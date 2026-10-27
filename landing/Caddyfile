@@ -1,0 +1,8 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$LANDING_DOMAIN}, www.{$LANDING_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy landing:8080
+}

@@ -1,7 +1,8 @@
 node_modules/
 dist/
 release/
-build/
+engine/build/
+# desktop/build holds the app icons: keep it in the repository
 __pycache__/
 *.pyc
 .env
