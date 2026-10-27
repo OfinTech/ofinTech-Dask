@@ -1,0 +1,45 @@
+# OfinTech Desk for desk.ofintech.ai: a desktop client of the Team Server (no local engine inside).
+#   npx electron-builder --config electron-builder.cloud.yml --mac     (on macOS)
+#   npx electron-builder --config electron-builder.cloud.yml --win     (on Windows, or Linux for an unsigned test build)
+# Another server: add  -c.extraMetadata.deskEdition.defaultServer=https://desk.example.com
+appId: ai.ofintech.desk
+productName: OfinTech Desk
+copyright: Copyright © 2026 OfinTech
+artifactName: OfinTech-Desk-${version}-${os}-${arch}.${ext}
+directories:
+  output: release-cloud
+  buildResources: build
+files:
+  - dist/**
+  - static/**
+  - package.json
+extraMetadata:
+  deskEdition:
+    defaultServer: https://desk.ofintech.ai
+    serverOnly: true
+asar: true
+protocols:
+  - name: OfinTech Desk link
+    schemes: [ofintech-desk]
+mac:
+  category: public.app-category.finance
+  hardenedRuntime: true
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+dmg:
+  title: OfinTech Desk
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: OfinTech Desk

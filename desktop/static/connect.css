@@ -1,0 +1,16 @@
+body { margin: 0; font: 14px/1.5 "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background: #f6f7f5; color: #18202b; }
+main { padding: 24px 28px; }
+h1 { font-size: 20px; margin: 0 0 8px; }
+p { color: #4a5462; }
+label { display: block; font-weight: 600; margin: 16px 0 4px; }
+input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #b9c2bb; border-radius: 6px; font: inherit; }
+#error { color: #b2342b; min-height: 1.5em; }
+.row { display: flex; justify-content: space-between; gap: 8px; }
+button { padding: 7px 14px; border-radius: 6px; border: 1px solid #b9c2bb; background: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+button.primary { background: #1f4c9a; border-color: #1f4c9a; color: #fff; }
+@media (prefers-color-scheme: dark) {
+  body { background: #10151b; color: #e5e9ee; } p { color: #b2bac4; }
+  input, button { background: #161d25; color: #e5e9ee; border-color: #3a4654; }
+  button.primary { background: #86a9f0; border-color: #86a9f0; color: #10151b; }
+}
+.offline h1 { font-size: 22px; } .offline #server { font-weight: 600; color: inherit; }

@@ -1,0 +1,104 @@
+# Tests the engine and UI, builds the engine with PyInstaller on each OS, and packages the desktop
+# installers with electron-builder. Signing: add the secrets listed in docs/RELEASING.md.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: OCR and LibreOffice for the file tests
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-ara
+          tesseract-ocr-spa tesseract-ocr-fra libreoffice-calc-nogui
+      - name: Engine tests
+        working-directory: engine
+        run: |
+          pip install -r requirements.txt
+          python -m unittest discover -s tests -t .
+      - name: UI typecheck, translations and build
+        working-directory: ui
+        run: |
+          npm install --no-audit --no-fund
+          npx tsc --noEmit
+          npm run i18n:check
+          node build.mjs
+      - name: Browser smoke test
+        run: |
+          pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+          python e2e/ui_smoke.py e2e-output
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-smoke-screenshots
+          path: e2e-output/
+          if-no-files-found: ignore
+      - name: Desktop typecheck
+        working-directory: desktop
+        run: |
+          npm install --no-audit --no-fund
+          npx tsc --noEmit -p tsconfig.json
+
+  desktop:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-2022, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: Build engine
+        working-directory: engine
+        run: |
+          pip install -r requirements-dev.txt
+          python packaging/build_engine.py
+      - name: Build UI
+        working-directory: ui
+        run: |
+          npm install --no-audit --no-fund
+          node build.mjs
+      - name: Package desktop app
+        working-directory: desktop
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' }}
+        run: |
+          npm install --no-audit --no-fund
+          npm run dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ofintech-desk-${{ matrix.os }}
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.exe
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+          if-no-files-found: error
+
+  team-server-image:
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Team Server image
+        run: docker build -f server/Dockerfile -t ofintech-desk:ci .

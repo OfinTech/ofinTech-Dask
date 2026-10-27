@@ -1,0 +1,69 @@
+# Testing
+
+```bash
+cd engine && python -m unittest discover -s tests -t .     # 99 tests, about 11 seconds (Tesseract, LibreOffice optional)
+cd ui && npx tsc --noEmit && npm run i18n:check && node build.mjs
+cd desktop && npx tsc --noEmit -p tsconfig.json
+python e2e/ui_smoke.py                                       # real UI in Chromium + engine + fake model
+DESK_SMOKE_OUT=/tmp/smoke xvfb-run -a npx electron --no-sandbox desktop   # desktop shell
+```
+
+## What the engine tests cover
+
+| File | Covers |
+|---|---|
+| `test_finance.py` | NPV, IRR, XNPV/XIRR against Excel's documented examples, amortisation, three depreciation methods, ratios and cash conversion cycle, tax splits |
+| `test_api_desktop.py` | Local token, DNS-rebinding guard, security headers; provider set-up with key never returned; chat with a streamed tool call; system prompt contents; figure check (pass and flag); "no model" error; write tool approval, resume and reject; audit entries |
+| `test_data.py` | Number and date parsing in many notations, header detection, European CSV, unpivot; import → query (fiscal year, quarter, last N months, filters) → dashboards; SQL injection attempts; CSV formula neutralisation; bad files |
+| `test_team_server.py` | First user, CSRF origin check, invitation flow (wrong e-mail, single use), roles, workspace isolation, private conversations, owner rules, logout; sign-in rate limit; SSRF and stdio refusal on the server; skills (built-in toggle, custom, import with ignored script, path traversal, export); secret binding |
+| `test_connectors.py` | QuickBooks P&L and balance-sheet parsers (no double counting of sub-accounts), Xero parsers, Zoho flattening, net profit and aging; Gmail parsing and header-injection guard; complete QuickBooks OAuth → sync → P&L and receivables dashboards; Xero PKCE, token refresh and rotation, tenant header |
+| `test_workflows.py` | Cron (time zones, steps, validation), templating (type-preserving, no attribute access), conditions; tool → condition → notify; agent step with a pinned skill → approval step; write-tool step approve and reject; schedule tick; tool catalogue; drafts saved incomplete but refused when switched on or run, with the missing fields named |
+| `test_channels.py` | Telegram: unlinked refusal, group chats ignored, pairing (wrong, single-use code), chat with the agent, workflow notification; WhatsApp: verify handshake, signature check, linking; HTTPS requirement |
+| `test_mcp.py` | A real stdio MCP server: tool discovery, read-only flags, auto/ask/off policy (auto downgraded for write tools), approval and execution; the built-in MCP server with access keys over JSON-RPC (write tools hidden, revocation) |
+| `test_knowledge.py` | Extraction from generated PDF, Word, Markdown and e-mail files; scanned-PDF refusal; chunking with pages and headings; FTS query sanitising; upload of several files (duplicate and unsupported rejected), keyword search with page and heading, collection filter, page text, download, workspace isolation, deletion (chunks, index, file); hybrid search with an embeddings endpoint (re-embedding, semantic-only match); the assistant citing passages [n]; PipesHub (against a mock of its documented API: wrong token, knowledge base created, existing documents sent on connect, original file uploaded under a unique name with `files_metadata`, the SSE upload stream parsed, a scanned PDF indexed through PipesHub, `/retrieve` filtered to the knowledge base, printf-like text removed from queries, another workspace's records dropped, other sources only when enabled, record deleted with the document); chat attachments (upload as a viewer-allowed chat purpose, same file reused, the model told the document ids and which could be read, search limited to the attached documents, other workspaces refused, empty message refused) |
+| `test_files.py` | Formula language (parsing, Excel compilation with correct brackets, Excel semantics: blank as zero, division by zero, ROUND at 15 digits; refusal of anything that is not a formula); a workbook created in chat from a pivoted query: exact sources with drill-down to the underlying rows, typed figures traced to tool results or flagged, live formulas, ratio-of-totals, KPIs; the Excel file (formulas, blue inputs, notes, Ref links to the Sources sheet, yellow cells); **every formula cell recalculated by LibreOffice and compared with the engine's value**; the independent reviewer (separate call without the conversation, no file tools, findings on cells, invalid targets moved to the file, notes and Review sheet, resolving removes them); refresh into version 2 with changed figures; workspace isolation; a Word report with figures bound to table cells, [S]/[C] links and bookmarks, highlighted and commented unsourced figures; invalid definitions returned to the model as guidance |
+| `test_storage.py` | AWS Signature V4 against the three published S3 examples (GET object, PUT object, list objects); S3 round trip with every request's signature checked against the URL actually sent; engine-side encryption (stored bytes unreadable, copied object refused), path traversal refused, wrong key and missing bucket, bucket creation; plain files written before encryption still read; the whole engine on S3: document upload, indexing and download, import uploads cleaned up, workspace deletion empties its prefix |
+| `test_odoo_open.py` | Odoo 19 JSON-2 (bearer key, `X-Odoo-Database`, company filter): P&L sections and signs, net profit, balance sheet that balances with unallocated earnings, invoices and credit notes, partially paid bills; Odoo 18 JSON-RPC fallback with `read_group`; a clear message when an old server needs the login; Open Accounting Connector pull against the reference adapter (wrong key, sync, the assistant reading a report through it); push ingest (key shown once and hashed, 401/422 cases, unknown kind, sync refused, reports answered from pushed data, key rotation revokes the old key); the OpenAPI document (all references resolve, published copy up to date) |
+| `test_accounts.py` | Invitations by e-mail (existing accounts added directly), password reset (same answer for unknown addresses, password policy, single use, old sessions ended, rate limit), an administrator's reset link, Google sign-in (PKCE, unverified e-mail refused, no account without an invitation, invitation accepted, replayed state refused, domain allow-list applied to every sign-in) |
+| `test_memory.py` | Secret detection (passwords in four languages, keys, IBANs, Luhn card numbers, account numbers); a proposal is not used until saved; saved memory reaches the prompt and the answer lists it; use counts and origin; unrelated questions do not pull it in, pinning does; archive, deletion, workspace isolation; manual entries and search; audit entries |
+| `test_search.py` | OCR of a scanned PDF and an image (Tesseract); one search over documents, conversations (another person's private thread hidden), memory, files and data; a cited answer made without tools; a collection that follows a Google Drive folder (added, unchanged, changed and removed files) |
+| `test_user_files.py` | An attached workbook opened for editing, inspected (formulas with saved values) and filled: a figure from the user's message traced, an unsourced one shaded with a finding, a total row of live formulas, the original kept as version 1, styles and number formats kept, the same attachment reused; a Word template: placeholders split across runs filled, a table cell set and a paragraph inserted, unsourced figures highlighted; refusals (unknown placeholder, formulas reaching outside the workbook or the web, macro files, refresh and reviewer on uploaded files) |
+| `test_workflow_more.py` | Webhook trigger (no secret, wrong secret, event data in steps, 413 on large bodies, refused while off, secret removed, not for manual workflows); file steps (refresh a workbook, fill a Word template); retries with back-off and *continue*; failure stops the run with later steps *not run*; the run timeline (statuses, durations, attempts, file links); every template saves as a draft; incomplete templates refused when switched on; the schedule preview |
+| `test_language.py` | Language saved per person and returned in the session; the assistant told the interface language; templates in the person's language; production settings refused on a Team Server (`DESK_DEV`, `http://` address, missing master key) |
+| `test_tokens.py` | Measured request size with and without tool selection (54% smaller for a simple question); `more_tools` loads a group for the next step and the thread keeps it; a tool that was not sent still runs; one system message with the stable part first; older tool results shortened after two turns |
+| `test_more.py` | Anthropic streaming with tool use, prompt-cache breakpoints (tools, stable system block, latest message) and cache token counts, and message conversion; OpenAI-compatible error mapping, `stream_options` fallback, Azure `api-key` header; Google OAuth → Gmail search → draft reply after approval (thread and In-Reply-To); Zoho EU data centre (accounts server, `api_domain`, organisation id, forged server refused) |
+
+External services (model providers, Intuit, Zoho, Xero, Google, Telegram, Meta) are replaced by an HTTP mock
+transport that returns responses shaped like each provider's documented format. The MCP tests use a real MCP server
+process.
+
+## What was executed for this version (27 Oct 2026, release 1.0.0)
+
+| Check | Result |
+|---|---|
+| Engine tests | 99 passed (Python 3.13, SQLite 3.53, Tesseract 5.3.4 with English data, LibreOffice 24.2 for the recalculation check) |
+| UI type check (`tsc --noEmit`, strict, React 19 types) | passed |
+| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 899 of 899 strings |
+| Desktop type check against Electron 44 type definitions | passed |
+| UI browser smoke (`e2e/ui_smoke.py`, Chromium) | passed: onboarding, model set-up, chat with tool and figure check, approval, Excel import, document upload and search, an answer with citations, the document viewer, a file attached in chat and cited, a workbook created in chat with its evidence panel and reviewer finding, connections, a workflow draft, dashboard; **new:** workspace search, a memory added by hand, the user's own Excel file uploaded and its contents shown, a workflow template with the schedule preview, a conversation deleted, and the app in Arabic (right to left), Spanish and French |
+| Desktop shell under Xvfb (Electron 44.0.0, Linux) | engine started by Electron, UI loaded at `http://localhost:47821/`, token bridge present, no Node in the page |
+
+## Not executed here
+
+- Installers (.dmg, .exe, .AppImage, .deb) and the PyInstaller engine build: built by CI on each OS.
+- The Team Server Docker image: no Docker daemon in the build environment. The server mode itself is covered by the
+  API tests.
+- A real MinIO / S3 bucket: signing is checked against AWS's published examples and a signature-verifying mock, but run
+  `docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d` once before release.
+- A live PipesHub instance: the connector follows PipesHub's OpenAPI description (release 0.10.0, October 2026) and
+  was tested against a mock of it. Connect a real instance before release.
+- A live Odoo database: the connector was tested against mocks that follow Odoo's documented JSON-2 and JSON-RPC
+  formats. Try it on an Odoo 19 trial database and on an Odoo 17/18 database before release.
+- Opening the generated and edited files in Microsoft Excel and Word themselves (LibreOffice was used here).
+- OCR with the Arabic, Spanish and French Tesseract data (only English data was installed here; the Team Server
+  image installs all four).
+- Live Google sign-in and SMTP delivery: tested against mocks of Google's OIDC endpoints and a fake mailer.
+- Review of the translations by native speakers.
+- Live calls to model providers, QuickBooks, Zoho Books, Xero, Google, Telegram and WhatsApp: they need your
+  credentials. Test with a QuickBooks sandbox company, a Xero demo company, a Zoho Books trial, a Google test
+  project and a Telegram test bot before release.

@@ -1,0 +1,896 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OfinTech Desk \u2014 Open Accounting Connector",
+    "version": "1.0.0",
+    "description": "Connect any accounting system. Pull: implement the five GET endpoints in an HTTPS adapter in front of your system; OfinTech Desk calls them with `Authorization: Bearer <adapter key>`. Push: send the same JSON to the ingest endpoints with the connection's ingest key. Amounts are in the company's base currency unless a document says otherwise. See docs/ACCOUNTING_API.md."
+  },
+  "servers": [
+    {
+      "url": "https://your-adapter.example.com",
+      "description": "your adapter (pull)"
+    }
+  ],
+  "paths": {
+    "/v1/company": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterCompany",
+        "summary": "The company whose books are exposed",
+        "responses": {
+          "200": {
+            "description": "Company",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Company"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/v1/profit-and-loss": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterProfitAndLoss",
+        "summary": "Net amount per account per calendar month (posted entries only)",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "P&L lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PLResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/v1/balance-sheet": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterBalanceSheet",
+        "summary": "Balance per account at a date",
+        "parameters": [
+          {
+            "name": "as_of",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance sheet lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BSResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/v1/invoices": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterInvoices",
+        "summary": "Customer invoices and credit notes",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "all"
+              ]
+            },
+            "description": "open: balance \u2260 0; all: every posted document"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/v1/bills": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterBills",
+        "summary": "Supplier bills and credit notes",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "all"
+              ]
+            },
+            "description": "open: balance \u2260 0; all: every posted document"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/profit-and-loss": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushProfitAndLoss",
+        "summary": "Replace the profit and loss held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PLResponse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/balance-sheet": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushBalanceSheet",
+        "summary": "Replace the balance sheet held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BSResponse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/invoices": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushInvoices",
+        "summary": "Replace the invoices held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentsResponse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/bills": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushBills",
+        "summary": "Replace the bills held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentsResponse"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/company": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushCompany",
+        "summary": "Replace the company held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Company"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Company": {
+        "description": "The company (legal entity) whose books are exposed.",
+        "properties": {
+          "name": {
+            "examples": [
+              "Acme Trading LLC"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "currency": {
+            "description": "ISO 4217 code of the base currency",
+            "examples": [
+              "SAR"
+            ],
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency",
+            "type": "string"
+          },
+          "country": {
+            "anyOf": [
+              {
+                "maxLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "ISO 3166-1 alpha-2",
+            "examples": [
+              "SA"
+            ],
+            "title": "Country"
+          },
+          "fiscal_year_start_month": {
+            "anyOf": [
+              {
+                "maximum": 12,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fiscal Year Start Month"
+          }
+        },
+        "required": [
+          "name",
+          "currency"
+        ],
+        "title": "Company",
+        "type": "object"
+      },
+      "PLLine": {
+        "description": "One account's net amount for one calendar month.",
+        "properties": {
+          "period": {
+            "description": "first day of the month",
+            "examples": [
+              "2026-03-01"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-01$",
+            "title": "Period",
+            "type": "string"
+          },
+          "section": {
+            "enum": [
+              "Income",
+              "Cost of sales",
+              "Expenses",
+              "Other income",
+              "Other expenses"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "account": {
+            "description": "account code and name",
+            "examples": [
+              "4000 Sales"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "amount": {
+            "description": "positive for income and for costs; negative only for reversals",
+            "examples": [
+              125400.0
+            ],
+            "title": "Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "period",
+          "section",
+          "account",
+          "amount"
+        ],
+        "title": "PLLine",
+        "type": "object"
+      },
+      "BSLine": {
+        "properties": {
+          "as_of": {
+            "examples": [
+              "2026-03-31"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "As Of",
+            "type": "string"
+          },
+          "section": {
+            "enum": [
+              "Assets",
+              "Liabilities",
+              "Equity"
+            ],
+            "title": "Section",
+            "type": "string"
+          },
+          "group": {
+            "default": "",
+            "examples": [
+              "Current assets"
+            ],
+            "maxLength": 120,
+            "title": "Group",
+            "type": "string"
+          },
+          "account": {
+            "examples": [
+              "1100 Accounts receivable"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "amount": {
+            "description": "positive for normal balances (assets debit; liabilities and equity credit)",
+            "examples": [
+              48210.5
+            ],
+            "title": "Amount",
+            "type": "number"
+          }
+        },
+        "required": [
+          "as_of",
+          "section",
+          "account",
+          "amount"
+        ],
+        "title": "BSLine",
+        "type": "object"
+      },
+      "Document": {
+        "description": "A customer invoice (receivable) or supplier bill (payable). Credit notes have negative amounts.",
+        "properties": {
+          "number": {
+            "examples": [
+              "INV-2026-0042"
+            ],
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Number",
+            "type": "string"
+          },
+          "party": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "examples": [
+              "Northwind Retail"
+            ],
+            "title": "Party"
+          },
+          "issue_date": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Issue Date"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Due Date"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "maxLength": 3,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Currency"
+          },
+          "total": {
+            "title": "Total",
+            "type": "number"
+          },
+          "balance": {
+            "description": "amount still open; 0 when paid",
+            "title": "Balance",
+            "type": "number"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "examples": [
+              "Open"
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "number",
+          "total",
+          "balance"
+        ],
+        "title": "Document",
+        "type": "object"
+      },
+      "PLResponse": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PLLine"
+            },
+            "maxItems": 200000,
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "PLResponse",
+        "type": "object"
+      },
+      "BSResponse": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/BSLine"
+            },
+            "maxItems": 50000,
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "BSResponse",
+        "type": "object"
+      },
+      "DocumentsResponse": {
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/Document"
+            },
+            "maxItems": 200000,
+            "title": "Documents",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "pull only: pass as ?cursor= to get the next page",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "title": "DocumentsResponse",
+        "type": "object"
+      },
+      "IngestResult": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Dataset Id"
+          }
+        },
+        "required": [
+          "kind",
+          "rows"
+        ],
+        "title": "IngestResult",
+        "type": "object"
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {}
+        },
+        "required": [
+          "error",
+          "message"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "adapterKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "the key you configure in the connection"
+      },
+      "ingestKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "the connection's ingest key (odk_\u2026)"
+      }
+    }
+  },
+  "security": [
+    {
+      "adapterKey": []
+    }
+  ]
+}
