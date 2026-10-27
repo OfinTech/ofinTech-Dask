@@ -1,0 +1,14 @@
+# On the same server as the Team Server (desk.ofintech.ai): join its Docker network so its Caddy can reach the
+# landing container as "ofintech-landing:8080". Start the Team Server first.
+#   docker compose -f docker-compose.yml -f docker-compose.desk.yml up -d --build
+services:
+  landing:
+    networks:
+      default: {}
+      desk:
+        aliases: [ofintech-landing]
+
+networks:
+  desk:
+    external: true
+    name: ofintech-desk_default

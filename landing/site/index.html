@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OfinTech Desk: open-source AI workspace for finance teams</title>
+<meta name="description" content="OfinTech Desk is an open-source AI workspace for finance and accounting teams. Every figure is traced to its source; any model; connects to any accounting system.">
+<meta property="og:title" content="OfinTech Desk">
+<meta property="og:description" content="Open-source AI workspace for finance teams. Every figure traced to its source.">
+<meta property="og:image" content="assets/workbook-evidence.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icon-512.png">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#010301}a:hover{color:#5e5a60}
+pre{margin:0;white-space:pre;overflow-x:auto}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+a:focus-visible,button:focus-visible{outline:2px solid #010301;outline-offset:2px}
+
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+img{max-width:100%}
+@media (max-width: 640px){h1#hero-title{font-size:38px!important;line-height:44px!important}}
+</style>
+</head>
+<body>
+<div style="background: #ffffff; color: #1f1c20; font-family: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 24px;">
+
+<header style="border-bottom: 1px solid #e3e2e4;">
+<nav aria-label="Main" style="max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none;">
+<img src="assets/ofintech-wordmark-black.png" alt="OFINTECH" style="height: 30px; width: auto; display: block;">
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Desk</span>
+</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; font-size: 14px; line-height: 20px;">
+<a href="#product" style="text-decoration: none; color: #1f1c20;">Product</a>
+<a href="#install" style="text-decoration: none; color: #1f1c20;">Install</a>
+<a href="#connect" style="text-decoration: none; color: #1f1c20;">Connect a ledger</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/tree/main/docs" style="text-decoration: none; color: #1f1c20;">Docs</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask" style="text-decoration: none; color: #ffffff; background: #010301; padding: 10px 16px; border-radius: 0 8px 0 8px; font-weight: 600;">View on GitHub</a>
+</div>
+</nav>
+</header>
+
+<main id="top">
+
+<section aria-labelledby="hero-title" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px 48px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 48px; align-items: center;">
+<div style="display: flex; flex-direction: column; gap: 24px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Open source, Apache-2.0</p>
+<h1 id="hero-title" style="margin: 0; font-size: 52px; line-height: 56px; font-weight: 700; letter-spacing: -0.01em; color: #010301;">Every figure traced to its source.</h1>
+<p style="margin: 0; font-size: 18px; line-height: 28px; color: #1f1c20; max-width: 34em;">OfinTech Desk is an AI workspace for finance and accounting teams. It reads your ledger, spreadsheets, documents and inbox, does the arithmetic in code, fills in your own Excel and Word files with a source for every number, and asks a person before it sends or changes anything.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px;">
+<a href="https://github.com/OfinTech/ofinTech-Dask" style="text-decoration: none; background: #010301; color: #ffffff; padding: 12px 20px; border-radius: 0 8px 0 8px; font-weight: 600;">Get the code on GitHub</a>
+<a href="#install" style="text-decoration: none; color: #010301; padding: 11px 19px; border: 1px solid #8c888e; border-radius: 0 8px 0 8px; font-weight: 600;">Read the install guide</a>
+</div>
+<div style="background: #f4f3f4; padding: 12px 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 20px;">
+<pre><code>git clone https://github.com/OfinTech/ofinTech-Dask.git</code></pre>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #5e5a60;">Desktop app for macOS, Windows and Linux. Team Server with Docker. English, Arabic, Spanish and French. Bring any model, cloud or local.</p>
+</div>
+<figure style="margin: 0; display: flex; flex-direction: column; gap: 12px;">
+<img width="1360" height="860" src="assets/workbook-evidence.png" alt="A workbook in OfinTech Desk: selecting the March freight revenue figure shows its source dataset, the underlying row and a reviewer's finding" style="width: 100%; height: auto; display: block; border: 1px solid #e3e2e4; border-radius: 0 16px 0 16px;">
+<figcaption style="font-size: 14px; line-height: 20px; color: #5e5a60;">Select any figure: its source, the rows behind it and the reviewer's notes appear beside it.</figcaption>
+</figure>
+</section>
+
+<section id="product" aria-labelledby="product-title" style="border-top: 1px solid #e3e2e4;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 46em;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">What it does</p>
+<h2 id="product-title" style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; color: #010301;">Built for work that someone will audit</h2>
+<p style="margin: 0; color: #1f1c20;">The assistant is useful only if you can check it. Every feature is designed so a controller can see where a number came from and who approved what.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); column-gap: 48px; row-gap: 0;">
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Evidence-linked workbooks and reports</h3>
+<p style="margin: 0; color: #1f1c20;">Inputs drill down to the rows they came from, totals are live Excel formulas, and figures without a source are shaded. A separate reviewer model checks each file without seeing the conversation.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Your own Excel and Word files</h3>
+<p style="margin: 0; color: #1f1c20;">Attach a company template or last month's pack. The assistant fills it in, keeps your layout and formulas, saves a new version and highlights any figure it cannot trace.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Approvals before anything leaves</h3>
+<p style="margin: 0; color: #1f1c20;">E-mails, chat messages, workflow runs and external tools wait for an editor to approve the exact content. Every decision is in the audit log.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Memory you approve</h3>
+<p style="margin: 0; color: #1f1c20;">The assistant proposes lasting facts such as a materiality threshold or an account mapping; nothing is kept until a person saves it. Each answer shows which memories it used.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">One search with citations</h3>
+<p style="margin: 0; color: #1f1c20;">Documents (scans read with OCR), past conversations, memory, files and data in one place, with a short answer that cites the page it came from.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Workflows for the close</h3>
+<p style="margin: 0; color: #1f1c20;">Month-end packs, receivables follow-up and bills due, on a schedule, from an e-mail or from another system's webhook, with retries and a timeline of every run.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Any model, fewer tokens</h3>
+<p style="margin: 0; color: #1f1c20;">OpenAI, Anthropic, Gemini, DeepSeek, Mistral, Azure or a local model through Ollama. Requests carry only the tools they need and are ordered for prompt caching.</p>
+</div>
+<div style="border-top: 1px solid #e3e2e4; padding: 20px 0 24px; display: flex; flex-direction: column; gap: 6px;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Four languages, right to left</h3>
+<p style="margin: 0; color: #1f1c20;">English, Arabic, Spanish and French, chosen per person. The assistant answers in the language you write in.</p>
+</div>
+</div>
+<figure style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 32px; align-items: center; background: #f4f3f4; padding: 32px; border-radius: 0 16px 0 16px;">
+<img loading="lazy" width="1360" height="860" src="assets/workflows-arabic.png" alt="The Workflows page in Arabic, laid out right to left, with templates for the month-end pack and receivables follow-up" style="width: 100%; height: auto; display: block; border: 1px solid #e3e2e4;">
+<figcaption style="display: flex; flex-direction: column; gap: 8px;">
+<span style="font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">The whole interface in Arabic</span>
+<span style="color: #1f1c20;">Arabic switches the layout to right to left; figures keep Western digits, as in most finance reports. Workflow templates appear in each person's language.</span>
+</figcaption>
+</figure>
+</div>
+</section>
+
+<section id="install" aria-labelledby="install-title" style="border-top: 1px solid #e3e2e4; background: #ffffff;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 46em;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Install</p>
+<h2 id="install-title" style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; color: #010301;">Run it on your own server or computer</h2>
+<p style="margin: 0;">Most teams run the Team Server and give everyone the desktop app. Your data stays on your infrastructure; the only outside calls go to the model provider and the systems you connect.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px;">
+<div style="border: 1px solid #e3e2e4; padding: 24px; border-radius: 0 16px 0 16px; display: flex; flex-direction: column; gap: 8px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">For a team</p>
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Team Server</h3>
+<p style="margin: 0; font-size: 14px; line-height: 20px;">Docker Compose with automatic HTTPS. Accounts, invitations, roles, approvals inbox, webhooks.</p>
+</div>
+<div style="border: 1px solid #e3e2e4; padding: 24px; border-radius: 0 16px 0 16px; display: flex; flex-direction: column; gap: 8px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">For each person</p>
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Desktop app</h3>
+<p style="margin: 0; font-size: 14px; line-height: 20px;">macOS and Windows client of your Team Server, or a standalone app with its own engine on one computer.</p>
+</div>
+<div style="border: 1px solid #e3e2e4; padding: 24px; border-radius: 0 16px 0 16px; display: flex; flex-direction: column; gap: 8px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">For contributors</p>
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">From source</h3>
+<p style="margin: 0; font-size: 14px; line-height: 20px;">Python 3.11+ and Node.js 22+. Engine, UI and tests in one repository.</p>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 24px;">
+<h3 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; color: #010301;">Team Server on Ubuntu 24.04</h3>
+<p style="margin: 0; max-width: 46em;">You need a server with 2 vCPU and 4 GB of RAM (up to 25 people), a DNS A record for your domain pointing at it, and ports 80 and 443 open.</p>
+
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 28px;">
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">01</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Install Docker and Compose</h4>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>sudo apt update &amp;&amp; sudo apt install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release &amp;&amp; echo $VERSION_CODENAME) stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update &amp;&amp; sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin</code></pre>
+</div>
+</div>
+</li>
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">02</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Get the code and create the settings file</h4>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>git clone https://github.com/OfinTech/ofinTech-Dask.git
+cd ofinTech-Dask/server
+cp .env.example .env &amp;&amp; chmod 600 .env</code></pre>
+</div>
+</div>
+</li>
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">03</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Generate the master key</h4>
+<p style="margin: 0;">It encrypts every stored credential and file. Keep a copy in a password manager, separate from your backups.</p>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>KEY=$(python3 -c 'import secrets,base64;print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())')
+sed -i "s|^DESK_MASTER_KEY=.*|DESK_MASTER_KEY=$KEY|" .env</code></pre>
+</div>
+</div>
+</li>
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">04</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Set your domain, e-mail and sign-in</h4>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code># .env
+DESK_DOMAIN=desk.yourcompany.com
+ACME_EMAIL=it@yourcompany.com
+DESK_OPEN_SIGNUP=false                # invitation only
+
+# optional: invitations and password resets by e-mail
+DESK_SMTP_HOST=smtp.yourprovider.com
+DESK_SMTP_USER=desk@yourcompany.com
+DESK_SMTP_PASSWORD=...
+DESK_SMTP_FROM=OfinTech Desk &lt;desk@yourcompany.com&gt;
+
+# optional: "Continue with Google", limited to your domain
+DESK_GOOGLE_CLIENT_ID=...
+DESK_GOOGLE_CLIENT_SECRET=...
+DESK_GOOGLE_ALLOWED_DOMAINS=yourcompany.com</code></pre>
+</div>
+</div>
+</li>
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">05</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Start it and create the administrator</h4>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>docker compose up -d --build
+docker compose logs -f engine      # wait for: Uvicorn running on http://0.0.0.0:8700</code></pre>
+</div>
+<p style="margin: 0;">Open your domain. The first account becomes the administrator, so create it straight away. Then add a model provider under <strong>Settings → Models</strong> and invite colleagues under <strong>Settings → Members</strong>.</p>
+</div>
+</li>
+<li style="display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 16px;">
+<span aria-hidden="true" style="font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 14px; line-height: 28px; font-weight: 500; color: #5e5a60;">06</span>
+<div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+<h4 style="margin: 0; font-size: 18px; line-height: 28px; font-weight: 600; color: #010301;">Back up every night</h4>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>./backup.sh                        # backups/&lt;timestamp&gt;.sqlite3 with a checksum
+# crontab -e
+0 2 * * * cd /path/to/ofinTech-Dask/server &amp;&amp; ./backup.sh</code></pre>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #5e5a60;">Optional: keep files in MinIO or any S3 store with <code>-f docker-compose.minio.yml</code>. Full checklist in <a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/DEPLOYMENT.md">docs/DEPLOYMENT.md</a>.</p>
+</div>
+</li>
+</ol>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 32px; border-top: 1px solid #e3e2e4; padding-top: 40px;">
+<div style="display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+<h3 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; color: #010301;">Desktop app for macOS and Windows</h3>
+<p style="margin: 0;">The desktop client opens your Team Server (by default <code>https://desk.ofintech.ai</code>). GitHub Actions builds the installers: open <strong>Actions → desktop-cloud → Run workflow</strong>, or push a tag.</p>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>git tag desk-v1.0.0 &amp;&amp; git push origin desk-v1.0.0
+# → OfinTech-Desk-1.0.0-mac-arm64.dmg, …-mac-x64.dmg, …-win-x64.exe</code></pre>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #5e5a60;">Sign the builds with an Apple Developer ID and a Windows code-signing certificate so they install without warnings. See <a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/DESKTOP.md">docs/DESKTOP.md</a>.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+<h3 style="margin: 0; font-size: 24px; line-height: 32px; font-weight: 700; color: #010301;">From source, on one computer</h3>
+<p style="margin: 0;">The standalone app runs its own engine on <code>127.0.0.1</code> and keeps its key in the operating system's secure storage.</p>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 14px; line-height: 22px;">
+<pre><code>pip install -r engine/requirements.txt
+(cd ui &amp;&amp; npm install &amp;&amp; node build.mjs)
+(cd desktop &amp;&amp; npm install &amp;&amp; npm start)
+
+# tests
+cd engine &amp;&amp; python -m unittest discover -s tests -t .</code></pre>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="connect" aria-labelledby="connect-title" style="border-top: 1px solid #e3e2e4; background: #f4f3f4;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px; display: flex; flex-direction: column; gap: 40px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 46em;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Connect a ledger</p>
+<h2 id="connect-title" style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; color: #010301;">Works with any accounting system</h2>
+<p style="margin: 0;">Four systems connect out of the box. Anything else, from Tally and Sage to SAP Business One or your own database, links through the Open Accounting Connector: a small, documented API. Every connection is read-only.</p>
+</div>
+
+<div style="overflow-x: auto; background: #ffffff; border-radius: 0 16px 0 16px;">
+<table style="width: 100%; border-collapse: collapse; font-size: 14px; line-height: 20px; min-width: 640px;">
+<thead>
+<tr style="text-align: left;">
+<th style="padding: 14px 20px; border-bottom: 1px solid #8c888e; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">System</th>
+<th style="padding: 14px 20px; border-bottom: 1px solid #8c888e; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">How it connects</th>
+<th style="padding: 14px 20px; border-bottom: 1px solid #8c888e; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">What you need</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4; font-weight: 600;">QuickBooks Online</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">OAuth 2.0</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">An Intuit developer app; redirect URI <code>https://&lt;domain&gt;/oauth/callback</code></td></tr>
+<tr><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4; font-weight: 600;">Xero</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">OAuth 2.0 with PKCE</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">A Xero app with the granular accounting scopes</td></tr>
+<tr><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4; font-weight: 600;">Zoho Books</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">OAuth 2.0, every data centre</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">A Zoho API console client</td></tr>
+<tr><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4; font-weight: 600;">Odoo 17 or later</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">JSON-2 API (19+), JSON-RPC (17, 18)</td><td style="padding: 14px 20px; border-bottom: 1px solid #e3e2e4;">The Odoo address and an API key of a user with read access to Accounting</td></tr>
+<tr><td style="padding: 14px 20px; font-weight: 600;">Any other system</td><td style="padding: 14px 20px;">Open Accounting Connector, pull or push</td><td style="padding: 14px 20px;">An adapter with five read-only endpoints, or a script that posts JSON</td></tr>
+</tbody>
+</table>
+</div>
+<p style="margin: -24px 0 0; font-size: 14px; line-height: 20px; color: #5e5a60;">Each connection syncs profit and loss by month, the balance sheet, invoices and bills into datasets, with ready-made dashboards. Set it up under <strong>Connections → Accounting</strong> (admin role).</p>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 32px;">
+<div style="background: #ffffff; padding: 28px; border-radius: 0 16px 0 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Pull</p>
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">OfinTech Desk reads your adapter</h3>
+<p style="margin: 0;">For a live system with an API or a database you can query. You run a small HTTPS service; OfinTech Desk calls it on every sync and when the assistant reads a report.</p>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 13px; line-height: 20px;">
+<pre><code>GET /v1/company
+GET /v1/profit-and-loss?start=2026-01-01&amp;end=2026-03-31
+GET /v1/balance-sheet?as_of=2026-03-31
+GET /v1/invoices?status=open|all
+GET /v1/bills?status=open|all
+
+Authorization: Bearer &lt;adapter key&gt;</code></pre>
+</div>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 20px;">
+<li>Copy <code>examples/accounting-adapter/adapter.py</code> (standard library only).</li>
+<li>Replace its four data functions with queries against your system, using a read-only user.</li>
+<li>Serve it over HTTPS, then add <strong>Other accounting system → Pull</strong> with its address and key.</li>
+</ol>
+</div>
+<div style="background: #ffffff; padding: 28px; border-radius: 0 16px 0 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Push</p>
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">Your system sends JSON</h3>
+<p style="margin: 0;">For systems behind a firewall or without an API: a nightly export posts to the Team Server. Nothing is opened towards your network.</p>
+<div style="background: #f4f3f4; padding: 16px; border-radius: 0 8px 0 8px; font-size: 13px; line-height: 20px;">
+<pre><code>curl -X POST \
+  https://desk.yourcompany.com/api/ingest/v1/accounting/profit-and-loss \
+  -H "Authorization: Bearer odk_…" \
+  -H "Content-Type: application/json" \
+  -d '{"lines":[{"period":"2026-03-01","section":"Income",
+       "account":"4000 Sales","amount":53000}]}'
+# → {"kind":"profit-and-loss","rows":2,"dataset_id":"ds_…"}</code></pre>
+</div>
+<ol style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 20px;">
+<li>Add <strong>Other accounting system → Push</strong> and copy the ingest key; it is shown once.</li>
+<li>Post <code>company</code>, <code>profit-and-loss</code>, <code>balance-sheet</code>, <code>invoices</code> and <code>bills</code>.</li>
+<li>Each post replaces that data set; send the full history you want to analyse.</li>
+</ol>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 32px; align-items: start;">
+<div style="display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+<h3 style="margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; color: #010301;">The data format</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>Profit and loss: one line per account per month, from posted entries. <code>section</code> is Income, Cost of sales, Expenses, Other income or Other expenses. No totals.</li>
+<li>Balance sheet: Assets, Liabilities and Equity as positive amounts, including the unclosed profit for the year.</li>
+<li>Invoices and bills: paged with <code>next_cursor</code>; credit notes are negative.</li>
+<li>Amounts in the base currency; dates as <code>YYYY-MM-DD</code>. Every response is validated and errors name the field at fault.</li>
+</ul>
+</div>
+<div style="background: #ffffff; padding: 16px; border-radius: 0 8px 0 8px; font-size: 13px; line-height: 20px; min-width: 0;">
+<pre><code>{ "lines": [
+  { "period": "2026-03-01", "section": "Income",
+    "account": "4000 Sales", "amount": 53000.00 },
+  { "period": "2026-03-01", "section": "Expenses",
+    "account": "6100 Rent", "amount": 4500.00 }
+] }</code></pre>
+</div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 20px;">The full specification is an OpenAPI 3.1 file, ready for Swagger UI or Postman: <a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/openapi/accounting-connector.json">docs/openapi/accounting-connector.json</a>. Guide: <a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/ACCOUNTING_API.md">docs/ACCOUNTING_API.md</a>.</p>
+</div>
+</section>
+
+<section aria-labelledby="limits-title" style="border-top: 1px solid #e3e2e4;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 32px;">
+<div style="display: flex; flex-direction: column; gap: 12px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #5e5a60;">Plainly stated</p>
+<h2 id="limits-title" style="margin: 0; font-size: 32px; line-height: 40px; font-weight: 700; color: #010301;">What it does not claim</h2>
+</div>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px;">
+<li>Tax, accounting and regulatory output is general guidance. No certification or compliance is claimed for e-invoicing, data protection laws or any regulator.</li>
+<li>Accounting connectors read data; they do not post entries. There is no live bank connection.</li>
+<li>The independent reviewer is a second model check, not an audit.</li>
+<li>Test every connection against a sandbox company before using it with real books.</li>
+</ul>
+</div>
+</section>
+
+</main>
+
+<footer style="border-top: 1px solid #e3e2e4; background: #010301; color: #ffffff;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 48px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 32px;">
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 30em;">
+<img src="assets/ofintech-wordmark-white.png" alt="OFINTECH" style="height: 30px; width: auto; display: block; align-self: flex-start;">
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #a8a4aa;">OfinTech Desk is open source under the Apache License 2.0. The OFINTECH name and logo are not covered by the licence.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 48px; font-size: 14px; line-height: 20px;">
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a8a4aa;">Code</p>
+<a href="https://github.com/OfinTech/ofinTech-Dask" style="color: #ffffff;">GitHub repository</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/CHANGELOG.md" style="color: #ffffff;">Changelog</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/CONTRIBUTING.md" style="color: #ffffff;">Contributing</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/SECURITY.md" style="color: #ffffff;">Report a vulnerability</a>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px;">
+<p style="margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: #a8a4aa;">Docs</p>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/DEPLOYMENT.md" style="color: #ffffff;">Deployment</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/DESKTOP.md" style="color: #ffffff;">Desktop app</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/ACCOUNTING_API.md" style="color: #ffffff;">Accounting API</a>
+<a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/docs/SECURITY.md" style="color: #ffffff;">Security model</a>
+</div>
+</div>
+</div>
+</footer>
+
+</div>
+</body>
+</html>
