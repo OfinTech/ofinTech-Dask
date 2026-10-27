@@ -1,0 +1,15 @@
+# The landing page on its own, listening on 127.0.0.1:8080. Put HTTPS in front of it:
+#   - on the Team Server's Caddy (same server as desk.ofintech.ai), see README.md, or
+#   - with docker-compose.https.yml on a server of its own.
+name: ofintech-landing
+
+services:
+  landing:
+    build: .
+    image: ofintech-landing:latest
+    restart: unless-stopped
+    ports: ["127.0.0.1:8080:8080"]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }

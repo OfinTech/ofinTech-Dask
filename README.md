@@ -137,6 +137,7 @@ ui/          React + TypeScript UI (esbuild); translations in ui/src/i18n
 desktop/     Electron shell: engine sidecar, secure storage, Team Server mode, electron-builder config
 server/      Team Server: Dockerfile, docker-compose with Caddy (HTTPS), MinIO overlay, backup script
 e2e/         Browser smoke test with a fake model
+landing/     The public website (static, nginx in Docker)
 examples/    Reference adapter for the Open Accounting Connector; sample output files
 docs/        Architecture, security, deployment, connectors, accounting API, files, knowledge, memory,
              workflows, languages, costs, skills, MCP, testing, releasing; brand assets
