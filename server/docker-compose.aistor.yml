@@ -1,0 +1,21 @@
+# Optional third overlay: run MinIO AIStor (MinIO, Inc.'s commercial edition) instead of the Silo build.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.minio.yml -f docker-compose.aistor.yml up -d
+#
+# AIStor is not open source and runs only with a licence file from MinIO, Inc. (the free tier is single-node,
+# without support, and may not be redistributed). Read its terms first. Required in .env:
+#   AISTOR_IMAGE         a pinned tag or digest, e.g. quay.io/minio/aistor/minio:<release> (never :latest)
+#   AISTOR_LICENSE_FILE  absolute path of minio.license on the Docker host
+# minio-init keeps using the Silo image because it needs the mcli client.
+services:
+  minio:
+    image: ${AISTOR_IMAGE:?set AISTOR_IMAGE to a pinned quay.io/minio/aistor/minio tag}
+    command: ["minio", "server", "/data", "--console-address", ":9001", "--license", "/minio.license"]
+    volumes:
+      - ${AISTOR_LICENSE_FILE:?set AISTOR_LICENSE_FILE}:/minio.license:ro
+    healthcheck:
+      disable: true
+
+  minio-init:
+    depends_on:
+      minio: { condition: service_started }

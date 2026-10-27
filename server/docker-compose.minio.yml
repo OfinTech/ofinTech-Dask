@@ -1,0 +1,70 @@
+# Overlay: keep the Team Server's files in MinIO (S3-compatible object storage) instead of the engine volume.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.minio.yml up -d
+#
+# MinIO, Inc. no longer publishes community images; this uses PGSTY Silo, a maintained build of the same
+# AGPLv3 code (same S3 API, MINIO_* variables and data format), run unmodified as a separate service.
+# For MinIO AIStor (commercial, needs a licence file) add docker-compose.aistor.yml as a third -f.
+# Any other S3-compatible store (AWS S3, Cloudflare R2, Wasabi, SeaweedFS, Garage, Ceph RGW) works without
+# this overlay: set DESK_STORAGE=s3 and the DESK_S3_* variables in .env instead.
+#
+# Required in .env: MINIO_ROOT_USER, MINIO_ROOT_PASSWORD (root, used only by minio-init),
+#                   DESK_S3_ACCESS_KEY, DESK_S3_SECRET_KEY (the engine's least-privilege user).
+# Files are also encrypted by the engine (AES-256-GCM with a key derived from DESK_MASTER_KEY) before upload.
+# Existing files on the engine volume: run once after the first start
+#   docker compose -f docker-compose.yml -f docker-compose.minio.yml exec engine python -m desk_engine storage-migrate
+x-logging: &logging { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+
+services:
+  engine:
+    environment:
+      DESK_STORAGE: s3
+      DESK_S3_ENDPOINT: http://minio:9000
+      DESK_S3_REGION: us-east-1
+      DESK_S3_BUCKET: ${DESK_S3_BUCKET:-ofintech-desk-files}
+      DESK_S3_ACCESS_KEY: ${DESK_S3_ACCESS_KEY:?set DESK_S3_ACCESS_KEY}
+      DESK_S3_SECRET_KEY: ${DESK_S3_SECRET_KEY:?set DESK_S3_SECRET_KEY}
+      DESK_S3_PATH_STYLE: "true"
+    depends_on:
+      minio-init: { condition: service_completed_successfully }
+
+  minio:
+    image: ${MINIO_IMAGE:-pgsty/silo:RELEASE.2026-10-18T00-00-00Z}
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+    volumes: [minio_data:/data]
+    # Not published to the internet. Console over an SSH tunnel: ssh -L 9001:127.0.0.1:9001 <server>
+    ports: ["127.0.0.1:${MINIO_CONSOLE_HOST_PORT:-9001}:9001"]
+    expose: ["9000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    logging: *logging
+
+  # Creates the private, versioned bucket and the least-privilege user the engine uses. Safe to re-run.
+  minio-init:
+    image: ${MINIO_IMAGE:-pgsty/silo:RELEASE.2026-10-18T00-00-00Z}
+    entrypoint: ["/bin/sh", "/init-minio.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${DESK_S3_BUCKET:-ofintech-desk-files}
+      S3_ACCESS_KEY: ${DESK_S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${DESK_S3_SECRET_KEY}
+      NONCURRENT_DAYS: ${MINIO_NONCURRENT_DAYS:-90}
+    volumes:
+      - ./minio/init-minio.sh:/init-minio.sh:ro
+    depends_on:
+      minio: { condition: service_healthy }
+    restart: "no"
+    logging: *logging
+
+volumes:
+  minio_data:

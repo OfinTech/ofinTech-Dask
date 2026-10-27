@@ -1,0 +1,73 @@
+# Builds the OfinTech Desk desktop app for macOS and Windows as a client of a Team Server
+# (default https://desk.ofintech.ai). No Python engine is bundled, so the build is small and fast.
+# Run it from Actions → desktop-cloud → Run workflow, or push a tag desk-v1.0.0.
+# Signing (optional but needed for a smooth install): see docs/DESKTOP.md.
+name: desktop-cloud
+
+on:
+  workflow_dispatch:
+    inputs:
+      server:
+        description: "Team Server the app opens"
+        default: "https://desk.ofintech.ai"
+        required: true
+  push:
+    tags: ["desk-v*"]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: --mac
+          - os: windows-2022
+            target: --win
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "24" }
+      - name: Build and package
+        working-directory: desktop
+        shell: bash
+        env:
+          SERVER: ${{ github.event.inputs.server || 'https://desk.ofintech.ai' }}
+          # macOS signing and notarisation (Developer ID Application certificate, base64 .p12)
+          CSC_LINK: ${{ runner.os == 'macOS' && secrets.CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ runner.os == 'macOS' && secrets.CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Windows signing (code-signing certificate, base64 .pfx); leave empty for an unsigned build
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'macOS' && secrets.CSC_LINK != '' }}
+        run: |
+          case "$SERVER" in https://*) ;; *) echo "The server must be an https:// address"; exit 1;; esac
+          npm install --no-audit --no-fund
+          npm run build
+          npx electron-builder --config electron-builder.cloud.yml ${{ matrix.target }} --publish never \
+            -c.extraMetadata.deskEdition.defaultServer="$SERVER"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ofintech-desk-${{ runner.os }}
+          path: |
+            desktop/release-cloud/*.dmg
+            desktop/release-cloud/*.zip
+            desktop/release-cloud/*.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/desk-v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions: { contents: write }
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true

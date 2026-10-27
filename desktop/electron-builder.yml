@@ -1,0 +1,32 @@
+appId: ai.ofintech.desk
+productName: OfinTech Desk
+copyright: Copyright © 2026 OfinTech
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - static/**
+  - package.json
+extraResources:
+  - from: ../engine/dist/desk-engine
+    to: engine
+  - from: ../ui/dist
+    to: ui
+asar: true
+protocols:
+  - name: OfinTech Desk link
+    schemes: [ofintech-desk]
+mac:
+  category: public.app-category.finance
+  hardenedRuntime: true
+  target: [dmg, zip]
+win:
+  target: [nsis]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Office;Finance
+  mimeTypes: [x-scheme-handler/ofintech-desk]
+  target: [AppImage, deb]

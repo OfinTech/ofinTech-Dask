@@ -1,0 +1,36 @@
+# OfinTech Desk Team Server with automatic HTTPS (Caddy).
+#   cp .env.example .env    (set DESK_DOMAIN, ACME_EMAIL and DESK_MASTER_KEY)
+#   docker compose up -d --build
+name: ofintech-desk
+
+services:
+  engine:
+    build: { context: .., dockerfile: server/Dockerfile }
+    image: ofintech-desk:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DESK_MODE: server
+      DESK_PUBLIC_URL: https://${DESK_DOMAIN:?set DESK_DOMAIN in .env}
+      DESK_MASTER_KEY: ${DESK_MASTER_KEY:?set DESK_MASTER_KEY in .env (python -m desk_engine keygen)}
+    volumes: [desk_data:/var/lib/ofintech-desk]
+    expose: ["8700"]
+    logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      DESK_DOMAIN: ${DESK_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [engine]
+
+volumes:
+  desk_data:
+  caddy_data:
+  caddy_config:

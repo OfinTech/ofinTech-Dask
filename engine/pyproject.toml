@@ -1,0 +1,24 @@
+[project]
+name = "ofintech-desk-engine"
+version = "1.0.0"
+description = "Engine of OfinTech Desk: agent, data, dashboards, workflows, connectors, MCP, channels."
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = [
+  "starlette==1.7.0", "uvicorn==0.54.0", "pydantic==2.13.5", "httpx2==2.13.1", "mcp==2.3.0",
+  "openpyxl==3.1.5", "cryptography==50.0.1", "python-multipart==0.0.32", "PyYAML==6.0.3",
+  "pypdf==6.17.0", "python-docx==1.2.0", "numpy==2.5.3",
+]
+
+[project.scripts]
+desk-engine = "desk_engine.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["desk_engine*"]
+
+[tool.setuptools.package-data]
+desk_engine = ["skills/builtin/*/*.md"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

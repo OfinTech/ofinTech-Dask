@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'" />
+  <title>OfinTech Desk</title>
+  <link rel="stylesheet" href="connect.css" />
+</head>
+<body>
+  <main class="offline">
+    <h1>OfinTech Desk cannot reach the server</h1>
+    <p id="server"></p>
+    <p>Check your internet connection or VPN. If it works for colleagues, the server may be restarting; try again
+      in a minute.</p>
+    <p dir="rtl" lang="ar">تعذّر الوصول إلى الخادم. تحقّق من اتصال الإنترنت ثم أعد المحاولة.</p>
+    <div class="row">
+      <button type="button" id="settings">Change server…</button>
+      <button type="button" id="retry" class="primary">Try again</button>
+    </div>
+  </main>
+  <script src="offline.js"></script>
+</body>
+</html>
