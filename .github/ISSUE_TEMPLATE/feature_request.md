@@ -1,7 +1,10 @@
 ---
 name: Feature request
 about: Suggest something for finance teams
+title: ''
 labels: enhancement
+assignees: ''
+
 ---
 
 **The finance task** (what you are trying to get done, and who does it)
