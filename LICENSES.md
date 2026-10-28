@@ -27,10 +27,11 @@ optionally, on the desktop); its language data files are Apache-2.0 as well.
 | cryptography | 50.0.1 | Apache-2.0 OR BSD-3-Clause | AES-GCM |
 | python-multipart | 0.0.32 | Apache-2.0 | File uploads |
 | PyYAML | 6.0.3 | MIT | Skill front matter |
-| pypdf | 6.17.0 | BSD-3-Clause | PDF text extraction |
+| pypdf | 6.21.2 | BSD-3-Clause | PDF text extraction |
 | python-docx | 1.2.0 | MIT | Word extraction and Word reports |
 | NumPy | 2.5.3 | BSD-3-Clause (and bundled permissive licences) | Semantic search |
 | React, React DOM | 19.2.8 | MIT | UI |
+| IBM Plex Sans Arabic (Regular, Medium, SemiBold, Bold; © 2017 IBM Corp., from the Google Fonts repository) | SIL Open Font License 1.1, Reserved Font Name "Plex" | Arabic interface text. Bundled in the UI as WOFF, converted from the TTF files without changes to the glyphs or names; the licence travels with it in `ui/src/fonts/OFL.txt` and the built `assets/OFL-IBM-Plex-Sans-Arabic.txt` |
 | Electron | 44.x | MIT (Chromium: BSD-3-Clause and others; see `LICENSES.chromium.html` in the app) | Desktop shell |
 
 Build tools (not shipped): esbuild (MIT), TypeScript (Apache-2.0), electron-builder (MIT) and PyInstaller (GPL-2.0
