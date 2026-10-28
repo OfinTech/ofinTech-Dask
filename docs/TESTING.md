@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-cd engine && python -m unittest discover -s tests -t .     # 112 tests, about 12 seconds (Tesseract, LibreOffice optional)
+cd engine && python -m unittest discover -s tests -t .     # 123 tests, about 13 seconds (Tesseract, LibreOffice optional)
 cd ui && npx tsc --noEmit && npm run i18n:check && node build.mjs
 cd desktop && npx tsc --noEmit -p tsconfig.json
 python e2e/ui_smoke.py                                       # real UI in Chromium + engine + fake model
@@ -32,6 +32,7 @@ DESK_SMOKE_OUT=/tmp/smoke xvfb-run -a npx electron --no-sandbox desktop   # desk
 | `test_language.py` | Language saved per person and returned in the session; the assistant told the interface language; templates in the person's language; production settings refused on a Team Server (`DESK_DEV`, `http://` address, missing master key) |
 | `test_tokens.py` | Measured request size with and without tool selection (54% smaller for a simple question); `more_tools` loads a group for the next step and the thread keeps it; a tool that was not sent still runs; one system message with the stable part first; older tool results shortened after two turns |
 | `test_cost_centres.py` | A hand-checked ledger: rules (tag, account prefix with keyword, split tag, exceptions; Arabic normalisation), untagged share and cost per rule; accrual against cash (paid directly, supplier bills settled oldest first, unpaid, not cash; monthly cash); possibly missing lines, bank payments that may belong, a 50/50 split not counted twice; run-out date (before end, exceeded on the right day, no budget); a budget read from Excel (cells, codes, total check, mismatch warning) and from an Arabic Word table; the API end to end (journal lines pushed, preview, create, budget import with account matching, report, lines, rule history, hand-edited budget line keeps its source, the assistant's report); a ledger imported from Excel; journal lines from Xero, QuickBooks and Odoo (analytic split) |
+| `test_financial_analysis.py` | A trading company over 15 months whose figures are worked out by hand: role suggestions in four languages; the formula language (look-back, missing history, divide by zero, unsafe input refused) and status rules; measures (balances, equity as assets − liabilities, cash flow by activity, purchases); KPIs checked by hand (growth, margins, DSO/DPO/DIO, current and quick ratios, interest cover, DSCR, ROE, collection rate, concentration, margin of safety, no runway when not burning); targets, a changed formula and a KPI of the company's own; opening balances rebuilt from a balance sheet match the full ledger; forecast projection by hand (growth, percentage of revenue, trend, tax on profit, working capital and cash), year-on-year and month-by-month methods, invalid references refused, defaults from history; the statistical reference and its back-test; accuracy on closed months; the API end to end (scorecard, roles, KPI settings, draft → submitted → approved → plan, plan variance and accuracy KPIs, versions and scenarios, approval refused for editors, comparison, the assistant's tools) |
 | `test_more.py` | Anthropic streaming with tool use, prompt-cache breakpoints (tools, stable system block, latest message) and cache token counts, and message conversion; OpenAI-compatible error mapping, `stream_options` fallback, Azure `api-key` header; Google OAuth → Gmail search → draft reply after approval (thread and In-Reply-To); Zoho EU data centre (accounts server, `api_domain`, organisation id, forged server refused) |
 
 External services (model providers, Intuit, Zoho, Xero, Google, Telegram, Meta) are replaced by an HTTP mock
@@ -42,11 +43,11 @@ process.
 
 | Check | Result |
 |---|---|
-| Engine tests | 112 passed (Python 3.13, SQLite 3.53, Tesseract 5.3.4 with English data, LibreOffice 24.2 for the recalculation check) |
+| Engine tests | 123 passed (Python 3.13, SQLite 3.53, Tesseract 5.3.4 with English data, LibreOffice 24.2 for the recalculation check) |
 | UI type check (`tsc --noEmit`, strict, React 19 types) | passed |
-| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,033 of 1,033 strings |
+| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,217 of 1,217 strings |
 | Desktop type check against Electron 44 type definitions | passed |
-| UI browser smoke (`e2e/ui_smoke.py`, Chromium) | passed: onboarding, model set-up, chat with tool and figure check, approval, Excel import, document upload and search, an answer with citations, the document viewer, a file attached in chat and cited, a workbook created in chat with its evidence panel and reviewer finding, connections, a workflow draft, dashboard; **new:** workspace search, a memory added by hand, the user's own Excel file uploaded and its contents shown, a workflow template with the schedule preview, a conversation deleted, a general ledger imported from Excel and a cost centre created with its budget read from an Excel file (run-out date, cost against cash, budget cells, the unassigned bank payment), and the app in Arabic (right to left), Spanish and French |
+| UI browser smoke (`e2e/ui_smoke.py`, Chromium) | passed: onboarding, model set-up, chat with tool and figure check, approval, Excel import, document upload and search, an answer with citations, the document viewer, a file attached in chat and cited, a workbook created in chat with its evidence panel and reviewer finding, connections, a workflow draft, dashboard; **new:** workspace search, a memory added by hand, the user's own Excel file uploaded and its contents shown, a workflow template with the schedule preview, a conversation deleted, a general ledger imported from Excel and a cost centre created with its budget read from an Excel file (run-out date, cost against cash, budget cells, the unassigned bank payment), financial analysis on a 15-month ledger (the scorecard, a KPI target that turns the card to *watch*, the accounts behind DSO, account roles, a forecast submitted, approved and made the plan), and the app in Arabic (right to left), Spanish and French |
 | Desktop shell under Xvfb (Electron 44.0.0, Linux) | engine started by Electron, UI loaded at `http://localhost:47821/`, token bridge present, no Node in the page |
 
 ## Not executed here

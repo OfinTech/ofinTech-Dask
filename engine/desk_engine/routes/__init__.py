@@ -10,12 +10,12 @@ if TYPE_CHECKING:
 
 
 def all_routes(engine: Engine) -> list[Any]:
-    from . import (approvals, auth, comments, connections, costcentres, dashboards, datasets, documents, files, mcp,
+    from . import (analysis, approvals, auth, comments, connections, costcentres, dashboards, datasets, documents, files, mcp,
                    memory, providers, skills, threads, workflows, workspaces)
 
     routes: list[Any] = []
     for module in (auth, workspaces, providers, threads, approvals, skills, datasets, documents, files, dashboards,
-                   connections, mcp, workflows, comments, memory, costcentres):
+                   connections, mcp, workflows, comments, memory, costcentres, analysis):
         module.router.bind(engine)
         routes.extend(module.router.routes)
     return routes
