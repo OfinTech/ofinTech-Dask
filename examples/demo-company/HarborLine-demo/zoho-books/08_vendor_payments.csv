@@ -1,0 +1,92 @@
+Date,Payment Number,Vendor Name,Bill Number,Amount,Amount Applied to Bill,Payment Mode,Paid Through,Reference Number,Currency Code
+2025-10-14,VP-0001,Atlas Fuel Cards,AFC-2509-001,39143.47,39143.47,Bank Transfer,Operating Account,VP-0001,USD
+2025-10-21,VP-0002,Swiftway Haulage,SH-2509-002,18736.39,18736.39,Bank Transfer,Operating Account,VP-0002,USD
+2025-10-17,VP-0003,Ironclad Fleet Services,IFS-2509-003,9337.92,9337.92,Bank Transfer,Operating Account,VP-0003,USD
+2025-09-03,VP-0004,Harbor Road Properties,HRP-2509-004,14500.00,14500.00,Bank Transfer,Operating Account,VP-0004,USD
+2025-09-30,VP-0005,Brightspark Utilities,BU-2509-005,2519.42,2519.42,Bank Transfer,Operating Account,VP-0005,USD
+2025-10-01,VP-0006,Cloudnine Software,CS-2509-006,1450.00,1450.00,Bank Transfer,Operating Account,VP-0006,USD
+2025-10-20,VP-0007,Kingsley & Rowe Advisors,K&R-2509-007,4200.00,4200.00,Bank Transfer,Operating Account,VP-0007,USD
+2025-11-17,VP-0008,Atlas Fuel Cards,AFC-2510-008,39623.63,39623.63,Bank Transfer,Operating Account,VP-0008,USD
+2025-11-21,VP-0009,Swiftway Haulage,SH-2510-009,23406.44,23406.44,Bank Transfer,Operating Account,VP-0009,USD
+2025-11-20,VP-0010,Ironclad Fleet Services,IFS-2510-010,8478.29,8478.29,Bank Transfer,Operating Account,VP-0010,USD
+2025-10-03,VP-0011,Harbor Road Properties,HRP-2510-011,14500.00,14500.00,Bank Transfer,Operating Account,VP-0011,USD
+2025-11-03,VP-0012,Brightspark Utilities,BU-2510-012,1983.51,1983.51,Bank Transfer,Operating Account,VP-0012,USD
+2025-11-03,VP-0013,Cloudnine Software,CS-2510-013,1450.00,1450.00,Bank Transfer,Operating Account,VP-0013,USD
+2025-12-11,VP-0014,Atlas Fuel Cards,AFC-2511-014,42221.35,42221.35,Bank Transfer,Operating Account,VP-0014,USD
+2025-12-24,VP-0015,Swiftway Haulage,SH-2511-015,22546.40,22546.40,Bank Transfer,Operating Account,VP-0015,USD
+2025-12-18,VP-0016,Ironclad Fleet Services,IFS-2511-016,7544.03,7544.03,Bank Transfer,Operating Account,VP-0016,USD
+2025-11-03,VP-0017,Harbor Road Properties,HRP-2511-017,14500.00,14500.00,Bank Transfer,Operating Account,VP-0017,USD
+2025-12-01,VP-0018,Brightspark Utilities,BU-2511-018,2395.26,2395.26,Bank Transfer,Operating Account,VP-0018,USD
+2025-12-01,VP-0019,Cloudnine Software,CS-2511-019,1450.00,1450.00,Bank Transfer,Operating Account,VP-0019,USD
+2026-01-14,VP-0020,Atlas Fuel Cards,AFC-2512-020,48397.41,48397.41,Bank Transfer,Operating Account,VP-0020,USD
+2026-01-26,VP-0021,Swiftway Haulage,SH-2512-021,21470.44,21470.44,Bank Transfer,Operating Account,VP-0021,USD
+2026-01-19,VP-0022,Ironclad Fleet Services,IFS-2512-022,5051.69,5051.69,Bank Transfer,Operating Account,VP-0022,USD
+2025-12-03,VP-0023,Harbor Road Properties,HRP-2512-023,14500.00,14500.00,Bank Transfer,Operating Account,VP-0023,USD
+2026-01-01,VP-0024,Brightspark Utilities,BU-2512-024,2417.37,2417.37,Bank Transfer,Operating Account,VP-0024,USD
+2026-01-06,VP-0025,Cloudnine Software,CS-2512-025,1450.00,1450.00,Bank Transfer,Operating Account,VP-0025,USD
+2026-01-16,VP-0026,Kingsley & Rowe Advisors,K&R-2512-026,4200.00,4200.00,Bank Transfer,Operating Account,VP-0026,USD
+2026-02-10,VP-0027,Atlas Fuel Cards,AFC-2601-027,33704.67,33704.67,Bank Transfer,Operating Account,VP-0027,USD
+2026-02-24,VP-0028,Swiftway Haulage,SH-2601-028,18379.65,18379.65,Bank Transfer,Operating Account,VP-0028,USD
+2026-02-16,VP-0029,Ironclad Fleet Services,IFS-2601-029,6226.28,6226.28,Bank Transfer,Operating Account,VP-0029,USD
+2026-01-05,VP-0030,Harbor Road Properties,HRP-2601-030,14500.00,14500.00,Bank Transfer,Operating Account,VP-0030,USD
+2026-02-02,VP-0031,Brightspark Utilities,BU-2601-031,2700.45,2700.45,Bank Transfer,Operating Account,VP-0031,USD
+2026-02-04,VP-0032,Cloudnine Software,CS-2601-032,1450.00,1450.00,Bank Transfer,Operating Account,VP-0032,USD
+2026-03-19,VP-0033,Atlas Fuel Cards,AFC-2602-033,32876.18,32876.18,Bank Transfer,Operating Account,VP-0033,USD
+2026-03-24,VP-0034,Swiftway Haulage,SH-2602-034,18505.84,18505.84,Bank Transfer,Operating Account,VP-0034,USD
+2026-03-18,VP-0035,Ironclad Fleet Services,IFS-2602-035,8889.37,8889.37,Bank Transfer,Operating Account,VP-0035,USD
+2026-02-03,VP-0036,Harbor Road Properties,HRP-2602-036,14500.00,14500.00,Bank Transfer,Operating Account,VP-0036,USD
+2026-03-04,VP-0037,Brightspark Utilities,BU-2602-037,2592.50,2592.50,Bank Transfer,Operating Account,VP-0037,USD
+2026-03-05,VP-0038,Cloudnine Software,CS-2602-038,1450.00,1450.00,Bank Transfer,Operating Account,VP-0038,USD
+2026-04-14,VP-0039,Atlas Fuel Cards,AFC-2603-039,36053.37,36053.37,Bank Transfer,Operating Account,VP-0039,USD
+2026-04-23,VP-0040,Swiftway Haulage,SH-2603-040,18378.66,18378.66,Bank Transfer,Operating Account,VP-0040,USD
+2026-04-09,VP-0041,Ironclad Fleet Services,IFS-2603-041,5772.80,5772.80,Bank Transfer,Operating Account,VP-0041,USD
+2026-03-03,VP-0042,Harbor Road Properties,HRP-2603-042,14500.00,14500.00,Bank Transfer,Operating Account,VP-0042,USD
+2026-04-06,VP-0043,Brightspark Utilities,BU-2603-043,2131.78,2131.78,Bank Transfer,Operating Account,VP-0043,USD
+2026-03-30,VP-0044,Cloudnine Software,CS-2603-044,1690.00,1690.00,Bank Transfer,Operating Account,VP-0044,USD
+2026-04-14,VP-0045,Kingsley & Rowe Advisors,K&R-2603-045,4200.00,4200.00,Bank Transfer,Operating Account,VP-0045,USD
+2026-05-11,VP-0046,Atlas Fuel Cards,AFC-2604-046,39120.69,39120.69,Bank Transfer,Operating Account,VP-0046,USD
+2026-05-22,VP-0047,Swiftway Haulage,SH-2604-047,25221.64,25221.64,Bank Transfer,Operating Account,VP-0047,USD
+2026-05-11,VP-0048,Ironclad Fleet Services,IFS-2604-048,7714.23,7714.23,Bank Transfer,Operating Account,VP-0048,USD
+2026-04-03,VP-0049,Harbor Road Properties,HRP-2604-049,14500.00,14500.00,Bank Transfer,Operating Account,VP-0049,USD
+2026-04-28,VP-0050,Brightspark Utilities,BU-2604-050,2256.69,2256.69,Bank Transfer,Operating Account,VP-0050,USD
+2026-04-28,VP-0051,Cloudnine Software,CS-2604-051,1690.00,1690.00,Bank Transfer,Operating Account,VP-0051,USD
+2026-06-16,VP-0052,Atlas Fuel Cards,AFC-2605-052,42918.05,42918.05,Bank Transfer,Operating Account,VP-0052,USD
+2026-06-22,VP-0053,Swiftway Haulage,SH-2605-053,27947.66,27947.66,Bank Transfer,Operating Account,VP-0053,USD
+2026-06-22,VP-0054,Ironclad Fleet Services,IFS-2605-054,7483.91,7483.91,Bank Transfer,Operating Account,VP-0054,USD
+2026-05-04,VP-0055,Harbor Road Properties,HRP-2605-055,14500.00,14500.00,Bank Transfer,Operating Account,VP-0055,USD
+2026-06-04,VP-0056,Brightspark Utilities,BU-2605-056,2056.78,2056.78,Bank Transfer,Operating Account,VP-0056,USD
+2026-06-05,VP-0057,Cloudnine Software,CS-2605-057,1690.00,1690.00,Bank Transfer,Operating Account,VP-0057,USD
+2026-07-13,VP-0058,Atlas Fuel Cards,AFC-2606-058,44174.29,44174.29,Bank Transfer,Operating Account,VP-0058,USD
+2026-07-22,VP-0059,Swiftway Haulage,SH-2606-059,25479.20,25479.20,Bank Transfer,Operating Account,VP-0059,USD
+2026-07-27,VP-0060,Ironclad Fleet Services,IFS-2606-060,6958.75,6958.75,Bank Transfer,Operating Account,VP-0060,USD
+2026-06-03,VP-0061,Harbor Road Properties,HRP-2606-061,14500.00,14500.00,Bank Transfer,Operating Account,VP-0061,USD
+2026-06-29,VP-0062,Brightspark Utilities,BU-2606-062,2155.52,2155.52,Bank Transfer,Operating Account,VP-0062,USD
+2026-06-30,VP-0063,Cloudnine Software,CS-2606-063,1690.00,1690.00,Bank Transfer,Operating Account,VP-0063,USD
+2026-07-17,VP-0064,Kingsley & Rowe Advisors,K&R-2606-064,4200.00,4200.00,Bank Transfer,Operating Account,VP-0064,USD
+2026-08-18,VP-0065,Atlas Fuel Cards,AFC-2607-065,39963.04,39963.04,Bank Transfer,Operating Account,VP-0065,USD
+2026-08-21,VP-0066,Swiftway Haulage,SH-2607-066,23641.00,23641.00,Bank Transfer,Operating Account,VP-0066,USD
+2026-08-18,VP-0067,Ironclad Fleet Services,IFS-2607-067,4808.45,4808.45,Bank Transfer,Operating Account,VP-0067,USD
+2026-07-03,VP-0068,Harbor Road Properties,HRP-2607-068,14500.00,14500.00,Bank Transfer,Operating Account,VP-0068,USD
+2026-08-05,VP-0069,Brightspark Utilities,BU-2607-069,2366.99,2366.99,Bank Transfer,Operating Account,VP-0069,USD
+2026-07-30,VP-0070,Cloudnine Software,CS-2607-070,1690.00,1690.00,Bank Transfer,Operating Account,VP-0070,USD
+2026-09-14,VP-0071,Atlas Fuel Cards,AFC-2608-071,41217.23,41217.23,Bank Transfer,Operating Account,VP-0071,USD
+2026-09-17,VP-0072,Swiftway Haulage,SH-2608-072,25115.82,25115.82,Bank Transfer,Operating Account,VP-0072,USD
+2026-09-16,VP-0073,Ironclad Fleet Services,IFS-2608-073,5118.32,5118.32,Bank Transfer,Operating Account,VP-0073,USD
+2026-08-03,VP-0074,Harbor Road Properties,HRP-2608-074,14500.00,14500.00,Bank Transfer,Operating Account,VP-0074,USD
+2026-09-02,VP-0075,Brightspark Utilities,BU-2608-075,2699.34,2699.34,Bank Transfer,Operating Account,VP-0075,USD
+2026-09-01,VP-0076,Cloudnine Software,CS-2608-076,1690.00,1690.00,Bank Transfer,Operating Account,VP-0076,USD
+2026-10-13,VP-0077,Atlas Fuel Cards,AFC-2609-077,47800.36,47800.36,Bank Transfer,Operating Account,VP-0077,USD
+2026-10-26,VP-0078,Swiftway Haulage,SH-2609-078,31415.57,31415.57,Bank Transfer,Operating Account,VP-0078,USD
+2026-10-15,VP-0079,Ironclad Fleet Services,IFS-2609-079,6307.78,6307.78,Bank Transfer,Operating Account,VP-0079,USD
+2026-09-03,VP-0080,Harbor Road Properties,HRP-2609-080,14500.00,14500.00,Bank Transfer,Operating Account,VP-0080,USD
+2026-09-30,VP-0081,Brightspark Utilities,BU-2609-081,2417.87,2417.87,Bank Transfer,Operating Account,VP-0081,USD
+2026-09-29,VP-0082,Cloudnine Software,CS-2609-082,1690.00,1690.00,Bank Transfer,Operating Account,VP-0082,USD
+2026-10-14,VP-0083,Kingsley & Rowe Advisors,K&R-2609-083,4200.00,4200.00,Bank Transfer,Operating Account,VP-0083,USD
+2026-10-05,VP-0084,Harbor Road Properties,HRP-2610-087,14500.00,14500.00,Bank Transfer,Operating Account,VP-0084,USD
+2026-03-18,VP-0085,Eastport Fitout Contractors,EFC-2602-090,6800.00,6800.00,Bank Transfer,Operating Account,VP-0085,USD
+2026-04-23,VP-0086,Eastport Fitout Contractors,EFC-2603-091,9400.00,9400.00,Bank Transfer,Operating Account,VP-0086,USD
+2026-06-02,VP-0087,Rackline Storage Systems,RSS-2604-092,38500.00,38500.00,Bank Transfer,Operating Account,VP-0087,USD
+2026-06-19,VP-0088,Eastport Fitout Contractors,EFC-2605-093,11200.00,11200.00,Bank Transfer,Operating Account,VP-0088,USD
+2026-08-11,VP-0089,Rackline Storage Systems,RSS-2606-094,29800.00,29800.00,Bank Transfer,Operating Account,VP-0089,USD
+2026-08-20,VP-0090,Eastport Fitout Contractors,EFC-2607-095,8600.00,8600.00,Bank Transfer,Operating Account,VP-0090,USD
+2026-09-21,VP-0091,Eastport Fitout Contractors,EFC-2608-096,7300.00,7300.00,Bank Transfer,Operating Account,VP-0091,USD

@@ -50,6 +50,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 - **Google sign-in from the desktop app** through the system browser, handed back to the app with a single-use,
   two-minute code bound to the app that started it (migration 12).
 
+- **A demo company** in `examples/demo-company`: Harbor Line Logistics Ltd, 14 months of books in USD. It has Zoho
+  Books import files (chart of accounts, contacts, items, invoices, bills, payments, manual journals), the same
+  transactions as an OfinTech Desk general ledger, a project budget and a step-by-step guide.
+
+### Fixed
+
+- Reading a budget file no longer takes a title line that mentions "budget" for the table's header.
+- A payment to a supplier is classed as investing in proportion to the equipment on that supplier's bills, instead of
+  always as operating.
+- Accounts such as *Warehouse Racking*, *Shelving*, *Fit-out* and *Trucks* are suggested as fixed assets.
+
 ### Changed
 
 - The README describes the product for finance teams in any country.

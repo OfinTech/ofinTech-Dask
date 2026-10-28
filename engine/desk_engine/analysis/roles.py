@@ -26,6 +26,7 @@ WORDS: dict[str, list[str]] = {
                   "marchandises", "matieres premieres"],
     "fixed_assets": ["equipment", "machinery", "vehicle", "vehicles", "building", "buildings", "land", "furniture",
                      "fixtures", "property", "plant", "leasehold", "fixed asset", "fixed assets", "accumulated depreciation",
+                     "racking", "shelving", "fit-out", "fitout", "leasehold improvements", "trucks", "fleet", "رفوف", "تجهيزات",
                      "computer hardware", "معدات", "الات", "سيارات", "مركبات", "مباني", "اراضي", "اثاث", "اصول ثابتة",
                      "مجمع الاهلاك", "مجمع الاستهلاك", "maquinaria", "vehiculo", "vehiculos", "edificio", "terreno",
                      "mobiliario", "inmovilizado", "amortizacion acumulada", "materiel", "vehicule", "batiment",

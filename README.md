@@ -142,7 +142,8 @@ desktop/     Electron shell: engine sidecar, secure storage, Team Server mode, e
 server/      Team Server: Dockerfile, docker-compose with Caddy (HTTPS), MinIO overlay, backup script
 e2e/         Browser smoke test with a fake model
 landing/     The public website (static, nginx in Docker)
-examples/    Reference adapter for the Open Accounting Connector; sample output files
+examples/    Reference adapter for the Open Accounting Connector; sample output files; a demo company with
+             Zoho Books import files and a matching general ledger
 docs/        Architecture, security, deployment, connectors, accounting API, files, knowledge, memory,
              workflows, cost centres, financial analysis, forecasting, languages, costs, skills, MCP, testing, releasing; brand assets
 ```

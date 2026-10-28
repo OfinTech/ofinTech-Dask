@@ -114,6 +114,7 @@ class Roles(unittest.TestCase):
         self.assertEqual(suggest("Expense", "Dotation aux amortissements"), "depreciation")
         self.assertEqual(suggest("Other expense", "Intereses bancarios"), "interest")
         self.assertEqual(suggest("Expense", "Office rent"), "opex")
+        self.assertEqual(suggest("Asset", "Warehouse Racking"), "fixed_assets")
 
 
 class Formula(unittest.TestCase):
@@ -169,6 +170,23 @@ class Kpis(unittest.TestCase):
         self.assertAlmostEqual(led.value("purchases", m), 6800)
         self.assertEqual(led.accounts("payroll", m)[0], {"account": "6100 Salaries", "key": "6100|Salaries",
                                                          "amount": 2000.0})
+
+    def test_equipment_bought_on_credit_is_investing_when_paid(self) -> None:
+        lines = prepared() + [prepare(x) for x in [
+            {"date": "2026-09-12", "entry": "BILL-R1", "type": "Bill", "account_code": "1500", "account": "Equipment",
+             "account_class": "Asset", "debit": 9000, "credit": 0, "description": "Racking", "party": "Rackline", "tags": ""},
+            {"date": "2026-09-12", "entry": "BILL-R1", "type": "Bill", "account_code": "6200", "account": "Rent",
+             "account_class": "Expense", "debit": 1000, "credit": 0, "description": "Installation", "party": "Rackline",
+             "tags": ""},
+            {"date": "2026-09-12", "entry": "BILL-R1", "type": "Bill", "account_code": "2000", "account": "Trade payables",
+             "account_class": "Payable", "debit": 0, "credit": 10000, "description": None, "party": "Rackline", "tags": ""},
+            {"date": "2026-09-20", "entry": "PAY-R1", "type": "Payment", "account_code": "2000", "account": "Trade payables",
+             "account_class": "Payable", "debit": 10000, "credit": 0, "description": None, "party": "Rackline", "tags": ""},
+            {"date": "2026-09-20", "entry": "PAY-R1", "type": "Payment", "account_code": "1010", "account": "Bank",
+             "account_class": "Bank", "debit": 0, "credit": 10000, "description": None, "party": "Rackline", "tags": ""}]]
+        led = Ledger(lines, {})
+        self.assertAlmostEqual(led.value("icf", "2026-09"), -9000)
+        self.assertAlmostEqual(led.value("ocf", "2026-09"), 0.6 * R(13) - 3000 - 1000)
 
     def test_kpis_by_hand(self) -> None:
         three = R(12) + R(13) + R(14)                               # 49,500
