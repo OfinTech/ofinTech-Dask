@@ -16,7 +16,8 @@
   <a href="LICENSE">Apache-2.0</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
-  <a href="SECURITY.md">Security policy</a>
+  <a href="SECURITY.md">Security policy</a> ·
+  <a href="https://discord.gg/hbzN6udBM">Discord</a>
 </p>
 
 ---
