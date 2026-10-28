@@ -83,8 +83,8 @@ def _header(rows: list[list[Any]]) -> tuple[int, int, int | None, int | None] | 
         scores = [(4 if _exact(t, BUDGET_WORDS) else 3 if _exact(t, AMOUNT_WORDS) else
                    2 if _is(t, BUDGET_WORDS) else 1 if _is(t, AMOUNT_WORDS) and not _is(t, LABEL_WORDS) else 0)
                   for t in texts]
-        if not any(scores):
-            continue
+        if not any(scores) or sum(1 for t in texts if t) < 2:
+            continue  # a header row has at least a label and an amount heading; a title line has one cell
         amount = max(range(len(scores)), key=lambda c: (scores[c], -c))
         code = next((c for c, t in enumerate(texts) if c != amount and _is(t, CODE_WORDS)), None)
         label = next((c for c, t in enumerate(texts) if c not in (amount, code) and _is(t, LABEL_WORDS)), None)

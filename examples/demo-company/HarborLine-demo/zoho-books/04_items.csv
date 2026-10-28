@@ -1,0 +1,6 @@
+Item Name,Item Type,Rate,Account,Usage unit,Description
+FTL Trip,Service,1850.00,Freight Revenue - FTL,trip,Full-truckload trip
+LTL Pallet,Service,95.00,Freight Revenue - LTL,pallet,"Less-than-truckload, per pallet"
+Pallet Storage,Service,18.00,Warehousing Revenue,pallet-month,"Pallet storage, per pallet per month"
+Handling Fee,Service,140.00,Handling & Brokerage Revenue,job,Inbound and outbound handling
+Customs Brokerage,Service,220.00,Handling & Brokerage Revenue,entry,Customs entry and clearance

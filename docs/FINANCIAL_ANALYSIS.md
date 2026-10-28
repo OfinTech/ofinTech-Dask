@@ -67,7 +67,8 @@ entry's other lines:
 - **investing** when they touch fixed or other non-current assets;
 - **operating** otherwise.
 
-Transfers between bank accounts are left out.
+A payment to a supplier is split by the mix of that supplier's bills so far. Equipment bought on credit therefore
+counts as investing when it is paid. Transfers between bank accounts are left out.
 
 ## Measures
 

@@ -6,7 +6,9 @@
   liabilities, so it always includes the profit that has not been closed yet.
 * Cash flow uses the bank lines (accounts with the *cash* role). Each entry's net bank movement is classed by the
   other lines in the entry: financing when it touches debt or equity, investing when it touches fixed or other
-  non-current assets, operating otherwise. Entries that only move money between bank accounts are left out.
+  non-current assets, operating otherwise. A payment to a supplier is split by the mix of that supplier's bills so
+  far, so equipment bought on credit is investing when it is paid. Entries that only move money between bank
+  accounts are left out.
 """
 
 from __future__ import annotations
@@ -127,8 +129,11 @@ class Ledger:
             for m, v in series.items():
                 self.stocks[role][m] += sign * v
                 self.by_account[role][m][key] += sign * v
-        # cash flow by activity, and flows that come from payables and receivables
-        for lines in entries.values():
+        # cash flow by activity, and flows that come from payables and receivables. A supplier payment takes the mix
+        # of that supplier's bills so far: paying for racking bought on credit is investing, not operating.
+        capital = {"fixed_assets", "other_non_current_assets"}
+        mix: dict[str | None, list[float]] = defaultdict(lambda: [0.0, 0.0])  # party -> [capital, everything]
+        for lines in sorted(entries.values(), key=lambda ls: min(ln["date"] for ln, _ in ls)):
             cash = [ln for ln, r in lines if r == "cash"]
             others = [(ln, r) for ln, r in lines if r != "cash"]
             m = month_of(min(ln["date"] for ln, _ in lines))
@@ -138,21 +143,31 @@ class Ledger:
                         self.flows["purchases"][m] += ln["credit"]
                     elif r == "receivables":
                         self.flows["invoiced"][m] += ln["debit"]
+                if any(r == "payables" and ln["credit"] > 0 for ln, r in others):
+                    party = next((norm(ln.get("party")) or None for ln, r in others if r == "payables"), None)
+                    debits = [(ln["debit"], r) for ln, r in others if r != "payables" and ln["debit"] > 0]
+                    mix[party][0] += sum(d for d, r in debits if r in capital)
+                    mix[party][1] += sum(d for d, _ in debits)
                 continue
             if not others:
                 continue  # transfer between bank accounts
             net = sum(ln["debit"] - ln["credit"] for ln in cash)
             roles_here = {r for _, r in others}
             if roles_here & (DEBT_ROLES | {"equity"}):
-                cat = "fcf_fin"
+                self.flows["fcf_fin"][m] += net
                 if net < 0:
                     repaid = sum(ln["debit"] for ln, r in others if r in DEBT_ROLES)
                     self.flows["debt_repaid"][m] += min(repaid, -net)
-            elif roles_here & {"fixed_assets", "other_non_current_assets"}:
-                cat = "icf"
+            elif roles_here & capital:
+                self.flows["icf"][m] += net
+            elif roles_here == {"payables"}:
+                party = next((norm(ln.get("party")) or None for ln, _ in others), None)
+                cap, total = mix.get(party, [0.0, 0.0])
+                share = cap / total if total > 0 else 0.0
+                self.flows["icf"][m] += net * share
+                self.flows["ocf"][m] += net * (1 - share)
             else:
-                cat = "ocf"
-            self.flows[cat][m] += net
+                self.flows["ocf"][m] += net
             self.flows["cash_in" if net > 0 else "cash_out"][m] += abs(net)
             for ln, r in others:
                 if r == "receivables":

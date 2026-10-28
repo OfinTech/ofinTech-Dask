@@ -1,0 +1,112 @@
+Journal Date,Journal Number,Reference Number,Notes,Status,Currency,Account,Description,Contact Name,Debit,Credit
+2025-09-01,JV-OPEN,JV-OPEN,Opening balances,Published,USD,Operating Account,Opening bank balance,,520000.00,
+2025-09-01,JV-OPEN,JV-OPEN,Opening balances,Published,USD,Vehicles,"Fleet at cost: 6 trucks, 4 vans",,420000.00,
+2025-09-01,JV-OPEN,JV-OPEN,Opening balances,Published,USD,Accumulated Depreciation - Vehicles,Depreciation to 31 Aug 2025,,,84000.00
+2025-09-01,JV-OPEN,JV-OPEN,Opening balances,Published,USD,Bank Loan - Long Term,Fleet loan outstanding,,,240000.00
+2025-09-01,JV-OPEN,JV-OPEN,Opening balances,Published,USD,Owner's Equity,Owner's capital and retained earnings,,,616000.00
+2025-09-29,JV-PAY-2509,JV-PAY-2509,Payroll September 2025,Published,USD,Staff Salaries,Payroll September 2025,,52000.00,
+2025-09-29,JV-PAY-2509,JV-PAY-2509,Payroll September 2025,Published,USD,Operating Account,Payroll September 2025,,,52000.00
+2025-09-30,JV-DEP-2509,JV-DEP-2509,Depreciation September 2025,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2025-09-30,JV-DEP-2509,JV-DEP-2509,Depreciation September 2025,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2025-09-25,JV-LOAN-2509,JV-LOAN-2509,Fleet loan instalment September 2025,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2025-09-25,JV-LOAN-2509,JV-LOAN-2509,Fleet loan instalment September 2025,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1300.00,
+2025-09-25,JV-LOAN-2509,JV-LOAN-2509,Fleet loan instalment September 2025,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6300.00
+2025-10-28,JV-PAY-2510,JV-PAY-2510,Payroll October 2025,Published,USD,Staff Salaries,Payroll October 2025,,52208.00,
+2025-10-28,JV-PAY-2510,JV-PAY-2510,Payroll October 2025,Published,USD,Operating Account,Payroll October 2025,,,52208.00
+2025-10-31,JV-DEP-2510,JV-DEP-2510,Depreciation October 2025,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2025-10-31,JV-DEP-2510,JV-DEP-2510,Depreciation October 2025,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2025-10-27,JV-LOAN-2510,JV-LOAN-2510,Fleet loan instalment October 2025,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2025-10-27,JV-LOAN-2510,JV-LOAN-2510,Fleet loan instalment October 2025,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1272.92,
+2025-10-27,JV-LOAN-2510,JV-LOAN-2510,Fleet loan instalment October 2025,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6272.92
+2025-11-27,JV-PAY-2511,JV-PAY-2511,Payroll November 2025,Published,USD,Staff Salaries,Payroll November 2025,,52416.00,
+2025-11-27,JV-PAY-2511,JV-PAY-2511,Payroll November 2025,Published,USD,Operating Account,Payroll November 2025,,,52416.00
+2025-11-30,JV-DEP-2511,JV-DEP-2511,Depreciation November 2025,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2025-11-30,JV-DEP-2511,JV-DEP-2511,Depreciation November 2025,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2025-11-25,JV-LOAN-2511,JV-LOAN-2511,Fleet loan instalment November 2025,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2025-11-25,JV-LOAN-2511,JV-LOAN-2511,Fleet loan instalment November 2025,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1245.83,
+2025-11-25,JV-LOAN-2511,JV-LOAN-2511,Fleet loan instalment November 2025,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6245.83
+2025-12-29,JV-PAY-2512,JV-PAY-2512,Payroll December 2025,Published,USD,Staff Salaries,Payroll December 2025,,58624.00,
+2025-12-29,JV-PAY-2512,JV-PAY-2512,Payroll December 2025,Published,USD,Operating Account,Payroll December 2025,,,58624.00
+2025-12-31,JV-DEP-2512,JV-DEP-2512,Depreciation December 2025,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2025-12-31,JV-DEP-2512,JV-DEP-2512,Depreciation December 2025,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2025-12-25,JV-LOAN-2512,JV-LOAN-2512,Fleet loan instalment December 2025,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2025-12-25,JV-LOAN-2512,JV-LOAN-2512,Fleet loan instalment December 2025,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1218.75,
+2025-12-25,JV-LOAN-2512,JV-LOAN-2512,Fleet loan instalment December 2025,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6218.75
+2026-01-28,JV-PAY-2601,JV-PAY-2601,Payroll January 2026,Published,USD,Staff Salaries,Payroll January 2026,,52832.00,
+2026-01-28,JV-PAY-2601,JV-PAY-2601,Payroll January 2026,Published,USD,Operating Account,Payroll January 2026,,,52832.00
+2026-01-31,JV-DEP-2601,JV-DEP-2601,Depreciation January 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-01-31,JV-DEP-2601,JV-DEP-2601,Depreciation January 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-01-26,JV-LOAN-2601,JV-LOAN-2601,Fleet loan instalment January 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-01-26,JV-LOAN-2601,JV-LOAN-2601,Fleet loan instalment January 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1191.67,
+2026-01-26,JV-LOAN-2601,JV-LOAN-2601,Fleet loan instalment January 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6191.67
+2026-02-25,JV-PAY-2602,JV-PAY-2602,Payroll February 2026,Published,USD,Staff Salaries,Payroll February 2026,,53040.00,
+2026-02-25,JV-PAY-2602,JV-PAY-2602,Payroll February 2026,Published,USD,Operating Account,Payroll February 2026,,,53040.00
+2026-02-28,JV-DEP-2602,JV-DEP-2602,Depreciation February 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-02-28,JV-DEP-2602,JV-DEP-2602,Depreciation February 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-02-25,JV-LOAN-2602,JV-LOAN-2602,Fleet loan instalment February 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-02-25,JV-LOAN-2602,JV-LOAN-2602,Fleet loan instalment February 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1164.58,
+2026-02-25,JV-LOAN-2602,JV-LOAN-2602,Fleet loan instalment February 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6164.58
+2026-03-30,JV-PAY-2603,JV-PAY-2603,Payroll March 2026,Published,USD,Staff Salaries,Payroll March 2026,,53248.00,
+2026-03-30,JV-PAY-2603,JV-PAY-2603,Payroll March 2026,Published,USD,Operating Account,Payroll March 2026,,,53248.00
+2026-03-31,JV-DEP-2603,JV-DEP-2603,Depreciation March 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-03-31,JV-DEP-2603,JV-DEP-2603,Depreciation March 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-03-25,JV-LOAN-2603,JV-LOAN-2603,Fleet loan instalment March 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-03-25,JV-LOAN-2603,JV-LOAN-2603,Fleet loan instalment March 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1137.50,
+2026-03-25,JV-LOAN-2603,JV-LOAN-2603,Fleet loan instalment March 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6137.50
+2026-04-27,JV-PAY-2604,JV-PAY-2604,Payroll April 2026,Published,USD,Staff Salaries,Payroll April 2026,,53456.00,
+2026-04-27,JV-PAY-2604,JV-PAY-2604,Payroll April 2026,Published,USD,Operating Account,Payroll April 2026,,,53456.00
+2026-04-30,JV-DEP-2604,JV-DEP-2604,Depreciation April 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-04-30,JV-DEP-2604,JV-DEP-2604,Depreciation April 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-04-27,JV-LOAN-2604,JV-LOAN-2604,Fleet loan instalment April 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-04-27,JV-LOAN-2604,JV-LOAN-2604,Fleet loan instalment April 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1110.42,
+2026-04-27,JV-LOAN-2604,JV-LOAN-2604,Fleet loan instalment April 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6110.42
+2026-05-28,JV-PAY-2605,JV-PAY-2605,Payroll May 2026,Published,USD,Staff Salaries,Payroll May 2026,,53664.00,
+2026-05-28,JV-PAY-2605,JV-PAY-2605,Payroll May 2026,Published,USD,Operating Account,Payroll May 2026,,,53664.00
+2026-05-31,JV-DEP-2605,JV-DEP-2605,Depreciation May 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-05-31,JV-DEP-2605,JV-DEP-2605,Depreciation May 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-05-25,JV-LOAN-2605,JV-LOAN-2605,Fleet loan instalment May 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-05-25,JV-LOAN-2605,JV-LOAN-2605,Fleet loan instalment May 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1083.33,
+2026-05-25,JV-LOAN-2605,JV-LOAN-2605,Fleet loan instalment May 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6083.33
+2026-06-29,JV-PAY-2606,JV-PAY-2606,Payroll June 2026,Published,USD,Staff Salaries,Payroll June 2026,,53872.00,
+2026-06-29,JV-PAY-2606,JV-PAY-2606,Payroll June 2026,Published,USD,Operating Account,Payroll June 2026,,,53872.00
+2026-06-30,JV-DEP-2606,JV-DEP-2606,Depreciation June 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-06-30,JV-DEP-2606,JV-DEP-2606,Depreciation June 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-06-25,JV-LOAN-2606,JV-LOAN-2606,Fleet loan instalment June 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-06-25,JV-LOAN-2606,JV-LOAN-2606,Fleet loan instalment June 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1056.25,
+2026-06-25,JV-LOAN-2606,JV-LOAN-2606,Fleet loan instalment June 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6056.25
+2026-07-28,JV-PAY-2607,JV-PAY-2607,Payroll July 2026,Published,USD,Staff Salaries,Payroll July 2026,,54080.00,
+2026-07-28,JV-PAY-2607,JV-PAY-2607,Payroll July 2026,Published,USD,Operating Account,Payroll July 2026,,,54080.00
+2026-07-31,JV-DEP-2607,JV-DEP-2607,Depreciation July 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-07-31,JV-DEP-2607,JV-DEP-2607,Depreciation July 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-07-27,JV-LOAN-2607,JV-LOAN-2607,Fleet loan instalment July 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-07-27,JV-LOAN-2607,JV-LOAN-2607,Fleet loan instalment July 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1029.17,
+2026-07-27,JV-LOAN-2607,JV-LOAN-2607,Fleet loan instalment July 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6029.17
+2026-08-28,JV-PAY-2608,JV-PAY-2608,Payroll August 2026,Published,USD,Staff Salaries,Payroll August 2026,,54288.00,
+2026-08-28,JV-PAY-2608,JV-PAY-2608,Payroll August 2026,Published,USD,Operating Account,Payroll August 2026,,,54288.00
+2026-08-31,JV-DEP-2608,JV-DEP-2608,Depreciation August 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-08-31,JV-DEP-2608,JV-DEP-2608,Depreciation August 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-08-25,JV-LOAN-2608,JV-LOAN-2608,Fleet loan instalment August 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-08-25,JV-LOAN-2608,JV-LOAN-2608,Fleet loan instalment August 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,1002.08,
+2026-08-25,JV-LOAN-2608,JV-LOAN-2608,Fleet loan instalment August 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,6002.08
+2026-09-28,JV-PAY-2609,JV-PAY-2609,Payroll September 2026,Published,USD,Staff Salaries,Payroll September 2026,,54496.00,
+2026-09-28,JV-PAY-2609,JV-PAY-2609,Payroll September 2026,Published,USD,Operating Account,Payroll September 2026,,,54496.00
+2026-09-30,JV-DEP-2609,JV-DEP-2609,Depreciation September 2026,Published,USD,Depreciation - Vehicles,Fleet depreciation (5 years straight line),,7000.00,
+2026-09-30,JV-DEP-2609,JV-DEP-2609,Depreciation September 2026,Published,USD,Accumulated Depreciation - Vehicles,Fleet depreciation,,,7000.00
+2026-09-25,JV-LOAN-2609,JV-LOAN-2609,Fleet loan instalment September 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-09-25,JV-LOAN-2609,JV-LOAN-2609,Fleet loan instalment September 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,975.00,
+2026-09-25,JV-LOAN-2609,JV-LOAN-2609,Fleet loan instalment September 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,5975.00
+2026-10-26,JV-PAY-2610,JV-PAY-2610,Payroll October 2026,Published,USD,Staff Salaries,Payroll October 2026,,54704.00,
+2026-10-26,JV-PAY-2610,JV-PAY-2610,Payroll October 2026,Published,USD,Operating Account,Payroll October 2026,,,54704.00
+2026-10-26,JV-LOAN-2610,JV-LOAN-2610,Fleet loan instalment October 2026,Published,USD,Bank Loan - Long Term,Loan principal,First Harbor Bank,5000.00,
+2026-10-26,JV-LOAN-2610,JV-LOAN-2610,Fleet loan instalment October 2026,Published,USD,Loan Interest,Loan interest 6.5%,First Harbor Bank,947.92,
+2026-10-26,JV-LOAN-2610,JV-LOAN-2610,Fleet loan instalment October 2026,Published,USD,Operating Account,Loan instalment,First Harbor Bank,,5947.92
+2026-09-29,JV-SUSP-01,JV-SUSP-01,Unallocated payment,Published,USD,Suspense,Eastport Fitout Contractors advance,Eastport Fitout Contractors,4800.00,
+2026-09-29,JV-SUSP-01,JV-SUSP-01,Unallocated payment,Published,USD,Operating Account,Eastport Fitout Contractors advance,Eastport Fitout Contractors,,4800.00
+2026-06-10,JV-CAPEX-01,JV-CAPEX-01,New delivery van,Published,USD,Vehicles,"Delivery van, VIN ending 4471",Metro Commercial Vehicles,48000.00,
+2026-06-10,JV-CAPEX-01,JV-CAPEX-01,New delivery van,Published,USD,Operating Account,Delivery van purchase,Metro Commercial Vehicles,,48000.00
+2026-07-31,JV-DEP2-2607,JV-DEP2-2607,Depreciation - new van,Published,USD,Depreciation - Vehicles,New van depreciation (5 years),,800.00,
+2026-07-31,JV-DEP2-2607,JV-DEP2-2607,Depreciation - new van,Published,USD,Accumulated Depreciation - Vehicles,New van depreciation,,,800.00
+2026-08-31,JV-DEP2-2608,JV-DEP2-2608,Depreciation - new van,Published,USD,Depreciation - Vehicles,New van depreciation (5 years),,800.00,
+2026-08-31,JV-DEP2-2608,JV-DEP2-2608,Depreciation - new van,Published,USD,Accumulated Depreciation - Vehicles,New van depreciation,,,800.00
+2026-09-30,JV-DEP2-2609,JV-DEP2-2609,Depreciation - new van,Published,USD,Depreciation - Vehicles,New van depreciation (5 years),,800.00,
+2026-09-30,JV-DEP2-2609,JV-DEP2-2609,Depreciation - new van,Published,USD,Accumulated Depreciation - Vehicles,New van depreciation,,,800.00

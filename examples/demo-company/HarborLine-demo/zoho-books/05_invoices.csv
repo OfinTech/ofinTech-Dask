@@ -1,0 +1,743 @@
+Invoice Date,Invoice Number,Invoice Status,Customer Name,Due Date,Payment Terms,Payment Terms Label,Currency Code,Item Name,Item Desc,Quantity,Item Price,Account,Usage unit,Notes
+2025-09-12,INV-1001,Sent,Meridian Retail Group,2025-10-27,45,Net 45,USD,FTL Trip,Full-truckload trip - Sep 2025,8,1901.74,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-12,INV-1001,Sent,Meridian Retail Group,2025-10-27,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",67,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-12,INV-1001,Sent,Meridian Retail Group,2025-10-27,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",274,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-12,INV-1001,Sent,Meridian Retail Group,2025-10-27,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-24,INV-1002,Sent,Meridian Retail Group,2025-11-08,45,Net 45,USD,FTL Trip,Full-truckload trip - Sep 2025,7,1833.40,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-24,INV-1002,Sent,Meridian Retail Group,2025-11-08,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",56,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-24,INV-1002,Sent,Meridian Retail Group,2025-11-08,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",255,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-24,INV-1002,Sent,Meridian Retail Group,2025-11-08,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-03,INV-1003,Sent,Alder & Finch Foods,2025-10-03,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,4,1794.70,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-03,INV-1003,Sent,Alder & Finch Foods,2025-10-03,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-03,INV-1003,Sent,Alder & Finch Foods,2025-10-03,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-19,INV-1004,Sent,Alder & Finch Foods,2025-10-19,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1807.26,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-19,INV-1004,Sent,Alder & Finch Foods,2025-10-19,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-19,INV-1004,Sent,Alder & Finch Foods,2025-10-19,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-15,INV-1005,Sent,Coastal Pharma Supplies,2025-10-15,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1866.68,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-15,INV-1005,Sent,Coastal Pharma Supplies,2025-10-15,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-15,INV-1005,Sent,Coastal Pharma Supplies,2025-10-15,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-15,INV-1005,Sent,Coastal Pharma Supplies,2025-10-15,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-18,INV-1006,Sent,Coastal Pharma Supplies,2025-10-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1852.84,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-18,INV-1006,Sent,Coastal Pharma Supplies,2025-10-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-18,INV-1006,Sent,Coastal Pharma Supplies,2025-10-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-18,INV-1006,Sent,Coastal Pharma Supplies,2025-10-18,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-08,INV-1007,Sent,Northgate Electronics,2025-10-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1856.30,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-08,INV-1007,Sent,Northgate Electronics,2025-10-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-08,INV-1007,Sent,Northgate Electronics,2025-10-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",105,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-08,INV-1007,Sent,Northgate Electronics,2025-10-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-08,INV-1007,Sent,Northgate Electronics,2025-10-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-23,INV-1008,Sent,Northgate Electronics,2025-10-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1905.43,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-23,INV-1008,Sent,Northgate Electronics,2025-10-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-23,INV-1008,Sent,Northgate Electronics,2025-10-23,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",99,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-23,INV-1008,Sent,Northgate Electronics,2025-10-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-23,INV-1008,Sent,Northgate Electronics,2025-10-23,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-15,INV-1009,Sent,Bluepeak Furniture,2025-10-15,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1913.78,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-15,INV-1009,Sent,Bluepeak Furniture,2025-10-15,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-15,INV-1009,Sent,Bluepeak Furniture,2025-10-15,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",87,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-15,INV-1009,Sent,Bluepeak Furniture,2025-10-15,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-15,INV-1009,Sent,Bluepeak Furniture,2025-10-15,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-22,INV-1010,Sent,Bluepeak Furniture,2025-10-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1856.65,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-22,INV-1010,Sent,Bluepeak Furniture,2025-10-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-22,INV-1010,Sent,Bluepeak Furniture,2025-10-22,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",94,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-22,INV-1010,Sent,Bluepeak Furniture,2025-10-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-22,INV-1010,Sent,Bluepeak Furniture,2025-10-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-12,INV-1011,Sent,Solstice Beverages,2025-10-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,5,1934.06,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-12,INV-1011,Sent,Solstice Beverages,2025-10-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-12,INV-1011,Sent,Solstice Beverages,2025-10-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-10,INV-1012,Sent,Kestrel Auto Parts,2025-10-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,4,1881.94,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-10,INV-1012,Sent,Kestrel Auto Parts,2025-10-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",34,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-10,INV-1012,Sent,Kestrel Auto Parts,2025-10-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-09-10,INV-1012,Sent,Kestrel Auto Parts,2025-10-10,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-09-09,INV-1013,Sent,Lumen Home Goods,2025-10-09,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2025,3,1931.48,Freight Revenue - FTL,trip,Thank you for your business.
+2025-09-09,INV-1013,Sent,Lumen Home Goods,2025-10-09,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2025",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-09-09,INV-1013,Sent,Lumen Home Goods,2025-10-09,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2025",112,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-09-09,INV-1013,Sent,Lumen Home Goods,2025-10-09,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-13,INV-1014,Sent,Meridian Retail Group,2025-11-27,45,Net 45,USD,FTL Trip,Full-truckload trip - Oct 2025,8,1915.57,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-13,INV-1014,Sent,Meridian Retail Group,2025-11-27,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",57,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-13,INV-1014,Sent,Meridian Retail Group,2025-11-27,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",269,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-13,INV-1014,Sent,Meridian Retail Group,2025-11-27,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Oct 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-17,INV-1015,Sent,Meridian Retail Group,2025-12-01,45,Net 45,USD,FTL Trip,Full-truckload trip - Oct 2025,10,1922.09,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-17,INV-1015,Sent,Meridian Retail Group,2025-12-01,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",61,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-17,INV-1015,Sent,Meridian Retail Group,2025-12-01,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",294,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-17,INV-1015,Sent,Meridian Retail Group,2025-12-01,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Oct 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-06,INV-1016,Sent,Alder & Finch Foods,2025-11-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,4,1834.38,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-06,INV-1016,Sent,Alder & Finch Foods,2025-11-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",30,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-06,INV-1016,Sent,Alder & Finch Foods,2025-11-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-24,INV-1017,Sent,Alder & Finch Foods,2025-11-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,4,1795.03,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-24,INV-1017,Sent,Alder & Finch Foods,2025-11-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-24,INV-1017,Sent,Alder & Finch Foods,2025-11-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-10,INV-1018,Sent,Coastal Pharma Supplies,2025-11-09,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,4,1838.62,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-10,INV-1018,Sent,Coastal Pharma Supplies,2025-11-09,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-10,INV-1018,Sent,Coastal Pharma Supplies,2025-11-09,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-10,INV-1018,Sent,Coastal Pharma Supplies,2025-11-09,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-24,INV-1019,Sent,Coastal Pharma Supplies,2025-11-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,4,1892.71,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-24,INV-1019,Sent,Coastal Pharma Supplies,2025-11-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-24,INV-1019,Sent,Coastal Pharma Supplies,2025-11-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-24,INV-1019,Sent,Coastal Pharma Supplies,2025-11-23,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-03,INV-1020,Sent,Northgate Electronics,2025-11-02,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,3,1796.67,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-03,INV-1020,Sent,Northgate Electronics,2025-11-02,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-03,INV-1020,Sent,Northgate Electronics,2025-11-02,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",111,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-03,INV-1020,Sent,Northgate Electronics,2025-11-02,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-03,INV-1020,Sent,Northgate Electronics,2025-11-02,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-27,INV-1021,Sent,Northgate Electronics,2025-11-26,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,3,1920.57,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-27,INV-1021,Sent,Northgate Electronics,2025-11-26,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-27,INV-1021,Sent,Northgate Electronics,2025-11-26,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",105,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-27,INV-1021,Sent,Northgate Electronics,2025-11-26,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-27,INV-1021,Sent,Northgate Electronics,2025-11-26,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-09,INV-1022,Sent,Bluepeak Furniture,2025-11-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,3,1927.73,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-09,INV-1022,Sent,Bluepeak Furniture,2025-11-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-09,INV-1022,Sent,Bluepeak Furniture,2025-11-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",86,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-09,INV-1022,Sent,Bluepeak Furniture,2025-11-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-09,INV-1022,Sent,Bluepeak Furniture,2025-11-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-17,INV-1023,Sent,Bluepeak Furniture,2025-11-16,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,3,1810.90,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-17,INV-1023,Sent,Bluepeak Furniture,2025-11-16,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-17,INV-1023,Sent,Bluepeak Furniture,2025-11-16,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",87,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-17,INV-1023,Sent,Bluepeak Furniture,2025-11-16,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-17,INV-1023,Sent,Bluepeak Furniture,2025-11-16,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-09,INV-1024,Sent,Solstice Beverages,2025-11-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,5,1836.81,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-09,INV-1024,Sent,Solstice Beverages,2025-11-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",37,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-09,INV-1024,Sent,Solstice Beverages,2025-11-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-13,INV-1025,Sent,Kestrel Auto Parts,2025-11-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,5,1822.76,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-13,INV-1025,Sent,Kestrel Auto Parts,2025-11-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-13,INV-1025,Sent,Kestrel Auto Parts,2025-11-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-10-13,INV-1025,Sent,Kestrel Auto Parts,2025-11-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-10-10,INV-1026,Sent,Lumen Home Goods,2025-11-09,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2025,4,1875.05,Freight Revenue - FTL,trip,Thank you for your business.
+2025-10-10,INV-1026,Sent,Lumen Home Goods,2025-11-09,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2025",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-10-10,INV-1026,Sent,Lumen Home Goods,2025-11-09,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2025",115,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-10-10,INV-1026,Sent,Lumen Home Goods,2025-11-09,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-12,INV-1027,Sent,Meridian Retail Group,2025-12-27,45,Net 45,USD,FTL Trip,Full-truckload trip - Nov 2025,8,1845.88,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-12,INV-1027,Sent,Meridian Retail Group,2025-12-27,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",58,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-12,INV-1027,Sent,Meridian Retail Group,2025-12-27,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",288,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-12,INV-1027,Sent,Meridian Retail Group,2025-12-27,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Nov 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-24,INV-1028,Sent,Meridian Retail Group,2026-01-08,45,Net 45,USD,FTL Trip,Full-truckload trip - Nov 2025,8,1898.17,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-24,INV-1028,Sent,Meridian Retail Group,2026-01-08,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",52,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-24,INV-1028,Sent,Meridian Retail Group,2026-01-08,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",284,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-24,INV-1028,Sent,Meridian Retail Group,2026-01-08,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Nov 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-07,INV-1029,Sent,Alder & Finch Foods,2025-12-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,4,1903.91,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-07,INV-1029,Sent,Alder & Finch Foods,2025-12-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-07,INV-1029,Sent,Alder & Finch Foods,2025-12-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-17,INV-1030,Sent,Alder & Finch Foods,2025-12-17,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,4,1896.19,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-17,INV-1030,Sent,Alder & Finch Foods,2025-12-17,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-17,INV-1030,Sent,Alder & Finch Foods,2025-12-17,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-03,INV-1031,Sent,Coastal Pharma Supplies,2025-12-03,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,4,1840.42,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-03,INV-1031,Sent,Coastal Pharma Supplies,2025-12-03,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-03,INV-1031,Sent,Coastal Pharma Supplies,2025-12-03,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-03,INV-1031,Sent,Coastal Pharma Supplies,2025-12-03,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-21,INV-1032,Sent,Coastal Pharma Supplies,2025-12-21,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1899.68,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-21,INV-1032,Sent,Coastal Pharma Supplies,2025-12-21,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-21,INV-1032,Sent,Coastal Pharma Supplies,2025-12-21,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-21,INV-1032,Sent,Coastal Pharma Supplies,2025-12-21,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-07,INV-1033,Sent,Northgate Electronics,2025-12-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1901.03,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-07,INV-1033,Sent,Northgate Electronics,2025-12-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-07,INV-1033,Sent,Northgate Electronics,2025-12-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",106,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-07,INV-1033,Sent,Northgate Electronics,2025-12-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-07,INV-1033,Sent,Northgate Electronics,2025-12-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-24,INV-1034,Sent,Northgate Electronics,2025-12-24,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1849.64,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-24,INV-1034,Sent,Northgate Electronics,2025-12-24,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-24,INV-1034,Sent,Northgate Electronics,2025-12-24,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",96,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-24,INV-1034,Sent,Northgate Electronics,2025-12-24,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-24,INV-1034,Sent,Northgate Electronics,2025-12-24,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-12,INV-1035,Sent,Bluepeak Furniture,2025-12-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1836.07,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-12,INV-1035,Sent,Bluepeak Furniture,2025-12-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-12,INV-1035,Sent,Bluepeak Furniture,2025-12-12,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",89,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-12,INV-1035,Sent,Bluepeak Furniture,2025-12-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-12,INV-1035,Sent,Bluepeak Furniture,2025-12-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-25,INV-1036,Sent,Bluepeak Furniture,2025-12-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1927.62,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-25,INV-1036,Sent,Bluepeak Furniture,2025-12-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",16,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-25,INV-1036,Sent,Bluepeak Furniture,2025-12-25,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",92,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-25,INV-1036,Sent,Bluepeak Furniture,2025-12-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-25,INV-1036,Sent,Bluepeak Furniture,2025-12-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-05,INV-1037,Sent,Solstice Beverages,2025-12-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,5,1845.25,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-05,INV-1037,Sent,Solstice Beverages,2025-12-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",32,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-05,INV-1037,Sent,Solstice Beverages,2025-12-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-05,INV-1038,Sent,Kestrel Auto Parts,2025-12-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,5,1813.56,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-05,INV-1038,Sent,Kestrel Auto Parts,2025-12-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",30,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-05,INV-1038,Sent,Kestrel Auto Parts,2025-12-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-11-05,INV-1038,Sent,Kestrel Auto Parts,2025-12-05,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Nov 2025,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-11-10,INV-1039,Sent,Lumen Home Goods,2025-12-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Nov 2025,3,1916.37,Freight Revenue - FTL,trip,Thank you for your business.
+2025-11-10,INV-1039,Sent,Lumen Home Goods,2025-12-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Nov 2025",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-11-10,INV-1039,Sent,Lumen Home Goods,2025-12-10,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Nov 2025",112,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-11-10,INV-1039,Sent,Lumen Home Goods,2025-12-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Nov 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-03,INV-1040,Sent,Meridian Retail Group,2026-01-17,45,Net 45,USD,FTL Trip,Full-truckload trip - Dec 2025,8,1885.55,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-03,INV-1040,Sent,Meridian Retail Group,2026-01-17,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",73,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-03,INV-1040,Sent,Meridian Retail Group,2026-01-17,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",295,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-03,INV-1040,Sent,Meridian Retail Group,2026-01-17,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Dec 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-23,INV-1041,Sent,Meridian Retail Group,2026-02-06,45,Net 45,USD,FTL Trip,Full-truckload trip - Dec 2025,10,1799.91,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-23,INV-1041,Sent,Meridian Retail Group,2026-02-06,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",58,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-23,INV-1041,Sent,Meridian Retail Group,2026-02-06,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",325,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-23,INV-1041,Sent,Meridian Retail Group,2026-02-06,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Dec 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-08,INV-1042,Sent,Alder & Finch Foods,2026-01-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1873.50,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-08,INV-1042,Sent,Alder & Finch Foods,2026-01-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-08,INV-1042,Sent,Alder & Finch Foods,2026-01-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-24,INV-1043,Sent,Alder & Finch Foods,2026-01-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,5,1855.20,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-24,INV-1043,Sent,Alder & Finch Foods,2026-01-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",34,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-24,INV-1043,Sent,Alder & Finch Foods,2026-01-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-12,INV-1044,Sent,Coastal Pharma Supplies,2026-01-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1834.38,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-12,INV-1044,Sent,Coastal Pharma Supplies,2026-01-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-12,INV-1044,Sent,Coastal Pharma Supplies,2026-01-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-12,INV-1044,Sent,Coastal Pharma Supplies,2026-01-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-19,INV-1045,Sent,Coastal Pharma Supplies,2026-01-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1839.03,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-19,INV-1045,Sent,Coastal Pharma Supplies,2026-01-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",32,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-19,INV-1045,Sent,Coastal Pharma Supplies,2026-01-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-19,INV-1045,Sent,Coastal Pharma Supplies,2026-01-18,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-11,INV-1046,Sent,Northgate Electronics,2026-01-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1848.68,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-11,INV-1046,Sent,Northgate Electronics,2026-01-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-11,INV-1046,Sent,Northgate Electronics,2026-01-10,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",109,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-11,INV-1046,Sent,Northgate Electronics,2026-01-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-11,INV-1046,Sent,Northgate Electronics,2026-01-10,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-16,INV-1047,Sent,Northgate Electronics,2026-01-15,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1857.66,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-16,INV-1047,Sent,Northgate Electronics,2026-01-15,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-16,INV-1047,Sent,Northgate Electronics,2026-01-15,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",127,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-16,INV-1047,Sent,Northgate Electronics,2026-01-15,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-16,INV-1047,Sent,Northgate Electronics,2026-01-15,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-12,INV-1048,Sent,Bluepeak Furniture,2026-01-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,3,1804.25,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-12,INV-1048,Sent,Bluepeak Furniture,2026-01-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-12,INV-1048,Sent,Bluepeak Furniture,2026-01-11,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",112,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-12,INV-1048,Sent,Bluepeak Furniture,2026-01-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-12,INV-1048,Sent,Bluepeak Furniture,2026-01-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-22,INV-1049,Sent,Bluepeak Furniture,2026-01-21,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1865.36,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-22,INV-1049,Sent,Bluepeak Furniture,2026-01-21,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-22,INV-1049,Sent,Bluepeak Furniture,2026-01-21,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",107,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-22,INV-1049,Sent,Bluepeak Furniture,2026-01-21,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-22,INV-1049,Sent,Bluepeak Furniture,2026-01-21,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-08,INV-1050,Sent,Solstice Beverages,2026-01-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,6,1910.76,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-08,INV-1050,Sent,Solstice Beverages,2026-01-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",41,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-08,INV-1050,Sent,Solstice Beverages,2026-01-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-08,INV-1051,Sent,Kestrel Auto Parts,2026-01-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,5,1842.50,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-08,INV-1051,Sent,Kestrel Auto Parts,2026-01-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",42,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-08,INV-1051,Sent,Kestrel Auto Parts,2026-01-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2025-12-08,INV-1051,Sent,Kestrel Auto Parts,2026-01-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Dec 2025,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2025-12-08,INV-1052,Sent,Lumen Home Goods,2026-01-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Dec 2025,4,1895.87,Freight Revenue - FTL,trip,Thank you for your business.
+2025-12-08,INV-1052,Sent,Lumen Home Goods,2026-01-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Dec 2025",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2025-12-08,INV-1052,Sent,Lumen Home Goods,2026-01-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Dec 2025",129,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2025-12-08,INV-1052,Sent,Lumen Home Goods,2026-01-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Dec 2025,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-05,INV-1053,Sent,Meridian Retail Group,2026-02-19,45,Net 45,USD,FTL Trip,Full-truckload trip - Jan 2026,7,1804.15,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-05,INV-1053,Sent,Meridian Retail Group,2026-02-19,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",55,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-05,INV-1053,Sent,Meridian Retail Group,2026-02-19,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",221,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-05,INV-1053,Sent,Meridian Retail Group,2026-02-19,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jan 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-26,INV-1054,Sent,Meridian Retail Group,2026-03-12,45,Net 45,USD,FTL Trip,Full-truckload trip - Jan 2026,7,1843.02,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-26,INV-1054,Sent,Meridian Retail Group,2026-03-12,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",48,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-26,INV-1054,Sent,Meridian Retail Group,2026-03-12,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",245,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-26,INV-1054,Sent,Meridian Retail Group,2026-03-12,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jan 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-12,INV-1055,Sent,Alder & Finch Foods,2026-02-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1871.28,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-12,INV-1055,Sent,Alder & Finch Foods,2026-02-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-12,INV-1055,Sent,Alder & Finch Foods,2026-02-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-19,INV-1056,Sent,Alder & Finch Foods,2026-02-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,4,1862.14,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-19,INV-1056,Sent,Alder & Finch Foods,2026-02-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-19,INV-1056,Sent,Alder & Finch Foods,2026-02-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-06,INV-1057,Sent,Coastal Pharma Supplies,2026-02-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1800.87,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-06,INV-1057,Sent,Coastal Pharma Supplies,2026-02-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",15,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-06,INV-1057,Sent,Coastal Pharma Supplies,2026-02-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-06,INV-1057,Sent,Coastal Pharma Supplies,2026-02-05,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-26,INV-1058,Sent,Coastal Pharma Supplies,2026-02-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1837.31,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-26,INV-1058,Sent,Coastal Pharma Supplies,2026-02-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-26,INV-1058,Sent,Coastal Pharma Supplies,2026-02-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-26,INV-1058,Sent,Coastal Pharma Supplies,2026-02-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-13,INV-1059,Sent,Northgate Electronics,2026-02-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,2,1799.10,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-13,INV-1059,Sent,Northgate Electronics,2026-02-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-13,INV-1059,Sent,Northgate Electronics,2026-02-12,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",78,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-13,INV-1059,Sent,Northgate Electronics,2026-02-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-13,INV-1059,Sent,Northgate Electronics,2026-02-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-19,INV-1060,Sent,Northgate Electronics,2026-02-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1897.79,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-19,INV-1060,Sent,Northgate Electronics,2026-02-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",16,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-19,INV-1060,Sent,Northgate Electronics,2026-02-18,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",90,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-19,INV-1060,Sent,Northgate Electronics,2026-02-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-19,INV-1060,Sent,Northgate Electronics,2026-02-18,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-08,INV-1061,Sent,Bluepeak Furniture,2026-02-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,2,1806.46,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-08,INV-1061,Sent,Bluepeak Furniture,2026-02-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-08,INV-1061,Sent,Bluepeak Furniture,2026-02-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",77,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-08,INV-1061,Sent,Bluepeak Furniture,2026-02-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-08,INV-1061,Sent,Bluepeak Furniture,2026-02-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-19,INV-1062,Sent,Bluepeak Furniture,2026-02-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1940.16,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-19,INV-1062,Sent,Bluepeak Furniture,2026-02-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",16,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-19,INV-1062,Sent,Bluepeak Furniture,2026-02-18,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",69,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-19,INV-1062,Sent,Bluepeak Furniture,2026-02-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-19,INV-1062,Sent,Bluepeak Furniture,2026-02-18,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-08,INV-1063,Sent,Solstice Beverages,2026-02-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,4,1843.75,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-08,INV-1063,Sent,Solstice Beverages,2026-02-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-08,INV-1063,Sent,Solstice Beverages,2026-02-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-13,INV-1064,Sent,Kestrel Auto Parts,2026-02-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,4,1872.48,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-13,INV-1064,Sent,Kestrel Auto Parts,2026-02-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-13,INV-1064,Sent,Kestrel Auto Parts,2026-02-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-01-13,INV-1064,Sent,Kestrel Auto Parts,2026-02-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jan 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-01-07,INV-1065,Sent,Lumen Home Goods,2026-02-06,30,Net 30,USD,FTL Trip,Full-truckload trip - Jan 2026,3,1889.06,Freight Revenue - FTL,trip,Thank you for your business.
+2026-01-07,INV-1065,Sent,Lumen Home Goods,2026-02-06,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jan 2026",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-01-07,INV-1065,Sent,Lumen Home Goods,2026-02-06,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jan 2026",95,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-01-07,INV-1065,Sent,Lumen Home Goods,2026-02-06,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jan 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-06,INV-1066,Sent,Meridian Retail Group,2026-03-23,45,Net 45,USD,FTL Trip,Full-truckload trip - Feb 2026,8,1814.38,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-06,INV-1066,Sent,Meridian Retail Group,2026-03-23,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",58,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-06,INV-1066,Sent,Meridian Retail Group,2026-03-23,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",230,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-06,INV-1066,Sent,Meridian Retail Group,2026-03-23,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Feb 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-20,INV-1067,Sent,Meridian Retail Group,2026-04-06,45,Net 45,USD,FTL Trip,Full-truckload trip - Feb 2026,6,1932.49,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-20,INV-1067,Sent,Meridian Retail Group,2026-04-06,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",46,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-20,INV-1067,Sent,Meridian Retail Group,2026-04-06,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",240,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-20,INV-1067,Sent,Meridian Retail Group,2026-04-06,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Feb 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-09,INV-1068,Sent,Alder & Finch Foods,2026-03-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,3,1801.05,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-09,INV-1068,Sent,Alder & Finch Foods,2026-03-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-09,INV-1068,Sent,Alder & Finch Foods,2026-03-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-23,INV-1069,Sent,Alder & Finch Foods,2026-03-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,3,1901.75,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-23,INV-1069,Sent,Alder & Finch Foods,2026-03-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-23,INV-1069,Sent,Alder & Finch Foods,2026-03-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-09,INV-1070,Sent,Coastal Pharma Supplies,2026-03-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,3,1815.89,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-09,INV-1070,Sent,Coastal Pharma Supplies,2026-03-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-09,INV-1070,Sent,Coastal Pharma Supplies,2026-03-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-09,INV-1070,Sent,Coastal Pharma Supplies,2026-03-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-20,INV-1071,Sent,Coastal Pharma Supplies,2026-03-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,2,1879.92,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-20,INV-1071,Sent,Coastal Pharma Supplies,2026-03-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-20,INV-1071,Sent,Coastal Pharma Supplies,2026-03-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-20,INV-1071,Sent,Coastal Pharma Supplies,2026-03-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-09,INV-1072,Sent,Northgate Electronics,2026-03-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,3,1928.58,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-09,INV-1072,Sent,Northgate Electronics,2026-03-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-09,INV-1072,Sent,Northgate Electronics,2026-03-11,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",85,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-09,INV-1072,Sent,Northgate Electronics,2026-03-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-09,INV-1072,Sent,Northgate Electronics,2026-03-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-23,INV-1073,Sent,Northgate Electronics,2026-03-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,3,1805.43,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-23,INV-1073,Sent,Northgate Electronics,2026-03-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-23,INV-1073,Sent,Northgate Electronics,2026-03-25,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",83,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-23,INV-1073,Sent,Northgate Electronics,2026-03-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-23,INV-1073,Sent,Northgate Electronics,2026-03-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-09,INV-1074,Sent,Bluepeak Furniture,2026-03-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,2,1921.22,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-09,INV-1074,Sent,Bluepeak Furniture,2026-03-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",16,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-09,INV-1074,Sent,Bluepeak Furniture,2026-03-11,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",80,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-09,INV-1074,Sent,Bluepeak Furniture,2026-03-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-09,INV-1074,Sent,Bluepeak Furniture,2026-03-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-26,INV-1075,Sent,Bluepeak Furniture,2026-03-28,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,2,1807.96,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-26,INV-1075,Sent,Bluepeak Furniture,2026-03-28,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-26,INV-1075,Sent,Bluepeak Furniture,2026-03-28,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",80,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-26,INV-1075,Sent,Bluepeak Furniture,2026-03-28,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-26,INV-1075,Sent,Bluepeak Furniture,2026-03-28,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-05,INV-1076,Sent,Solstice Beverages,2026-03-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,4,1848.68,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-05,INV-1076,Sent,Solstice Beverages,2026-03-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-05,INV-1076,Sent,Solstice Beverages,2026-03-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-10,INV-1077,Sent,Kestrel Auto Parts,2026-03-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,4,1920.47,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-10,INV-1077,Sent,Kestrel Auto Parts,2026-03-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-10,INV-1077,Sent,Kestrel Auto Parts,2026-03-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-02-10,INV-1077,Sent,Kestrel Auto Parts,2026-03-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Feb 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-02-05,INV-1078,Sent,Lumen Home Goods,2026-03-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Feb 2026,2,1815.38,Freight Revenue - FTL,trip,Thank you for your business.
+2026-02-05,INV-1078,Sent,Lumen Home Goods,2026-03-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Feb 2026",17,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-02-05,INV-1078,Sent,Lumen Home Goods,2026-03-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Feb 2026",103,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-02-05,INV-1078,Sent,Lumen Home Goods,2026-03-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Feb 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-04,INV-1079,Sent,Meridian Retail Group,2026-04-18,45,Net 45,USD,FTL Trip,Full-truckload trip - Mar 2026,8,1851.52,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-04,INV-1079,Sent,Meridian Retail Group,2026-04-18,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",59,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-04,INV-1079,Sent,Meridian Retail Group,2026-04-18,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",241,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-04,INV-1079,Sent,Meridian Retail Group,2026-04-18,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Mar 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-26,INV-1080,Sent,Meridian Retail Group,2026-05-10,45,Net 45,USD,FTL Trip,Full-truckload trip - Mar 2026,8,1932.93,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-26,INV-1080,Sent,Meridian Retail Group,2026-05-10,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",58,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-26,INV-1080,Sent,Meridian Retail Group,2026-05-10,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",252,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-26,INV-1080,Sent,Meridian Retail Group,2026-05-10,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Mar 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1081,Sent,Alder & Finch Foods,2026-04-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,4,1917.72,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-09,INV-1081,Sent,Alder & Finch Foods,2026-04-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-09,INV-1081,Sent,Alder & Finch Foods,2026-04-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-24,INV-1082,Sent,Alder & Finch Foods,2026-04-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,4,1858.50,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-24,INV-1082,Sent,Alder & Finch Foods,2026-04-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-24,INV-1082,Sent,Alder & Finch Foods,2026-04-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1083,Sent,Coastal Pharma Supplies,2026-04-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1825.99,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-09,INV-1083,Sent,Coastal Pharma Supplies,2026-04-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-09,INV-1083,Sent,Coastal Pharma Supplies,2026-04-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1083,Sent,Coastal Pharma Supplies,2026-04-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-16,INV-1084,Sent,Coastal Pharma Supplies,2026-04-15,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1883.39,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-16,INV-1084,Sent,Coastal Pharma Supplies,2026-04-15,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-16,INV-1084,Sent,Coastal Pharma Supplies,2026-04-15,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-16,INV-1084,Sent,Coastal Pharma Supplies,2026-04-15,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-11,INV-1085,Sent,Northgate Electronics,2026-04-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1861.03,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-11,INV-1085,Sent,Northgate Electronics,2026-04-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-11,INV-1085,Sent,Northgate Electronics,2026-04-10,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",100,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-11,INV-1085,Sent,Northgate Electronics,2026-04-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-11,INV-1085,Sent,Northgate Electronics,2026-04-10,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-18,INV-1086,Sent,Northgate Electronics,2026-04-17,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1795.96,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-18,INV-1086,Sent,Northgate Electronics,2026-04-17,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-18,INV-1086,Sent,Northgate Electronics,2026-04-17,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",98,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-18,INV-1086,Sent,Northgate Electronics,2026-04-17,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-18,INV-1086,Sent,Northgate Electronics,2026-04-17,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-09,INV-1087,Sent,Bluepeak Furniture,2026-04-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1894.62,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-09,INV-1087,Sent,Bluepeak Furniture,2026-04-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",14,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-09,INV-1087,Sent,Bluepeak Furniture,2026-04-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",92,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-09,INV-1087,Sent,Bluepeak Furniture,2026-04-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1087,Sent,Bluepeak Furniture,2026-04-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-24,INV-1088,Sent,Bluepeak Furniture,2026-04-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1800.53,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-24,INV-1088,Sent,Bluepeak Furniture,2026-04-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-24,INV-1088,Sent,Bluepeak Furniture,2026-04-23,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",89,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-24,INV-1088,Sent,Bluepeak Furniture,2026-04-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-24,INV-1088,Sent,Bluepeak Furniture,2026-04-23,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-13,INV-1089,Sent,Solstice Beverages,2026-04-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,4,1890.14,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-13,INV-1089,Sent,Solstice Beverages,2026-04-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",35,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-13,INV-1089,Sent,Solstice Beverages,2026-04-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1090,Sent,Kestrel Auto Parts,2026-04-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,4,1906.28,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-09,INV-1090,Sent,Kestrel Auto Parts,2026-04-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-09,INV-1090,Sent,Kestrel Auto Parts,2026-04-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-03-09,INV-1090,Sent,Kestrel Auto Parts,2026-04-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Mar 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-03-13,INV-1091,Sent,Lumen Home Goods,2026-04-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Mar 2026,3,1819.46,Freight Revenue - FTL,trip,Thank you for your business.
+2026-03-13,INV-1091,Sent,Lumen Home Goods,2026-04-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Mar 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-03-13,INV-1091,Sent,Lumen Home Goods,2026-04-12,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Mar 2026",109,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-03-13,INV-1091,Sent,Lumen Home Goods,2026-04-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Mar 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-08,INV-1092,Sent,Meridian Retail Group,2026-05-23,45,Net 45,USD,FTL Trip,Full-truckload trip - Apr 2026,7,1901.80,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-08,INV-1092,Sent,Meridian Retail Group,2026-05-23,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",56,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-08,INV-1092,Sent,Meridian Retail Group,2026-05-23,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",287,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-08,INV-1092,Sent,Meridian Retail Group,2026-05-23,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Apr 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-27,INV-1093,Sent,Meridian Retail Group,2026-06-11,45,Net 45,USD,FTL Trip,Full-truckload trip - Apr 2026,9,1932.97,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-27,INV-1093,Sent,Meridian Retail Group,2026-06-11,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",50,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-27,INV-1093,Sent,Meridian Retail Group,2026-06-11,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",267,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-27,INV-1093,Sent,Meridian Retail Group,2026-06-11,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Apr 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-06,INV-1094,Sent,Alder & Finch Foods,2026-05-06,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,3,1833.21,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-06,INV-1094,Sent,Alder & Finch Foods,2026-05-06,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-06,INV-1094,Sent,Alder & Finch Foods,2026-05-06,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-27,INV-1095,Sent,Alder & Finch Foods,2026-05-27,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,4,1873.31,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-27,INV-1095,Sent,Alder & Finch Foods,2026-05-27,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-27,INV-1095,Sent,Alder & Finch Foods,2026-05-27,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-13,INV-1096,Sent,Coastal Pharma Supplies,2026-05-13,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,3,1914.87,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-13,INV-1096,Sent,Coastal Pharma Supplies,2026-05-13,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-13,INV-1096,Sent,Coastal Pharma Supplies,2026-05-13,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-13,INV-1096,Sent,Coastal Pharma Supplies,2026-05-13,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-21,INV-1097,Sent,Coastal Pharma Supplies,2026-05-21,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,3,1811.64,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-21,INV-1097,Sent,Coastal Pharma Supplies,2026-05-21,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-21,INV-1097,Sent,Coastal Pharma Supplies,2026-05-21,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-21,INV-1097,Sent,Coastal Pharma Supplies,2026-05-21,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-09,INV-1098,Sent,Northgate Electronics,2026-05-09,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,3,1914.86,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-09,INV-1098,Sent,Northgate Electronics,2026-05-09,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-09,INV-1098,Sent,Northgate Electronics,2026-05-09,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",106,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-09,INV-1098,Sent,Northgate Electronics,2026-05-09,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-09,INV-1098,Sent,Northgate Electronics,2026-05-09,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-17,INV-1099,Sent,Northgate Electronics,2026-05-17,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,3,1892.83,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-17,INV-1099,Sent,Northgate Electronics,2026-05-17,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-17,INV-1099,Sent,Northgate Electronics,2026-05-17,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",92,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-17,INV-1099,Sent,Northgate Electronics,2026-05-17,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-17,INV-1099,Sent,Northgate Electronics,2026-05-17,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-10,INV-1100,Sent,Bluepeak Furniture,2026-05-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,2,1898.05,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-10,INV-1100,Sent,Bluepeak Furniture,2026-05-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-10,INV-1100,Sent,Bluepeak Furniture,2026-05-10,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",87,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-10,INV-1100,Sent,Bluepeak Furniture,2026-05-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-10,INV-1100,Sent,Bluepeak Furniture,2026-05-10,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-16,INV-1101,Sent,Bluepeak Furniture,2026-05-16,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,2,1860.43,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-16,INV-1101,Sent,Bluepeak Furniture,2026-05-16,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-16,INV-1101,Sent,Bluepeak Furniture,2026-05-16,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",97,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-16,INV-1101,Sent,Bluepeak Furniture,2026-05-16,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-16,INV-1101,Sent,Bluepeak Furniture,2026-05-16,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-10,INV-1102,Sent,Solstice Beverages,2026-05-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,4,1903.36,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-10,INV-1102,Sent,Solstice Beverages,2026-05-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",39,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-10,INV-1102,Sent,Solstice Beverages,2026-05-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-06,INV-1103,Sent,Kestrel Auto Parts,2026-05-06,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,4,1884.94,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-06,INV-1103,Sent,Kestrel Auto Parts,2026-05-06,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-06,INV-1103,Sent,Kestrel Auto Parts,2026-05-06,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-04-06,INV-1103,Sent,Kestrel Auto Parts,2026-05-06,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Apr 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-04-07,INV-1104,Sent,Lumen Home Goods,2026-05-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Apr 2026,4,1799.54,Freight Revenue - FTL,trip,Thank you for your business.
+2026-04-07,INV-1104,Sent,Lumen Home Goods,2026-05-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Apr 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-04-07,INV-1104,Sent,Lumen Home Goods,2026-05-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Apr 2026",102,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-04-07,INV-1104,Sent,Lumen Home Goods,2026-05-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Apr 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-04,INV-1105,Sent,Meridian Retail Group,2026-06-18,45,Net 45,USD,FTL Trip,Full-truckload trip - May 2026,8,1815.09,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-04,INV-1105,Sent,Meridian Retail Group,2026-06-18,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",53,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-04,INV-1105,Sent,Meridian Retail Group,2026-06-18,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",280,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-04,INV-1105,Sent,Meridian Retail Group,2026-06-18,45,Net 45,USD,Handling Fee,Inbound and outbound handling - May 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-26,INV-1106,Sent,Meridian Retail Group,2026-07-10,45,Net 45,USD,FTL Trip,Full-truckload trip - May 2026,8,1940.51,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-26,INV-1106,Sent,Meridian Retail Group,2026-07-10,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",48,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-26,INV-1106,Sent,Meridian Retail Group,2026-07-10,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",271,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-26,INV-1106,Sent,Meridian Retail Group,2026-07-10,45,Net 45,USD,Handling Fee,Inbound and outbound handling - May 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-06,INV-1107,Sent,Alder & Finch Foods,2026-06-05,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1880.83,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-06,INV-1107,Sent,Alder & Finch Foods,2026-06-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-06,INV-1107,Sent,Alder & Finch Foods,2026-06-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-25,INV-1108,Sent,Alder & Finch Foods,2026-06-24,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,4,1906.65,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-25,INV-1108,Sent,Alder & Finch Foods,2026-06-24,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-25,INV-1108,Sent,Alder & Finch Foods,2026-06-24,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-12,INV-1109,Sent,Coastal Pharma Supplies,2026-06-11,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1796.91,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-12,INV-1109,Sent,Coastal Pharma Supplies,2026-06-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-12,INV-1109,Sent,Coastal Pharma Supplies,2026-06-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-12,INV-1109,Sent,Coastal Pharma Supplies,2026-06-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-26,INV-1110,Sent,Coastal Pharma Supplies,2026-06-25,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1877.71,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-26,INV-1110,Sent,Coastal Pharma Supplies,2026-06-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-26,INV-1110,Sent,Coastal Pharma Supplies,2026-06-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-26,INV-1110,Sent,Coastal Pharma Supplies,2026-06-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-06,INV-1111,Sent,Northgate Electronics,2026-06-05,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1906.86,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-06,INV-1111,Sent,Northgate Electronics,2026-06-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-06,INV-1111,Sent,Northgate Electronics,2026-06-05,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",94,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-06,INV-1111,Sent,Northgate Electronics,2026-06-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-06,INV-1111,Sent,Northgate Electronics,2026-06-05,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-22,INV-1112,Sent,Northgate Electronics,2026-06-21,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1897.40,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-22,INV-1112,Sent,Northgate Electronics,2026-06-21,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-22,INV-1112,Sent,Northgate Electronics,2026-06-21,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",95,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-22,INV-1112,Sent,Northgate Electronics,2026-06-21,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-22,INV-1112,Sent,Northgate Electronics,2026-06-21,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-04,INV-1113,Sent,Bluepeak Furniture,2026-06-03,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1866.72,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-04,INV-1113,Sent,Bluepeak Furniture,2026-06-03,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-04,INV-1113,Sent,Bluepeak Furniture,2026-06-03,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",90,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-04,INV-1113,Sent,Bluepeak Furniture,2026-06-03,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-04,INV-1113,Sent,Bluepeak Furniture,2026-06-03,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-25,INV-1114,Sent,Bluepeak Furniture,2026-06-24,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1873.18,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-25,INV-1114,Sent,Bluepeak Furniture,2026-06-24,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-25,INV-1114,Sent,Bluepeak Furniture,2026-06-24,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",94,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-25,INV-1114,Sent,Bluepeak Furniture,2026-06-24,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-25,INV-1114,Sent,Bluepeak Furniture,2026-06-24,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-12,INV-1115,Sent,Solstice Beverages,2026-06-11,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,5,1936.42,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-12,INV-1115,Sent,Solstice Beverages,2026-06-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-12,INV-1115,Sent,Solstice Beverages,2026-06-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-08,INV-1116,Sent,Kestrel Auto Parts,2026-06-07,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,4,1823.37,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-08,INV-1116,Sent,Kestrel Auto Parts,2026-06-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-08,INV-1116,Sent,Kestrel Auto Parts,2026-06-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-05-08,INV-1116,Sent,Kestrel Auto Parts,2026-06-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - May 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-05-06,INV-1117,Sent,Lumen Home Goods,2026-06-05,30,Net 30,USD,FTL Trip,Full-truckload trip - May 2026,3,1865.50,Freight Revenue - FTL,trip,Thank you for your business.
+2026-05-06,INV-1117,Sent,Lumen Home Goods,2026-06-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - May 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-05-06,INV-1117,Sent,Lumen Home Goods,2026-06-05,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - May 2026",118,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-05-06,INV-1117,Sent,Lumen Home Goods,2026-06-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - May 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-09,INV-1118,Sent,Meridian Retail Group,2026-07-24,45,Net 45,USD,FTL Trip,Full-truckload trip - Jun 2026,7,1932.49,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-09,INV-1118,Sent,Meridian Retail Group,2026-07-24,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",51,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-09,INV-1118,Sent,Meridian Retail Group,2026-07-24,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",306,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-09,INV-1118,Sent,Meridian Retail Group,2026-07-24,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jun 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-23,INV-1119,Sent,Meridian Retail Group,2026-08-07,45,Net 45,USD,FTL Trip,Full-truckload trip - Jun 2026,8,1871.09,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-23,INV-1119,Sent,Meridian Retail Group,2026-08-07,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",71,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-23,INV-1119,Sent,Meridian Retail Group,2026-08-07,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",265,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-23,INV-1119,Sent,Meridian Retail Group,2026-08-07,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jun 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-08,INV-1120,Sent,Alder & Finch Foods,2026-07-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,4,1848.59,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-08,INV-1120,Sent,Alder & Finch Foods,2026-07-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-08,INV-1120,Sent,Alder & Finch Foods,2026-07-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-22,INV-1121,Sent,Alder & Finch Foods,2026-07-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,4,1903.13,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-22,INV-1121,Sent,Alder & Finch Foods,2026-07-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-22,INV-1121,Sent,Alder & Finch Foods,2026-07-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-08,INV-1122,Sent,Coastal Pharma Supplies,2026-07-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1898.43,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-08,INV-1122,Sent,Coastal Pharma Supplies,2026-07-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-08,INV-1122,Sent,Coastal Pharma Supplies,2026-07-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-08,INV-1122,Sent,Coastal Pharma Supplies,2026-07-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-22,INV-1123,Sent,Coastal Pharma Supplies,2026-07-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1843.71,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-22,INV-1123,Sent,Coastal Pharma Supplies,2026-07-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-22,INV-1123,Sent,Coastal Pharma Supplies,2026-07-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-22,INV-1123,Sent,Coastal Pharma Supplies,2026-07-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-10,INV-1124,Sent,Northgate Electronics,2026-07-10,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1929.17,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-10,INV-1124,Sent,Northgate Electronics,2026-07-10,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-10,INV-1124,Sent,Northgate Electronics,2026-07-10,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",111,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-10,INV-1124,Sent,Northgate Electronics,2026-07-10,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-10,INV-1124,Sent,Northgate Electronics,2026-07-10,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-25,INV-1125,Sent,Northgate Electronics,2026-07-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1798.55,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-25,INV-1125,Sent,Northgate Electronics,2026-07-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-25,INV-1125,Sent,Northgate Electronics,2026-07-25,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",111,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-25,INV-1125,Sent,Northgate Electronics,2026-07-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-25,INV-1125,Sent,Northgate Electronics,2026-07-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-08,INV-1126,Sent,Bluepeak Furniture,2026-07-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1903.73,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-08,INV-1126,Sent,Bluepeak Furniture,2026-07-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-08,INV-1126,Sent,Bluepeak Furniture,2026-07-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",96,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-08,INV-1126,Sent,Bluepeak Furniture,2026-07-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-08,INV-1126,Sent,Bluepeak Furniture,2026-07-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-22,INV-1127,Sent,Bluepeak Furniture,2026-07-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1892.33,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-22,INV-1127,Sent,Bluepeak Furniture,2026-07-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-22,INV-1127,Sent,Bluepeak Furniture,2026-07-22,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",96,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-22,INV-1127,Sent,Bluepeak Furniture,2026-07-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-22,INV-1127,Sent,Bluepeak Furniture,2026-07-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-04,INV-1128,Sent,Solstice Beverages,2026-07-04,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,6,1890.53,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-04,INV-1128,Sent,Solstice Beverages,2026-07-04,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-04,INV-1128,Sent,Solstice Beverages,2026-07-04,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-04,INV-1129,Sent,Kestrel Auto Parts,2026-07-04,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,5,1816.35,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-04,INV-1129,Sent,Kestrel Auto Parts,2026-07-04,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",37,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-04,INV-1129,Sent,Kestrel Auto Parts,2026-07-04,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-06-04,INV-1129,Sent,Kestrel Auto Parts,2026-07-04,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jun 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-06-12,INV-1130,Sent,Lumen Home Goods,2026-07-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Jun 2026,3,1862.37,Freight Revenue - FTL,trip,Thank you for your business.
+2026-06-12,INV-1130,Sent,Lumen Home Goods,2026-07-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jun 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-06-12,INV-1130,Sent,Lumen Home Goods,2026-07-12,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jun 2026",108,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-06-12,INV-1130,Sent,Lumen Home Goods,2026-07-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jun 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-13,INV-1131,Sent,Meridian Retail Group,2026-08-27,45,Net 45,USD,FTL Trip,Full-truckload trip - Jul 2026,8,1815.34,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-13,INV-1131,Sent,Meridian Retail Group,2026-08-27,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",49,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-13,INV-1131,Sent,Meridian Retail Group,2026-08-27,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",261,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-13,INV-1131,Sent,Meridian Retail Group,2026-08-27,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jul 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-27,INV-1132,Sent,Meridian Retail Group,2026-09-10,45,Net 45,USD,FTL Trip,Full-truckload trip - Jul 2026,8,1806.42,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-27,INV-1132,Sent,Meridian Retail Group,2026-09-10,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",49,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-27,INV-1132,Sent,Meridian Retail Group,2026-09-10,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",273,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-27,INV-1132,Sent,Meridian Retail Group,2026-09-10,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Jul 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-06,INV-1133,Sent,Alder & Finch Foods,2026-08-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,4,1935.49,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-06,INV-1133,Sent,Alder & Finch Foods,2026-08-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-06,INV-1133,Sent,Alder & Finch Foods,2026-08-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-27,INV-1134,Sent,Alder & Finch Foods,2026-08-26,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,4,1896.32,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-27,INV-1134,Sent,Alder & Finch Foods,2026-08-26,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-27,INV-1134,Sent,Alder & Finch Foods,2026-08-26,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-07,INV-1135,Sent,Coastal Pharma Supplies,2026-08-06,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,4,1872.70,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-07,INV-1135,Sent,Coastal Pharma Supplies,2026-08-06,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-07,INV-1135,Sent,Coastal Pharma Supplies,2026-08-06,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-07,INV-1135,Sent,Coastal Pharma Supplies,2026-08-06,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-27,INV-1136,Sent,Coastal Pharma Supplies,2026-08-26,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,4,1919.15,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-27,INV-1136,Sent,Coastal Pharma Supplies,2026-08-26,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-27,INV-1136,Sent,Coastal Pharma Supplies,2026-08-26,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-27,INV-1136,Sent,Coastal Pharma Supplies,2026-08-26,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-09,INV-1137,Sent,Northgate Electronics,2026-08-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,3,1852.93,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-09,INV-1137,Sent,Northgate Electronics,2026-08-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",18,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-09,INV-1137,Sent,Northgate Electronics,2026-08-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",104,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-09,INV-1137,Sent,Northgate Electronics,2026-08-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-09,INV-1137,Sent,Northgate Electronics,2026-08-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-17,INV-1138,Sent,Northgate Electronics,2026-08-16,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,3,1931.10,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-17,INV-1138,Sent,Northgate Electronics,2026-08-16,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-17,INV-1138,Sent,Northgate Electronics,2026-08-16,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",93,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-17,INV-1138,Sent,Northgate Electronics,2026-08-16,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-17,INV-1138,Sent,Northgate Electronics,2026-08-16,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-06,INV-1139,Sent,Bluepeak Furniture,2026-08-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,3,1833.48,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-06,INV-1139,Sent,Bluepeak Furniture,2026-08-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-06,INV-1139,Sent,Bluepeak Furniture,2026-08-05,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",98,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-06,INV-1139,Sent,Bluepeak Furniture,2026-08-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-06,INV-1139,Sent,Bluepeak Furniture,2026-08-05,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-23,INV-1140,Sent,Bluepeak Furniture,2026-08-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,3,1890.45,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-23,INV-1140,Sent,Bluepeak Furniture,2026-08-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-23,INV-1140,Sent,Bluepeak Furniture,2026-08-22,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",87,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-23,INV-1140,Sent,Bluepeak Furniture,2026-08-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-23,INV-1140,Sent,Bluepeak Furniture,2026-08-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-08,INV-1141,Sent,Solstice Beverages,2026-08-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,4,1870.98,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-08,INV-1141,Sent,Solstice Beverages,2026-08-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",39,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-08,INV-1141,Sent,Solstice Beverages,2026-08-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-03,INV-1142,Sent,Kestrel Auto Parts,2026-08-02,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,5,1932.32,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-03,INV-1142,Sent,Kestrel Auto Parts,2026-08-02,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",30,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-03,INV-1142,Sent,Kestrel Auto Parts,2026-08-02,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-07-03,INV-1142,Sent,Kestrel Auto Parts,2026-08-02,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Jul 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-07-03,INV-1143,Sent,Lumen Home Goods,2026-08-02,30,Net 30,USD,FTL Trip,Full-truckload trip - Jul 2026,3,1885.68,Freight Revenue - FTL,trip,Thank you for your business.
+2026-07-03,INV-1143,Sent,Lumen Home Goods,2026-08-02,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Jul 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-07-03,INV-1143,Sent,Lumen Home Goods,2026-08-02,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Jul 2026",112,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-07-03,INV-1143,Sent,Lumen Home Goods,2026-08-02,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Jul 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-11,INV-1144,Sent,Meridian Retail Group,2026-09-25,45,Net 45,USD,FTL Trip,Full-truckload trip - Aug 2026,9,1797.11,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-11,INV-1144,Sent,Meridian Retail Group,2026-09-25,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",72,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-11,INV-1144,Sent,Meridian Retail Group,2026-09-25,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",320,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-11,INV-1144,Sent,Meridian Retail Group,2026-09-25,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Aug 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-19,INV-1145,Sent,Meridian Retail Group,2026-10-03,45,Net 45,USD,FTL Trip,Full-truckload trip - Aug 2026,9,1835.10,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-19,INV-1145,Sent,Meridian Retail Group,2026-10-03,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",60,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-19,INV-1145,Sent,Meridian Retail Group,2026-10-03,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",297,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-19,INV-1145,Sent,Meridian Retail Group,2026-10-03,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Aug 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-06,INV-1146,Sent,Alder & Finch Foods,2026-09-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,4,1873.28,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-06,INV-1146,Sent,Alder & Finch Foods,2026-09-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-06,INV-1146,Sent,Alder & Finch Foods,2026-09-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-17,INV-1147,Sent,Alder & Finch Foods,2026-09-16,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,4,1938.65,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-17,INV-1147,Sent,Alder & Finch Foods,2026-09-16,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-17,INV-1147,Sent,Alder & Finch Foods,2026-09-16,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-03,INV-1148,Sent,Coastal Pharma Supplies,2026-09-02,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,4,1897.90,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-03,INV-1148,Sent,Coastal Pharma Supplies,2026-09-02,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-03,INV-1148,Sent,Coastal Pharma Supplies,2026-09-02,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-03,INV-1148,Sent,Coastal Pharma Supplies,2026-09-02,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-20,INV-1149,Sent,Coastal Pharma Supplies,2026-09-19,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,4,1888.67,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-20,INV-1149,Sent,Coastal Pharma Supplies,2026-09-19,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-20,INV-1149,Sent,Coastal Pharma Supplies,2026-09-19,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-20,INV-1149,Sent,Coastal Pharma Supplies,2026-09-19,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-10,INV-1150,Sent,Northgate Electronics,2026-09-09,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,3,1885.90,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-10,INV-1150,Sent,Northgate Electronics,2026-09-09,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",22,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-10,INV-1150,Sent,Northgate Electronics,2026-09-09,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",99,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-10,INV-1150,Sent,Northgate Electronics,2026-09-09,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-10,INV-1150,Sent,Northgate Electronics,2026-09-09,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-17,INV-1151,Sent,Northgate Electronics,2026-09-16,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,4,1803.11,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-17,INV-1151,Sent,Northgate Electronics,2026-09-16,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-17,INV-1151,Sent,Northgate Electronics,2026-09-16,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",111,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-17,INV-1151,Sent,Northgate Electronics,2026-09-16,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-17,INV-1151,Sent,Northgate Electronics,2026-09-16,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-06,INV-1152,Sent,Bluepeak Furniture,2026-09-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,3,1832.30,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-06,INV-1152,Sent,Bluepeak Furniture,2026-09-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",21,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-06,INV-1152,Sent,Bluepeak Furniture,2026-09-05,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",95,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-06,INV-1152,Sent,Bluepeak Furniture,2026-09-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-06,INV-1152,Sent,Bluepeak Furniture,2026-09-05,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-26,INV-1153,Sent,Bluepeak Furniture,2026-09-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,3,1865.40,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-26,INV-1153,Sent,Bluepeak Furniture,2026-09-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-26,INV-1153,Sent,Bluepeak Furniture,2026-09-25,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",88,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-26,INV-1153,Sent,Bluepeak Furniture,2026-09-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-26,INV-1153,Sent,Bluepeak Furniture,2026-09-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-07,INV-1154,Sent,Solstice Beverages,2026-09-06,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,5,1868.83,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-07,INV-1154,Sent,Solstice Beverages,2026-09-06,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-07,INV-1154,Sent,Solstice Beverages,2026-09-06,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-12,INV-1155,Sent,Kestrel Auto Parts,2026-09-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,5,1933.14,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-12,INV-1155,Sent,Kestrel Auto Parts,2026-09-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-12,INV-1155,Sent,Kestrel Auto Parts,2026-09-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-08-12,INV-1155,Sent,Kestrel Auto Parts,2026-09-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Aug 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-08-06,INV-1156,Sent,Lumen Home Goods,2026-09-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Aug 2026,3,1898.06,Freight Revenue - FTL,trip,Thank you for your business.
+2026-08-06,INV-1156,Sent,Lumen Home Goods,2026-09-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Aug 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-08-06,INV-1156,Sent,Lumen Home Goods,2026-09-05,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Aug 2026",114,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-08-06,INV-1156,Sent,Lumen Home Goods,2026-09-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Aug 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-07,INV-1157,Sent,Meridian Retail Group,2026-10-22,45,Net 45,USD,FTL Trip,Full-truckload trip - Sep 2026,10,1816.71,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-07,INV-1157,Sent,Meridian Retail Group,2026-10-22,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",56,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-07,INV-1157,Sent,Meridian Retail Group,2026-10-22,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",291,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-07,INV-1157,Sent,Meridian Retail Group,2026-10-22,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Sep 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-17,INV-1158,Sent,Meridian Retail Group,2026-11-01,45,Net 45,USD,FTL Trip,Full-truckload trip - Sep 2026,8,1806.70,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-17,INV-1158,Sent,Meridian Retail Group,2026-11-01,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",53,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-17,INV-1158,Sent,Meridian Retail Group,2026-11-01,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",336,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-17,INV-1158,Sent,Meridian Retail Group,2026-11-01,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Sep 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-08,INV-1159,Sent,Alder & Finch Foods,2026-10-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,4,1824.61,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-08,INV-1159,Sent,Alder & Finch Foods,2026-10-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",36,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-08,INV-1159,Sent,Alder & Finch Foods,2026-10-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-22,INV-1160,Sent,Alder & Finch Foods,2026-10-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,4,1796.27,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-22,INV-1160,Sent,Alder & Finch Foods,2026-10-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",35,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-22,INV-1160,Sent,Alder & Finch Foods,2026-10-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-07,INV-1161,Sent,Coastal Pharma Supplies,2026-10-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,4,1842.42,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-07,INV-1161,Sent,Coastal Pharma Supplies,2026-10-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-07,INV-1161,Sent,Coastal Pharma Supplies,2026-10-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-07,INV-1161,Sent,Coastal Pharma Supplies,2026-10-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-23,INV-1162,Sent,Coastal Pharma Supplies,2026-10-23,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,4,1840.17,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-23,INV-1162,Sent,Coastal Pharma Supplies,2026-10-23,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-23,INV-1162,Sent,Coastal Pharma Supplies,2026-10-23,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-23,INV-1162,Sent,Coastal Pharma Supplies,2026-10-23,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-14,INV-1163,Sent,Northgate Electronics,2026-10-14,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,3,1842.05,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-14,INV-1163,Sent,Northgate Electronics,2026-10-14,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-14,INV-1163,Sent,Northgate Electronics,2026-10-14,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",114,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-14,INV-1163,Sent,Northgate Electronics,2026-10-14,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-14,INV-1163,Sent,Northgate Electronics,2026-10-14,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-17,INV-1164,Sent,Northgate Electronics,2026-10-17,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,3,1931.81,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-17,INV-1164,Sent,Northgate Electronics,2026-10-17,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-17,INV-1164,Sent,Northgate Electronics,2026-10-17,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",106,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-17,INV-1164,Sent,Northgate Electronics,2026-10-17,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-17,INV-1164,Sent,Northgate Electronics,2026-10-17,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-14,INV-1165,Sent,Bluepeak Furniture,2026-10-14,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,3,1895.46,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-14,INV-1165,Sent,Bluepeak Furniture,2026-10-14,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",20,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-14,INV-1165,Sent,Bluepeak Furniture,2026-10-14,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",102,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-14,INV-1165,Sent,Bluepeak Furniture,2026-10-14,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-14,INV-1165,Sent,Bluepeak Furniture,2026-10-14,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-21,INV-1166,Sent,Bluepeak Furniture,2026-10-21,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,3,1842.94,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-21,INV-1166,Sent,Bluepeak Furniture,2026-10-21,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-21,INV-1166,Sent,Bluepeak Furniture,2026-10-21,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",112,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-21,INV-1166,Sent,Bluepeak Furniture,2026-10-21,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-21,INV-1166,Sent,Bluepeak Furniture,2026-10-21,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,1,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-14,INV-1167,Sent,Solstice Beverages,2026-10-14,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,6,1822.01,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-14,INV-1167,Sent,Solstice Beverages,2026-10-14,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",34,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-14,INV-1167,Sent,Solstice Beverages,2026-10-14,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-11,INV-1168,Sent,Kestrel Auto Parts,2026-10-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,5,1816.47,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-11,INV-1168,Sent,Kestrel Auto Parts,2026-10-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",32,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-11,INV-1168,Sent,Kestrel Auto Parts,2026-10-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-09-11,INV-1168,Sent,Kestrel Auto Parts,2026-10-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Sep 2026,2,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-09-07,INV-1169,Sent,Lumen Home Goods,2026-10-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Sep 2026,4,1901.34,Freight Revenue - FTL,trip,Thank you for your business.
+2026-09-07,INV-1169,Sent,Lumen Home Goods,2026-10-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Sep 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-09-07,INV-1169,Sent,Lumen Home Goods,2026-10-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Sep 2026",120,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-09-07,INV-1169,Sent,Lumen Home Goods,2026-10-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Sep 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-12,INV-1170,Sent,Meridian Retail Group,2026-11-26,45,Net 45,USD,FTL Trip,Full-truckload trip - Oct 2026,11,1889.62,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-12,INV-1170,Sent,Meridian Retail Group,2026-11-26,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",57,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-12,INV-1170,Sent,Meridian Retail Group,2026-11-26,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",334,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-12,INV-1170,Sent,Meridian Retail Group,2026-11-26,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Oct 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-20,INV-1171,Sent,Meridian Retail Group,2026-12-04,45,Net 45,USD,FTL Trip,Full-truckload trip - Oct 2026,9,1934.98,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-20,INV-1171,Sent,Meridian Retail Group,2026-12-04,45,Net 45,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",67,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-20,INV-1171,Sent,Meridian Retail Group,2026-12-04,45,Net 45,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",331,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-20,INV-1171,Sent,Meridian Retail Group,2026-12-04,45,Net 45,USD,Handling Fee,Inbound and outbound handling - Oct 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-05,INV-1172,Sent,Alder & Finch Foods,2026-11-04,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,5,1845.14,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-05,INV-1172,Sent,Alder & Finch Foods,2026-11-04,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",30,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-05,INV-1172,Sent,Alder & Finch Foods,2026-11-04,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,5,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-16,INV-1173,Sent,Alder & Finch Foods,2026-11-15,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,5,1869.46,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-16,INV-1173,Sent,Alder & Finch Foods,2026-11-15,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",28,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-16,INV-1173,Sent,Alder & Finch Foods,2026-11-15,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-13,INV-1174,Sent,Coastal Pharma Supplies,2026-11-12,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,4,1932.04,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-13,INV-1174,Sent,Coastal Pharma Supplies,2026-11-12,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",27,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-13,INV-1174,Sent,Coastal Pharma Supplies,2026-11-12,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-13,INV-1174,Sent,Coastal Pharma Supplies,2026-11-12,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-26,INV-1175,Sent,Coastal Pharma Supplies,2026-11-25,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,4,1816.76,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-26,INV-1175,Sent,Coastal Pharma Supplies,2026-11-25,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",23,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-26,INV-1175,Sent,Coastal Pharma Supplies,2026-11-25,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-26,INV-1175,Sent,Coastal Pharma Supplies,2026-11-25,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,3,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-09,INV-1176,Sent,Northgate Electronics,2026-11-08,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,3,1868.00,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-09,INV-1176,Sent,Northgate Electronics,2026-11-08,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",29,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-09,INV-1176,Sent,Northgate Electronics,2026-11-08,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",128,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-09,INV-1176,Sent,Northgate Electronics,2026-11-08,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-09,INV-1176,Sent,Northgate Electronics,2026-11-08,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-19,INV-1177,Sent,Northgate Electronics,2026-11-18,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,3,1899.06,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-19,INV-1177,Sent,Northgate Electronics,2026-11-18,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",26,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-19,INV-1177,Sent,Northgate Electronics,2026-11-18,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",129,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-19,INV-1177,Sent,Northgate Electronics,2026-11-18,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-19,INV-1177,Sent,Northgate Electronics,2026-11-18,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-08,INV-1178,Sent,Bluepeak Furniture,2026-11-07,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,3,1906.40,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-08,INV-1178,Sent,Bluepeak Furniture,2026-11-07,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",19,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-08,INV-1178,Sent,Bluepeak Furniture,2026-11-07,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",106,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-08,INV-1178,Sent,Bluepeak Furniture,2026-11-07,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,4,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-08,INV-1178,Sent,Bluepeak Furniture,2026-11-07,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-23,INV-1179,Sent,Bluepeak Furniture,2026-11-22,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,3,1861.98,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-23,INV-1179,Sent,Bluepeak Furniture,2026-11-22,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",24,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-23,INV-1179,Sent,Bluepeak Furniture,2026-11-22,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",104,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-23,INV-1179,Sent,Bluepeak Furniture,2026-11-22,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-23,INV-1179,Sent,Bluepeak Furniture,2026-11-22,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-06,INV-1180,Sent,Solstice Beverages,2026-11-05,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,6,1861.65,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-06,INV-1180,Sent,Solstice Beverages,2026-11-05,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",36,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-06,INV-1180,Sent,Solstice Beverages,2026-11-05,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,2,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-12,INV-1181,Sent,Kestrel Auto Parts,2026-11-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,5,1824.59,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-12,INV-1181,Sent,Kestrel Auto Parts,2026-11-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",31,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-12,INV-1181,Sent,Kestrel Auto Parts,2026-11-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,6,140.00,Handling & Brokerage Revenue,job,Thank you for your business.
+2026-10-12,INV-1181,Sent,Kestrel Auto Parts,2026-11-11,30,Net 30,USD,Customs Brokerage,Customs entry and clearance - Oct 2026,4,220.00,Handling & Brokerage Revenue,entry,Thank you for your business.
+2026-10-12,INV-1182,Sent,Lumen Home Goods,2026-11-11,30,Net 30,USD,FTL Trip,Full-truckload trip - Oct 2026,4,1847.45,Freight Revenue - FTL,trip,Thank you for your business.
+2026-10-12,INV-1182,Sent,Lumen Home Goods,2026-11-11,30,Net 30,USD,LTL Pallet,"Less-than-truckload, per pallet - Oct 2026",25,95.00,Freight Revenue - LTL,pallet,Thank you for your business.
+2026-10-12,INV-1182,Sent,Lumen Home Goods,2026-11-11,30,Net 30,USD,Pallet Storage,"Pallet storage, per pallet per month - Oct 2026",138,18.00,Warehousing Revenue,pallet-month,Thank you for your business.
+2026-10-12,INV-1182,Sent,Lumen Home Goods,2026-11-11,30,Net 30,USD,Handling Fee,Inbound and outbound handling - Oct 2026,3,140.00,Handling & Brokerage Revenue,job,Thank you for your business.

@@ -1,0 +1,20 @@
+Account Name,Account Code,Account Type,Description,Currency
+Vehicles,1500,Fixed Asset,Trucks and vans at cost,USD
+Accumulated Depreciation - Vehicles,1510,Fixed Asset,Contra asset,USD
+Warehouse Racking,1600,Fixed Asset,Racking installed at the Eastport warehouse,USD
+Suspense,1900,Other Current Asset,Payments waiting to be allocated,USD
+Bank Loan - Long Term,2500,Long Term Liability,Five-year fleet loan,USD
+Freight Revenue - FTL,4000,Income,Full-truckload trips,USD
+Freight Revenue - LTL,4010,Income,Less-than-truckload pallets,USD
+Warehousing Revenue,4100,Income,Pallet storage,USD
+Handling & Brokerage Revenue,4200,Income,Handling and customs brokerage fees,USD
+Fuel,5000,Cost Of Goods Sold,Diesel and fuel cards,USD
+Subcontracted Haulage,5100,Cost Of Goods Sold,Third-party carriers,USD
+Fleet Maintenance,5200,Cost Of Goods Sold,"Repairs, tyres and servicing",USD
+Staff Salaries,6000,Expense,"Drivers, warehouse and office payroll",USD
+Warehouse Rent,6100,Expense,Rent of the Harbor Road warehouse,USD
+Utilities,6200,Expense,"Power, water and telecoms",USD
+Software Subscriptions,6300,Expense,Fleet tracking and office software,USD
+Professional Fees,6400,Expense,"Consultants, audit and legal",USD
+Depreciation - Vehicles,6500,Expense,Monthly depreciation of the fleet,USD
+Loan Interest,7000,Other Expense,Interest on the fleet loan,USD

@@ -201,6 +201,25 @@ class BudgetFiles(unittest.TestCase):
         mapped = match_accounts(r["lines"], [("5200", "Materials"), ("5100", "Subcontractors"), ("6100", "Site rent")])
         self.assertEqual([x["accounts"] for x in mapped], [["5200"], ["5100"], ["6100"], []])
 
+    def test_title_line_that_mentions_the_budget(self) -> None:
+        from openpyxl import Workbook
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Budget"
+        ws["A1"] = "Eastport warehouse fit-out - approved budget"   # a title, not the header
+        ws.append([])
+        ws.append(["Code", "Item", "Budget (USD)", "Notes"])
+        ws.append([6400, "Contractors", 58000, None])
+        ws.append([1600, "Pallet racking", 86000, None])
+        ws.append([None, "Total", 144000, None])
+        buf = io.BytesIO()
+        wb.save(buf)
+        r = parse_xlsx(buf.getvalue())
+        self.assertEqual([(x["label"], x["amount"], x["code"], x["cell"]) for x in r["lines"]],
+                         [("Contractors", 58000.0, "6400", "Budget!C4"), ("Pallet racking", 86000.0, "1600", "Budget!C5")])
+        self.assertIn("Budget!C6", r["check"])
+
     def test_arabic_word_budget(self) -> None:
         from docx import Document
 
