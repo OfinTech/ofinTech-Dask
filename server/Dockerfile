@@ -1,7 +1,7 @@
 # OfinTech Desk Team Server: the engine in server mode plus the web UI.
 # Build from the repository root:  docker build -f server/Dockerfile -t ofintech-desk .
 
-FROM node:24-alpine AS ui
+FROM node:26-alpine AS ui
 WORKDIR /ui
 COPY ui/package.json ./
 RUN npm install --no-audit --no-fund
