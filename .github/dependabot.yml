@@ -1,0 +1,43 @@
+# Dependency updates. Security fixes and routine updates arrive as one grouped pull request per ecosystem and
+# folder, so a single CI run tests them together. Merge after the checks pass.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /engine
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 10
+    groups:
+      python-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      python-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directories: [/ui, /desktop]
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 10
+    groups:
+      npm-security:
+        applies-to: security-updates
+        patterns: ["*"]
+      npm-updates:
+        applies-to: version-updates
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directories: [/server, /landing]
+    schedule: { interval: weekly, day: monday }
+    groups:
+      docker-images:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    groups:
+      actions:
+        patterns: ["*"]
