@@ -13,6 +13,3 @@ dev-master.key
 backups/
 release-cloud/
 
-# website deploy webhook settings and keys
-landing/deploy/webhook.env
-landing/deploy/ssh/
