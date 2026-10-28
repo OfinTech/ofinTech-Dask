@@ -33,6 +33,10 @@ BS_TYPES = {
     "liability_non_current": ("Liabilities", "Non-current liabilities"),
     "equity": ("Equity", "Equity"), "equity_unaffected": ("Equity", "Current year earnings"),
 }
+ACCOUNT_CLASS = {"asset_cash": "Bank", "asset_receivable": "Receivable", "liability_payable": "Payable",
+                 "income": "Income", "income_other": "Other income", "expense_direct_cost": "Cost of sales",
+                 "expense": "Expense", "expense_depreciation": "Expense", "equity": "Equity",
+                 "equity_unaffected": "Equity"}
 PAYMENT_STATUS = {"not_paid": "Open", "partial": "Partially paid", "in_payment": "In payment", "paid": "Paid",
                   "reversed": "Reversed", "invoicing_legacy": "Legacy", "blocked": "Blocked"}
 _ids = itertools.count(1)
@@ -256,3 +260,55 @@ class OdooClient:
 
     async def bills(self, open_only: bool = True) -> list[dict[str, Any]]:
         return await self._moves(["in_invoice", "in_refund"], open_only)
+
+    async def journal_lines(self, start: date, end: date) -> list[dict[str, Any]]:
+        """Posted journal items with their analytic distribution (projects, departments) as tags."""
+        accounts = await self._accounts()
+        analytic: dict[str, tuple[str, str]] = {}
+        try:
+            for r in await self.call("account.analytic.account", "search_read", domain=[],
+                                     fields=["name", "plan_id"]) or []:
+                plan = r.get("plan_id")
+                analytic[str(r["id"])] = (plan[1] if isinstance(plan, (list, tuple)) else "Analytic", r["name"])
+        except UpstreamError:
+            analytic = {}  # analytic accounting is not installed or not visible to this user
+        domain: list[Any] = [("parent_state", "=", "posted"), ("date", ">=", start.isoformat()),
+                             ("date", "<=", end.isoformat())]
+        if self.company_id:
+            domain.append(("company_id", "=", int(self.company_id)))
+        fields = ["date", "move_id", "move_name", "journal_id", "account_id", "name", "debit", "credit", "partner_id",
+                  "analytic_distribution"]
+        out: list[dict[str, Any]] = []
+        offset = 0
+        while offset <= 400000:
+            rows = await self.call("account.move.line", "search_read", domain=domain, fields=fields, limit=2000,
+                                   offset=offset, order="date, move_id, id")
+            out.extend(odoo_line(r, accounts, analytic) for r in rows or [])
+            if not rows or len(rows) < 2000:
+                break
+            offset += 2000
+        return out
+
+
+def _m2o(v: Any) -> tuple[Any, str | None]:
+    return (v[0], v[1]) if isinstance(v, (list, tuple)) and len(v) >= 2 else (None, None)
+
+
+def odoo_line(r: dict[str, Any], accounts: dict[int, dict[str, Any]],
+              analytic: dict[str, tuple[str, str]]) -> dict[str, Any]:
+    aid, aname = _m2o(r.get("account_id"))
+    acc = accounts.get(aid) or {}
+    t = acc.get("account_type") or ""
+    cls = ACCOUNT_CLASS.get(t) or ("Asset" if t.startswith("asset") else "Liability" if t.startswith("liability")
+                                   else "Asset")
+    tags = []
+    for key, pct in (r.get("analytic_distribution") or {}).items():
+        for one in str(key).split(","):  # "12,30": one line on two plans at the same percentage
+            plan, name = analytic.get(one.strip(), ("Analytic", f"#{one.strip()}"))
+            tags.append({"dimension": plan, "value": name, "percent": float(pct)})
+    move_id, move_name = _m2o(r.get("move_id"))
+    return {"date": r.get("date"), "entry": r.get("move_name") or move_name or str(move_id),
+            "type": _m2o(r.get("journal_id"))[1], "account_code": acc.get("code"),
+            "account": acc.get("name") or aname or "", "account_class": cls,
+            "debit": float(r.get("debit") or 0), "credit": float(r.get("credit") or 0),
+            "description": r.get("name") or None, "party": _m2o(r.get("partner_id"))[1], "tags": tags}

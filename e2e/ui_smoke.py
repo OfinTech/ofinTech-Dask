@@ -236,13 +236,56 @@ def run_steps(pg, base, out, xlsx):
             break
         pg.wait_for_timeout(100)
     assert pg.locator(".thread-item").count() == before - 1
+    # cost centres: a general ledger imported from Excel, rules, and the budget read from the customer's file
+    sys.path.insert(0, str(ROOT / "engine"))
+    from tests.test_cost_centres import budget_xlsx, ledger_xlsx
+
+    (out / "gl.xlsx").write_bytes(ledger_xlsx())
+    (out / "Riyadh budget.xlsx").write_bytes(budget_xlsx())
+    pg.goto(f"{base}/#/data")
+    pg.get_by_role("button", name="Import Excel or CSV").click()
+    pg.set_input_files("input[type=file]", str(out / "gl.xlsx"))
+    pg.wait_for_selector(".modal-foot .btn.primary")
+    pg.locator(".modal-foot .btn.primary").click()
+    pg.wait_for_selector("text=Export CSV")
+    pg.goto(f"{base}/#/costcentres")
+    pg.get_by_role("button", name="New cost centre").click()
+    m = pg.locator(".modal")
+    m.locator("label:has(> span:text-is('Name')) input").fill("Riyadh tower")
+    m.locator("label:has(> span:text-is('Starts')) input").fill("2026-05-01")
+    m.locator("label:has(> span:text-is('Planned end')) input").fill("2026-12-31")
+    m.locator("label:has(> span:text-is('Tag in the ledger')) input").first.fill("Project: Riyadh tower")
+    pg.get_by_role("button", name="Add a rule").click()
+    m.locator("label:has(> span:text-is('Accounts')) input").nth(1).fill("5")
+    m.locator("label:has(> span:text-is('Accounts')) input").nth(1).press("Enter")
+    m.locator("label:has(> span:text-is('Words in the description')) input").nth(1).fill("riyadh tower")
+    m.locator("label:has(> span:text-is('Words in the description')) input").nth(1).press("Enter")
+    pg.wait_for_selector("text=These rules pick up 5 ledger lines")
+    pg.screenshot(path=str(out / "cost-centre-editor.png"))
+    pg.locator(".modal-foot .btn.primary").click()
+    pg.wait_for_selector("text=When the budget runs out")
+    pg.set_input_files("label:has-text('Read budget from a file') input[type=file]", str(out / "Riyadh budget.xlsx"))
+    pg.wait_for_selector("a:text-is('Budget!C4')")
+    pg.wait_for_selector("text=At this pace the budget lasts until")
+    pg.add_style_tag(content=".toasts { visibility: hidden; }")
+    pg.set_viewport_size({"width": 1360, "height": 2400})  # the page scrolls inside the app frame
+    pg.wait_for_timeout(400)
+    pg.screenshot(path=str(out / "cost-centre.png"))
+    pg.set_viewport_size({"width": 1360, "height": 860})
+    pg.get_by_role("button", name="Review").first.click()
+    pg.wait_for_selector(".modal >> text=BANK-7")
+    pg.keyboard.press("Escape")
+    pg.goto(f"{base}/#/costcentres")
+    pg.wait_for_selector("td >> text=Riyadh tower")
+    pg.screenshot(path=str(out / "cost-centres.png"))
     # Arabic (right to left), Spanish and French
     pg.goto(f"{base}/#/settings/account")
     pg.get_by_role("button", name="العربية").click()
     pg.wait_for_selector("html[dir=rtl][lang=ar]", state="attached")
     pg.wait_for_selector("text=اللغة")
     pg.screenshot(path=str(out / "ar-settings.png"))
-    for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب")):
+    for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
+                         ("costcentres", "مراكز التكلفة")):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_selector(f"text={needle}")
         pg.wait_for_timeout(300)

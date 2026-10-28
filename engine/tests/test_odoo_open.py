@@ -76,6 +76,19 @@ def search_read(model: str, kw: dict[str, Any], domain: list[Any]) -> list[dict[
     if model == "account.move":
         rows = [m for m in MOVES if _match(m, domain)]
         return rows[kw.get("offset", 0): kw.get("offset", 0) + kw.get("limit", 80)]
+    if model == "account.analytic.account":
+        return [{"id": 4, "name": "Riyadh tower", "plan_id": [1, "Projects"]}]
+    if model == "account.move.line":
+        rows = []
+        for i, (d, acc, bal, comp) in enumerate(LINES):
+            rec = _line_rec((d, acc, bal, comp)) | {
+                "id": i + 1, "move_id": [i // 2 + 1, f"MISC/{i // 2 + 1}"], "move_name": f"MISC/{i // 2 + 1}",
+                "journal_id": [1, "Miscellaneous"], "account_id": [acc, _acc_name(acc)], "name": f"line {i + 1}",
+                "debit": max(bal, 0.0), "credit": max(-bal, 0.0), "partner_id": False,
+                "analytic_distribution": {"4": 100.0} if acc == 3 else False}
+            if _match(rec, domain):
+                rows.append(rec)
+        return rows[kw.get("offset", 0): kw.get("offset", 0) + kw.get("limit", 80)]
     raise KeyError(model)
 
 
@@ -170,7 +183,12 @@ class Odoo(unittest.TestCase):
         self.assertEqual(conn["label"], "Odoo: Acme SA")
         self.assertEqual(conn["config"]["api"], "json2")
         self.assertNotIn("api_key", json.dumps(conn))
-        ds = self.wait_datasets(4)
+        ds = self.wait_datasets(5)
+        gl = self.rows(ds["Odoo: Acme SA · General ledger"]["id"])
+        self.assertEqual(len(gl), 10)  # company 2's line is left out
+        cogs = next(r for r in gl if r[3] == "500000")
+        self.assertEqual((cogs[5], cogs[6], cogs[10]), ("Cost of sales", 4000.0, "Projects: Riyadh tower"))
+        self.assertEqual(next(r for r in gl if r[3] == "101401")[5], "Bank")
         pl = self.rows(ds["Odoo: Acme SA · Profit and loss"]["id"])
         jan = {(r[1], r[2]): r[3] for r in pl if str(r[0]).startswith("2026-01")}
         self.assertEqual(jan[("Income", "400000 Product Sales")], 10000.0)      # credit balance shown as income
@@ -203,7 +221,12 @@ class Odoo(unittest.TestCase):
                                                                    "database": "legacy", "username": "api@acme.test",
                                                                    "company_id": 1})
         self.assertEqual(conn["config"]["api"], "jsonrpc")
-        ds = self.wait_datasets(4)
+        ds = self.wait_datasets(5)
+        gl = self.rows(ds["Odoo: Acme SA · General ledger"]["id"])
+        self.assertEqual(len(gl), 10)  # company 2's line is left out
+        cogs = next(r for r in gl if r[3] == "500000")
+        self.assertEqual((cogs[5], cogs[6], cogs[10]), ("Cost of sales", 4000.0, "Projects: Riyadh tower"))
+        self.assertEqual(next(r for r in gl if r[3] == "101401")[5], "Bank")
         pl = self.rows(ds["Odoo: Acme SA · Profit and loss"]["id"])
         feb = {r[2]: r[3] for r in pl if str(r[0]).startswith("2026-02")}
         self.assertEqual(feb["400000 Product Sales"], 12000.0)

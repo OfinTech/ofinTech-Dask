@@ -65,7 +65,9 @@ totals). Compare the first synced month with the same report in Zoho Books.
 1. Create a *Web app* at <https://developer.xero.com/app/manage> and add the redirect URI.
 2. Apps created after 2 March 2026 must use **granular scopes**. OfinTech Desk requests:
    `openid profile email offline_access accounting.reports.profitandloss.read accounting.reports.balancesheet.read
-   accounting.reports.aged.read accounting.invoices.read accounting.contacts.read accounting.settings.read`.
+   accounting.reports.aged.read accounting.invoices.read accounting.contacts.read accounting.settings.read
+   accounting.journals.read`. The journals scope feeds cost centres; connections made before it was added need to be
+   reconnected once (until then the sync reports that the journal lines could not be read).
    Apps created earlier can override the scope list in the OAuth app options (until Xero retires broad scopes in
    September 2027).
 3. **Connection limits:** uncertified apps are limited by Xero's developer pricing tier. Certification as a Xero App

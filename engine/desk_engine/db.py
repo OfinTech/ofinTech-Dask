@@ -548,6 +548,50 @@ MIGRATIONS: list[str] = [
         used_at REAL
     );
     """,
+    # 13 — cost centres: rules over general-ledger lines, their history, and budget lines read from a file
+    """
+    CREATE TABLE cost_centres (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        code TEXT,
+        description TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        dataset_id TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        rules TEXT NOT NULL,
+        rules_version INTEGER NOT NULL DEFAULT 1,
+        include_assets INTEGER NOT NULL DEFAULT 0,
+        budget_amount REAL,
+        burn_months INTEGER NOT NULL DEFAULT 3,
+        budget_file_id TEXT,
+        budget_file_version INTEGER,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE UNIQUE INDEX ux_cost_centres_name ON cost_centres(workspace_id, lower(name));
+    CREATE TABLE cost_centre_rule_versions (
+        cost_centre_id TEXT NOT NULL REFERENCES cost_centres(id) ON DELETE CASCADE,
+        version INTEGER NOT NULL,
+        rules TEXT NOT NULL,
+        note TEXT,
+        changed_by TEXT,
+        created_at REAL NOT NULL,
+        PRIMARY KEY (cost_centre_id, version)
+    );
+    CREATE TABLE cost_centre_budget_lines (
+        id TEXT PRIMARY KEY,
+        cost_centre_id TEXT NOT NULL REFERENCES cost_centres(id) ON DELETE CASCADE,
+        position INTEGER NOT NULL,
+        label TEXT NOT NULL,
+        amount REAL NOT NULL,
+        accounts TEXT NOT NULL DEFAULT '[]',
+        source TEXT NOT NULL DEFAULT '{}'
+    );
+    CREATE INDEX ix_cost_centre_budget ON cost_centre_budget_lines(cost_centre_id, position);
+    """,
 ]
 
 
