@@ -1,0 +1,12 @@
+Display Name,Company Name,Contact Type,Currency Code,Payment Terms,Payment Terms Label,Billing City,Billing Country,EmailID
+Atlas Fuel Cards,Atlas Fuel Cards,vendor,USD,15,Net 15,Houston,USA,billing@atlasfuelcards.example
+Swiftway Haulage,Swiftway Haulage,vendor,USD,30,Net 30,Newark,USA,billing@swiftwayhaulage.example
+Ironclad Fleet Services,Ironclad Fleet Services,vendor,USD,30,Net 30,Newark,USA,billing@ironcladfleetservi.example
+Harbor Road Properties,Harbor Road Properties,vendor,USD,0,Due on receipt,Newark,USA,billing@harborroadproperti.example
+Brightspark Utilities,Brightspark Utilities,vendor,USD,20,Net 20,Newark,USA,billing@brightsparkutiliti.example
+Cloudnine Software,Cloudnine Software,vendor,USD,30,Net 30,Dublin,Ireland,billing@cloudninesoftware.example
+Eastport Fitout Contractors,Eastport Fitout Contractors,vendor,USD,30,Net 30,Newark,USA,billing@eastportfitoutcont.example
+Rackline Storage Systems,Rackline Storage Systems,vendor,USD,45,Net 45,Hamburg,Germany,billing@racklinestoragesys.example
+Kingsley & Rowe Advisors,Kingsley & Rowe Advisors,vendor,USD,30,Net 30,Boston,USA,billing@kingsley-roweadvis.example
+First Harbor Bank,First Harbor Bank,vendor,USD,0,Due on receipt,Newark,USA,info@firstharborbank.example
+Metro Commercial Vehicles,Metro Commercial Vehicles,vendor,USD,0,Due on receipt,Newark,USA,info@metrocommercialveh.example
