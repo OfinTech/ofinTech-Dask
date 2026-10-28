@@ -83,6 +83,14 @@ def main() -> int:
     return 0
 
 
+def hide_toasts(pg, hide: bool = True) -> None:
+    """Keeps toasts out of a screenshot without hiding them from later waits."""
+    if hide:
+        pg.evaluate("document.head.insertAdjacentHTML('beforeend', '<style id=\"hide-toasts\">.toasts{visibility:hidden}</style>')")
+    else:
+        pg.evaluate("document.getElementById('hide-toasts')?.remove()")
+
+
 def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#token={TOKEN}")
     pg.locator("label:has(> span:text-is('Company or workspace name')) input").fill("E2E Ltd")
@@ -181,6 +189,47 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#/connections")
     pg.wait_for_selector("text=Other accounting system")
     pg.screenshot(path=str(out / "connections.png"), full_page=True)
+    # webhooks under Connections: an outgoing one delivers a signed test event to the fake receiver, an incoming one
+    # shows its endpoint and secret once
+    pg.get_by_role("button", name="Add outgoing webhook").click()
+    m = pg.locator(".modal")
+    m.locator("label:has(> span:text-is('Name')) input").fill("Data warehouse")
+    m.locator("label:has(> span:text-is('Address')) input").fill("http://127.0.0.1:47999/hook")
+    m.locator("label.check:has-text('approval') input").check()
+    m.locator("label.check:has-text('test events') input").check()
+    m.locator(".modal-foot .btn.primary").click()
+    pg.wait_for_selector(".modal >> text=Webhook secret")
+    secret = pg.locator(".modal code.excel").first.inner_text()
+    assert secret.startswith("who_") and len(secret) > 30, secret
+    pg.screenshot(path=str(out / "webhook-secret.png"))
+    pg.get_by_role("button", name="I have stored it").click()
+    pg.get_by_role("button", name="Send a test").click()
+    pg.wait_for_selector("text=Test event queued")
+    for _ in range(60):
+        pg.wait_for_timeout(500)
+        pg.get_by_role("button", name="Deliveries (1)").click()
+        pg.wait_for_selector(".modal >> text=test.ping")
+        if pg.locator(".modal .tag", has_text="delivered").count():
+            break
+        pg.keyboard.press("Escape")
+    else:
+        raise AssertionError("the test event was not delivered")
+    pg.locator(".modal tr.clickable").first.click()
+    pg.wait_for_selector(".modal pre >> text=Test event from OfinTech Desk")
+    pg.screenshot(path=str(out / "webhook-deliveries.png"))
+    pg.keyboard.press("Escape")
+    pg.get_by_role("button", name="Add incoming webhook").click()
+    m = pg.locator(".modal")
+    m.locator("label:has(> span:text-is('Name')) input").fill("Bank portal")
+    m.locator(".modal-foot .btn.primary").click()
+    pg.wait_for_selector(".modal code:has-text('/api/hooks/in/wh_')")
+    pg.get_by_role("button", name="I have stored it").click()
+    pg.wait_for_selector("strong:text-is('Bank portal')")
+    hide_toasts(pg)
+    pg.evaluate("[...document.querySelectorAll('h2')].find((h) => h.textContent === 'Webhooks').scrollIntoView({ block: 'start' })")
+    pg.wait_for_timeout(300)
+    pg.screenshot(path=str(out / "webhooks.png"))
+    hide_toasts(pg, False)
     # a new workflow starts as a draft and can be saved before it is complete
     pg.goto(f"{base}/#/workflows")
     pg.get_by_role("button", name="New workflow").click()
@@ -278,6 +327,32 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#/costcentres")
     pg.wait_for_selector("td >> text=Riyadh tower")
     pg.screenshot(path=str(out / "cost-centres.png"))
+    # the general ledger template, filled in and uploaded from the Cost centres page; both templates download
+    from openpyxl import load_workbook
+
+    pg.get_by_role("button", name="Import ledger").click()
+    with pg.expect_download() as dl:
+        pg.get_by_role("button", name="General ledger template").click()
+    tpl = out / dl.value.suggested_filename
+    dl.value.save_as(str(tpl))
+    assert tpl.name == "OfinTech-Desk-general-ledger-template.xlsx", tpl.name
+    with pg.expect_download() as dl2:
+        pg.get_by_role("button", name="Budget template").click()
+    assert dl2.value.suggested_filename == "OfinTech-Desk-budget-template.xlsx"
+    wb = load_workbook(tpl)
+    sheet = wb["General ledger"]
+    sheet.delete_rows(2, sheet.max_row)
+    src = load_workbook(out / "gl.xlsx").active
+    for row in src.iter_rows(min_row=2, values_only=True):
+        sheet.append(list(row))
+    wb.save(out / "GL October.xlsx")
+    pg.set_input_files("label:has-text('Upload ledger file') input[type=file]", str(out / "GL October.xlsx"))
+    pg.wait_for_selector("text=now in the ledger “GL October · General ledger”")
+    hide_toasts(pg)
+    pg.wait_for_timeout(300)
+    pg.screenshot(path=str(out / "cost-centres-import.png"))
+    hide_toasts(pg, False)
+    assert pg.locator("select[aria-label='Ledger to replace'] option", has_text="GL October").count() == 1
     # financial analysis: a 15-month ledger, the KPI scorecard, a KPI explained, account roles, a forecast approved
     from tests.test_financial_analysis import ledger_xlsx as fa_ledger
 

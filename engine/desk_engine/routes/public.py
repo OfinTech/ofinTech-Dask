@@ -211,6 +211,133 @@ async def workflow_hook(request: Request) -> Response:
     return JSONResponse({"run_id": run_id}, status_code=202)
 
 
+# --- sign-in and sign-up from the public website -------------------------------------------------------------------
+#
+# The website (DESK_SITE_URL, e.g. https://ofintech.ai) has plain HTML forms that post here. The website and the
+# Team Server share a registrable domain, so the session cookie set on the redirect is sent to the app. Failures go
+# back to the website with a short code in the URL fragment, which the page shows without any script.
+
+AUTH_FORM_FIELDS = 8
+
+
+def _allowed_origin(engine: Any, request: Request) -> bool:
+    origin = request.headers.get("origin") or ""
+    if not origin:
+        referer = request.headers.get("referer") or ""
+        origin = referer.split("/", 3)[0] + "//" + referer.split("/", 3)[2] if referer.count("/") >= 2 else ""
+    allowed = {engine.settings.public_url.rstrip("/")}
+    if engine.settings.site_url:
+        allowed.add(engine.settings.site_url.rstrip("/"))
+    return origin.rstrip("/") in allowed
+
+
+def _back(engine: Any, code: str) -> Response:
+    from starlette.responses import RedirectResponse
+
+    if engine.settings.site_url:
+        return RedirectResponse(f"{engine.settings.site_url}/#{code}", status_code=303)
+    return RedirectResponse(f"{engine.settings.public_url.rstrip('/')}/#/login?error={code}", status_code=303)
+
+
+def _into_app(engine: Any, token: str) -> Response:
+    from starlette.responses import RedirectResponse
+
+    from .auth import set_session_cookie
+
+    resp = RedirectResponse(f"{engine.settings.public_url.rstrip('/')}/#/", status_code=303)
+    set_session_cookie(engine, resp, token)
+    resp.headers["cache-control"] = "no-store"
+    return resp
+
+
+async def _form(request: Request) -> dict[str, str]:
+    async with request.form(max_files=0, max_fields=AUTH_FORM_FIELDS) as form:
+        return {k: str(v)[:300] for k, v in form.items() if isinstance(v, str)}
+
+
+async def auth_form_sign_in(request: Request) -> Response:
+    from .auth import create_session, login_user
+
+    engine = request.app.state.engine
+    if engine.settings.is_desktop:
+        return _back(engine, "desktop")
+    if not _allowed_origin(engine, request):
+        return page("Sign-in refused", "This form was sent from a site that is not allowed.", 403)
+    f = await _form(request)
+    email, password = f.get("email", "").strip(), f.get("password", "")
+    if not email or not password or len(email) > 254:
+        return _back(engine, "signin-error")
+    try:
+        uid = login_user(engine, email=email, password=password, client_host=request.client.host if request.client else "-")
+    except AppError as exc:
+        return _back(engine, {"rate_limited": "signin-rate", "disabled": "signin-disabled"}.get(exc.code or "", "signin-error"))
+    return _into_app(engine, create_session(engine, request, uid))
+
+
+async def auth_form_sign_up(request: Request) -> Response:
+    from .auth import create_session, signup_user
+
+    engine = request.app.state.engine
+    if engine.settings.is_desktop:
+        return _back(engine, "desktop")
+    if not _allowed_origin(engine, request):
+        return page("Sign-up refused", "This form was sent from a site that is not allowed.", 403)
+    f = await _form(request)
+    email, name, password = f.get("email", "").strip(), f.get("name", "").strip(), f.get("password", "")
+    if not email or "@" not in email or "." not in email.rsplit("@", 1)[-1] or not name or not password:
+        return _back(engine, "signup-invalid")
+    try:
+        uid = signup_user(engine, email=email, name=name[:120], password=password, invite_token=None,
+                          client_host=request.client.host if request.client else "-")
+    except AppError as exc:
+        code = {"invitation_only": "signup-invitation", "exists": "signup-exists", "rate_limited": "signup-rate",
+                "weak_password": "signup-password"}.get(exc.code or "", "signup-password" if exc.status == 422 else "signup-invalid")
+        return _back(engine, code)
+    return _into_app(engine, create_session(engine, request, uid))
+
+
+async def auth_form_google(request: Request) -> Response:
+    """A plain link on the website starts Google sign-in; the callback sets the cookie and opens the app."""
+    from starlette.responses import RedirectResponse
+
+    from .auth import _rate_limit, google_start_url
+
+    engine = request.app.state.engine
+    if engine.settings.is_desktop:
+        return _back(engine, "desktop")
+    try:
+        _rate_limit(engine, f"google-start:{request.client.host if request.client else '-'}", limit=30)
+        url = google_start_url(engine)
+    except AppError as exc:
+        return _back(engine, "signin-rate" if exc.code == "rate_limited" else "google-off")
+    return RedirectResponse(url, status_code=303)
+
+
+async def incoming_webhook(request: Request) -> Response:
+    """A delivery from another system to a webhook made under Connections. The sender proves itself with the hook's
+    secret (bearer or HMAC signature); the delivery is logged and may start the linked workflow."""
+    engine = request.app.state.engine
+    hook = engine.db.one("SELECT * FROM webhooks WHERE id = ? AND direction = 'in'", (request.path_params["hid"],))
+    deny = JSONResponse({"error": "unauthorized", "message": "Unknown webhook or wrong secret."}, status_code=401)
+    if hook is None:
+        return deny
+    if int(request.headers.get("content-length") or 0) > 256 * 1024:
+        return JSONResponse({"error": "too_large", "message": "At most 256 KB per delivery."}, status_code=413)
+    body = await request.body()
+    if len(body) > 256 * 1024:
+        return JSONResponse({"error": "too_large", "message": "At most 256 KB per delivery."}, status_code=413)
+    if not engine.webhooks.verify_incoming(hook, dict(request.headers), body):
+        engine.webhooks.record_rejected(hook, "missing or wrong secret")
+        return deny
+    if engine.webhooks.rate_limited(hook["id"]):
+        return JSONResponse({"error": "rate_limited", "message": "At most 60 deliveries a minute."}, status_code=429)
+    if not hook["enabled"]:
+        return JSONResponse({"error": "disabled", "message": "This webhook is switched off."}, status_code=409)
+    event = (request.headers.get("x-ofintech-event") or request.headers.get("x-github-event") or "")[:80] or None
+    result = engine.webhooks.receive(hook, event, body)
+    return JSONResponse(result, status_code=202)
+
+
 async def connector_spec(request: Request) -> Response:
     from ..connectors.open_api import openapi
 
@@ -222,6 +349,10 @@ routes = [
     Route("/api/ingest/v1/accounting/{kind}", ingest_accounting, methods=["POST"]),
     Route("/api/connector-spec/openapi.json", connector_spec, methods=["GET"]),
     Route("/api/hooks/workflows/{wid}", workflow_hook, methods=["POST"]),
+    Route("/api/hooks/in/{hid}", incoming_webhook, methods=["POST"]),
+    Route("/auth/form/sign-in", auth_form_sign_in, methods=["POST"]),
+    Route("/auth/form/sign-up", auth_form_sign_up, methods=["POST"]),
+    Route("/auth/form/google", auth_form_google, methods=["GET"]),
     Route("/oauth/callback", oauth_callback, methods=["GET"]),
     Route("/hooks/telegram/{cid}", telegram_hook, methods=["POST"]),
     Route("/hooks/whatsapp/{cid}", whatsapp_hook, methods=["GET", "POST"]),

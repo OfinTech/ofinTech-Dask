@@ -80,8 +80,9 @@ export const put = <T = any>(p: string, b?: unknown) => api<T>("PUT", p, b ?? {}
 export const patch = <T = any>(p: string, b?: unknown) => api<T>("PATCH", p, b ?? {});
 export const del = <T = any>(p: string) => api<T>("DELETE", p);
 
-export async function upload<T = any>(path: string, file: File): Promise<T> {
+export async function upload<T = any>(path: string, file: File, fields: Record<string, string> = {}): Promise<T> {
   const form = new FormData();
+  for (const [k, v] of Object.entries(fields)) form.append(k, v);
   form.append("file", file);
   const resp = await fetch(path, { method: "POST", body: form, headers: headers(), credentials: "same-origin" });
   return handle(resp);

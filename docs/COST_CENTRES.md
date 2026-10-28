@@ -21,9 +21,10 @@ Cost centres read a **general-ledger dataset**. A connection creates it as `<con
 | Xero | `GET /Journals` (scope `accounting.journals.read`) | tracking categories | **no**: Xero journals carry no contact (see below) |
 | Odoo 17+ | posted `account.move.line` | analytic distribution, with percentages | yes |
 | Open Accounting Connector | `GET /v1/journal-lines` (pull) or `POST …/journal-lines` (push); see [ACCOUNTING_API.md](ACCOUNTING_API.md) | as sent | as sent |
+| **Import a general ledger file** under Cost centres | the general ledger template below, filled in or exported to, as `.xlsx` or `.csv` | as typed | as typed |
 | Excel or CSV under **Data** | a sheet whose first columns are the general-ledger columns below | as typed | as typed |
 
-Zoho Books is not covered yet. Use the Open Accounting Connector or an Excel export.
+Zoho Books is not covered yet. Use the Open Accounting Connector or the template.
 
 General-ledger columns, in this order: `Date`, `Entry`, `Type`, `Account code`, `Account`, `Account class`,
 `Debit`, `Credit`, `Description`, `Party`, `Cost centre tags`.
@@ -31,6 +32,31 @@ General-ledger columns, in this order: `Date`, `Entry`, `Type`, `Account code`, 
 - `Account class` is one of `Bank`, `Receivable`, `Payable`, `Asset`, `Liability`, `Equity`, `Income`,
   `Other income`, `Cost of sales`, `Expense`, `Other expense`.
 - Tags are written as `Project: Riyadh tower | Department: Site (60%)`.
+
+### The templates and the ledger upload
+
+The Cost centres page offers two Excel templates (`GET /api/w/{ws}/cost-centres/templates/budget|ledger`), each with
+a guide sheet, the workspace's currency in the headers and drop-down lists where a value must be one of a few:
+
+- **General ledger template** (`OfinTech-Desk-general-ledger-template.xlsx`): the eleven columns above, one row per
+  journal line, with six example rows that form three balanced entries, and the account classes as a list. Fill it
+  in by hand, or paste an export from any accounting system into it.
+- **Budget template** (`OfinTech-Desk-budget-template.xlsx`): `Code`, `Item`, `Budget (<currency>)`, `Notes`, three
+  example lines and a total row with a `SUM` formula. *Read budget from a file* reads it like any other budget file
+  (below), matching lines to accounts by code or name.
+
+**Import a general ledger file** (`POST /api/w/{ws}/cost-centres/ledger/upload`, editor role, multipart `file`,
+optional `dataset_id` and `name`) accepts `.xlsx`, `.xlsm`, `.csv`, `.tsv` and `.txt` up to the upload limit. It
+finds the sheet whose header row (within the first 30 rows) has the eleven columns above in that order, accepts
+account classes with their usual aliases (`Cash`, `Accounts receivable`, `Debtors`, `Creditors`, `Revenue`, `Sales`,
+`COGS`, `Opex` …), reads dates and numbers in the usual notations, and refuses a file that is not a ledger or has a
+row without a date, an entry number, an account or a known class, naming each row (up to 20).
+
+The reply says what was read: the sheet, the number of lines and entries, the first and last dates, and the entries
+whose debits and credits differ (`unbalanced_entries`), so a broken export is noticed before cost centres are built
+on it. As a new ledger, the dataset is named `<file name> · General ledger`; with *Replace "…"* chosen, the rows of
+that ledger are replaced in place and every cost centre built on it is brought up to date, which is how a month-end
+re-export is loaded. Both are audited (`dataset.import`, `dataset.replace`).
 
 ## Rules, not a ledger field
 
@@ -103,7 +129,7 @@ Each budget line has its own run-out date, measured on the accounts matched to i
 
 ## Budgets from your own file
 
-*Read budget from a file* takes the Excel or Word file the team already uses.
+*Read budget from a file* takes the Excel or Word file the team already uses, or the budget template above.
 
 1. **Find the table.** It looks for a header row with an amount column, in the first 40 rows of each sheet. Headers
    such as *Budget*, *Approved budget*, *Amount*, *الموازنة*, *المبلغ*, *Presupuesto*, *Importe* and *Montant* are

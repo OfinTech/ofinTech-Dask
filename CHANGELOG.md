@@ -7,13 +7,24 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
-- **Website:**
-  - a features page (`landing/site/features/`) for financial analysis, forecasting and cost centres, with screenshots
-    of the demo company, linked from the home page;
-  - a **GitHub deploy webhook** (`landing/deploy`) that checks GitHub's signature and rebuilds the website when a push
-    to `main` changes `landing/`;
-  - *Sign in* links to the product at `desk.ofintech.ai`; the website stays at `ofintech.ai` (docs/DEPLOYMENT.md →
-    Domains).
+- **Webhooks under Connections** (docs/WEBHOOKS.md): **incoming** endpoints other systems call with a secret
+  (bearer token or HMAC-SHA256 signature), logged and able to start a workflow with the delivery as its trigger;
+  **outgoing** subscriptions that post signed JSON (`X-OfinTech-Signature-256`) for chosen event groups, with
+  retries after 1, 10 and 60 minutes, a delivery log, re-sends and test events; secrets shown once and stored
+  encrypted; the assistant's read-only `webhook_events` tool; migration 15.
+- **Cost centres: templates and a ledger upload.** A general ledger template and a budget template (Excel, with
+  guide sheets and drop-down lists) download from the Cost centres page; *Import a general ledger file* uploads a
+  filled-in ledger as a new ledger or replaces an existing one after a month-end re-export, reporting the lines,
+  entries and dates read and naming entries whose debits and credits differ.
+- **Sign in and create an account from the website** (`DESK_SITE_URL`): the Team Server accepts plain HTML forms
+  from the website's origin (`/auth/form/sign-in`, `/auth/form/sign-up`, `/auth/form/google`), sets the session
+  cookie and opens the app, or sends the person back with a short error code; the same rate limits, password policy
+  and invitation rules as in the app.
+- **Website** (`landing/`): one page at `ofintech.ai` with sections for CFOs, accountants and executive managers,
+  all features (financial analysis, forecasting, cost centres with the templates, connections and webhooks, the
+  workspace), the latest changes, the demo company, the **sign-in and create-account forms** (no JavaScript; errors
+  shown with CSS), the install guide and connecting a ledger. The former `/features/` page redirects to
+  `/#features`, and the GitHub deploy webhook was removed: deploys are a `git pull` on the server.
 
 - **Financial analysis** (docs/FINANCIAL_ANALYSIS.md):
   - 35 standard KPIs from the general ledger in six groups, with a scorecard, sparklines and the change on the
@@ -68,6 +79,9 @@ migrations are applied automatically on start-up and are never rewritten once re
 - A payment to a supplier is classed as investing in proportion to the equipment on that supplier's bills, instead of
   always as operating.
 - Accounts such as *Warehouse Racking*, *Shelving*, *Fit-out* and *Trucks* are suggested as fixed assets.
+- A custom KPI can no longer take the id of a ledger measure (such as `revenue`), which would have shadowed the
+  measure in every formula.
+- Workflow runs now audit `workflow.run.<status>` when they finish, so outgoing webhooks and the audit log see them.
 
 ### Changed
 

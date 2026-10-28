@@ -109,6 +109,33 @@ class CostCentres:
                 "tags": [t for t, _ in tags.most_common(300)], "parties": [p for p, _ in parties.most_common(300)],
                 "first_date": min(dates) if dates else None, "last_date": max(dates) if dates else None}
 
+    def import_ledger_file(self, ws_id: str, user_id: str, name: str, data: bytes, *, dataset_id: str | None = None,
+                           dataset_name: str | None = None) -> dict[str, Any]:
+        """A general ledger uploaded as Excel or CSV becomes (or replaces) a ledger dataset."""
+        from ..data.store import create_dataset, replace_rows
+        from .templates import read_ledger_file
+
+        parsed = read_ledger_file(data, name)
+        columns = [dict(c) for c in GL_COLUMNS]
+        if dataset_id:
+            ds = self._ledger(ws_id, dataset_id)
+            ds = replace_rows(self.engine, ws_id, ds["id"], columns, parsed["rows"])
+            self.engine.db.execute("UPDATE datasets SET source_ref = ? WHERE id = ?",
+                                   (dumps({"filename": name[:200], "sheet": parsed["sheet"], "kind": "general_ledger"}),
+                                    ds["id"]))
+            action = "dataset.replace"
+        else:
+            label = (dataset_name or f"{name.rsplit('.', 1)[0]} · General ledger").strip()[:120]
+            ds = create_dataset(self.engine, ws_id, name=label, source="csv" if name.lower().endswith(".csv") else "excel",
+                                columns=columns, rows=parsed["rows"],
+                                source_ref={"filename": name[:200], "sheet": parsed["sheet"], "kind": "general_ledger"},
+                                created_by=user_id)
+            action = "dataset.import"
+        self.engine.audit(ws_id, user_id, action, ds["id"], {"filename": name[:200], "rows": ds["row_count"],
+                                                              "kind": "general_ledger"})
+        parsed.pop("rows")
+        return parsed | {"dataset": {"id": ds["id"], "name": ds["name"], "row_count": ds["row_count"]}}
+
     # -- cost centres ----------------------------------------------------------------------------------------------
     def _row(self, ws_id: str, cc_id: str) -> dict[str, Any]:
         row = self.engine.db.one("SELECT * FROM cost_centres WHERE workspace_id = ? AND (id = ? OR lower(name) = "

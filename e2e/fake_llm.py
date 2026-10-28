@@ -107,6 +107,16 @@ async def chat(request):
         return sse(call("list_datasets", {}))
     return sse(text("I can help with figures from your ledger, spreadsheets and connected systems. Try asking for an NPV or a variance."))
 
-app = Starlette(routes=[Route("/v1/models", models), Route("/v1/chat/completions", chat, methods=["POST"])])
+async def hook(request):
+    """A webhook receiver: answers 200 when the delivery is signed, 401 otherwise (the smoke test checks both)."""
+    body = await request.body()
+    sig = request.headers.get("x-ofintech-signature-256", "")
+    if not sig.startswith("sha256=") or not request.headers.get("x-ofintech-event"):
+        return JSONResponse({"error": "unsigned"}, status_code=401)
+    return JSONResponse({"ok": True, "event": request.headers["x-ofintech-event"], "bytes": len(body)})
+
+
+app = Starlette(routes=[Route("/v1/models", models), Route("/v1/chat/completions", chat, methods=["POST"]),
+                        Route("/hook", hook, methods=["POST"])])
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=47999, log_level="warning")

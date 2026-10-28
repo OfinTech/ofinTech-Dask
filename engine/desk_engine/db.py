@@ -648,6 +648,46 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ix_forecasts_ws ON forecasts(workspace_id, group_id);
     """,
+    # 15 — webhooks under Connections: incoming (other systems call us) and outgoing (we call other systems)
+    """
+    CREATE TABLE webhooks (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        direction TEXT NOT NULL,
+        name TEXT NOT NULL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        secret_id TEXT,
+        secret_hash TEXT,
+        secret_prefix TEXT,
+        url TEXT,
+        events TEXT NOT NULL DEFAULT '[]',
+        workflow_id TEXT,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL,
+        last_delivery_at REAL,
+        last_status TEXT
+    );
+    CREATE INDEX ix_webhooks_ws ON webhooks(workspace_id, direction);
+    CREATE TABLE webhook_deliveries (
+        id TEXT PRIMARY KEY,
+        webhook_id TEXT NOT NULL REFERENCES webhooks(id) ON DELETE CASCADE,
+        workspace_id TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        event TEXT,
+        status TEXT NOT NULL,
+        http_status INTEGER,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        payload TEXT,
+        response TEXT,
+        run_id TEXT,
+        created_at REAL NOT NULL,
+        next_attempt_at REAL,
+        finished_at REAL
+    );
+    CREATE INDEX ix_webhook_deliveries ON webhook_deliveries(webhook_id, created_at);
+    CREATE INDEX ix_webhook_pending ON webhook_deliveries(status, next_attempt_at) WHERE status = 'pending';
+    """,
 ]
 
 

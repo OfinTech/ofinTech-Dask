@@ -338,6 +338,86 @@ class ImportedLedger(unittest.TestCase):
             h.close()
 
 
+class TemplatesAndUpload(unittest.TestCase):
+    def setUp(self) -> None:
+        self.h = Harness()
+        self.ws = self.h.setup_workspace()
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_fill_in_the_templates_and_upload_them(self) -> None:
+        from openpyxl import load_workbook
+
+        h, ws = self.h, self.ws
+        # the ledger template, with the example rows replaced by the test ledger
+        r = h.client.get(f"/api/w/{ws}/cost-centres/templates/ledger")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("general-ledger-template.xlsx", r.headers["content-disposition"])
+        wb = load_workbook(io.BytesIO(r.content))
+        sheet = wb["General ledger"]
+        self.assertEqual([c.value for c in sheet[1]][:3], ["Date", "Entry", "Type"])
+        self.assertIn("Guide", wb.sheetnames)
+        sheet.delete_rows(2, sheet.max_row)
+        for row in gl_rows(LEDGER):
+            sheet.append([date.fromisoformat(row[0]), *row[1:]])
+        buf = io.BytesIO()
+        wb.save(buf)
+        up = h.api("POST", f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("GL March.xlsx", buf.getvalue())})
+        self.assertEqual((up["lines"], up["entries"], up["unbalanced_count"]), (len(LEDGER), 10, 0))
+        self.assertEqual((up["first_date"], up["last_date"]), ("2026-05-10", "2026-09-20"))
+        self.assertEqual(up["dataset"]["name"], "GL March · General ledger")
+        did = up["dataset"]["id"]
+        self.assertEqual([x["id"] for x in h.api("GET", f"/api/w/{ws}/cost-centres")["ledgers"]], [did])
+        cc = h.api("POST", f"/api/w/{ws}/cost-centres", json=CC | {"dataset_id": did})
+        self.assertEqual(h.api("GET", f"/api/w/{ws}/cost-centres/{cc['id']}/report")["totals"]["cost"], 40500.0)
+        # the budget template, filled in
+        r = h.client.get(f"/api/w/{ws}/cost-centres/templates/budget")
+        wb = load_workbook(io.BytesIO(r.content))
+        b = wb["Budget"]
+        self.assertEqual([c.value for c in b[1]][:3], ["Code", "Item", "Budget (GBP)"])
+        b.delete_rows(2, b.max_row)
+        b.append([5200, "Materials", 60000, None])
+        b.append([None, "Site rent", 12000, None])
+        b.append([None, "Total", 72000, None])
+        buf = io.BytesIO()
+        wb.save(buf)
+        f = h.client.post(f"/api/w/{ws}/files/upload", files={"file": ("EWF budget.xlsx", buf.getvalue())}).json()
+        imp = h.api("POST", f"/api/w/{ws}/cost-centres/{cc['id']}/budget/import", json={"file_id": f["file"]["id"]})
+        self.assertEqual([(x["label"], x["amount"], x["accounts"]) for x in imp["lines"]],
+                         [("Materials", 60000.0, ["5200"]), ("Site rent", 12000.0, ["6100"])])
+        self.assertIn("72,000.00", imp["check"])
+        # a month-end re-export replaces the ledger in place: the cost centre keeps pointing at it
+        more = LEDGER + entry("2026-10-03", "B-9", "Gulf Steel", L(MAT, 5000, 0, RIYADH, "October steel"), L(AP, 0, 5000))
+        wb = load_workbook(io.BytesIO(h.client.get(f"/api/w/{ws}/cost-centres/templates/ledger").content))
+        sheet = wb["General ledger"]
+        sheet.delete_rows(2, sheet.max_row)
+        for row in gl_rows(more):
+            sheet.append([date.fromisoformat(row[0]), *row[1:]])
+        buf = io.BytesIO()
+        wb.save(buf)
+        up2 = h.api("POST", f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("GL April.xlsx", buf.getvalue())},
+                    data={"dataset_id": did})
+        self.assertEqual((up2["dataset"]["id"], up2["lines"]), (did, len(more)))
+        self.assertEqual(h.api("GET", f"/api/w/{ws}/cost-centres/{cc['id']}/report")["totals"]["cost"], 45500.0)
+        # problems are named by row; a CSV with the same columns works too
+        sheet.cell(row=3, column=6, value="Something")
+        sheet.cell(row=4, column=7, value="ten")
+        buf = io.BytesIO()
+        wb.save(buf)
+        r = h.client.post(f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("bad.xlsx", buf.getvalue())})
+        self.assertEqual(r.status_code, 422)
+        self.assertIn("row 3: unknown account class", r.text)
+        self.assertIn("row 4", r.text)
+        csv_text = ",".join(c["name"] for c in __import__("desk_engine.connectors.accounting", fromlist=["GL_COLUMNS"]).GL_COLUMNS) + "\n"
+        csv_text += "\n".join(",".join("" if v is None else str(v) for v in row) for row in gl_rows(LEDGER[:3]))
+        up3 = h.api("POST", f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("gl.csv", csv_text.encode())})
+        self.assertEqual(up3["lines"], 3)
+        h.client.post(f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("notes.docx", b"x")}).status_code
+        self.assertEqual(h.client.post(f"/api/w/{ws}/cost-centres/ledger/upload",
+                                       files={"file": ("other.xlsx", budget_xlsx())}).status_code, 422)
+
+
 class ConnectorLines(unittest.TestCase):
     def test_xero_journals(self) -> None:
         from desk_engine.connectors.xero import parse_journals
