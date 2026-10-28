@@ -1,0 +1,165 @@
+Date,Payment Number,Customer Name,Invoice Number,Amount,Amount Applied to Invoice,Payment Mode,Deposit To,Reference Number,Currency Code
+2025-10-27,PMT-0001,Meridian Retail Group,INV-1001,26930.92,26930.92,Bank Transfer,Operating Account,BT623503,USD
+2025-11-17,PMT-0002,Meridian Retail Group,INV-1002,23163.80,23163.80,Bank Transfer,Operating Account,BT788267,USD
+2025-10-08,PMT-0003,Alder & Finch Foods,INV-1003,10208.80,10208.80,Bank Transfer,Operating Account,BT791864,USD
+2025-10-27,PMT-0004,Alder & Finch Foods,INV-1004,8786.78,8786.78,Bank Transfer,Operating Account,BT139626,USD
+2025-10-16,PMT-0005,Coastal Pharma Supplies,INV-1005,9380.04,9380.04,Bank Transfer,Operating Account,BT263244,USD
+2025-10-20,PMT-0006,Coastal Pharma Supplies,INV-1006,8758.52,8758.52,Bank Transfer,Operating Account,BT348170,USD
+2025-10-16,PMT-0007,Northgate Electronics,INV-1007,10628.90,10628.90,Bank Transfer,Operating Account,BT452034,USD
+2025-11-03,PMT-0008,Northgate Electronics,INV-1008,10613.29,10613.29,Bank Transfer,Operating Account,BT156398,USD
+2025-10-20,PMT-0009,Bluepeak Furniture,INV-1009,9702.34,9702.34,Bank Transfer,Operating Account,BT372469,USD
+2025-10-29,PMT-0010,Bluepeak Furniture,INV-1010,10331.95,10331.95,Bank Transfer,Operating Account,BT468090,USD
+2025-10-15,PMT-0011,Solstice Beverages,INV-1011,12655.30,12655.30,Bank Transfer,Operating Account,BT872799,USD
+2025-11-25,PMT-0012,Kestrel Auto Parts,INV-1012,11257.76,11257.76,Bank Transfer,Operating Account,BT808725,USD
+2025-10-27,PMT-0013,Lumen Home Goods,INV-1013,10790.44,10790.44,Bank Transfer,Operating Account,BT570509,USD
+2025-12-01,PMT-0014,Meridian Retail Group,INV-1014,25861.56,25861.56,Bank Transfer,Operating Account,BT431823,USD
+2025-12-02,PMT-0015,Meridian Retail Group,INV-1015,31007.90,31007.90,Bank Transfer,Operating Account,BT412269,USD
+2025-11-12,PMT-0016,Alder & Finch Foods,INV-1016,10467.52,10467.52,Bank Transfer,Operating Account,BT877188,USD
+2025-11-27,PMT-0017,Alder & Finch Foods,INV-1017,9880.12,9880.12,Bank Transfer,Operating Account,BT604741,USD
+2025-11-10,PMT-0018,Coastal Pharma Supplies,INV-1018,10589.48,10589.48,Bank Transfer,Operating Account,BT292548,USD
+2025-11-26,PMT-0019,Coastal Pharma Supplies,INV-1019,12045.84,12045.84,Bank Transfer,Operating Account,BT311139,USD
+2025-11-12,PMT-0020,Northgate Electronics,INV-1020,10778.01,10778.01,Bank Transfer,Operating Account,BT583911,USD
+2025-12-11,PMT-0021,Northgate Electronics,INV-1021,10761.71,10761.71,Bank Transfer,Operating Account,BT998769,USD
+2025-11-17,PMT-0022,Bluepeak Furniture,INV-1022,10876.19,10876.19,Bank Transfer,Operating Account,BT601687,USD
+2025-11-20,PMT-0023,Bluepeak Furniture,INV-1023,9823.70,9823.70,Bank Transfer,Operating Account,BT175211,USD
+2025-11-05,PMT-0024,Solstice Beverages,INV-1024,12979.05,12979.05,Bank Transfer,Operating Account,BT479841,USD
+2026-01-14,PMT-0025,Kestrel Auto Parts,INV-1025,13308.80,13308.80,Bank Transfer,Operating Account,BT474796,USD
+2025-11-20,PMT-0026,Lumen Home Goods,INV-1026,12500.20,12500.20,Bank Transfer,Operating Account,BT680726,USD
+2026-01-01,PMT-0027,Meridian Retail Group,INV-1027,26021.04,26021.04,Bank Transfer,Operating Account,BT297525,USD
+2026-01-14,PMT-0028,Meridian Retail Group,INV-1028,25517.36,25517.36,Bank Transfer,Operating Account,BT409856,USD
+2025-12-15,PMT-0029,Alder & Finch Foods,INV-1029,10735.64,10735.64,Bank Transfer,Operating Account,BT983667,USD
+2025-12-25,PMT-0030,Alder & Finch Foods,INV-1030,10899.76,10899.76,Bank Transfer,Operating Account,BT521909,USD
+2025-12-08,PMT-0031,Coastal Pharma Supplies,INV-1031,11021.68,11021.68,Bank Transfer,Operating Account,BT114694,USD
+2025-12-24,PMT-0032,Coastal Pharma Supplies,INV-1032,9039.04,9039.04,Bank Transfer,Operating Account,BT357893,USD
+2025-12-26,PMT-0033,Northgate Electronics,INV-1033,10431.09,10431.09,Bank Transfer,Operating Account,BT838525,USD
+2025-12-29,PMT-0034,Northgate Electronics,INV-1034,10536.92,10536.92,Bank Transfer,Operating Account,BT413946,USD
+2025-12-25,PMT-0035,Bluepeak Furniture,INV-1035,9645.21,9645.21,Bank Transfer,Operating Account,BT974119,USD
+2025-12-29,PMT-0036,Bluepeak Furniture,INV-1036,10258.86,10258.86,Bank Transfer,Operating Account,BT652505,USD
+2025-12-12,PMT-0037,Solstice Beverages,INV-1037,12966.25,12966.25,Bank Transfer,Operating Account,BT828380,USD
+2026-01-16,PMT-0038,Kestrel Auto Parts,INV-1038,6318.90,6318.90,Bank Transfer,Operating Account,BT284930,USD
+2025-12-25,PMT-0039,Lumen Home Goods,INV-1039,11030.11,11030.11,Bank Transfer,Operating Account,BT221241,USD
+2026-01-20,PMT-0040,Meridian Retail Group,INV-1040,27749.40,27749.40,Bank Transfer,Operating Account,BT983540,USD
+2026-02-13,PMT-0041,Meridian Retail Group,INV-1041,29779.10,29779.10,Bank Transfer,Operating Account,BT356165,USD
+2026-01-09,PMT-0042,Alder & Finch Foods,INV-1042,10524.00,10524.00,Bank Transfer,Operating Account,BT963197,USD
+2026-01-26,PMT-0043,Alder & Finch Foods,INV-1043,13066.00,13066.00,Bank Transfer,Operating Account,BT207095,USD
+2026-01-15,PMT-0044,Coastal Pharma Supplies,INV-1044,10622.52,10622.52,Bank Transfer,Operating Account,BT514376,USD
+2026-01-21,PMT-0045,Coastal Pharma Supplies,INV-1045,11536.12,11536.12,Bank Transfer,Operating Account,BT770652,USD
+2026-01-26,PMT-0046,Northgate Electronics,INV-1046,13261.72,13261.72,Bank Transfer,Operating Account,BT719037,USD
+2026-01-21,PMT-0047,Northgate Electronics,INV-1047,13861.64,13861.64,Bank Transfer,Operating Account,BT473471,USD
+2026-01-16,PMT-0048,Bluepeak Furniture,INV-1048,10818.75,10818.75,Bank Transfer,Operating Account,BT545714,USD
+2026-02-02,PMT-0049,Bluepeak Furniture,INV-1049,12252.44,12252.44,Bank Transfer,Operating Account,BT219761,USD
+2026-01-05,PMT-0050,Solstice Beverages,INV-1050,15779.56,15779.56,Bank Transfer,Operating Account,BT590537,USD
+2026-03-09,PMT-0051,Kestrel Auto Parts,INV-1051,7071.25,7071.25,Bank Transfer,Operating Account,BT745826,USD
+2026-01-29,PMT-0052,Lumen Home Goods,INV-1052,13120.48,13120.48,Bank Transfer,Operating Account,BT900570,USD
+2026-02-19,PMT-0053,Meridian Retail Group,INV-1053,22252.05,22252.05,Bank Transfer,Operating Account,BT425942,USD
+2026-03-19,PMT-0054,Meridian Retail Group,INV-1054,22291.14,22291.14,Bank Transfer,Operating Account,BT144323,USD
+2026-02-19,PMT-0055,Alder & Finch Foods,INV-1055,8168.84,8168.84,Bank Transfer,Operating Account,BT380613,USD
+2026-02-16,PMT-0056,Alder & Finch Foods,INV-1056,9813.56,9813.56,Bank Transfer,Operating Account,BT141947,USD
+2026-02-05,PMT-0057,Coastal Pharma Supplies,INV-1057,7827.61,7827.61,Bank Transfer,Operating Account,BT181926,USD
+2026-02-26,PMT-0058,Coastal Pharma Supplies,INV-1058,8521.93,8521.93,Bank Transfer,Operating Account,BT139580,USD
+2026-02-23,PMT-0059,Northgate Electronics,INV-1059,7537.20,7537.20,Bank Transfer,Operating Account,BT850033,USD
+2026-03-10,PMT-0060,Northgate Electronics,INV-1060,9553.37,9553.37,Bank Transfer,Operating Account,BT725733,USD
+2026-02-16,PMT-0061,Bluepeak Furniture,INV-1061,7893.92,7893.92,Bank Transfer,Operating Account,BT162084,USD
+2026-02-19,PMT-0062,Bluepeak Furniture,INV-1062,10162.48,10162.48,Bank Transfer,Operating Account,BT281539,USD
+2026-02-11,PMT-0063,Solstice Beverages,INV-1063,10450.00,10450.00,Bank Transfer,Operating Account,BT439216,USD
+2026-03-31,PMT-0064,Kestrel Auto Parts,INV-1064,5747.46,5747.46,Bank Transfer,Operating Account,BT502232,USD
+2026-02-26,PMT-0065,Lumen Home Goods,INV-1065,9412.18,9412.18,Bank Transfer,Operating Account,BT802237,USD
+2026-03-25,PMT-0066,Meridian Retail Group,INV-1066,24725.04,24725.04,Bank Transfer,Operating Account,BT714150,USD
+2026-04-16,PMT-0067,Meridian Retail Group,INV-1067,20564.94,20564.94,Bank Transfer,Operating Account,BT281645,USD
+2026-03-09,PMT-0068,Alder & Finch Foods,INV-1068,8248.15,8248.15,Bank Transfer,Operating Account,BT842666,USD
+2026-03-23,PMT-0069,Alder & Finch Foods,INV-1069,8350.25,8350.25,Bank Transfer,Operating Account,BT543510,USD
+2026-03-11,PMT-0070,Coastal Pharma Supplies,INV-1070,8882.67,8882.67,Bank Transfer,Operating Account,BT500242,USD
+2026-03-26,PMT-0071,Coastal Pharma Supplies,INV-1071,7254.84,7254.84,Bank Transfer,Operating Account,BT332194,USD
+2026-03-23,PMT-0072,Northgate Electronics,INV-1072,10890.74,10890.74,Bank Transfer,Operating Account,BT844607,USD
+2026-04-13,PMT-0073,Northgate Electronics,INV-1073,9355.29,9355.29,Bank Transfer,Operating Account,BT843696,USD
+2026-03-11,PMT-0074,Bluepeak Furniture,INV-1074,8522.44,8522.44,Bank Transfer,Operating Account,BT279007,USD
+2026-03-30,PMT-0075,Bluepeak Furniture,INV-1075,7985.92,7985.92,Bank Transfer,Operating Account,BT283689,USD
+2026-03-17,PMT-0076,Solstice Beverages,INV-1076,11179.72,11179.72,Bank Transfer,Operating Account,BT498601,USD
+2026-05-05,PMT-0077,Kestrel Auto Parts,INV-1077,5300.94,5300.94,Bank Transfer,Operating Account,BT548395,USD
+2026-03-17,PMT-0078,Lumen Home Goods,INV-1078,7659.76,7659.76,Bank Transfer,Operating Account,BT870555,USD
+2026-04-27,PMT-0079,Meridian Retail Group,INV-1079,25175.16,25175.16,Bank Transfer,Operating Account,BT358538,USD
+2026-05-11,PMT-0080,Meridian Retail Group,INV-1080,25929.44,25929.44,Bank Transfer,Operating Account,BT551433,USD
+2026-04-06,PMT-0081,Alder & Finch Foods,INV-1081,10610.88,10610.88,Bank Transfer,Operating Account,BT460206,USD
+2026-05-01,PMT-0082,Alder & Finch Foods,INV-1082,10654.00,10654.00,Bank Transfer,Operating Account,BT450653,USD
+2026-04-10,PMT-0083,Coastal Pharma Supplies,INV-1083,8617.97,8617.97,Bank Transfer,Operating Account,BT228716,USD
+2026-04-16,PMT-0084,Coastal Pharma Supplies,INV-1084,8455.17,8455.17,Bank Transfer,Operating Account,BT633723,USD
+2026-04-27,PMT-0085,Northgate Electronics,INV-1085,10738.09,10738.09,Bank Transfer,Operating Account,BT760920,USD
+2026-05-07,PMT-0086,Northgate Electronics,INV-1086,10511.88,10511.88,Bank Transfer,Operating Account,BT311631,USD
+2026-04-10,PMT-0087,Bluepeak Furniture,INV-1087,9889.86,9889.86,Bank Transfer,Operating Account,BT815459,USD
+2026-04-23,PMT-0088,Bluepeak Furniture,INV-1088,10578.59,10578.59,Bank Transfer,Operating Account,BT847595,USD
+2026-04-20,PMT-0089,Solstice Beverages,INV-1089,11445.56,11445.56,Bank Transfer,Operating Account,BT935916,USD
+2026-05-19,PMT-0090,Kestrel Auto Parts,INV-1090,5265.06,5265.06,Bank Transfer,Operating Account,BT926962,USD
+2026-05-05,PMT-0091,Lumen Home Goods,INV-1091,10165.38,10165.38,Bank Transfer,Operating Account,BT898305,USD
+2026-05-28,PMT-0092,Meridian Retail Group,INV-1092,24218.60,24218.60,Bank Transfer,Operating Account,BT594970,USD
+2026-06-15,PMT-0093,Meridian Retail Group,INV-1093,27792.73,27792.73,Bank Transfer,Operating Account,BT751982,USD
+2026-05-04,PMT-0094,Alder & Finch Foods,INV-1094,8669.63,8669.63,Bank Transfer,Operating Account,BT923243,USD
+2026-05-25,PMT-0095,Alder & Finch Foods,INV-1095,10758.24,10758.24,Bank Transfer,Operating Account,BT521424,USD
+2026-05-15,PMT-0096,Coastal Pharma Supplies,INV-1096,9794.61,9794.61,Bank Transfer,Operating Account,BT199824,USD
+2026-05-25,PMT-0097,Coastal Pharma Supplies,INV-1097,8494.92,8494.92,Bank Transfer,Operating Account,BT420507,USD
+2026-05-25,PMT-0098,Northgate Electronics,INV-1098,11037.58,11037.58,Bank Transfer,Operating Account,BT407542,USD
+2026-06-03,PMT-0099,Northgate Electronics,INV-1099,11239.49,11239.49,Bank Transfer,Operating Account,BT190550,USD
+2026-05-19,PMT-0100,Bluepeak Furniture,INV-1100,7952.10,7952.10,Bank Transfer,Operating Account,BT121882,USD
+2026-06-01,PMT-0101,Bluepeak Furniture,INV-1101,8836.86,8836.86,Bank Transfer,Operating Account,BT988969,USD
+2026-05-11,PMT-0102,Solstice Beverages,INV-1102,11878.44,11878.44,Bank Transfer,Operating Account,BT705936,USD
+2026-06-29,PMT-0103,Kestrel Auto Parts,INV-1103,11354.76,11354.76,Bank Transfer,Operating Account,BT366487,USD
+2026-06-19,PMT-0104,Meridian Retail Group,INV-1105,25015.72,25015.72,Bank Transfer,Operating Account,BT638448,USD
+2026-07-17,PMT-0105,Meridian Retail Group,INV-1106,25662.08,25662.08,Bank Transfer,Operating Account,BT122125,USD
+2026-06-08,PMT-0106,Alder & Finch Foods,INV-1107,9147.49,9147.49,Bank Transfer,Operating Account,BT476131,USD
+2026-06-22,PMT-0107,Alder & Finch Foods,INV-1108,10276.60,10276.60,Bank Transfer,Operating Account,BT425018,USD
+2026-06-15,PMT-0108,Coastal Pharma Supplies,INV-1109,9015.73,9015.73,Bank Transfer,Operating Account,BT529263,USD
+2026-06-26,PMT-0109,Coastal Pharma Supplies,INV-1110,8908.13,8908.13,Bank Transfer,Operating Account,BT814548,USD
+2026-06-17,PMT-0110,Northgate Electronics,INV-1111,9622.58,9622.58,Bank Transfer,Operating Account,BT142602,USD
+2026-07-06,PMT-0111,Northgate Electronics,INV-1112,10697.20,10697.20,Bank Transfer,Operating Account,BT593501,USD
+2026-06-16,PMT-0112,Bluepeak Furniture,INV-1113,9710.16,9710.16,Bank Transfer,Operating Account,BT218141,USD
+2026-07-06,PMT-0113,Bluepeak Furniture,INV-1114,10606.54,10606.54,Bank Transfer,Operating Account,BT834556,USD
+2026-06-19,PMT-0114,Solstice Beverages,INV-1115,12907.10,12907.10,Bank Transfer,Operating Account,BT806568,USD
+2026-07-30,PMT-0115,Kestrel Auto Parts,INV-1116,5586.74,5586.74,Bank Transfer,Operating Account,BT243306,USD
+2026-06-22,PMT-0116,Lumen Home Goods,INV-1117,10420.50,10420.50,Bank Transfer,Operating Account,BT444307,USD
+2026-07-29,PMT-0117,Meridian Retail Group,INV-1118,24440.43,24440.43,Bank Transfer,Operating Account,BT839032,USD
+2026-08-19,PMT-0118,Meridian Retail Group,INV-1119,26903.72,26903.72,Bank Transfer,Operating Account,BT218777,USD
+2026-07-13,PMT-0119,Alder & Finch Foods,INV-1120,9999.36,9999.36,Bank Transfer,Operating Account,BT436225,USD
+2026-07-22,PMT-0120,Alder & Finch Foods,INV-1121,10647.52,10647.52,Bank Transfer,Operating Account,BT374653,USD
+2026-07-09,PMT-0121,Coastal Pharma Supplies,INV-1122,8790.29,8790.29,Bank Transfer,Operating Account,BT204558,USD
+2026-07-23,PMT-0122,Coastal Pharma Supplies,INV-1123,8151.13,8151.13,Bank Transfer,Operating Account,BT158798,USD
+2026-07-23,PMT-0123,Northgate Electronics,INV-1124,11110.51,11110.51,Bank Transfer,Operating Account,BT986894,USD
+2026-08-03,PMT-0124,Northgate Electronics,INV-1125,11013.65,11013.65,Bank Transfer,Operating Account,BT358185,USD
+2026-07-20,PMT-0125,Bluepeak Furniture,INV-1126,10354.19,10354.19,Bank Transfer,Operating Account,BT358486,USD
+2026-07-27,PMT-0126,Bluepeak Furniture,INV-1127,10069.99,10069.99,Bank Transfer,Operating Account,BT510004,USD
+2026-07-06,PMT-0127,Solstice Beverages,INV-1128,14658.18,14658.18,Bank Transfer,Operating Account,BT523296,USD
+2026-09-07,PMT-0128,Kestrel Auto Parts,INV-1129,13736.75,13736.75,Bank Transfer,Operating Account,BT510485,USD
+2026-08-03,PMT-0129,Lumen Home Goods,INV-1130,10271.11,10271.11,Bank Transfer,Operating Account,BT125425,USD
+2026-09-07,PMT-0130,Meridian Retail Group,INV-1131,24435.72,24435.72,Bank Transfer,Operating Account,BT918365,USD
+2026-09-21,PMT-0131,Meridian Retail Group,INV-1132,24860.36,24860.36,Bank Transfer,Operating Account,BT354565,USD
+2026-08-03,PMT-0132,Alder & Finch Foods,INV-1133,10441.96,10441.96,Bank Transfer,Operating Account,BT550404,USD
+2026-08-25,PMT-0133,Alder & Finch Foods,INV-1134,10710.28,10710.28,Bank Transfer,Operating Account,BT567105,USD
+2026-08-12,PMT-0134,Coastal Pharma Supplies,INV-1135,10930.80,10930.80,Bank Transfer,Operating Account,BT332707,USD
+2026-08-28,PMT-0135,Coastal Pharma Supplies,INV-1136,10986.60,10986.60,Bank Transfer,Operating Account,BT222432,USD
+2026-08-24,PMT-0136,Northgate Electronics,INV-1137,9860.79,9860.79,Bank Transfer,Operating Account,BT310440,USD
+2026-09-04,PMT-0137,Northgate Electronics,INV-1138,10372.30,10372.30,Bank Transfer,Operating Account,BT263252,USD
+2026-08-05,PMT-0138,Bluepeak Furniture,INV-1139,9759.44,9759.44,Bank Transfer,Operating Account,BT403056,USD
+2026-08-25,PMT-0139,Bluepeak Furniture,INV-1140,10812.35,10812.35,Bank Transfer,Operating Account,BT543324,USD
+2026-08-10,PMT-0140,Solstice Beverages,INV-1141,12028.92,12028.92,Bank Transfer,Operating Account,BT982029,USD
+2026-09-22,PMT-0141,Kestrel Auto Parts,INV-1142,6825.80,6825.80,Bank Transfer,Operating Account,BT107986,USD
+2026-08-14,PMT-0142,Lumen Home Goods,INV-1143,10843.04,10843.04,Bank Transfer,Operating Account,BT507265,USD
+2026-09-29,PMT-0143,Meridian Retail Group,INV-1144,29193.99,29193.99,Bank Transfer,Operating Account,BT958415,USD
+2026-10-14,PMT-0144,Meridian Retail Group,INV-1145,28261.90,28261.90,Bank Transfer,Operating Account,BT982906,USD
+2026-09-03,PMT-0145,Alder & Finch Foods,INV-1146,10148.12,10148.12,Bank Transfer,Operating Account,BT497107,USD
+2026-09-21,PMT-0146,Alder & Finch Foods,INV-1147,10504.60,10504.60,Bank Transfer,Operating Account,BT605302,USD
+2026-09-07,PMT-0147,Coastal Pharma Supplies,INV-1148,11121.60,11121.60,Bank Transfer,Operating Account,BT487985,USD
+2026-09-25,PMT-0148,Coastal Pharma Supplies,INV-1149,10829.68,10829.68,Bank Transfer,Operating Account,BT567491,USD
+2026-09-28,PMT-0149,Northgate Electronics,INV-1150,10969.70,10969.70,Bank Transfer,Operating Account,BT770381,USD
+2026-10-05,PMT-0150,Northgate Electronics,INV-1151,11890.44,11890.44,Bank Transfer,Operating Account,BT185745,USD
+2026-09-21,PMT-0151,Bluepeak Furniture,INV-1152,9841.90,9841.90,Bank Transfer,Operating Account,BT464453,USD
+2026-10-12,PMT-0152,Bluepeak Furniture,INV-1153,10125.20,10125.20,Bank Transfer,Operating Account,BT688914,USD
+2026-09-16,PMT-0153,Solstice Beverages,INV-1154,12989.15,12989.15,Bank Transfer,Operating Account,BT608017,USD
+2026-09-21,PMT-0154,Lumen Home Goods,INV-1156,10826.18,10826.18,Bank Transfer,Operating Account,BT808720,USD
+2026-10-26,PMT-0155,Meridian Retail Group,INV-1157,29005.10,29005.10,Bank Transfer,Operating Account,BT444302,USD
+2026-10-13,PMT-0156,Alder & Finch Foods,INV-1159,11558.44,11558.44,Bank Transfer,Operating Account,BT987569,USD
+2026-10-19,PMT-0157,Alder & Finch Foods,INV-1160,11070.08,11070.08,Bank Transfer,Operating Account,BT208287,USD
+2026-10-07,PMT-0158,Coastal Pharma Supplies,INV-1161,10949.68,10949.68,Bank Transfer,Operating Account,BT314078,USD
+2026-10-27,PMT-0159,Coastal Pharma Supplies,INV-1162,10845.68,10845.68,Bank Transfer,Operating Account,BT685870,USD
+2026-10-19,PMT-0160,Northgate Electronics,INV-1163,11738.15,11738.15,Bank Transfer,Operating Account,BT727312,USD
+2026-10-27,PMT-0161,Northgate Electronics,INV-1164,10963.43,10963.43,Bank Transfer,Operating Account,BT187068,USD
+2026-10-23,PMT-0162,Bluepeak Furniture,INV-1165,10782.38,10782.38,Bank Transfer,Operating Account,BT872735,USD
+2026-10-19,PMT-0163,Solstice Beverages,INV-1167,14722.06,14722.06,Bank Transfer,Operating Account,BT602301,USD
+2026-10-27,PMT-0164,Lumen Home Goods,INV-1169,12980.36,12980.36,Bank Transfer,Operating Account,BT254102,USD

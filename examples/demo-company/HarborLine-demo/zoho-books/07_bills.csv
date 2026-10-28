@@ -1,0 +1,99 @@
+Bill Date,Bill Number,Bill Status,Vendor Name,Due Date,Payment Terms,Currency Code,Account,Description,Quantity,Rate,Item Total
+2025-09-29,AFC-2509-001,Open,Atlas Fuel Cards,2025-10-14,15,USD,Fuel,Fuel card statement Sep 2025,1,39143.47,39143.47
+2025-09-22,SH-2509-002,Open,Swiftway Haulage,2025-10-22,30,USD,Subcontracted Haulage,Subcontracted trips Sep 2025,1,18736.39,18736.39
+2025-09-17,IFS-2509-003,Open,Ironclad Fleet Services,2025-10-17,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,9337.92,9337.92
+2025-09-01,HRP-2509-004,Open,Harbor Road Properties,2025-09-01,0,USD,Warehouse Rent,Warehouse rent Sep 2025,1,14500.00,14500.00
+2025-09-10,BU-2509-005,Open,Brightspark Utilities,2025-09-30,20,USD,Utilities,"Power, water and telecoms",1,2519.42,2519.42
+2025-09-01,CS-2509-006,Open,Cloudnine Software,2025-10-01,30,USD,Software Subscriptions,Fleet tracking and office software Sep 2025,1,1450.00,1450.00
+2025-09-15,K&R-2509-007,Open,Kingsley & Rowe Advisors,2025-10-15,30,USD,Professional Fees,Quarterly accounting and advisory,1,4200.00,4200.00
+2025-10-29,AFC-2510-008,Open,Atlas Fuel Cards,2025-11-13,15,USD,Fuel,Fuel card statement Oct 2025,1,39623.63,39623.63
+2025-10-21,SH-2510-009,Open,Swiftway Haulage,2025-11-20,30,USD,Subcontracted Haulage,Subcontracted trips Oct 2025,1,23406.44,23406.44
+2025-10-17,IFS-2510-010,Open,Ironclad Fleet Services,2025-11-16,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,8478.29,8478.29
+2025-10-01,HRP-2510-011,Open,Harbor Road Properties,2025-10-01,0,USD,Warehouse Rent,Warehouse rent Oct 2025,1,14500.00,14500.00
+2025-10-10,BU-2510-012,Open,Brightspark Utilities,2025-10-30,20,USD,Utilities,"Power, water and telecoms",1,1983.51,1983.51
+2025-10-01,CS-2510-013,Open,Cloudnine Software,2025-10-31,30,USD,Software Subscriptions,Fleet tracking and office software Oct 2025,1,1450.00,1450.00
+2025-11-28,AFC-2511-014,Open,Atlas Fuel Cards,2025-12-13,15,USD,Fuel,Fuel card statement Nov 2025,1,42221.35,42221.35
+2025-11-21,SH-2511-015,Open,Swiftway Haulage,2025-12-21,30,USD,Subcontracted Haulage,Subcontracted trips Nov 2025,1,22546.40,22546.40
+2025-11-13,IFS-2511-016,Open,Ironclad Fleet Services,2025-12-13,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,7544.03,7544.03
+2025-11-01,HRP-2511-017,Open,Harbor Road Properties,2025-11-01,0,USD,Warehouse Rent,Warehouse rent Nov 2025,1,14500.00,14500.00
+2025-11-10,BU-2511-018,Open,Brightspark Utilities,2025-11-30,20,USD,Utilities,"Power, water and telecoms",1,2395.26,2395.26
+2025-11-01,CS-2511-019,Open,Cloudnine Software,2025-12-01,30,USD,Software Subscriptions,Fleet tracking and office software Nov 2025,1,1450.00,1450.00
+2025-12-29,AFC-2512-020,Open,Atlas Fuel Cards,2026-01-13,15,USD,Fuel,Fuel card statement Dec 2025,1,48397.41,48397.41
+2025-12-22,SH-2512-021,Open,Swiftway Haulage,2026-01-21,30,USD,Subcontracted Haulage,Subcontracted trips Dec 2025,1,21470.44,21470.44
+2025-12-18,IFS-2512-022,Open,Ironclad Fleet Services,2026-01-17,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,5051.69,5051.69
+2025-12-01,HRP-2512-023,Open,Harbor Road Properties,2025-12-01,0,USD,Warehouse Rent,Warehouse rent Dec 2025,1,14500.00,14500.00
+2025-12-10,BU-2512-024,Open,Brightspark Utilities,2025-12-30,20,USD,Utilities,"Power, water and telecoms",1,2417.37,2417.37
+2025-12-01,CS-2512-025,Open,Cloudnine Software,2025-12-31,30,USD,Software Subscriptions,Fleet tracking and office software Dec 2025,1,1450.00,1450.00
+2025-12-15,K&R-2512-026,Open,Kingsley & Rowe Advisors,2026-01-14,30,USD,Professional Fees,Quarterly accounting and advisory,1,4200.00,4200.00
+2026-01-29,AFC-2601-027,Open,Atlas Fuel Cards,2026-02-13,15,USD,Fuel,Fuel card statement Jan 2026,1,33704.67,33704.67
+2026-01-21,SH-2601-028,Open,Swiftway Haulage,2026-02-20,30,USD,Subcontracted Haulage,Subcontracted trips Jan 2026,1,18379.65,18379.65
+2026-01-12,IFS-2601-029,Open,Ironclad Fleet Services,2026-02-11,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,6226.28,6226.28
+2026-01-01,HRP-2601-030,Open,Harbor Road Properties,2026-01-01,0,USD,Warehouse Rent,Warehouse rent Jan 2026,1,14500.00,14500.00
+2026-01-12,BU-2601-031,Open,Brightspark Utilities,2026-02-01,20,USD,Utilities,"Power, water and telecoms",1,2700.45,2700.45
+2026-01-01,CS-2601-032,Open,Cloudnine Software,2026-01-31,30,USD,Software Subscriptions,Fleet tracking and office software Jan 2026,1,1450.00,1450.00
+2026-02-26,AFC-2602-033,Open,Atlas Fuel Cards,2026-03-13,15,USD,Fuel,Fuel card statement Feb 2026,1,32876.18,32876.18
+2026-02-23,SH-2602-034,Open,Swiftway Haulage,2026-03-25,30,USD,Subcontracted Haulage,Subcontracted trips Feb 2026,1,18505.84,18505.84
+2026-02-13,IFS-2602-035,Open,Ironclad Fleet Services,2026-03-15,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,8889.37,8889.37
+2026-02-01,HRP-2602-036,Open,Harbor Road Properties,2026-02-01,0,USD,Warehouse Rent,Warehouse rent Feb 2026,1,14500.00,14500.00
+2026-02-10,BU-2602-037,Open,Brightspark Utilities,2026-03-02,20,USD,Utilities,"Power, water and telecoms",1,2592.50,2592.50
+2026-02-01,CS-2602-038,Open,Cloudnine Software,2026-03-03,30,USD,Software Subscriptions,Fleet tracking and office software Feb 2026,1,1450.00,1450.00
+2026-03-30,AFC-2603-039,Open,Atlas Fuel Cards,2026-04-14,15,USD,Fuel,Fuel card statement Mar 2026,1,36053.37,36053.37
+2026-03-23,SH-2603-040,Open,Swiftway Haulage,2026-04-22,30,USD,Subcontracted Haulage,Subcontracted trips Mar 2026,1,18378.66,18378.66
+2026-03-10,IFS-2603-041,Open,Ironclad Fleet Services,2026-04-09,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,5772.80,5772.80
+2026-03-01,HRP-2603-042,Open,Harbor Road Properties,2026-03-01,0,USD,Warehouse Rent,Warehouse rent Mar 2026,1,14500.00,14500.00
+2026-03-10,BU-2603-043,Open,Brightspark Utilities,2026-03-30,20,USD,Utilities,"Power, water and telecoms",1,2131.78,2131.78
+2026-03-01,CS-2603-044,Open,Cloudnine Software,2026-03-31,30,USD,Software Subscriptions,Fleet tracking and office software Mar 2026,1,1690.00,1690.00
+2026-03-16,K&R-2603-045,Open,Kingsley & Rowe Advisors,2026-04-15,30,USD,Professional Fees,Quarterly accounting and advisory,1,4200.00,4200.00
+2026-04-28,AFC-2604-046,Open,Atlas Fuel Cards,2026-05-13,15,USD,Fuel,Fuel card statement Apr 2026,1,39120.69,39120.69
+2026-04-21,SH-2604-047,Open,Swiftway Haulage,2026-05-21,30,USD,Subcontracted Haulage,Subcontracted trips Apr 2026,1,25221.64,25221.64
+2026-04-07,IFS-2604-048,Open,Ironclad Fleet Services,2026-05-07,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,7714.23,7714.23
+2026-04-01,HRP-2604-049,Open,Harbor Road Properties,2026-04-01,0,USD,Warehouse Rent,Warehouse rent Apr 2026,1,14500.00,14500.00
+2026-04-10,BU-2604-050,Open,Brightspark Utilities,2026-04-30,20,USD,Utilities,"Power, water and telecoms",1,2256.69,2256.69
+2026-04-01,CS-2604-051,Open,Cloudnine Software,2026-05-01,30,USD,Software Subscriptions,Fleet tracking and office software Apr 2026,1,1690.00,1690.00
+2026-05-29,AFC-2605-052,Open,Atlas Fuel Cards,2026-06-13,15,USD,Fuel,Fuel card statement May 2026,1,42918.05,42918.05
+2026-05-21,SH-2605-053,Open,Swiftway Haulage,2026-06-20,30,USD,Subcontracted Haulage,Subcontracted trips May 2026,1,27947.66,27947.66
+2026-05-15,IFS-2605-054,Open,Ironclad Fleet Services,2026-06-14,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,7483.91,7483.91
+2026-05-01,HRP-2605-055,Open,Harbor Road Properties,2026-05-01,0,USD,Warehouse Rent,Warehouse rent May 2026,1,14500.00,14500.00
+2026-05-11,BU-2605-056,Open,Brightspark Utilities,2026-05-31,20,USD,Utilities,"Power, water and telecoms",1,2056.78,2056.78
+2026-05-01,CS-2605-057,Open,Cloudnine Software,2026-05-31,30,USD,Software Subscriptions,Fleet tracking and office software May 2026,1,1690.00,1690.00
+2026-06-29,AFC-2606-058,Open,Atlas Fuel Cards,2026-07-14,15,USD,Fuel,Fuel card statement Jun 2026,1,44174.29,44174.29
+2026-06-22,SH-2606-059,Open,Swiftway Haulage,2026-07-22,30,USD,Subcontracted Haulage,Subcontracted trips Jun 2026,1,25479.20,25479.20
+2026-06-22,IFS-2606-060,Open,Ironclad Fleet Services,2026-07-22,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,6958.75,6958.75
+2026-06-01,HRP-2606-061,Open,Harbor Road Properties,2026-06-01,0,USD,Warehouse Rent,Warehouse rent Jun 2026,1,14500.00,14500.00
+2026-06-10,BU-2606-062,Open,Brightspark Utilities,2026-06-30,20,USD,Utilities,"Power, water and telecoms",1,2155.52,2155.52
+2026-06-01,CS-2606-063,Open,Cloudnine Software,2026-07-01,30,USD,Software Subscriptions,Fleet tracking and office software Jun 2026,1,1690.00,1690.00
+2026-06-15,K&R-2606-064,Open,Kingsley & Rowe Advisors,2026-07-15,30,USD,Professional Fees,Quarterly accounting and advisory,1,4200.00,4200.00
+2026-07-29,AFC-2607-065,Open,Atlas Fuel Cards,2026-08-13,15,USD,Fuel,Fuel card statement Jul 2026,1,39963.04,39963.04
+2026-07-21,SH-2607-066,Open,Swiftway Haulage,2026-08-20,30,USD,Subcontracted Haulage,Subcontracted trips Jul 2026,1,23641.00,23641.00
+2026-07-13,IFS-2607-067,Open,Ironclad Fleet Services,2026-08-12,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,4808.45,4808.45
+2026-07-01,HRP-2607-068,Open,Harbor Road Properties,2026-07-01,0,USD,Warehouse Rent,Warehouse rent Jul 2026,1,14500.00,14500.00
+2026-07-10,BU-2607-069,Open,Brightspark Utilities,2026-07-30,20,USD,Utilities,"Power, water and telecoms",1,2366.99,2366.99
+2026-07-01,CS-2607-070,Open,Cloudnine Software,2026-07-31,30,USD,Software Subscriptions,Fleet tracking and office software Jul 2026,1,1690.00,1690.00
+2026-08-31,AFC-2608-071,Open,Atlas Fuel Cards,2026-09-15,15,USD,Fuel,Fuel card statement Aug 2026,1,41217.23,41217.23
+2026-08-21,SH-2608-072,Open,Swiftway Haulage,2026-09-20,30,USD,Subcontracted Haulage,Subcontracted trips Aug 2026,1,25115.82,25115.82
+2026-08-19,IFS-2608-073,Open,Ironclad Fleet Services,2026-09-18,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,5118.32,5118.32
+2026-08-01,HRP-2608-074,Open,Harbor Road Properties,2026-08-01,0,USD,Warehouse Rent,Warehouse rent Aug 2026,1,14500.00,14500.00
+2026-08-10,BU-2608-075,Open,Brightspark Utilities,2026-08-30,20,USD,Utilities,"Power, water and telecoms",1,2699.34,2699.34
+2026-08-01,CS-2608-076,Open,Cloudnine Software,2026-08-31,30,USD,Software Subscriptions,Fleet tracking and office software Aug 2026,1,1690.00,1690.00
+2026-09-28,AFC-2609-077,Open,Atlas Fuel Cards,2026-10-13,15,USD,Fuel,Fuel card statement Sep 2026,1,47800.36,47800.36
+2026-09-21,SH-2609-078,Open,Swiftway Haulage,2026-10-21,30,USD,Subcontracted Haulage,Subcontracted trips Sep 2026,1,31415.57,31415.57
+2026-09-16,IFS-2609-079,Open,Ironclad Fleet Services,2026-10-16,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,6307.78,6307.78
+2026-09-01,HRP-2609-080,Open,Harbor Road Properties,2026-09-01,0,USD,Warehouse Rent,Warehouse rent Sep 2026,1,14500.00,14500.00
+2026-09-10,BU-2609-081,Open,Brightspark Utilities,2026-09-30,20,USD,Utilities,"Power, water and telecoms",1,2417.87,2417.87
+2026-09-01,CS-2609-082,Open,Cloudnine Software,2026-10-01,30,USD,Software Subscriptions,Fleet tracking and office software Sep 2026,1,1690.00,1690.00
+2026-09-15,K&R-2609-083,Open,Kingsley & Rowe Advisors,2026-10-15,30,USD,Professional Fees,Quarterly accounting and advisory,1,4200.00,4200.00
+2026-10-27,AFC-2610-084,Open,Atlas Fuel Cards,2026-11-11,15,USD,Fuel,Fuel card statement Oct 2026,1,48192.14,48192.14
+2026-10-21,SH-2610-085,Open,Swiftway Haulage,2026-11-20,30,USD,Subcontracted Haulage,Subcontracted trips Oct 2026,1,31621.50,31621.50
+2026-10-23,IFS-2610-086,Open,Ironclad Fleet Services,2026-11-22,30,USD,Fleet Maintenance,Fleet servicing and repairs,1,7414.66,7414.66
+2026-10-01,HRP-2610-087,Open,Harbor Road Properties,2026-10-01,0,USD,Warehouse Rent,Warehouse rent Oct 2026,1,14500.00,14500.00
+2026-10-12,BU-2610-088,Open,Brightspark Utilities,2026-11-01,20,USD,Utilities,"Power, water and telecoms",1,2243.92,2243.92
+2026-10-01,CS-2610-089,Open,Cloudnine Software,2026-10-31,30,USD,Software Subscriptions,Fleet tracking and office software Oct 2026,1,1690.00,1690.00
+2026-02-16,EFC-2602-090,Open,Eastport Fitout Contractors,2026-03-18,30,USD,Professional Fees,EWF - design and permits,1,6800.00,6800.00
+2026-03-18,EFC-2603-091,Open,Eastport Fitout Contractors,2026-04-17,30,USD,Professional Fees,EWF - site preparation,1,9400.00,9400.00
+2026-04-20,RSS-2604-092,Open,Rackline Storage Systems,2026-06-04,45,USD,Warehouse Racking,"EWF - pallet racking, phase 1",1,38500.00,38500.00
+2026-05-19,EFC-2605-093,Open,Eastport Fitout Contractors,2026-06-18,30,USD,Professional Fees,EWF - electrical and lighting,1,11200.00,11200.00
+2026-06-22,RSS-2606-094,Open,Rackline Storage Systems,2026-08-06,45,USD,Warehouse Racking,"EWF - pallet racking, phase 2",1,29800.00,29800.00
+2026-07-21,EFC-2607-095,Open,Eastport Fitout Contractors,2026-08-20,30,USD,Professional Fees,EWF - fire safety works,1,8600.00,8600.00
+2026-08-18,EFC-2608-096,Open,Eastport Fitout Contractors,2026-09-17,30,USD,Professional Fees,Dock levellers installation,1,7300.00,7300.00
+2026-09-22,RSS-2609-097,Open,Rackline Storage Systems,2026-11-06,45,USD,Warehouse Racking,EWF - mezzanine racking,1,22600.00,22600.00
+2026-10-20,EFC-2610-098,Open,Eastport Fitout Contractors,2026-11-19,30,USD,Professional Fees,"EWF - floor marking, signage and dock office",1,19900.00,19900.00
