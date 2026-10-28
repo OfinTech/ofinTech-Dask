@@ -42,6 +42,7 @@ workflows and messaging channels). It contains no OpenHuman code. See [LICENSES.
 | **Approvals** | Anything that leaves the conversation waits for a person with the editor role or higher: sending e-mail or chat messages, running workflows, MCP tools. |
 | **Finance tools** | NPV/IRR, XNPV/XIRR (checked against Excel's documented examples), loan schedules, depreciation, ratios, variance analysis, VAT/GST/sales-tax splits, break-even, growth/CAGR, currency conversion at a stated rate. |
 | **Skills** | 15 built-in finance skills (month-end close, bank reconciliation, variance analysis, 13-week cash forecast, AR collections, IFRS 15/ASC 606, …). Write or import your own (`SKILL.md`). Skills are instructions only; nothing in them is executed. |
+| **Cost centres** | Follow a project or department through the general ledger, the journal and the bank. Cost centres are defined by rules (tags, accounts, suppliers, words), so they work on ledgers that were never tagged; the page shows the untagged share. It shows the cost against the cash that left the bank (paid directly, supplier bills paid or unpaid) and the date the budget runs out at the current pace. Budgets are read from your own Excel or Word file, and each line keeps its cell. See [docs/COST_CENTRES.md](docs/COST_CENTRES.md). |
 | **Data and dashboards** | Excel/CSV import that understands number and date formats from different countries; dashboards with KPI, bar, line, area and table widgets, grouped by month, quarter, year or fiscal year. |
 | **Accounting systems** | QuickBooks Online, Zoho Books, Xero and **Odoo** 17+. Any other ledger or ERP links through the **Open Accounting Connector** (OpenAPI 3.1, a reference adapter and a push API): [docs/ACCOUNTING_API.md](docs/ACCOUNTING_API.md). Read-only. |
 | **Workflows** | Triggers: by hand, schedule (with a preview of the next runs), incoming e-mail, chat command or a **webhook** from another system. Steps: assistant, tool, **file** (refresh a workbook or fill your own file), approval, condition, notify; retries per step; a run timeline with outputs and durations; a gallery of finance templates. See [docs/WORKFLOWS.md](docs/WORKFLOWS.md). |
@@ -140,7 +141,7 @@ e2e/         Browser smoke test with a fake model
 landing/     The public website (static, nginx in Docker)
 examples/    Reference adapter for the Open Accounting Connector; sample output files
 docs/        Architecture, security, deployment, connectors, accounting API, files, knowledge, memory,
-             workflows, languages, costs, skills, MCP, testing, releasing; brand assets
+             workflows, cost centres, languages, costs, skills, MCP, testing, releasing; brand assets
 ```
 
 Tests: `cd engine && python -m unittest discover -s tests -t .`; UI: `cd ui && npx tsc --noEmit && npm run

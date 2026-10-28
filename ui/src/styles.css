@@ -472,3 +472,39 @@ li.tl-not-run, li.tl-pending, li.tl-skipped { opacity: .6; }
 /* mixed Arabic and English text: each paragraph takes the direction of its first letter */
 [dir="rtl"] :is(p, li, td, th, h1, h2, h3, .t, .answer, .bubble, .memory-text, .result-title, .result-snippet, textarea, input:not([type])) {
   unicode-bidi: plaintext; }
+
+/* ---- cost centres ---------------------------------------------------------------------------------- */
+.cc-section { background: var(--panel); border: 1px solid var(--rule); border-top: 0; padding: var(--s4) var(--s5); }
+.kpis + .cc-section { border-top: 1px solid var(--rule); margin-top: var(--s4); border-radius: var(--radius) var(--radius) 0 0; }
+.cc-section:last-of-type { border-radius: 0 0 var(--radius) var(--radius); }
+.cc-section .h3 { margin-bottom: var(--s2); }
+.runout { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 620; line-height: 1.3; margin: 0 0 var(--s3);
+  max-width: 48ch; }
+.runout.amber { color: var(--amber); }
+.runout.red { color: var(--red); }
+.meter { position: relative; height: 14px; background: var(--sunk); border-radius: 3px; }
+.meter-fill { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--ink); border-radius: 3px; }
+.meter-proj { position: absolute; inset-block: 0; background: repeating-linear-gradient(135deg, var(--ink-3) 0 3px, transparent 3px 7px);
+  opacity: .7; }
+.meter-budget { position: absolute; top: -5px; bottom: -5px; width: 2px; margin-inline-start: -1px; background: var(--blue); }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-inline-end: 6px; vertical-align: -1px; }
+.swatch.spent { background: var(--ink); }
+.swatch.proj { background: repeating-linear-gradient(135deg, var(--ink-3) 0 2px, transparent 2px 4px); outline: 1px solid var(--ink-3); }
+.swatch.budget { background: var(--blue); width: 3px; }
+.cc-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(260px, 2fr); gap: var(--s5); align-items: start; }
+.split { display: flex; height: 10px; border-radius: 3px; overflow: hidden; background: var(--sunk); }
+.split-a { background: var(--ink); }
+.split-b { flex: 1; background: repeating-linear-gradient(135deg, var(--ink-3) 0 2px, transparent 2px 5px); opacity: .7; }
+.rules { margin: var(--s3) 0; padding-inline-start: 20px; }
+.rules li { padding: 4px 0; border-bottom: 1px dotted var(--rule); }
+.cond { border: 1px solid var(--rule); border-radius: var(--radius); padding: var(--s3); margin: var(--s2) 0; background: var(--paper); }
+.cond .spread { margin-top: var(--s2); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-height: 38px; padding: 4px 6px; border: 1px solid var(--rule-strong);
+  border-radius: var(--radius); background: var(--panel); }
+.chips:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; }
+.chips .chip { padding: 1px 4px 1px 10px; font-size: var(--t-sm); cursor: default; }
+.chips .chip button { border: 0; background: none; cursor: pointer; padding: 0 4px; color: var(--ink-3); font-size: 15px; line-height: 1; }
+.chip-input { flex: 1; min-width: 120px; border: 0; outline: 0; background: transparent; padding: 4px; }
+tr.clickable { cursor: pointer; }
+tr.clickable:hover td { background: var(--blue-wash); }
+@media (max-width: 860px) { .cc-cols { grid-template-columns: 1fr; } }

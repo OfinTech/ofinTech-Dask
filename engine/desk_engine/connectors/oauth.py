@@ -62,7 +62,7 @@ PROVIDERS: dict[str, OAuthProvider] = {
         "https://identity.xero.com/connect/token",
         ["openid", "profile", "email", "offline_access", "accounting.reports.profitandloss.read",
          "accounting.reports.balancesheet.read", "accounting.reports.aged.read", "accounting.invoices.read",
-         "accounting.contacts.read", "accounting.settings.read"],
+         "accounting.contacts.read", "accounting.settings.read", "accounting.journals.read"],
         basic_auth=True, developer_portal="https://developer.xero.com/app/manage"),
     "google": OAuthProvider(
         "google", "Google (Gmail, Drive, Sheets)",

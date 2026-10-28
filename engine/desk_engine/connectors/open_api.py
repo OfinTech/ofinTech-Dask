@@ -2,7 +2,8 @@
 
 Two ways, one data format (the models below):
 
-* **Pull** — you run a small HTTPS adapter in front of your system that answers five GET endpoints. OfinTech Desk
+* **Pull** — you run a small HTTPS adapter in front of your system that answers the GET endpoints below (journal
+  lines are optional). OfinTech Desk
   calls it with a bearer key on every sync and whenever the assistant asks for a report.
 * **Push** — your system sends the same JSON to OfinTech Desk's ingest API with a per-connection ingest key
   (useful behind firewalls, or from scheduled exports).
@@ -75,6 +76,41 @@ class Document(_M):
     status: str | None = Field(default=None, max_length=40, examples=["Open"])
 
 
+AccountClass = Literal["Bank", "Receivable", "Payable", "Asset", "Liability", "Equity", "Income", "Other income",
+                       "Cost of sales", "Expense", "Other expense"]
+
+
+class Tag(_M):
+    """A dimension on a journal line: project, cost centre, department, class, analytic account."""
+    dimension: str = Field(default="", max_length=60, examples=["Project"])
+    value: str = Field(min_length=1, max_length=120, examples=["Riyadh tower"])
+    percent: float | None = Field(default=None, gt=0, le=100,
+                                  description="share of the line on this value when a line is split; omit for 100")
+
+
+class JournalLine(_M):
+    """One line of a posted journal entry. Lines of the same entry share ``entry``; each entry balances."""
+    date: str = ISODate
+    entry: str = Field(min_length=1, max_length=80, description="journal entry number or id",
+                       examples=["BILL/2026/0142"])
+    type: str | None = Field(default=None, max_length=60, examples=["Supplier bill"])
+    account_code: str | None = Field(default=None, max_length=40, examples=["6100"])
+    account: str = Field(min_length=1, max_length=200, examples=["Subcontractors"])
+    account_class: AccountClass = Field(description="Bank for bank and cash accounts; Payable/Receivable for the "
+                                                    "supplier and customer control accounts")
+    debit: float = Field(default=0, ge=0)
+    credit: float = Field(default=0, ge=0)
+    description: str | None = Field(default=None, max_length=500)
+    party: str | None = Field(default=None, max_length=200, description="customer or supplier",
+                              examples=["Gulf Steel Co."])
+    tags: list[Tag] = Field(default_factory=list, max_length=10)
+
+
+class JournalLinesResponse(_M):
+    lines: list[JournalLine] = Field(max_length=200000)
+    next_cursor: str | None = Field(default=None, description="pull only: pass as ?cursor= to get the next page")
+
+
 class PLResponse(_M):
     lines: list[PLLine] = Field(max_length=200000)
 
@@ -95,7 +131,7 @@ class IngestResult(_M):
 
 
 KINDS = {"profit-and-loss": "profit_and_loss", "balance-sheet": "balance_sheet", "invoices": "invoices",
-         "bills": "bills", "company": "company"}
+         "bills": "bills", "company": "company", "journal-lines": "journal_lines"}
 
 
 def _validate(model: type[_M], data: Any, what: str) -> Any:
@@ -176,6 +212,27 @@ class PullClient:
     async def bills(self, open_only: bool = True) -> list[dict[str, Any]]:
         return await self._docs("/v1/bills", open_only)
 
+    async def journal_lines(self, start: date, end: date) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        cursor: str | None = None
+        for _ in range(400):
+            params: dict[str, Any] = {"start": start.isoformat(), "end": end.isoformat()}
+            if cursor:
+                params["cursor"] = cursor
+            try:
+                raw = await self._get("/v1/journal-lines", params)
+            except UpstreamError as exc:
+                if "HTTP 404" in exc.message:
+                    raise UpstreamError("The adapter does not offer /v1/journal-lines (optional); cost centres "
+                                        "need it.", code="not_supported") from exc
+                raise
+            page = _validate(JournalLinesResponse, raw, "journal-lines")
+            out.extend(ln.model_dump() for ln in page.lines)
+            cursor = page.next_cursor
+            if not cursor:
+                break
+        return out
+
 
 # --- push: stored datasets serve the same reads ------------------------------------------------------------------
 
@@ -233,7 +290,8 @@ async def ingest(engine: Engine, connection: dict[str, Any], kind: str, payload:
     """Validates pushed data and replaces the matching dataset."""
     from ..data.store import upsert_named
     from ..db import dumps, now
-    from .accounting import BS_COLUMNS, PL_COLUMNS, add_net_profit, doc_columns, doc_rows, with_aging
+    from .accounting import (BS_COLUMNS, GL_COLUMNS, PL_COLUMNS, add_net_profit, doc_columns, doc_rows, gl_rows,
+                             with_aging)
 
     if kind not in KINDS:
         raise Invalid(f"Unknown kind '{kind}'. Use one of: {', '.join(KINDS)}.")
@@ -257,6 +315,11 @@ async def ingest(engine: Engine, connection: dict[str, Any], kind: str, payload:
             ds = upsert_named(engine, ws_id, name=f"{label} · Profit and loss", source="custom", source_ref=ref,
                               columns=PL_COLUMNS, rows=[[x["period"], x["section"], x["account"], x["amount"]]
                                                         for x in lines], created_by=None)
+        elif kind == "journal-lines":
+            gl = [ln.model_dump() for ln in JournalLinesResponse.model_validate(payload).lines]
+            ds = upsert_named(engine, ws_id, name=f"{label} · General ledger", source="custom",
+                              source_ref=ref | {"kind": "general_ledger"}, columns=GL_COLUMNS, rows=gl_rows(gl),
+                              created_by=None)
         elif kind == "balance-sheet":
             bs = [ln.model_dump() for ln in BSResponse.model_validate(payload).lines]
             ds = upsert_named(engine, ws_id, name=f"{label} · Balance sheet", source="custom", source_ref=ref,
@@ -277,7 +340,8 @@ async def ingest(engine: Engine, connection: dict[str, Any], kind: str, payload:
 # --- OpenAPI ------------------------------------------------------------------------------------------------------
 
 def openapi(public_url: str = "https://desk.example.com") -> dict[str, Any]:
-    models = [Company, PLLine, BSLine, Document, PLResponse, BSResponse, DocumentsResponse, IngestResult]
+    models = [Company, PLLine, BSLine, Document, PLResponse, BSResponse, DocumentsResponse, Tag, JournalLine,
+              JournalLinesResponse, IngestResult]
     schemas: dict[str, Any] = {}
     for m in models:
         s = m.model_json_schema(ref_template="#/components/schemas/{model}")
@@ -317,9 +381,16 @@ def openapi(public_url: str = "https://desk.example.com") -> dict[str, Any]:
         "/v1/bills": {"get": {"tags": ["Adapter (you implement)"], "operationId": "adapterBills",
                               "summary": "Supplier bills and credit notes", "parameters": [status_param, cursor_param],
                               "responses": ok("DocumentsResponse", "One page of documents")}},
+        "/v1/journal-lines": {"get": {
+            "tags": ["Adapter (you implement)"], "operationId": "adapterJournalLines",
+            "summary": "Optional: posted journal lines with their dimensions (used by cost centres)",
+            "parameters": [{"name": "start", "in": "query", "required": True, "schema": {"type": "string", "format": "date"}},
+                           {"name": "end", "in": "query", "required": True, "schema": {"type": "string", "format": "date"}},
+                           cursor_param],
+            "responses": ok("JournalLinesResponse", "One page of journal lines")}},
     }
     body = {"profit-and-loss": "PLResponse", "balance-sheet": "BSResponse", "invoices": "DocumentsResponse",
-            "bills": "DocumentsResponse", "company": "Company"}
+            "bills": "DocumentsResponse", "company": "Company", "journal-lines": "JournalLinesResponse"}
     push = {
         f"/api/ingest/v1/accounting/{kind}": {"post": {
             "tags": ["Push (OfinTech Desk implements)"], "operationId": f"push{kind.title().replace('-', '')}",
@@ -337,7 +408,7 @@ def openapi(public_url: str = "https://desk.example.com") -> dict[str, Any]:
     return {
         "openapi": "3.1.0",
         "info": {"title": "OfinTech Desk — Open Accounting Connector", "version": "1.0.0",
-                 "description": "Connect any accounting system. Pull: implement the five GET endpoints in an HTTPS "
+                 "description": "Connect any accounting system. Pull: implement the GET endpoints (journal lines are optional) in an HTTPS "
                                 "adapter in front of your system; OfinTech Desk calls them with `Authorization: Bearer "
                                 "<adapter key>`. Push: send the same JSON to the ingest endpoints with the connection's "
                                 "ingest key. Amounts are in the company's base currency unless a document says "
