@@ -3,7 +3,16 @@ import { del, get, openExternal, patch, post, put } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
 import { fmtRelative } from "../lib/format";
 import { Confirm, ErrorBox, Field, Icon, Loading, Modal, PageHead, StatusTag, useAction, useLoad, useToast } from "../components/ui";
-import { tr } from "../lib/i18n";
+import { N, tr } from "../lib/i18n";
+
+/** Event groups and delivery statuses named by the engine (listed so they are translated). */
+export const WEBHOOK_WORDS = [N("workflow"), N("approval"), N("file"), N("forecast"), N("cost centre"), N("kpi"), N("memory"), N("dataset"),
+  N("connection"), N("member"), N("document"), N("test"), N("delivered"), N("received"), N("workflow started"), N("retrying"),
+  N("workflow runs started, finished or failed; workflows changed"), N("approvals decided"),
+  N("files created, revised, reviewed, edited, uploaded or deleted"), N("forecasts created, submitted, approved, archived or made the plan"),
+  N("cost centres and their budgets"), N("KPI targets and formulas changed"), N("memory proposed, saved, edited or deleted"),
+  N("datasets imported or deleted"), N("connections and syncs"), N("members added, roles changed, removed"), N("documents added or deleted"),
+  N("test events sent from the Connections page")];
 
 const ACCOUNTING = [
   ["quickbooks", "QuickBooks Online", "Profit and loss by month, balance sheet, invoices and bills (read-only)."],
@@ -56,9 +65,215 @@ export function ConnectionsPage(): ReactNode {
           <PipesHubCard conn={conns.find((c) => c.provider === "pipeshub")} admin={admin} onChange={data.reload} />
         </div>
       </div>
+      <div className="section"><Webhooks /></div>
       <div className="section"><McpServers /></div>
       {oauthOpen && <OAuthApps onClose={() => { setOauthOpen(false); data.reload(); }} />}
     </div>
+  );
+}
+
+// ---- webhooks ------------------------------------------------------------------------------------
+function Webhooks(): ReactNode {
+  const { ws, session } = useApp();
+  const data = useLoad(() => get<any>(wsPath(ws, "/webhooks")), [ws.id]);
+  const [creating, setCreating] = useState<"in" | "out" | null>(null);
+  const [secret, setSecret] = useState<{ hook: any; secret: string } | null>(null);
+  const [log, setLog] = useState<any>(null);
+  const [confirm, setConfirm] = useState<any>(null);
+  const { busy, run } = useAction();
+  const admin = can(ws, "admin");
+  const hooks: any[] = data.data?.webhooks || [];
+  const groups: Record<string, string> = data.data?.event_groups || {};
+  const workflows: any[] = data.data?.workflows || [];
+  const incoming = hooks.filter((h) => h.direction === "in");
+  const outgoing = hooks.filter((h) => h.direction === "out");
+
+  async function toggle(h: any) {
+    if (await run(() => patch(wsPath(ws, `/webhooks/${h.id}`), { enabled: !h.enabled }))) data.reload();
+  }
+  async function rotate(h: any) {
+    const r: any = await run(() => post(wsPath(ws, `/webhooks/${h.id}/secret`)));
+    if (r) { setSecret({ hook: h, secret: r.secret }); data.reload(); }
+  }
+  async function sendTest(h: any) {
+    if (await run(() => post(wsPath(ws, `/webhooks/${h.id}/test`)), tr("Test event queued; it is sent within a few seconds"))) data.reload();
+  }
+
+  function Hook({ h }: { h: any }): ReactNode {
+    return (
+      <div className="stack" style={{ borderTop: "1px solid var(--rule)", paddingTop: 10 }}>
+        <div className="spread"><strong className="small">{h.name}</strong>
+          <span className="row" style={{ gap: 6 }}>
+            {h.last_status && <StatusTag status={h.last_status} />}
+            <span className={`tag ${h.enabled ? "green" : ""}`}>{h.enabled ? tr("on") : tr("off")}</span></span></div>
+        <div className="xs" style={{ overflowWrap: "anywhere" }}>
+          <span className="muted">{h.direction === "in" ? tr("Endpoint") : tr("Sends to")}</span>{" "}<code>{h.direction === "in" ? h.endpoint : h.url}</code></div>
+        <div className="xs muted">
+          {h.direction === "in"
+            ? (h.workflow_name ? tr("Starts the workflow “{0}”.", { 0: h.workflow_name }) : tr("Deliveries are logged; no workflow is linked."))
+            : (h.events.includes("*") ? tr("Every event.") : h.events.map((e: string) => tr(e.replace(/_/g, " "))).join(", "))}
+          {" · "}{tr("secret {0}…", { 0: h.secret_prefix })}
+          {h.last_delivery_at ? ` · ${tr("last delivery {0}", { 0: fmtRelative(h.last_delivery_at) })}` : ""}
+        </div>
+        <div className="row wrap">
+          <button className="btn small" onClick={() => setLog(h)}>{tr("Deliveries ({0})", { 0: h.deliveries })}{h.failed ? <span className="tag red" style={{ marginInlineStart: 6 }}>{h.failed}</span> : null}</button>
+          {admin && h.direction === "out" && <button className="btn small" disabled={busy || !h.enabled} onClick={() => sendTest(h)}><Icon name="send" />{tr("Send a test")}</button>}
+          {admin && <button className="btn small" disabled={busy} onClick={() => toggle(h)}>{h.enabled ? tr("Switch off") : tr("Switch on")}</button>}
+          {admin && <button className="btn small" disabled={busy} onClick={() => rotate(h)}>{tr("New secret")}</button>}
+          {admin && <button className="btn small danger" onClick={() => setConfirm(h)}>{tr("Delete")}</button>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <h2>{tr("Webhooks")}</h2>
+      <p className="muted small" style={{ maxWidth: "75ch" }}>
+        {tr("Connect this workspace to anything with HTTPS. An incoming webhook gives another system an address to call, with a secret, and can start a workflow with what it sent. An outgoing webhook posts signed JSON to your address when things happen here: approvals, forecasts, files, cost centres, workflow runs.")}
+        {!session.features.whatsapp && <> {tr("Incoming webhooks are reachable on the Team Server, which has a public HTTPS address.")}</>}
+      </p>
+      <ErrorBox error={data.error} />
+      <div className="grid2" style={{ marginTop: 12 }}>
+        <div className="panel panel-pad stack">
+          <h3>{tr("Incoming")}</h3>
+          <p className="small muted" style={{ margin: 0 }}>{tr("Your ERP, bank portal, ticketing or CI system posts to the endpoint. The sender proves itself with the secret as a bearer token or an HMAC-SHA256 signature of the body.")}</p>
+          {incoming.map((h) => <Hook key={h.id} h={h} />)}
+          {!incoming.length && <p className="xs muted" style={{ margin: 0 }}>{tr("No incoming webhooks yet.")}</p>}
+          {admin && <div><button className="btn primary small" onClick={() => setCreating("in")}><Icon name="plus" />{tr("Add incoming webhook")}</button></div>}
+        </div>
+        <div className="panel panel-pad stack">
+          <h3>{tr("Outgoing")}</h3>
+          <p className="small muted" style={{ margin: 0 }}>{tr("Each delivery carries the event name and an HMAC-SHA256 signature of the body (X-OfinTech-Signature-256). Failed deliveries are retried after 1, 10 and 60 minutes.")}</p>
+          {outgoing.map((h) => <Hook key={h.id} h={h} />)}
+          {!outgoing.length && <p className="xs muted" style={{ margin: 0 }}>{tr("No outgoing webhooks yet.")}</p>}
+          {admin && <div><button className="btn primary small" onClick={() => setCreating("out")}><Icon name="plus" />{tr("Add outgoing webhook")}</button></div>}
+        </div>
+      </div>
+      {creating && <WebhookEditor direction={creating} groups={groups} workflows={workflows} onClose={() => setCreating(null)}
+        onCreated={(h) => { setCreating(null); setSecret({ hook: h, secret: h.secret }); data.reload(); }} />}
+      {secret && <SecretModal hook={secret.hook} secret={secret.secret} onClose={() => setSecret(null)} />}
+      {log && <DeliveriesModal hook={log} admin={admin} onClose={() => { setLog(null); data.reload(); }} />}
+      {confirm && <Confirm text={tr("Delete the webhook “{0}”? Its secret stops working at once and its delivery log is removed.", { 0: confirm.name })}
+        onClose={() => setConfirm(null)} onYes={() => run(() => del(wsPath(ws, `/webhooks/${confirm.id}`))).then(data.reload)} />}
+    </>
+  );
+}
+
+function WebhookEditor({ direction, groups, workflows, onClose, onCreated }: { direction: "in" | "out"; groups: Record<string, string>;
+  workflows: any[]; onClose: () => void; onCreated: (h: any) => void }): ReactNode {
+  const { ws } = useApp();
+  const [f, setF] = useState({ name: "", url: "", workflow_id: "", events: [] as string[], all: false });
+  const { busy, run } = useAction();
+  const ok = f.name.trim() && (direction === "in" || (/^https?:\/\/\S+$/i.test(f.url.trim()) && (f.all || f.events.length > 0)));
+  async function create() {
+    const body = { direction, name: f.name.trim(), url: direction === "out" ? f.url.trim() : null,
+      events: direction === "out" ? (f.all ? ["*"] : f.events) : [], workflow_id: direction === "in" && f.workflow_id ? f.workflow_id : null };
+    const r: any = await run(() => post(wsPath(ws, "/webhooks"), body), tr("Webhook created"));
+    if (r) onCreated(r);
+  }
+  return (
+    <Modal title={direction === "in" ? tr("Add incoming webhook") : tr("Add outgoing webhook")} onClose={onClose} footer={<>
+      <button className="btn" onClick={onClose}>{tr("Cancel")}</button>
+      <button className="btn primary" disabled={busy || !ok} onClick={create}>{tr("Create")}</button></>}>
+      <div className="stack">
+        <Field label={tr("Name")} hint={direction === "in" ? tr("Who will call it, e.g. Bank portal, SAP, Jira.") : tr("Where it goes, e.g. Slack relay, Data warehouse.")}>
+          <input className="input" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} autoFocus /></Field>
+        {direction === "in" ? (
+          <>
+            <Field label={tr("Workflow to start (optional)")} hint={tr("The delivery's JSON is handed to the workflow as its trigger; the workflow's own approval steps still apply.")}>
+              <select className="select" value={f.workflow_id} onChange={(e) => setF({ ...f, workflow_id: e.target.value })}>
+                <option value="">{tr("Only log the deliveries")}</option>
+                {workflows.map((w) => <option key={w.id} value={w.id} disabled={!w.enabled}>{w.name}{w.enabled ? "" : ` (${tr("off")})`}</option>)}
+              </select></Field>
+            <p className="small muted">{tr("At most 256 KB and 60 deliveries a minute per webhook. The last 500 deliveries are kept.")}</p>
+          </>
+        ) : (
+          <>
+            <Field label={tr("Address")} hint={tr("HTTPS, reachable from this server. Private and local addresses are refused on the Team Server.")}>
+              <input className="input" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} placeholder="https://example.com/hooks/ofintech" inputMode="url" /></Field>
+            <div className="small" style={{ fontWeight: 600 }}>{tr("Send these events")}</div>
+            <label className="check small"><input type="checkbox" checked={f.all} onChange={(e) => setF({ ...f, all: e.target.checked })} /><span>{tr("Everything that is audited")}</span></label>
+            {!f.all && <div className="grid2">
+              {Object.entries(groups).map(([k, desc]) => (
+                <label key={k} className="check small"><input type="checkbox" checked={f.events.includes(k)}
+                  onChange={(e) => setF({ ...f, events: e.target.checked ? [...f.events, k] : f.events.filter((x) => x !== k) })} />
+                  <span><strong>{tr(k.replace(/_/g, " "))}</strong> <span className="muted">{tr(desc)}</span></span></label>))}
+            </div>}
+          </>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function SecretModal({ hook, secret, onClose }: { hook: any; secret: string; onClose: () => void }): ReactNode {
+  const copy = (s: string) => navigator.clipboard?.writeText(s);
+  return (
+    <Modal title={tr("Webhook secret")} onClose={onClose} footer={<button className="btn primary" onClick={onClose}>{tr("I have stored it")}</button>}>
+      <div className="stack">
+        <p className="small">{tr("Copy the secret now; it is not shown again. It is stored encrypted here.")}</p>
+        {hook.direction === "in" && <>
+          <div className="xs muted">{tr("Endpoint")}</div>
+          <code className="excel" style={{ whiteSpace: "normal", overflowWrap: "anywhere" }}>{hook.endpoint}</code>
+        </>}
+        <div className="xs muted">{tr("Secret")}</div>
+        <code className="excel" style={{ whiteSpace: "normal", overflowWrap: "anywhere" }}>{secret}</code>
+        <div className="row"><button className="btn small" onClick={() => copy(secret)}>{tr("Copy secret")}</button>
+          {hook.direction === "in" && <button className="btn small" onClick={() => copy(hook.endpoint)}>{tr("Copy endpoint")}</button>}</div>
+        {hook.direction === "in" ? (
+          <div className="small stack" style={{ gap: 4 }}>
+            <div>{tr("The sender posts JSON to the endpoint with one of:")}</div>
+            <code className="excel">Authorization: Bearer {"<secret>"}</code>
+            <code className="excel">X-OfinTech-Signature-256: sha256={"<HMAC-SHA256 of the body with the secret, hex>"}</code>
+            <div className="muted">{tr("An optional X-OfinTech-Event header names the event; otherwise the JSON's “event” or “type” field is used.")}</div>
+          </div>
+        ) : (
+          <div className="small stack" style={{ gap: 4 }}>
+            <div>{tr("Verify each delivery before trusting it:")}</div>
+            <code className="excel">X-OfinTech-Signature-256: sha256={"<HMAC-SHA256 of the body with the secret, hex>"}</code>
+            <div className="muted">{tr("X-OfinTech-Event carries the event name and X-OfinTech-Delivery the delivery id. Answer with any 2xx status within 15 seconds.")}</div>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function DeliveriesModal({ hook, admin, onClose }: { hook: any; admin: boolean; onClose: () => void }): ReactNode {
+  const { ws } = useApp();
+  const data = useLoad(() => get<any[]>(wsPath(ws, `/webhooks/${hook.id}/deliveries?limit=100`)), [hook.id]);
+  const [open, setOpen] = useState<string | null>(null);
+  const { busy, run } = useAction();
+  const rows = data.data || [];
+  return (
+    <Modal title={tr("Deliveries: {0}", { 0: hook.name })} onClose={onClose} wide>
+      <ErrorBox error={data.error} />
+      <div className="row" style={{ marginBottom: 8 }}><button className="btn small" onClick={data.reload}><Icon name="refresh" />{tr("Refresh")}</button></div>
+      {data.loading && !data.data ? <Loading /> : rows.length === 0 ? <p className="muted">{tr("No deliveries yet.")}</p> : (
+        <div className="table-wrap" style={{ maxHeight: 520 }}>
+          <table className="ledger">
+            <thead><tr><th>{tr("When")}</th><th>{tr("Event")}</th><th>{tr("Status")}</th><th>{tr("HTTP")}</th><th className="num">{tr("Attempts")}</th><th>{tr("Response")}</th><th /></tr></thead>
+            <tbody>{rows.map((d) => (
+              <>
+                <tr key={d.id} className="clickable" onClick={() => setOpen(open === d.id ? null : d.id)}>
+                  <td className="small" title={d.created_at}>{fmtRelative(d.created_at)}</td>
+                  <td className="small">{d.event || "—"}{d.run_id ? <div className="xs"><a href={`#/workflows?run=${d.run_id}`} onClick={(e) => e.stopPropagation()}>{tr("workflow run")}</a></div> : null}</td>
+                  <td><StatusTag status={d.status} /></td>
+                  <td className="small">{d.http_status ?? "—"}</td>
+                  <td className="num">{d.attempts}</td>
+                  <td className="small" style={{ maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.response || ""}</td>
+                  <td>{admin && hook.direction === "out" && d.status !== "pending" && <button className="btn small" disabled={busy}
+                    onClick={(e) => { e.stopPropagation(); run(() => post(wsPath(ws, `/webhooks/${hook.id}/deliveries/${d.id}/redeliver`)), tr("Queued again")).then(data.reload); }}>{tr("Send again")}</button>}</td>
+                </tr>
+                {open === d.id && <tr key={`${d.id}-p`}><td colSpan={7}>
+                  <pre className="code-input xs" style={{ whiteSpace: "pre-wrap", margin: 0, maxHeight: 240, overflow: "auto" }}>{d.payload ? JSON.stringify(d.payload, null, 1) : d.response || ""}</pre></td></tr>}
+              </>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+    </Modal>
   );
 }
 

@@ -283,6 +283,8 @@ class Workflows:
         self.engine.db.execute("UPDATE workflow_runs SET status = ?, error = ?, finished_at = ? WHERE id = ?",
                                (status, error, now(), run["id"]))
         wf = self.engine.db.one("SELECT * FROM workflows WHERE id = ?", (run["workflow_id"],))
+        self.engine.audit(run["workspace_id"], run.get("started_by"), f"workflow.run.{status}", run["workflow_id"],
+                          {"run_id": run["id"], "name": wf["name"] if wf else None, "error": error})
         if wf and status in {"failed"}:
             self.engine.notify(run["workspace_id"], wf["created_by"], "workflow",
                                f"Workflow '{wf['name']}' failed: {error}", f"/workflows/{wf['id']}?run={run['id']}")

@@ -10,6 +10,7 @@ Two modes share one code base:
 from __future__ import annotations
 
 import base64
+import re
 import os
 import secrets
 from dataclasses import dataclass, field
@@ -42,6 +43,7 @@ class Settings:
     host: str
     port: int
     public_url: str
+    site_url: str
     master_key: bytes
     local_token: str
     open_signup: bool
@@ -161,6 +163,12 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
                           "Set DESK_ALLOW_HTTP=true only for a test install on a private network.")
         public_url = ""  # filled in by the app once the port is known
 
+    site_url = _env("DESK_SITE_URL").strip().rstrip("/")
+    if site_url and not re.match(r"^https?://[^/\s]+$", site_url):
+        raise ConfigError("DESK_SITE_URL is the origin of the public website, e.g. https://ofintech.ai")
+    if site_url and mode == "server" and not site_url.startswith("https://") and not _bool("DESK_ALLOW_HTTP", False):
+        raise ConfigError("DESK_SITE_URL must be an https:// address on a Team Server")
+
     ui = _env("DESK_UI_DIR")
     ui_dir = Path(ui) if ui else None
 
@@ -170,6 +178,7 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         host=host,
         port=port,
         public_url=public_url,
+        site_url=site_url,
         master_key=master_key,
         local_token=local_token,
         open_signup=_bool("DESK_OPEN_SIGNUP", False),

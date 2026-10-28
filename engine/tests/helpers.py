@@ -23,6 +23,7 @@ def settings(tmp: Path, mode: str = "desktop", **kw: Any) -> Settings:
     base = dict(
         mode=mode, data_dir=tmp, host="127.0.0.1", port=0,
         public_url=kw.pop("public_url", "http://localhost:47821" if mode == "desktop" else "https://desk.example.com"),
+        site_url=kw.pop("site_url", ""),
         master_key=secrets.token_bytes(32), local_token=LOCAL_TOKEN, open_signup=False,
         allow_stdio_mcp=mode == "desktop", allow_private_network_urls=mode == "desktop", ui_dir=None,
     )

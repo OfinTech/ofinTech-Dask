@@ -5,11 +5,63 @@ from __future__ import annotations
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
+from starlette.responses import Response
 
+from ..errors import Invalid
 from ..web import Ctx, Router
 
 router = Router()
 ISO = r"^\d{4}-\d{2}-\d{2}$"
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _int(value: str | None, default: int, lo: int, hi: int) -> int:
+    try:
+        return min(max(int(value), lo), hi) if value not in (None, "") else default
+    except ValueError:
+        return default
+
+
+@router.get("/api/w/{ws}/cost-centres/templates/{kind}", role="viewer")
+async def template(ctx: Ctx) -> Response:
+    """Excel templates to fill in: a project budget, or a general ledger (one row per journal line)."""
+    from ..costcentres.templates import budget_template, ledger_template
+
+    kind = ctx.request.path_params["kind"]
+    currency = ctx.workspace.get("base_currency") or "USD"
+    if kind == "budget":
+        data, filename = budget_template(currency=currency), "OfinTech-Desk-budget-template.xlsx"
+    elif kind == "ledger":
+        data, filename = ledger_template(currency=currency), "OfinTech-Desk-general-ledger-template.xlsx"
+    else:
+        raise Invalid("Templates: budget or ledger.")
+    return Response(data, media_type=XLSX, headers={"content-disposition": f'attachment; filename="{filename}"'})
+
+
+@router.post("/api/w/{ws}/cost-centres/ledger/upload", role="editor")
+async def upload_ledger(ctx: Ctx) -> dict[str, Any]:
+    """Upload a general ledger (.xlsx or .csv with the template's columns) as a new ledger dataset, or replace an
+    existing one (form field dataset_id) after a month-end re-export."""
+    limit = ctx.engine.settings.max_upload_mb * 1024 * 1024
+    if int(ctx.request.headers.get("content-length") or 0) > limit + 10000:
+        raise Invalid(f"Files up to {ctx.engine.settings.max_upload_mb} MB can be uploaded.")
+    async with ctx.request.form(max_files=1, max_fields=5) as form:
+        f = form.get("file")
+        if f is None or isinstance(f, str):
+            raise Invalid("Choose a file to upload.")
+        data = await f.read()
+        filename = f.filename or "ledger.xlsx"
+        dataset_id = form.get("dataset_id") or None
+        dataset_name = form.get("name") or None
+    if len(data) > limit:
+        raise Invalid(f"Files up to {ctx.engine.settings.max_upload_mb} MB can be uploaded.")
+    if not filename.lower().endswith((".xlsx", ".xlsm", ".csv", ".tsv", ".txt")):
+        raise Invalid("Upload an Excel (.xlsx) or CSV file.")
+    import asyncio
+
+    return await asyncio.to_thread(ctx.engine.costcentres.import_ledger_file, ctx.ws_id, ctx.user_id, filename, data,
+                                   dataset_id=str(dataset_id) if dataset_id else None,
+                                   dataset_name=str(dataset_name) if dataset_name else None)
 
 
 @router.get("/api/w/{ws}/cost-centres", role="viewer")
@@ -98,8 +150,8 @@ async def report(ctx: Ctx) -> dict[str, Any]:
 async def lines(ctx: Ctx) -> dict[str, Any]:
     q = ctx.request.query_params
     return await ctx.engine.costcentres.matched(ctx.ws_id, ctx.request.path_params["cid"], q.get("kind") or "matched",
-                                                q.get("as_of") or None, max(int(q.get("offset", 0) or 0), 0),
-                                                int(q.get("limit", 200) or 200))
+                                                q.get("as_of") or None, _int(q.get("offset"), 0, 0, 10 ** 7),
+                                                _int(q.get("limit"), 200, 1, 1000))
 
 
 class BudgetImportIn(BaseModel):

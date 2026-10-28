@@ -20,8 +20,10 @@ from ..web import SESSION_COOKIE, Ctx, Email, Router, optional_user, public_user
 router = Router()
 
 
-def _rate_limit(ctx: Ctx, key: str, limit: int = 8, window: float = 300) -> None:
-    attempts: dict[str, deque[float]] = ctx.engine.__dict__.setdefault("_auth_attempts", defaultdict(deque))
+def _rate_limit(ctx: Any, key: str, limit: int = 8, window: float = 300) -> None:
+    """``ctx`` is a request context or the engine itself (for the form endpoints)."""
+    engine = ctx if hasattr(ctx, "db") else ctx.engine
+    attempts: dict[str, deque[float]] = engine.__dict__.setdefault("_auth_attempts", defaultdict(deque))
     q = attempts[key]
     t = time.monotonic()
     while q and t - q[0] > window:
@@ -59,6 +61,7 @@ async def session(ctx: Ctx) -> dict[str, Any]:
             "signup_open": engine.settings.open_signup or not users_exist,
             "needs_first_user": not engine.settings.is_desktop and not users_exist,
             "public_url": engine.settings.public_url,
+            "site_url": engine.settings.site_url,
             "features": {"stdio_mcp": engine.settings.allow_stdio_mcp,
                          "whatsapp": engine.settings.public_url.startswith("https://"),
                          "team": not engine.settings.is_desktop,
@@ -77,49 +80,80 @@ class SignupIn(BaseModel):
     invite_token: str | None = None
 
 
-def _start_session(ctx: Ctx, user_id: str) -> JSONResponse:
+def create_session(engine: Any, request: Any, user_id: str) -> str:
     token = new_token(32)
     ts = now()
-    ctx.engine.db.insert("sessions", {"id": token_hash(token), "user_id": user_id, "created_at": ts,
-                                      "expires_at": ts + ctx.engine.settings.session_days * 86400, "last_seen": ts,
-                                      "user_agent": ctx.request.headers.get("user-agent", "")[:200]})
+    engine.db.insert("sessions", {"id": token_hash(token), "user_id": user_id, "created_at": ts,
+                                  "expires_at": ts + engine.settings.session_days * 86400, "last_seen": ts,
+                                  "user_agent": request.headers.get("user-agent", "")[:200]})
+    return token
+
+
+def set_session_cookie(engine: Any, resp: Any, token: str) -> None:
+    resp.set_cookie(SESSION_COOKIE, token, max_age=engine.settings.session_days * 86400, httponly=True,
+                    secure=engine.settings.public_url.startswith("https://"), samesite="strict", path="/")
+
+
+def _start_session(ctx: Ctx, user_id: str) -> JSONResponse:
+    token = create_session(ctx.engine, ctx.request, user_id)
     user = ctx.engine.db.one("SELECT * FROM users WHERE id = ?", (user_id,))
     resp = JSONResponse({"token": token, "user": public_user(user), "workspaces": workspaces_for(ctx.engine, user_id)})
-    resp.set_cookie(SESSION_COOKIE, token, max_age=ctx.engine.settings.session_days * 86400, httponly=True,
-                    secure=ctx.engine.settings.public_url.startswith("https://"), samesite="strict", path="/")
+    set_session_cookie(ctx.engine, resp, token)
     return resp
 
 
-@router.post("/api/auth/signup", auth=False, body=SignupIn)
-async def signup(ctx: Ctx) -> Any:
-    engine = ctx.engine
+def signup_user(engine: Any, *, email: str, name: str, password: str, invite_token: str | None,
+                client_host: str) -> str:
+    """Creates the account (the JSON API and the website's form share this) and returns its id."""
     if engine.settings.is_desktop:
         raise Forbidden("The desktop app has no accounts; it signs you in automatically.")
-    body: SignupIn = ctx.body
-    _rate_limit(ctx, f"signup:{ctx.request.client.host if ctx.request.client else '-'}")
+    _rate_limit(engine, f"signup:{client_host}")
     first = engine.db.scalar("SELECT COUNT(*) FROM users WHERE is_local = 0") == 0
     invite = None
-    if body.invite_token:
+    if invite_token:
         invite = engine.db.one("SELECT * FROM invites WHERE token_hash = ? AND accepted_at IS NULL AND expires_at > ?",
-                               (token_hash(body.invite_token), now()))
+                               (token_hash(invite_token), now()))
         if invite is None:
             raise Invalid("This invitation is not valid or has expired.", code="bad_invite")
-        if invite["email"].lower() != body.email.lower():
+        if invite["email"].lower() != email.lower():
             raise Invalid("Sign up with the e-mail address the invitation was sent to.", code="invite_email")
     elif not (first or engine.settings.open_signup):
-        raise Forbidden("Sign-up is by invitation. Ask a workspace administrator to invite you.")
-    check_password_policy(body.password)
-    if engine.db.one("SELECT 1 FROM users WHERE email = ?", (body.email,)):
-        raise Conflict("An account with this e-mail already exists. Sign in instead.")
+        raise Forbidden("Sign-up is by invitation. Ask a workspace administrator to invite you.", code="invitation_only")
+    check_password_policy(password)
+    if engine.db.one("SELECT 1 FROM users WHERE email = ?", (email.lower(),)):
+        raise Conflict("An account with this e-mail already exists. Sign in instead.", code="exists")
     uid = new_id("u_")
-    engine.db.insert("users", {"id": uid, "email": body.email.lower(), "name": body.name.strip(),
-                               "password_hash": hash_password(body.password), "created_at": now()})
+    engine.db.insert("users", {"id": uid, "email": email.lower(), "name": name.strip(),
+                               "password_hash": hash_password(password), "created_at": now()})
     if first:
         with engine.db.tx() as c:
             c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('instance_admin', ?)", (dumps(uid),))
     if invite:
         _accept(engine, invite, uid)
     engine.audit(invite["workspace_id"] if invite else None, uid, "user.signup", uid, {"first": first})
+    return uid
+
+
+def login_user(engine: Any, *, email: str, password: str, client_host: str) -> str:
+    """Checks the password (the JSON API and the website's form share this) and returns the user's id."""
+    if engine.settings.is_desktop:
+        raise Forbidden("The desktop app signs you in automatically.")
+    _rate_limit(engine, f"login:{email.lower()}")
+    _rate_limit(engine, f"login-ip:{client_host}", limit=30)
+    user = engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (email.lower(),))
+    if not verify_password(password, user["password_hash"] if user else None) or user is None:
+        raise Unauthorized("E-mail or password is wrong.", code="bad_credentials")
+    if user["disabled"]:
+        raise Forbidden("This account is disabled.", code="disabled")
+    engine.audit(None, user["id"], "user.login", user["id"])
+    return user["id"]
+
+
+@router.post("/api/auth/signup", auth=False, body=SignupIn)
+async def signup(ctx: Ctx) -> Any:
+    body: SignupIn = ctx.body
+    uid = signup_user(ctx.engine, email=body.email, name=body.name, password=body.password,
+                      invite_token=body.invite_token, client_host=ctx.request.client.host if ctx.request.client else "-")
     return _start_session(ctx, uid)
 
 
@@ -130,18 +164,10 @@ class LoginIn(BaseModel):
 
 @router.post("/api/auth/login", auth=False, body=LoginIn)
 async def login(ctx: Ctx) -> Any:
-    if ctx.engine.settings.is_desktop:
-        raise Forbidden("The desktop app signs you in automatically.")
     body: LoginIn = ctx.body
-    _rate_limit(ctx, f"login:{body.email.lower()}")
-    _rate_limit(ctx, f"login-ip:{ctx.request.client.host if ctx.request.client else '-'}", limit=30)
-    user = ctx.engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (body.email,))
-    if not verify_password(body.password, user["password_hash"] if user else None) or user is None:
-        raise Unauthorized("E-mail or password is wrong.", code="bad_credentials")
-    if user["disabled"]:
-        raise Forbidden("This account is disabled.")
-    ctx.engine.audit(None, user["id"], "user.login", user["id"])
-    return _start_session(ctx, user["id"])
+    uid = login_user(ctx.engine, email=body.email, password=body.password,
+                     client_host=ctx.request.client.host if ctx.request.client else "-")
+    return _start_session(ctx, uid)
 
 
 @router.post("/api/auth/logout")
@@ -302,15 +328,32 @@ def google_login_available(engine: Any) -> bool:
         return False
 
 
-@router.post("/api/auth/google/start", auth=False)
-async def google_start(ctx: Ctx) -> dict[str, Any]:
+def google_start_url(engine: Any, *, invite_token: str | None = None, desktop_challenge: str | None = None) -> str:
     from urllib.parse import urlencode
 
     from ..connectors.oauth import app_credentials
     from ..security import pkce_pair
 
-    if not google_login_available(ctx.engine):
+    if not google_login_available(engine):
         raise Invalid("Sign-in with Google is not set up on this server.", code="google_login_off")
+    if desktop_challenge is not None and not (isinstance(desktop_challenge, str)
+                                              and re.fullmatch(r"[A-Za-z0-9_-]{43}", desktop_challenge)):
+        raise Invalid("Bad desktop challenge.")
+    client_id, _, _ = app_credentials(engine, "google")
+    verifier, challenge = pkce_pair()
+    state = new_token(24)
+    engine.db.execute("DELETE FROM login_states WHERE created_at < ?", (now() - 900,))
+    engine.db.insert("login_states", {"state": state, "code_verifier": verifier,
+                                      "invite_token": str(invite_token)[:200] if invite_token else None,
+                                      "desktop_challenge": desktop_challenge, "created_at": now()})
+    params = {"client_id": client_id, "redirect_uri": engine.settings.oauth_redirect_uri, "response_type": "code",
+              "scope": "openid email profile", "state": state, "code_challenge": challenge,
+              "code_challenge_method": "S256", "prompt": "select_account"}
+    return f"{GOOGLE_AUTH}?{urlencode(params)}"
+
+
+@router.post("/api/auth/google/start", auth=False)
+async def google_start(ctx: Ctx) -> dict[str, Any]:
     try:
         body = await ctx.request.json()
     except ValueError:
@@ -318,19 +361,7 @@ async def google_start(ctx: Ctx) -> dict[str, Any]:
     invite = (body or {}).get("invite_token") if isinstance(body, dict) else None
     # the desktop app opens Google in the system browser and proves it started the sign-in with this challenge
     desktop = (body or {}).get("desktop_challenge") if isinstance(body, dict) else None
-    if desktop is not None and not (isinstance(desktop, str) and re.fullmatch(r"[A-Za-z0-9_-]{43}", desktop)):
-        raise Invalid("Bad desktop challenge.")
-    client_id, _, _ = app_credentials(ctx.engine, "google")
-    verifier, challenge = pkce_pair()
-    state = new_token(24)
-    ctx.engine.db.execute("DELETE FROM login_states WHERE created_at < ?", (now() - 900,))
-    ctx.engine.db.insert("login_states", {"state": state, "code_verifier": verifier,
-                                          "invite_token": str(invite)[:200] if invite else None,
-                                          "desktop_challenge": desktop, "created_at": now()})
-    params = {"client_id": client_id, "redirect_uri": ctx.engine.settings.oauth_redirect_uri, "response_type": "code",
-              "scope": "openid email profile", "state": state, "code_challenge": challenge,
-              "code_challenge_method": "S256", "prompt": "select_account"}
-    return {"url": f"{GOOGLE_AUTH}?{urlencode(params)}"}
+    return {"url": google_start_url(ctx.engine, invite_token=invite, desktop_challenge=desktop)}
 
 
 def _allowed_domain(email: str) -> bool:

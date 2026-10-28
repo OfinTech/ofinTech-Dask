@@ -17,11 +17,31 @@ Requirements: Docker Engine 24+ with Compose v2, a DNS record for your domain, a
 | Address | What it serves | Where it is configured |
 |---|---|---|
 | `desk.ofintech.ai` | the product: the Team Server (web app, API, OAuth callbacks), and what the desktop client opens | `DESK_DOMAIN=desk.ofintech.ai` in `server/.env` |
-| `ofintech.ai`, `www.ofintech.ai` | the website (landing page and features); its *Sign in* buttons link to `desk.ofintech.ai` | the `ofintech.ai` block in `server/Caddyfile`, see `landing/README.md` |
+| `ofintech.ai`, `www.ofintech.ai` | the website: one page with the product, who it is for, the install guide, and the **sign-in and create-account forms**, which post to `desk.ofintech.ai` | the `ofintech.ai` block in `server/Caddyfile`, see `landing/README.md`; `DESK_SITE_URL=https://ofintech.ai` in `server/.env` |
 
 Both can run on one server: the Team Server's Caddy holds ports 80 and 443 and serves the two names. Point DNS
 A records for `desk.ofintech.ai`, `ofintech.ai` and `www.ofintech.ai` at that server. OAuth apps (Google,
 QuickBooks, Xero, Zoho) use `https://desk.ofintech.ai/oauth/callback`, never the website's address.
+
+### Sign-in from the website (`DESK_SITE_URL`)
+
+With `DESK_SITE_URL` set to the website's origin (`https://ofintech.ai`), the Team Server accepts three plain
+requests from it, so that people sign in and create accounts on the website without any script there:
+
+| Request | From the website | Result |
+|---|---|---|
+| `POST /auth/form/sign-in` (`email`, `password`) | the *Sign in* form | the session cookie is set and the browser is sent to the app (`303`) |
+| `POST /auth/form/sign-up` (`name`, `email`, `password`) | the *Create account* form | an account is created (the first one administers the server; later ones only with `DESK_OPEN_SIGNUP=true`, otherwise by invitation) and signed in |
+| `GET /auth/form/google` | the *Continue with Google* link | Google sign-in starts, as from the app |
+
+The `Origin` header (or the `Referer`) must be the website or the app, or the request is refused with `403`. On a
+failure the browser is sent back to `DESK_SITE_URL/#<code>`, and the website shows the matching message:
+`signin-error`, `signin-rate`, `signin-disabled`, `signup-invalid`, `signup-password`, `signup-exists`,
+`signup-invitation`, `signup-rate`, `google-off` and `desktop`. The same rate limits and password policy apply as
+in the app, and the session cookie is the app's (HttpOnly, Secure, SameSite=strict), which reaches the app because
+the website and the app share the registrable domain. Without `DESK_SITE_URL`, failures go to the app's own
+sign-in page and only the app's origin is accepted. The website's `form-action` content-security policy must name
+the Team Server (`landing/nginx.conf`).
 
 ## Install
 

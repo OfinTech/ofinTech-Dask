@@ -1,7 +1,7 @@
 // Cost centres: a project or department followed through the general ledger, the journal and the bank.
 // The page states each figure's method and shows the ledger lines behind it.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { del, get, patch, post, put, upload } from "../lib/api";
+import { del, download, get, patch, post, put, upload } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
 import { fmtDate, fmtMoney, fmtNumber, fmtPercent } from "../lib/format";
 import { Chart } from "../components/charts";
@@ -23,24 +23,81 @@ function runsOut(c: any): ReactNode {
   return <span className="muted">—</span>;
 }
 
+/** Excel templates to fill in (a project budget, a general ledger) and the ledger upload that reads the latter. */
+export function TemplateLinks({ kinds = ["budget", "ledger"] }: { kinds?: ("budget" | "ledger")[] }): ReactNode {
+  const { ws } = useApp();
+  const { busy, run } = useAction();
+  const names: Record<string, [string, string]> = {
+    budget: [tr("Budget template"), "OfinTech-Desk-budget-template.xlsx"],
+    ledger: [tr("General ledger template"), "OfinTech-Desk-general-ledger-template.xlsx"],
+  };
+  return (
+    <>
+      {kinds.map((k) => <button key={k} type="button" className="btn small" disabled={busy}
+        onClick={() => run(() => download(wsPath(ws, `/cost-centres/templates/${k}`), names[k][1]))}><Icon name="sheet" size={14} />{names[k][0]}</button>)}
+    </>
+  );
+}
+
+function LedgerUpload({ ledgers, onDone }: { ledgers: any[]; onDone: () => void }): ReactNode {
+  const { ws } = useApp();
+  const [target, setTarget] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const { busy, run } = useAction();
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    const fields: Record<string, string> = target ? { dataset_id: target } : {};
+    const r: any = await run(() => upload(wsPath(ws, "/cost-centres/ledger/upload"), file, fields));
+    if (r) { setResult({ ...r, filename: file.name }); onDone(); }
+  }
+  return (
+    <div className="panel panel-pad stack">
+      <div className="spread"><h3 className="h3" style={{ margin: 0 }}>{tr("Import a general ledger file")}</h3><div className="row wrap"><TemplateLinks /></div></div>
+      <p className="small muted" style={{ margin: 0 }}>
+        {tr("Fill in the general ledger template (one row per journal line: date, entry, account, debit, credit, party, cost-centre tag) or export the ledger from your accounting system with the same columns, then upload it as Excel or CSV. Cost centres are built from it; upload the next month's file to the same ledger to bring them up to date.")}</p>
+      <div className="row wrap">
+        {ledgers.length > 0 && (
+          <select className="select" value={target} aria-label={tr("Ledger to replace")} onChange={(e) => setTarget(e.target.value)}>
+            <option value="">{tr("As a new ledger")}</option>
+            {ledgers.map((l) => <option key={l.id} value={l.id}>{tr("Replace “{0}”", { 0: l.name })}</option>)}
+          </select>)}
+        <label className={`btn primary ${busy ? "disabled" : ""}`}><Icon name="upload" />{busy ? tr("Reading…") : tr("Upload ledger file")}
+          <input type="file" hidden accept=".xlsx,.xlsm,.csv,.tsv,.txt" disabled={busy} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ""; }} /></label>
+      </div>
+      {result && (
+        <div className={`notice small ${result.unbalanced_count ? "warn" : ""}`}>
+          {tr("{0}: {1} lines in {2} entries, {3} to {4}, now in the ledger “{5}”.", { 0: result.filename, 1: fmtNumber(result.lines, 0), 2: fmtNumber(result.entries, 0),
+            3: fmtDate(result.first_date), 4: fmtDate(result.last_date), 5: result.dataset?.name })}
+          {result.unbalanced_count ? <> {tr("{0} entries do not balance (debits ≠ credits): {1}. Check them in the source system.", { 0: result.unbalanced_count, 1: (result.unbalanced_entries || []).slice(0, 5).join(", ") })}</> : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CostCentreList(): ReactNode {
   const { ws } = useApp();
   const data = useLoad(() => get<any>(wsPath(ws, "/cost-centres")), [ws.id]);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const ledgers: any[] = data.data?.ledgers || [];
   const items: any[] = data.data?.cost_centres || [];
   const cur = ws.base_currency;
+  const editor = can(ws, "editor");
   return (
     <div className="page" style={{ maxWidth: 1200 }}>
       <PageHead title={tr("Cost centres")}
         sub={tr("Follow a project or department through the general ledger, the journal and the bank: what it cost, what was actually paid, and when its budget runs out at the current pace.")}
-        actions={can(ws, "editor") && ledgers.length > 0 &&
-          <button className="btn primary" onClick={() => setCreating(true)}><Icon name="plus" />{tr("New cost centre")}</button>} />
+        actions={<>
+          {editor && ledgers.length > 0 && <button className="btn" onClick={() => setImporting(!importing)}><Icon name="upload" />{tr("Import ledger")}</button>}
+          {editor && ledgers.length > 0 && <button className="btn primary" onClick={() => setCreating(true)}><Icon name="plus" />{tr("New cost centre")}</button>}
+        </>} />
       <ErrorBox error={data.error} />
       {creating && <Editor ledgers={ledgers} onClose={() => setCreating(false)} onSaved={(cc) => go(`costcentres/${cc.id}`)} />}
+      {editor && (importing || (data.data && ledgers.length === 0)) && <div style={{ marginBottom: 16 }}><LedgerUpload ledgers={ledgers} onDone={data.reload} /></div>}
       {data.loading && !data.data ? <Loading /> : ledgers.length === 0 ? (
         <div className="panel"><Empty title={tr("No general ledger yet")}>
-          {tr("Cost centres read journal lines. Sync QuickBooks Online, Xero or Odoo under Connections, push journal lines from another system through the Open Accounting Connector, or import an Excel or CSV file with the general-ledger columns under Data.")}
+          {tr("Cost centres read journal lines. Upload the filled-in general ledger template above, sync QuickBooks Online, Xero or Odoo under Connections, or push journal lines from another system through the Open Accounting Connector.")}
         </Empty></div>
       ) : items.length === 0 ? (
         <div className="panel"><Empty title={tr("No cost centres yet")}>
@@ -114,6 +171,7 @@ function CostCentreView({ id }: { id: string }): ReactNode {
             <input type="date" className="input" style={{ width: 160 }} value={asOf} onChange={(e) => setAsOf(e.target.value)} /></label>
           {editor && <label className={`btn ${busy ? "disabled" : ""}`}><Icon name="upload" />{tr("Read budget from a file")}
             <input type="file" hidden accept=".xlsx,.docx" disabled={busy} onChange={(e) => { void importBudget(e.target.files?.[0]); e.target.value = ""; }} /></label>}
+          {editor && <TemplateLinks kinds={["budget"]} />}
           {editor && <button className="btn" onClick={() => setEditing(true)}><Icon name="edit" />{tr("Edit")}</button>}
           {editor && <button className="btn ghost" aria-label={tr("Delete")} onClick={() => setConfirm(true)}><Icon name="trash" /></button>}
         </>} />
@@ -244,7 +302,7 @@ function BudgetLines({ c, r, cur, editor, onSaved }: { c: any; r: any; cur: stri
     return (
       <section className="cc-section">
         <h2 className="h3">{tr("Budget lines")}</h2>
-        <p className="small muted">{tr("Read the budget from the Excel or Word file you already use: a table with a label column and an amount column. Each line keeps the cell it came from and is matched to ledger accounts by code or name.")}</p>
+        <p className="small muted">{tr("Read the budget from the Excel or Word file you already use: a table with a label column and an amount column. Each line keeps the cell it came from and is matched to ledger accounts by code or name. Starting from scratch? Download the budget template, fill it in and read it here.")}</p>
       </section>
     );
   }

@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from ..errors import Invalid
 from ..web import Ctx, Router
 
 router = Router()
@@ -48,7 +49,6 @@ class KpiIn(BaseModel):
 async def set_kpi(ctx: Ctx) -> dict[str, Any]:
     kid = ctx.request.path_params["kid"]
     if not kid.replace("_", "").isalnum() or len(kid) > 40:
-        from ..errors import Invalid
         raise Invalid("A KPI id uses letters, digits and underscores.")
     return ctx.engine.analysis.set_kpi(ctx.ws_id, ctx.user_id, kid.lower(), ctx.body.model_dump(exclude_unset=True))
 

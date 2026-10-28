@@ -11,7 +11,7 @@ from ..errors import Forbidden, Invalid, NotFound
 from ..web import role_at_least
 from . import forecast as fc
 from .kpis import BY_ID, CATEGORIES, UNITS, Evaluator, check_formula, definitions
-from .ledger import Ledger, opening_from_balance_sheet
+from .ledger import MEASURES, Ledger, opening_from_balance_sheet
 from .roles import ROLES, accounts_with_roles, role_fits
 
 if TYPE_CHECKING:
@@ -129,6 +129,8 @@ class Analysis:
     def set_kpi(self, ws_id: str, user_id: str, kid: str, body: dict[str, Any]) -> dict[str, Any]:
         defs = {k["id"]: k for k in definitions(self.settings(ws_id))}
         custom = kid not in BY_ID
+        if custom and kid in MEASURES:
+            raise Invalid(f"“{kid}” is a ledger measure; choose another id for the KPI.")
         if custom and kid not in defs and not body.get("name"):
             raise Invalid("A new KPI needs a name and a formula.")
         if body.get("formula"):

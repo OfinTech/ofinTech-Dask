@@ -55,7 +55,7 @@ TRIGGERS: dict[str, list[str]] = {
                     "مركز تكلفة", "مركز التكلفة", "مراكز التكلفة", "مشروع", "المشروع", "موازنة", "الموازنة", "تنفد",
                     "centro de coste", "centro de costo", "proyecto", "presupuesto",
                     "centre de coût", "centre de cout", "projet", "budget"],
-    "workflows": ["workflow", "automate", "automation", "routine", "every week", "every month", "run the",
+    "workflows": ["workflow", "webhook", "automate", "automation", "routine", "every week", "every month", "run the",
                   "سير العمل", "أتمتة", "اتمتة", "كل أسبوع", "كل شهر",
                   "flujo", "automatiza", "cada semana", "cada mes",
                   "workflow", "automatis", "chaque semaine", "chaque mois"],

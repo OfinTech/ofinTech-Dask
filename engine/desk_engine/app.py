@@ -35,6 +35,7 @@ from .mcp_client import MCPManager
 from .security import SecretBox, SecretStore
 from .storage import build_storage
 from .web import ROLES
+from .webhooks import Webhooks
 from .workflows.engine import Workflows
 
 log = logging.getLogger("desk")
@@ -67,6 +68,7 @@ class Engine:
         self.memory = Memory(self)
         self.costcentres = CostCentres(self)
         self.analysis = Analysis(self)
+        self.webhooks = Webhooks(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
 
@@ -106,6 +108,7 @@ class Engine:
         while True:
             try:
                 await self.channels.poll_telegram_once()
+                await self.webhooks.deliver_pending()
                 if tick % 5 == 0:
                     await self.workflows.tick()
                 if tick % 100 == 0:
@@ -138,6 +141,10 @@ class Engine:
         self.db.insert("audit_log", {"workspace_id": workspace_id, "user_id": user_id, "action": action,
                                      "target": target, "detail": dumps(detail) if detail is not None else None,
                                      "created_at": now()})
+        try:
+            self.webhooks.emit(workspace_id, user_id, action, target, detail)
+        except Exception:  # pragma: no cover - a webhook must never break the action that was audited
+            log.exception("outgoing webhook could not be queued")
 
     def record_usage(self, ws_id: str, provider_id: str, model: str, usage: Usage, source: str) -> None:
         self.db.insert("usage", {"workspace_id": ws_id, "provider_id": provider_id, "model": model,

@@ -109,10 +109,19 @@
 **Webhooks.**
 - Telegram: a secret token header. WhatsApp: an HMAC-SHA256 signature with the app secret.
 - OAuth `state` is single-use and expires after 15 minutes. PKCE is used where the provider supports it.
+- Connections → Webhooks (WEBHOOKS.md): secrets of 30 random bytes shown once, stored encrypted and compared in
+  constant time (bearer or HMAC-SHA256 of the body for incoming; every outgoing delivery signed with HMAC-SHA256);
+  256 KB and 60 deliveries a minute per incoming webhook, 64 KB per outgoing payload with credential-like keys
+  removed; outgoing addresses follow the outbound-request rules and redirects are not followed; the last 500
+  deliveries are kept; every change is audited and events about webhooks are never sent through them.
 
 **Accounts.**
 - Passwords: scrypt; at least 12 characters with mixed case and a digit. Changing or resetting a password ends every
   other session.
+- Sign-in and sign-up forms on the website (`DESK_SITE_URL`): accepted only from the website's or the app's origin
+  (`Origin`/`Referer` checked), the same rate limits and password policy as the app, no e-mail enumeration (an
+  existing address on an invitation-only server gets the same "by invitation" answer), and short error codes in the
+  redirect rather than messages that could be spoofed.
 - Password reset: the same answer whether or not the address has an account; at most 3 requests per address per 15
   minutes and 20 per IP; a random single-use token stored only as a hash, valid for one hour.
 - Google sign-in: OIDC authorisation code flow with PKCE and a single-use `state` (15 minutes); only verified e-mail
