@@ -3,6 +3,18 @@
    banding on every table (continuous-form printout), and approval "vouchers" with a perforated
    edge. Everything else stays quiet. */
 
+/* Arabic interface: IBM Plex Sans Arabic (SIL Open Font License 1.1, see src/fonts/OFL.txt), bundled so the app
+   works offline and under the strict CSP. Weight ranges map the UI's in-between weights (540, 620, 650) to the
+   nearest cut. */
+@font-face { font-family: "IBM Plex Sans Arabic"; src: url("./fonts/IBMPlexSansArabic-Regular.woff") format("woff");
+  font-weight: 100 449; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Sans Arabic"; src: url("./fonts/IBMPlexSansArabic-Medium.woff") format("woff");
+  font-weight: 450 579; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Sans Arabic"; src: url("./fonts/IBMPlexSansArabic-SemiBold.woff") format("woff");
+  font-weight: 580 639; font-style: normal; font-display: swap; }
+@font-face { font-family: "IBM Plex Sans Arabic"; src: url("./fonts/IBMPlexSansArabic-Bold.woff") format("woff");
+  font-weight: 640 900; font-style: normal; font-display: swap; }
+
 :root {
   --paper: #f6f7f5;
   --panel: #ffffff;
@@ -60,6 +72,13 @@
   --brand-tile: #e5e9ee; --brand-tile-ink: #10151b;
   color-scheme: dark;
 }
+
+:root:lang(ar) {
+  --font: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+  --font-display: var(--font);
+}
+/* tracking pulls Arabic letters apart and breaks their joins */
+:root:lang(ar) body, :root:lang(ar) body * { letter-spacing: normal !important; }
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
@@ -465,7 +484,7 @@ li.tl-not-run, li.tl-pending, li.tl-skipped { opacity: .6; }
 
 /* right-to-left (Arabic): logical properties above handle most of the layout */
 [dir="rtl"] .fig.flagged { box-shadow: inset -3px 0 0 var(--red); }
-[dir="rtl"] body { font-family: "Noto Sans Arabic", "Segoe UI", Tahoma, var(--font); }
+[dir="rtl"] body { font-family: var(--font); }  /* IBM Plex Sans Arabic for Arabic; see :root:lang(ar) */
 [dir="rtl"] .num, [dir="rtl"] .fig, [dir="rtl"] code, [dir="rtl"] pre { direction: ltr; unicode-bidi: isolate; }
 [dir="rtl"] .ledger td.num, [dir="rtl"] .ledger th.num { text-align: left; }
 .lang-select { width: auto; min-width: 120px; }

@@ -24,11 +24,8 @@ migrations are applied automatically on start-up and are never rewritten once re
   - approved results are frozen and their accuracy is tracked against actuals;
   - a statistical reference (Holt / Holt-Winters) with its measured error.
 - Three read-only assistant tools (`financial_kpis`, `kpi_detail`, `forecast_report`) and migration 14.
-
-### Changed
-
-- The README describes the product for finance teams in any country.
-
+- **IBM Plex Sans Arabic** for the Arabic interface, bundled with the app (works offline and under the strict content
+  security policy; SIL Open Font License 1.1). Letter spacing is turned off in Arabic so letters stay joined.
 - **Cost centres** (docs/COST_CENTRES.md): a project or department followed through the general ledger, the journal
   and the bank, with:
   - **rules instead of a ledger field**: tags, accounts, suppliers, words and dates, with exceptions and a version
@@ -52,6 +49,10 @@ migrations are applied automatically on start-up and are never rewritten once re
   offline page with *Try again*, and docs/DESKTOP.md.
 - **Google sign-in from the desktop app** through the system browser, handed back to the app with a single-use,
   two-minute code bound to the app that started it (migration 12).
+
+### Changed
+
+- The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27
 

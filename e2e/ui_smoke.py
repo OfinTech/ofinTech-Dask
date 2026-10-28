@@ -332,6 +332,10 @@ def run_steps(pg, base, out, xlsx):
     pg.get_by_role("button", name="العربية").click()
     pg.wait_for_selector("html[dir=rtl][lang=ar]", state="attached")
     pg.wait_for_selector("text=اللغة")
+    pg.evaluate("document.fonts.ready")
+    font = pg.evaluate("getComputedStyle(document.body).fontFamily")
+    assert font.startswith('"IBM Plex Sans Arabic"'), font
+    assert pg.evaluate("document.fonts.check('600 16px \"IBM Plex Sans Arabic\"', 'مرحبا')")
     pg.screenshot(path=str(out / "ar-settings.png"))
     for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
                          ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية")):
