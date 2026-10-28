@@ -4,5 +4,5 @@ contact_links:
     url: https://discord.gg/hbzN6udBM
     about: Ask the community about setting up OfinTech Desk or connecting a ledger.
   - name: Report a security vulnerability
-    url: https://github.com/OfinTech/OfinTech-ofinTech-Dask/security/advisories/new
+    url: https://github.com/OfinTech/ofinTech-Dask/security/advisories/new
     about: Please report security problems privately, not in a public issue.

@@ -71,8 +71,6 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Changed
 
-- The repository moved to `github.com/OfinTech/OfinTech-ofinTech-Dask`; links, the clone commands and the website
-  webhook's default repository follow.
 - The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27

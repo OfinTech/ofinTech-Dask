@@ -83,7 +83,7 @@ Docker on the host. Keep the secret long and private.
    local edits such as the Team Server's `Caddyfile`. It refuses to run in a checkout that has `server/.env`.
 
    ```bash
-   sudo git clone --depth 1 https://github.com/OfinTech/OfinTech-ofinTech-Dask.git /opt/ofintech-site
+   sudo git clone --depth 1 https://github.com/OfinTech/ofinTech-Dask.git /opt/ofintech-site
    cd /opt/ofintech-site/landing
    ```
 
