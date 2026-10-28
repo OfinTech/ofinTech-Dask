@@ -6,7 +6,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from ..data.importer import parse_date
-from .accounting import HttpBase, add_months, month_start, to_float
+from .accounting import HttpBase, add_months, debit_credit, month_start, to_float
 
 MINOR_VERSION = "75"
 PL_GROUPS = {"Income": "Income", "COGS": "Cost of sales", "Expenses": "Expenses", "OtherIncome": "Other income",
@@ -101,6 +101,63 @@ def parse_balance_sheet(report: dict[str, Any], as_of: date) -> list[dict[str, A
     return lines
 
 
+ACCOUNT_CLASS = {"Bank": "Bank", "Accounts Receivable": "Receivable", "Other Current Asset": "Asset",
+                 "Fixed Asset": "Asset", "Other Asset": "Asset", "Accounts Payable": "Payable",
+                 "Credit Card": "Liability", "Other Current Liability": "Liability", "Long Term Liability": "Liability",
+                 "Equity": "Equity", "Income": "Income", "Other Income": "Other income",
+                 "Cost of Goods Sold": "Cost of sales", "Expense": "Expense", "Other Expense": "Other expense"}
+GL_COLUMNS = "tx_date,txn_type,doc_num,name,memo,account_name,klass_name,dept_name,debt_amt,credit_amt,subt_nat_amount"
+
+
+def parse_general_ledger(report: dict[str, Any], accounts: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rows of the GeneralLedger report, grouped under account sections. ``accounts`` maps account id and name to
+    ``{"code", "class"}`` (from the Account query)."""
+    keys: list[str] = []
+    for col in report.get("Columns", {}).get("Column", []):
+        meta = {m.get("Name"): m.get("Value") for m in col.get("MetaData", []) or []}
+        keys.append(meta.get("ColKey") or str(col.get("ColTitle") or "").lower())
+    out: list[dict[str, Any]] = []
+
+    def cell(cells: list[dict[str, Any]], key: str) -> dict[str, Any]:
+        return cells[keys.index(key)] if key in keys and keys.index(key) < len(cells) else {}
+
+    def walk(rows: list[dict[str, Any]], account: dict[str, Any]) -> None:
+        for row in rows:
+            if "Rows" in row:
+                head = (row.get("Header", {}).get("ColData") or [{}])[0]
+                acc = accounts.get(str(head.get("id") or "")) or accounts.get(str(head.get("value") or "")) or {}
+                walk(row["Rows"].get("Row", []), {"name": head.get("value") or account.get("name"), **acc}
+                     if head.get("value") else account)
+                continue
+            cells = row.get("ColData") or []
+            if row.get("type") not in (None, "Data") or not cells:
+                continue
+            day = cell(cells, "tx_date").get("value")
+            if not day or not str(day)[:4].isdigit():
+                continue  # beginning-balance rows have no date
+            name = cell(cells, "account_name").get("value") or account.get("name") or ""
+            acc = accounts.get(str(cell(cells, "account_name").get("id") or "")) or accounts.get(name) or account
+            dr = to_float(cell(cells, "debt_amt").get("value"))
+            cr = to_float(cell(cells, "credit_amt").get("value"))
+            if dr is None and cr is None:
+                dr, cr = debit_credit(to_float(cell(cells, "subt_nat_amount").get("value")) or 0.0)
+            dr, cr = dr or 0.0, cr or 0.0
+            if not dr and not cr:
+                continue
+            txn = cell(cells, "txn_type")
+            tags = [{"dimension": "Class", "value": cell(cells, "klass_name").get("value")},
+                    {"dimension": "Location", "value": cell(cells, "dept_name").get("value")}]
+            out.append({"date": str(day)[:10], "entry": f"{txn.get('value')}:{txn.get('id') or cell(cells, 'doc_num').get('value')}",
+                        "type": txn.get("value"), "account_code": acc.get("code"), "account": name,
+                        "account_class": acc.get("class") or "Asset", "debit": dr, "credit": cr,
+                        "description": cell(cells, "memo").get("value") or cell(cells, "doc_num").get("value"),
+                        "party": cell(cells, "name").get("value") or None,
+                        "tags": [t for t in tags if t["value"]]})
+
+    walk(report.get("Rows", {}).get("Row", []), {})
+    return out
+
+
 def _doc(e: dict[str, Any], party_key: str) -> dict[str, Any]:
     balance = to_float(e.get("Balance")) or 0.0
     due = e.get("DueDate")
@@ -163,3 +220,22 @@ class QuickBooksClient(HttpBase):
         since = (date.today() - timedelta(days=730)).isoformat()
         where = "where Balance > '0'" if open_only else f"where TxnDate >= '{since}'"
         return [_doc(e, "VendorRef") for e in await self._query("Bill", where)]
+
+    async def journal_lines(self, start: date, end: date) -> list[dict[str, Any]]:
+        """The GeneralLedger report, a quarter at a time, with each line's class and location."""
+        accounts: dict[str, dict[str, Any]] = {}
+        for a in await self._query("Account", ""):
+            info = {"code": a.get("AcctNum"), "class": ACCOUNT_CLASS.get(a.get("AccountType") or "", "Asset")}
+            for k in (a.get("Id"), a.get("Name"), a.get("FullyQualifiedName")):
+                if k:
+                    accounts[str(k)] = info
+        lines: list[dict[str, Any]] = []
+        chunk = month_start(start)
+        while chunk <= end:
+            last = min(add_months(chunk, 3) - timedelta(days=1), end)
+            report = await self._get("reports/GeneralLedger", {
+                "start_date": max(chunk, start).isoformat(), "end_date": last.isoformat(), "columns": GL_COLUMNS,
+                "accounting_method": "Accrual"})
+            lines.extend(parse_general_ledger(report, accounts))
+            chunk = add_months(chunk, 3)
+        return lines

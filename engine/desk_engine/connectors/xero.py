@@ -3,11 +3,12 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+import re
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from ..data.importer import parse_date
-from .accounting import HttpBase, add_months, month_start, to_float
+from .accounting import HttpBase, add_months, debit_credit, month_start, to_float
 
 API = "https://api.xero.com/api.xro/2.0"
 
@@ -102,6 +103,47 @@ def _doc(e: dict[str, Any]) -> dict[str, Any]:
             "balance": balance, "status": status}
 
 
+ACCOUNT_CLASS = {"BANK": "Bank", "REVENUE": "Income", "SALES": "Income", "OTHERINCOME": "Other income",
+                 "DIRECTCOSTS": "Cost of sales", "EXPENSE": "Expense", "OVERHEADS": "Expense",
+                 "DEPRECIATN": "Expense", "CURRENT": "Asset", "FIXED": "Asset", "INVENTORY": "Asset",
+                 "NONCURRENT": "Asset", "PREPAYMENT": "Asset", "CURRLIAB": "Liability", "LIABILITY": "Liability",
+                 "TERMLIAB": "Liability", "PAYGLIABILITY": "Liability", "SUPERANNUATIONEXPENSE": "Expense",
+                 "SUPERANNUATIONLIABILITY": "Liability", "WAGESEXPENSE": "Expense",
+                 "WAGESPAYABLELIABILITY": "Liability", "EQUITY": "Equity"}
+SYSTEM_CLASS = {"DEBTORS": "Receivable", "CREDITORS": "Payable"}
+_MS_DATE = re.compile(r"/Date\((-?\d+)")
+
+
+def xero_date(v: Any) -> str | None:
+    """Xero JSON dates: ``/Date(1458086400000+0000)/`` or ISO."""
+    if not v:
+        return None
+    m = _MS_DATE.search(str(v))
+    if m:
+        return datetime.fromtimestamp(int(m.group(1)) / 1000, tz=timezone.utc).date().isoformat()
+    return str(v)[:10] if str(v)[:4].isdigit() else None
+
+
+def parse_journals(journals: list[dict[str, Any]], classes: dict[str, str]) -> list[dict[str, Any]]:
+    """Journal lines from ``GET /Journals``. NetAmount is positive for a debit. Xero journals carry no contact,
+    so ``party`` is empty."""
+    out = []
+    for j in journals:
+        day = xero_date(j.get("JournalDate"))
+        for ln in j.get("JournalLines") or []:
+            amount = to_float(ln.get("NetAmount")) or 0.0
+            if not amount:
+                continue
+            dr, cr = debit_credit(amount)
+            cls = classes.get(ln.get("AccountID") or "") or ACCOUNT_CLASS.get(str(ln.get("AccountType") or ""), "Asset")
+            tags = [{"dimension": t.get("Name"), "value": t.get("Option")} for t in ln.get("TrackingCategories") or []]
+            out.append({"date": day, "entry": f"J{j.get('JournalNumber')}", "type": j.get("SourceType"),
+                        "account_code": ln.get("AccountCode"), "account": ln.get("AccountName") or "",
+                        "account_class": cls, "debit": dr, "credit": cr,
+                        "description": ln.get("Description") or j.get("Reference"), "party": None, "tags": tags})
+    return out
+
+
 class XeroClient(HttpBase):
     label = "Xero"
 
@@ -153,3 +195,23 @@ class XeroClient(HttpBase):
 
     async def bills(self, open_only: bool = True) -> list[dict[str, Any]]:
         return await self._documents("ACCPAY", open_only)
+
+    async def journal_lines(self, start: date, end: date) -> list[dict[str, Any]]:
+        """Every posted journal (``accounting.journals.read``), 100 per call, kept within the period."""
+        classes: dict[str, str] = {}
+        for a in (await self.get(f"{API}/Accounts")).get("Accounts", []):
+            cls = SYSTEM_CLASS.get(str(a.get("SystemAccount") or "")) or ACCOUNT_CLASS.get(str(a.get("Type") or ""))
+            if cls and a.get("AccountID"):
+                classes[a["AccountID"]] = cls
+        journals: list[dict[str, Any]] = []
+        offset = 0
+        for _ in range(500):
+            batch = (await self.get(f"{API}/Journals", {"offset": offset})).get("Journals", [])
+            for j in batch:
+                d = xero_date(j.get("JournalDate"))
+                if d and start.isoformat() <= d <= end.isoformat():
+                    journals.append(j)
+            if len(batch) < 100:
+                break
+            offset = max(int(j.get("JournalNumber") or 0) for j in batch)
+        return parse_journals(journals, classes)

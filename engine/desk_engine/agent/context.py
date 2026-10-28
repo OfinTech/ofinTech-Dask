@@ -45,6 +45,10 @@ TRIGGERS: dict[str, list[str]] = {
                    "فاتورة", "فواتير", "دفتر", "ربح", "خسارة", "ميزانية", "مدين", "دائن", "متأخر", "عميل", "مورد", "قائمة الدخل",
                    "factura", "beneficio", "pérdida", "balance", "cobro", "pago", "vencid", "cliente", "proveedor",
                    "facture", "bénéfice", "perte", "bilan", "créance", "dette", "échu", "fournisseur"],
+    "costcentres": ["cost centre", "cost center", "cost-centre", "project", "budget", "burn", "run out", "runs out",
+                    "مركز تكلفة", "مركز التكلفة", "مراكز التكلفة", "مشروع", "المشروع", "موازنة", "الموازنة", "تنفد",
+                    "centro de coste", "centro de costo", "proyecto", "presupuesto",
+                    "centre de coût", "centre de cout", "projet", "budget"],
     "workflows": ["workflow", "automate", "automation", "routine", "every week", "every month", "run the",
                   "سير العمل", "أتمتة", "اتمتة", "كل أسبوع", "كل شهر",
                   "flujo", "automatiza", "cada semana", "cada mes",
@@ -59,6 +63,7 @@ GROUP_HELP = {
     "google": "Gmail search, read, drafts and sending; Google Drive and Sheets import",
     "data": "imported datasets: list, describe, query; dashboards",
     "accounting": "accounting system reports, invoices and bills, sync",
+    "costcentres": "cost centres and projects: cost, cash paid, budget lines and when the budget runs out",
     "workflows": "list and run workflows",
     "collaboration": "message colleagues in the workspace",
 }

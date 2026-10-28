@@ -83,6 +83,30 @@ that has not been closed to retained earnings, so that the balance sheet balance
 ], "next_cursor": null }
 ```
 
+**Journal lines** (optional, used by [cost centres](COST_CENTRES.md)):
+`GET /v1/journal-lines?start=2026-01-01&end=2026-03-31` (pull, paged with `next_cursor`) or
+`POST …/journal-lines` (push).
+
+One line per posted journal line. Lines of one entry share `entry`, and each entry balances.
+
+- `account_class` is one of `Bank`, `Receivable`, `Payable`, `Asset`, `Liability`, `Equity`, `Income`,
+  `Other income`, `Cost of sales`, `Expense`, `Other expense`. Use `Bank` for bank and cash accounts and `Payable`
+  for the supplier control account: cost centres use them to tell what has been paid.
+- `debit` and `credit` are positive numbers; one of them is usually 0.
+- `party` is the customer or supplier. Without it, supplier payments cannot be matched to the right bills.
+- `tags` are the line's dimensions (project, cost centre, department, class). Add `percent` when a line is split.
+  An adapter that has no journal lines can answer 404; everything else keeps working.
+
+```json
+{ "lines": [
+  { "date": "2026-03-10", "entry": "BILL-0142", "type": "Supplier bill", "account_code": "5200",
+    "account": "Materials", "account_class": "Cost of sales", "debit": 10000.00, "credit": 0, "description": "Steel",
+    "party": "Gulf Steel", "tags": [ { "dimension": "Project", "value": "Riyadh tower" } ] },
+  { "date": "2026-03-10", "entry": "BILL-0142", "account_code": "2000", "account": "Accounts payable",
+    "account_class": "Payable", "debit": 0, "credit": 10000.00, "party": "Gulf Steel" }
+], "next_cursor": null }
+```
+
 OfinTech Desk validates every response. If a response does not match the format, the sync stops with a message
 that names the field at fault, for example `lines.3.period: String should match pattern`.
 
