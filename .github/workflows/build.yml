@@ -12,10 +12,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: "24" }
       - name: OCR and LibreOffice for the file tests
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-ara
@@ -37,7 +37,7 @@ jobs:
           pip install playwright==1.63.0
           python -m playwright install --with-deps chromium
           python e2e/ui_smoke.py e2e-output
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: ui-smoke-screenshots
@@ -57,10 +57,10 @@ jobs:
         os: [macos-14, windows-2022, ubuntu-22.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with: { node-version: "24" }
       - name: Build engine
         working-directory: engine
@@ -84,7 +84,7 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ofintech-desk-${{ matrix.os }}
           path: |
@@ -99,6 +99,6 @@ jobs:
     needs: test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build Team Server image
         run: docker build -f server/Dockerfile -t ofintech-desk:ci .
