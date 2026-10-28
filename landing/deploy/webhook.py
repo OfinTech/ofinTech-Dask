@@ -12,7 +12,7 @@ A small HTTP server (Python standard library only) that accepts GitHub webhook d
   is acknowledged and ignored. When GitHub does not list the changed files (more than 20 commits), it deploys.
 
 Settings (environment): WEBHOOK_SECRET (required, at least 24 characters), DEPLOY_BRANCH (default main),
-DEPLOY_REPOSITORY (default OfinTech/ofinTech-Dask, compared without regard to case), DEPLOY_PATHS (default
+DEPLOY_REPOSITORY (default OfinTech/OfinTech-ofinTech-Dask, compared without regard to case), DEPLOY_PATHS (default
 landing/; space-separated prefixes, empty for every push), DEPLOY_COMMAND (default /app/deploy.sh), WEBHOOK_PORT
 (default 9000), WEBHOOK_PATH (default /hooks/deploy).
 """
@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 MAX_BODY = 1024 * 1024
 SECRET = os.environ.get("WEBHOOK_SECRET", "").encode()
 BRANCH = os.environ.get("DEPLOY_BRANCH", "main")
-REPOSITORY = os.environ.get("DEPLOY_REPOSITORY", "OfinTech/ofinTech-Dask").lower()
+REPOSITORY = os.environ.get("DEPLOY_REPOSITORY", "OfinTech/OfinTech-ofinTech-Dask").lower()
 PATHS = os.environ.get("DEPLOY_PATHS", "landing/").split()
 COMMAND = os.environ.get("DEPLOY_COMMAND", "/app/deploy.sh")
 PATH = os.environ.get("WEBHOOK_PATH", "/hooks/deploy")

@@ -11,7 +11,9 @@ migrations are applied automatically on start-up and are never rewritten once re
   - a features page (`landing/site/features/`) for financial analysis, forecasting and cost centres, with screenshots
     of the demo company, linked from the home page;
   - a **GitHub deploy webhook** (`landing/deploy`) that checks GitHub's signature and rebuilds the website when a push
-    to `main` changes `landing/`.
+    to `main` changes `landing/`;
+  - *Sign in* links to the product at `desk.ofintech.ai`; the website stays at `ofintech.ai` (docs/DEPLOYMENT.md →
+    Domains).
 
 - **Financial analysis** (docs/FINANCIAL_ANALYSIS.md):
   - 35 standard KPIs from the general ledger in six groups, with a scorecard, sparklines and the change on the
@@ -69,6 +71,8 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Changed
 
+- The repository moved to `github.com/OfinTech/OfinTech-ofinTech-Dask`; links, the clone commands and the website
+  webhook's default repository follow.
 - The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27
