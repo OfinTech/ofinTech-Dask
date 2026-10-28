@@ -9,6 +9,7 @@ rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist/assets", { recursive: true });
 cpSync("index.html", "dist/index.html");
 cpSync("favicon.svg", "dist/favicon.svg");
+cpSync("src/fonts/OFL.txt", "dist/assets/OFL-IBM-Plex-Sans-Arabic.txt");
 
 const options = {
   entryPoints: { app: "src/main.tsx" },
@@ -20,6 +21,8 @@ const options = {
   minify: !watch,
   sourcemap: watch ? "inline" : false,
   legalComments: "linked",
+  loader: { ".woff": "file" },
+  assetNames: "[name]-[hash]",
   define: { "process.env.NODE_ENV": JSON.stringify(watch ? "development" : "production") },
   logLevel: "info",
 };

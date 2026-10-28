@@ -7,6 +7,9 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **IBM Plex Sans Arabic** for the Arabic interface, bundled with the app (works offline and under the strict content
+  security policy; SIL Open Font License 1.1). Letter spacing is turned off in Arabic so letters stay joined.
+
 - **Cost centres** (docs/COST_CENTRES.md): a project or department followed through the general ledger, the journal
   and the bank, with:
   - **rules instead of a ledger field**: tags, accounts, suppliers, words and dates, with exceptions and a version
