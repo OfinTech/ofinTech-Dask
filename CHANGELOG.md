@@ -7,9 +7,25 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Financial analysis** (docs/FINANCIAL_ANALYSIS.md):
+  - 35 standard KPIs from the general ledger in six groups, with a scorecard, sparklines and the change on the
+    previous month;
+  - targets and warning levels set by the finance lead, editable formulas in a small safe formula language, and KPIs
+    of your own;
+  - drill-down to the measures and ledger accounts behind each value;
+  - account roles suggested in four languages and confirmed by people;
+  - month-end balances with opening balances from the synced balance sheet, and cash flow split into operating,
+    investing and financing.
+- **Forecasting** (docs/FORECASTING.md):
+  - seven methods per P&L line, plus working-capital days, capital spending and debt repayment, projecting profit,
+    working capital and cash;
+  - the month cash goes below zero is flagged;
+  - scenarios and versions; draft → submitted → approved, with approval and the plan reserved for administrators;
+  - approved results are frozen and their accuracy is tracked against actuals;
+  - a statistical reference (Holt / Holt-Winters) with its measured error.
+- Three read-only assistant tools (`financial_kpis`, `kpi_detail`, `forecast_report`) and migration 14.
 - **IBM Plex Sans Arabic** for the Arabic interface, bundled with the app (works offline and under the strict content
   security policy; SIL Open Font License 1.1). Letter spacing is turned off in Arabic so letters stay joined.
-
 - **Cost centres** (docs/COST_CENTRES.md): a project or department followed through the general ledger, the journal
   and the bank, with:
   - **rules instead of a ledger field**: tags, accounts, suppliers, words and dates, with exceptions and a version
@@ -33,6 +49,10 @@ migrations are applied automatically on start-up and are never rewritten once re
   offline page with *Try again*, and docs/DESKTOP.md.
 - **Google sign-in from the desktop app** through the system browser, handed back to the app with a single-use,
   two-minute code bound to the app that started it (migration 12).
+
+### Changed
+
+- The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27
 
