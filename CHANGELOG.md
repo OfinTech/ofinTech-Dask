@@ -7,6 +7,14 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Website:**
+  - a features page (`landing/site/features/`) for financial analysis, forecasting and cost centres, with screenshots
+    of the demo company, linked from the home page;
+  - a **GitHub deploy webhook** (`landing/deploy`) that checks GitHub's signature and rebuilds the website when a push
+    to `main` changes `landing/`;
+  - *Sign in* links to the product at `desk.ofintech.ai`; the website stays at `ofintech.ai` (docs/DEPLOYMENT.md →
+    Domains).
+
 - **Financial analysis** (docs/FINANCIAL_ANALYSIS.md):
   - 35 standard KPIs from the general ledger in six groups, with a scorecard, sparklines and the change on the
     previous month;

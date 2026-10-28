@@ -12,6 +12,17 @@ vLLM), size that machine separately; it typically needs a GPU.
 
 Requirements: Docker Engine 24+ with Compose v2, a DNS record for your domain, and ports 80 and 443 open.
 
+### Domains (OfinTech's own installation)
+
+| Address | What it serves | Where it is configured |
+|---|---|---|
+| `desk.ofintech.ai` | the product: the Team Server (web app, API, OAuth callbacks), and what the desktop client opens | `DESK_DOMAIN=desk.ofintech.ai` in `server/.env` |
+| `ofintech.ai`, `www.ofintech.ai` | the website (landing page and features); its *Sign in* buttons link to `desk.ofintech.ai` | the `ofintech.ai` block in `server/Caddyfile`, see `landing/README.md` |
+
+Both can run on one server: the Team Server's Caddy holds ports 80 and 443 and serves the two names. Point DNS
+A records for `desk.ofintech.ai`, `ofintech.ai` and `www.ofintech.ai` at that server. OAuth apps (Google,
+QuickBooks, Xero, Zoho) use `https://desk.ofintech.ai/oauth/callback`, never the website's address.
+
 ## Install
 
 ```bash
