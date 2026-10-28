@@ -17,6 +17,15 @@ they keep that data safe and every figure traceable, and then on everything else
 - **Figures must stay traceable.** A feature that puts numbers in front of a person shows where each one came from,
   or marks it as unsourced.
 
+## Questions and discussion
+
+Join the community on [Discord](https://discord.gg/hbzN6udBM) for questions, ideas and help with setting up or connecting a ledger. Open a
+GitHub issue for bugs and feature requests, so they can be tracked.
+
+- Do not post API keys, passwords, tokens, customer names or real financial figures on Discord. Use invented data in
+  screenshots and examples.
+- Report security problems privately as described in [SECURITY.md](SECURITY.md), not on Discord or in an issue.
+
 ## Development setup
 
 ```bash

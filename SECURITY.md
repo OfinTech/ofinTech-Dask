@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please **do not open a public issue** for a security problem. Report it privately through GitHub's *Report a
+Please **do not open a public issue or post on Discord** about a security problem. Report it privately through GitHub's *Report a
 vulnerability* button on the repository's Security tab (private vulnerability reporting). Include what you found,
 how to reproduce it, the version (Settings → Account shows it), and whether it affects the desktop app, the Team
 Server or both.
