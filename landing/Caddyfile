@@ -4,11 +4,5 @@
 
 {$LANDING_DOMAIN}, www.{$LANDING_DOMAIN} {
 	encode zstd gzip
-	# GitHub deploy webhook (only when docker-compose.webhook.yml runs)
-	handle /hooks/deploy* {
-		reverse_proxy hook:9000
-	}
-	handle {
-		reverse_proxy landing:8080
-	}
+	reverse_proxy landing:8080
 }
