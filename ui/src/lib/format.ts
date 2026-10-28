@@ -12,6 +12,13 @@ export function fmtNumber(v: unknown, digits = 2): string {
   return new Intl.NumberFormat(locales(), { minimumFractionDigits: 0, maximumFractionDigits: digits }).format(n);
 }
 
+export function fmtFixed(v: unknown, digits = 2): string {
+  if (v === null || v === undefined || v === "") return "—";
+  const n = typeof v === "number" ? v : Number(v);
+  if (!Number.isFinite(n)) return String(v);
+  return new Intl.NumberFormat(locales(), { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
+}
+
 export function fmtMoney(v: unknown, currency?: string): string {
   if (v === null || v === undefined || v === "") return "—";
   const n = typeof v === "number" ? v : Number(v);
