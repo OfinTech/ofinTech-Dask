@@ -10,8 +10,8 @@
     "i18n:check": "node scripts/i18n.mjs"
   },
   "dependencies": {
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   },
   "devDependencies": {
     "@types/react": "^19.2.0",
