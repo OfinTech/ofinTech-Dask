@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OfinTech Desk \u2014 Open Accounting Connector",
+    "title": "OfinTech Desk — Open Accounting Connector",
     "version": "1.0.0",
-    "description": "Connect any accounting system. Pull: implement the five GET endpoints in an HTTPS adapter in front of your system; OfinTech Desk calls them with `Authorization: Bearer <adapter key>`. Push: send the same JSON to the ingest endpoints with the connection's ingest key. Amounts are in the company's base currency unless a document says otherwise. See docs/ACCOUNTING_API.md."
+    "description": "Connect any accounting system. Pull: implement the GET endpoints (journal lines are optional) in an HTTPS adapter in front of your system; OfinTech Desk calls them with `Authorization: Bearer <adapter key>`. Push: send the same JSON to the ingest endpoints with the connection's ingest key. Amounts are in the company's base currency unless a document says otherwise. See docs/ACCOUNTING_API.md."
   },
   "servers": [
     {
@@ -133,7 +133,7 @@
                 "all"
               ]
             },
-            "description": "open: balance \u2260 0; all: every posted document"
+            "description": "open: balance ≠ 0; all: every posted document"
           },
           {
             "name": "cursor",
@@ -179,7 +179,7 @@
                 "all"
               ]
             },
-            "description": "open: balance \u2260 0; all: every posted document"
+            "description": "open: balance ≠ 0; all: every posted document"
           },
           {
             "name": "cursor",
@@ -197,6 +197,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DocumentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong key"
+          }
+        }
+      }
+    },
+    "/v1/journal-lines": {
+      "get": {
+        "tags": [
+          "Adapter (you implement)"
+        ],
+        "operationId": "adapterJournalLines",
+        "summary": "Optional: posted journal lines with their dimensions (used by cost centres)",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of journal lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalLinesResponse"
                 }
               }
             }
@@ -458,6 +510,63 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Company"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or wrong ingest key"
+          },
+          "422": {
+            "description": "The data does not match the format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests"
+          }
+        }
+      }
+    },
+    "/api/ingest/v1/accounting/journal-lines": {
+      "post": {
+        "tags": [
+          "Push (OfinTech Desk implements)"
+        ],
+        "operationId": "pushJournalLines",
+        "summary": "Replace the journal lines held for this connection",
+        "security": [
+          {
+            "ingestKey": []
+          }
+        ],
+        "servers": [
+          {
+            "url": "https://desk.example.com"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JournalLinesResponse"
               }
             }
           }
@@ -828,6 +937,219 @@
         "title": "DocumentsResponse",
         "type": "object"
       },
+      "Tag": {
+        "description": "A dimension on a journal line: project, cost centre, department, class, analytic account.",
+        "properties": {
+          "dimension": {
+            "default": "",
+            "examples": [
+              "Project"
+            ],
+            "maxLength": 60,
+            "title": "Dimension",
+            "type": "string"
+          },
+          "value": {
+            "examples": [
+              "Riyadh tower"
+            ],
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Value",
+            "type": "string"
+          },
+          "percent": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 100,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "share of the line on this value when a line is split; omit for 100",
+            "title": "Percent"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "Tag",
+        "type": "object"
+      },
+      "JournalLine": {
+        "description": "One line of a posted journal entry. Lines of the same entry share ``entry``; each entry balances.",
+        "properties": {
+          "date": {
+            "examples": [
+              "2026-03-31"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Date",
+            "type": "string"
+          },
+          "entry": {
+            "description": "journal entry number or id",
+            "examples": [
+              "BILL/2026/0142"
+            ],
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Entry",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "examples": [
+              "Supplier bill"
+            ],
+            "title": "Type"
+          },
+          "account_code": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "examples": [
+              "6100"
+            ],
+            "title": "Account Code"
+          },
+          "account": {
+            "examples": [
+              "Subcontractors"
+            ],
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Account",
+            "type": "string"
+          },
+          "account_class": {
+            "description": "Bank for bank and cash accounts; Payable/Receivable for the supplier and customer control accounts",
+            "enum": [
+              "Bank",
+              "Receivable",
+              "Payable",
+              "Asset",
+              "Liability",
+              "Equity",
+              "Income",
+              "Other income",
+              "Cost of sales",
+              "Expense",
+              "Other expense"
+            ],
+            "title": "Account Class",
+            "type": "string"
+          },
+          "debit": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Debit",
+            "type": "number"
+          },
+          "credit": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Credit",
+            "type": "number"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "party": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "customer or supplier",
+            "examples": [
+              "Gulf Steel Co."
+            ],
+            "title": "Party"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "maxItems": 10,
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date",
+          "entry",
+          "account",
+          "account_class"
+        ],
+        "title": "JournalLine",
+        "type": "object"
+      },
+      "JournalLinesResponse": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/JournalLine"
+            },
+            "maxItems": 200000,
+            "title": "Lines",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "pull only: pass as ?cursor= to get the next page",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "JournalLinesResponse",
+        "type": "object"
+      },
       "IngestResult": {
         "properties": {
           "kind": {
@@ -884,7 +1206,7 @@
       "ingestKey": {
         "type": "http",
         "scheme": "bearer",
-        "description": "the connection's ingest key (odk_\u2026)"
+        "description": "the connection's ingest key (odk_…)"
       }
     }
   },

@@ -7,6 +7,24 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Cost centres** (docs/COST_CENTRES.md): a project or department followed through the general ledger, the journal
+  and the bank, with:
+  - **rules instead of a ledger field**: tags, accounts, suppliers, words and dates, with exceptions and a version
+    history;
+  - the **untagged share**, plus checks for possibly missing lines and lines counted twice;
+  - **cost against cash**: paid directly, supplier bills settled oldest first, still unpaid, not cash, and bank
+    payments that may belong to the cost centre;
+  - the date the **budget runs out** at the current pace, overall and per budget line, with the projected cost at
+    the planned end;
+  - **budgets read from the customer's own Excel or Word file**, each line keeping its cell and matched to ledger
+    accounts.
+
+  The page has three read-only assistant tools and is translated into Arabic, Spanish and French (migration 13).
+- **General-ledger lines** from QuickBooks Online (GeneralLedger report), Xero (Journals; adds the
+  `accounting.journals.read` scope), Odoo (journal items with analytic distribution) and the Open Accounting
+  Connector (`/v1/journal-lines`, pull or push), synced as a `· General ledger` dataset. An Excel or CSV file with the
+  same columns works too.
+
 - **Desktop client for macOS and Windows** that opens the Team Server at `https://desk.ofintech.ai` (configurable at
   build time), without a local engine: `desktop/electron-builder.cloud.yml` and the `desktop-cloud` workflow, an
   offline page with *Try again*, and docs/DESKTOP.md.

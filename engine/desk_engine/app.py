@@ -22,6 +22,7 @@ from .agent.harness import Agent
 from .agent.tools import ToolContext, registry
 from .channels.service import Channels
 from .config import VERSION, Settings
+from .costcentres import CostCentres
 from .db import Database, dumps, new_id, now
 from .events import EventHub
 from .files.service import Files
@@ -63,6 +64,7 @@ class Engine:
         self.files = Files(self)
         self.mailer = Mailer.from_env()
         self.memory = Memory(self)
+        self.costcentres = CostCentres(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
 
