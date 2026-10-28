@@ -1,7 +1,7 @@
 # OfinTech Desk landing page: static files served by nginx, running as a non-root user on port 8080.
 #   docker build -t ofintech-landing .
 #   docker run -d -p 8080:8080 --name ofintech-landing ofintech-landing
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --chown=nginx:nginx site/ /usr/share/nginx/html/
