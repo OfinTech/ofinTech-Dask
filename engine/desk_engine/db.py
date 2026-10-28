@@ -592,6 +592,62 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ix_cost_centre_budget ON cost_centre_budget_lines(cost_centre_id, position);
     """,
+    # 14 — financial analysis: which ledger, account roles, KPI settings, forecasts
+    """
+    CREATE TABLE analysis_settings (
+        workspace_id TEXT PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+        dataset_id TEXT,
+        updated_by TEXT,
+        updated_at REAL NOT NULL
+    );
+    CREATE TABLE account_roles (
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        dataset_id TEXT NOT NULL,
+        account_key TEXT NOT NULL,
+        role TEXT NOT NULL,
+        confirmed_by TEXT,
+        updated_at REAL NOT NULL,
+        PRIMARY KEY (workspace_id, dataset_id, account_key)
+    );
+    CREATE TABLE kpi_settings (
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        kpi_id TEXT NOT NULL,
+        name TEXT,
+        category TEXT,
+        formula TEXT,
+        unit TEXT,
+        direction TEXT,
+        target REAL,
+        warn REAL,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        updated_by TEXT,
+        updated_at REAL NOT NULL,
+        PRIMARY KEY (workspace_id, kpi_id)
+    );
+    CREATE TABLE forecasts (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        dataset_id TEXT NOT NULL,
+        group_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        scenario TEXT NOT NULL DEFAULT 'Base',
+        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'draft',
+        is_plan INTEGER NOT NULL DEFAULT 0,
+        start_month TEXT NOT NULL,
+        months INTEGER NOT NULL,
+        assumptions TEXT NOT NULL,
+        result TEXT,
+        note TEXT,
+        created_by TEXT,
+        submitted_by TEXT,
+        approved_by TEXT,
+        approved_at REAL,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE INDEX ix_forecasts_ws ON forecasts(workspace_id, group_id);
+    """,
 ]
 
 
