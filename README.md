@@ -22,7 +22,7 @@
 
 ---
 
-OfinTech Desk reads your ledger, spreadsheets, documents and inbox, does the arithmetic in code, fills in your own
+OfinTech-Desk reads your ledger, spreadsheets, documents and inbox, does the arithmetic in code, fills in your own
 Excel and Word files with sources for every figure, and asks a person before it sends or changes anything. Bring any
 model: a cloud provider with your own key, or a local model.
 
