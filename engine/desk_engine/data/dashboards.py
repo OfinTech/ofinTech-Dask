@@ -58,6 +58,34 @@ def get_dashboard(engine: Engine, ws_id: str, dashboard_id: str) -> dict[str, An
     return row
 
 
+def dashboard_sources(engine: Engine, ws_id: str, dash: dict[str, Any]) -> list[dict[str, Any]]:
+    """The datasets behind a dashboard's widgets: when each was last refreshed, and the connection that can refresh
+    it (an accounting connection that is read, not pushed to)."""
+    from ..connectors.accounting import ACCOUNTING_PROVIDERS, is_push
+    from .store import find_dataset
+
+    out: dict[str, dict[str, Any]] = {}
+    for w in dash["widgets"]:
+        ref = (w.get("query") or {}).get("dataset")
+        if not ref:
+            continue
+        try:
+            ds = find_dataset(engine, ws_id, ref)
+        except AppError:
+            continue
+        if ds["id"] in out:
+            continue
+        src = loads(ds.get("source_ref"), {}) if isinstance(ds.get("source_ref"), str) else (ds.get("source_ref") or {})
+        conn = None
+        if src.get("connection_id"):
+            conn = engine.db.one("SELECT id, provider, label, status, config FROM connections WHERE id = ? AND "
+                                 "workspace_id = ?", (src["connection_id"], ws_id))
+        syncable = bool(conn and conn["provider"] in ACCOUNTING_PROVIDERS and not is_push(conn))
+        out[ds["id"]] = {"id": ds["id"], "name": ds["name"], "refreshed_at": ds.get("refreshed_at"),
+                         "connection": {"id": conn["id"], "label": conn["label"], "syncable": syncable} if conn else None}
+    return list(out.values())
+
+
 def render_dashboard(engine: Engine, workspace: dict[str, Any], dashboard_id: str) -> dict[str, Any]:
     dash = get_dashboard(engine, workspace["id"], dashboard_id)
     out = []
@@ -67,7 +95,8 @@ def render_dashboard(engine: Engine, workspace: dict[str, Any], dashboard_id: st
             out.append({**w, "data": result})
         except AppError as exc:
             out.append({**w, "error": exc.message})
-    return {**dash, "widgets": out, "currency": workspace.get("base_currency")}
+    return {**dash, "widgets": out, "currency": workspace.get("base_currency"),
+            "sources": dashboard_sources(engine, workspace["id"], dash), "rendered_at": now()}
 
 
 # --- templates ---------------------------------------------------------------------------------

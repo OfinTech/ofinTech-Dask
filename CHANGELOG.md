@@ -84,6 +84,21 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **Memory** found saved memories only when the question used the same word forms: Arabic words with another
+  article or ending (المستحقات / المستحقة), plurals, and short follow-ups were missed. Retrieval now normalises and
+  stems words in four languages, weighs rare words, and reads the latest three messages. The Memory page search finds
+  words while you type, and waits until you pause instead of searching on every key. Categories and usage counts
+  are translated. Up to six pinned memories no longer crowd out the relevant ones. The assistant can now correct an
+  outdated memory: saving the correction archives the old one (migration 17).
+- **Dashboards:** *Refresh* recalculated the same data with no sign that anything happened. It now syncs the
+  accounting connections behind the dashboard (for editors), shows that it is working, says what was updated or
+  what failed, and the dashboard shows how old its data is.
+- **Connecting an accounting system or Google:**
+  - On the Team Server, the sign-in now happens in the same tab and comes back to the page it was started from, with
+    the result shown there.
+  - In the desktop app, the browser page links back into the app's Connections page.
+  - A refused or failed sign-in returns with the provider's reason instead of a dead-end page.
+
 - Reading a budget file no longer takes a title line that mentions "budget" for the table's header.
 - A payment to a supplier is classed as investing in proportion to the equipment on that supplier's bills, instead of
   always as operating.

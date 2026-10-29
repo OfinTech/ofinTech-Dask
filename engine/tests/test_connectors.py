@@ -140,6 +140,8 @@ class OAuthFlows(unittest.TestCase):
         ok = h.client.get("/oauth/callback", params={"code": "c0de", "state": q["state"], "realmId": "9130"})
         self.assertEqual(ok.status_code, 200, ok.text)
         self.assertIn("QuickBooks: Sandbox Co", ok.text)
+        # the desktop app started the sign-in in the system browser: the page leads back into the app's page
+        self.assertIn(f"ofintech-desk://open/connections?ws={self.ws}", ok.text)
         token_req = r.find("https://oauth.platform.intuit.com")[0]
         self.assertTrue(token_req.headers["authorization"].startswith("Basic "))
         self.assertIn(b"code=c0de", token_req.content)
@@ -162,6 +164,16 @@ class OAuthFlows(unittest.TestCase):
                                                                                    "dataset_id": inv["id"]})
         view = h.api("GET", f"/api/w/{self.ws}/dashboards/{dash['id']}")
         self.assertEqual(view["widgets"][0]["data"]["rows"], [[1200.0]])
+        self.assertEqual([(x["name"], x["connection"]["syncable"]) for x in view["sources"]],
+                         [("QuickBooks: Sandbox Co · Invoices", True)])
+        # Refresh on a dashboard fetches new data from the connection behind it, then recalculates
+        before = len(r.find(f"{base}/query"))
+        fresh = h.api("POST", f"/api/w/{self.ws}/dashboards/{dash['id']}/refresh")
+        self.assertEqual(fresh["synced"], ["QuickBooks: Sandbox Co"])
+        self.assertTrue(all(v.startswith("general_ledger:") for v in fresh["sync_errors"].values()))  # not mocked here
+        self.assertGreater(len(r.find(f"{base}/query")), before)
+        self.assertEqual(fresh["widgets"][0]["data"]["rows"], [[1200.0]])
+        self.assertGreaterEqual(fresh["sources"][0]["refreshed_at"], view["sources"][0]["refreshed_at"])
 
     def test_token_refresh_rotates(self) -> None:
         h = self.h
@@ -201,3 +213,53 @@ class OAuthFlows(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OAuthReturnToPage(unittest.TestCase):
+    """On the Team Server the browser tab that started a connection comes back to the page it was started from."""
+
+    ORIGIN = {"origin": "https://desk.example.com"}
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server")
+        c = self.h.client
+        c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": "Str0ngPassw0rd!x"},
+               headers=self.ORIGIN)
+        self.ws = c.post("/api/workspaces", json={"name": "Acme"}, headers=self.ORIGIN).json()["id"]
+        c.put("/api/oauth-apps/quickbooks", json={"client_id": "cid", "client_secret": "sec", "environment": "sandbox"},
+              headers=self.ORIGIN)
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def start(self, **body: object) -> dict:
+        r = self.h.client.post(f"/api/w/{self.ws}/connections/quickbooks/authorize", json=body, headers=self.ORIGIN)
+        self.assertEqual(r.status_code, 200, r.text)
+        return {k: v[0] for k, v in parse_qs(urlparse(r.json()["url"]).query).items()}
+
+    def test_back_to_the_page(self) -> None:
+        h, c = self.h, self.h.client
+        bad = c.post(f"/api/w/{self.ws}/connections/quickbooks/authorize", json={"return_to": "https://evil.example/x"},
+                     headers=self.ORIGIN)
+        self.assertEqual(bad.status_code, 422)
+        # the provider refuses: back to the page with the reason
+        q = self.start(return_to="/settings/connections")
+        r = c.get("/oauth/callback", params={"error": "access_denied", "error_description": "User cancelled",
+                                             "state": q["state"]}, follow_redirects=False)
+        self.assertEqual(r.status_code, 303)
+        loc = r.headers["location"]
+        self.assertTrue(loc.startswith("/#/settings/connections?"), loc)
+        self.assertEqual(parse_qs(loc.split("?", 1)[1])["connect_error"], ["The provider returned: User cancelled"])
+        # success: back to the Connections page (the default) with the new connection's id
+        h.router.add("POST", "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer",
+                     lambda req: httpx.Response(200, json={"access_token": "at", "refresh_token": "rt", "expires_in": 3600}))
+        base = "https://sandbox-quickbooks.api.intuit.com/v3/company/42"
+        h.router.add("GET", f"{base}/companyinfo/", {"CompanyInfo": {"CompanyName": "Back Co", "Country": "US"}})
+        h.router.add("GET", f"{base}/preferences", {"Preferences": {"CurrencyPrefs": {"HomeCurrency": {"value": "USD"}}}})
+        q = self.start()
+        r = c.get("/oauth/callback", params={"code": "c", "state": q["state"], "realmId": "42"}, follow_redirects=False)
+        self.assertEqual(r.status_code, 303, r.text)
+        params = parse_qs(r.headers["location"].split("?", 1)[1])
+        self.assertTrue(r.headers["location"].startswith("/#/connections?"))
+        cid = h.engine.db.scalar("SELECT id FROM connections WHERE workspace_id = ?", (self.ws,))
+        self.assertEqual((params["connected"], params["ws"]), ([cid], [self.ws]))

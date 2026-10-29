@@ -727,6 +727,10 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ix_close_items_run ON close_items(run_id, kind, position);
     """,
+    # 17 — memory: a proposal can replace an outdated memory (the old one is archived when the new one is saved)
+    """
+    ALTER TABLE memories ADD COLUMN replaces_id TEXT;
+    """,
 ]
 
 
