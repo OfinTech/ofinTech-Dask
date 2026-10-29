@@ -302,6 +302,42 @@ def write_csv(name: str, rows: list[dict]) -> None:
         w.writerows(rows)
 
 
+def write_statement(month: str = "2026-10") -> None:
+    """The bank's statement for the operating account for one month, for the month-end close: most lines clear on the
+    same day or a day later, the last payment has not cleared yet, and the bank adds a fee and a customer transfer
+    that nobody recorded."""
+    from datetime import timedelta
+
+    def day(x: dict) -> date:
+        d = x["Date"]
+        return d if isinstance(d, date) else date.fromisoformat(str(d)[:10])
+
+    bank = [x for x in GL if x["Account"] == "Operating Account"]
+    opening = round(sum((x["Debit"] or 0) - (x["Credit"] or 0) for x in bank if day(x).isoformat()[:7] < month), 2)
+    rows = sorted((x for x in bank if day(x).isoformat()[:7] == month), key=lambda x: (day(x), x["Entry"]))
+    outstanding = max((x for x in rows if (x["Credit"] or 0) > 0), key=lambda x: (day(x), x["Entry"]))
+    lines = []
+    for i, x in enumerate(rows):
+        if x is outstanding:
+            continue
+        amount = round((x["Debit"] or 0) - (x["Credit"] or 0), 2)
+        cleared = day(x) + timedelta(days=1 if amount < 0 and i % 3 == 1 else 0)
+        lines.append((cleared, (x["Party"] or x["Description"] or "").upper()[:60], amount))
+    lines.append((date(2026, 10, 29), f"TRANSFER FROM {CUSTOMERS[0][0].upper()} REF REMITTANCE", 3150.00))
+    lines.append((date(2026, 10, 31), "MONTHLY ACCOUNT MAINTENANCE FEE", -45.00))
+    lines.sort(key=lambda x: x[0])
+    path = OUT / "ofintech-desk" / f"HarborLine_Bank_Statement_{month}.csv"
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["Date", "Description", "Money out", "Money in", "Balance"])
+        w.writerow([f"{month}-01", "Opening balance", "", "", f"{opening:.2f}"])
+        bal = opening
+        for d, text, amount in lines:
+            bal = round(bal + amount, 2)
+            w.writerow([d.isoformat(), text, f"{-amount:.2f}" if amount < 0 else "", f"{amount:.2f}" if amount > 0 else "",
+                        f"{bal:.2f}"])
+
+
 def main() -> dict:
     write_csv("01_chart_of_accounts.csv", [
         {"Account Name": n, "Account Code": c, "Account Type": t, "Description": d, "Currency": "USD"}
@@ -366,6 +402,8 @@ def main() -> dict:
     for col, w in zip("ABCD", (8, 34, 15, 40), strict=True):
         ws.column_dimensions[col].width = w
     wb.save(OUT / "ofintech-desk" / "EWF_Project_Budget.xlsx")
+
+    write_statement()
 
     dr = sum(x["Debit"] for x in GL)
     cr = sum(x["Credit"] for x in GL)

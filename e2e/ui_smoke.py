@@ -402,6 +402,53 @@ def run_steps(pg, base, out, xlsx):
     pg.wait_for_timeout(300)
     pg.screenshot(path=str(out / "forecast.png"))
     pg.set_viewport_size({"width": 1360, "height": 860})
+    # month-end close: a ledger uploaded, September prepared, the statement matched, entries decided
+    from tests.test_close import ledger_xlsx as close_ledger, statement_csv, BOOK
+
+    (out / "Close GL.xlsx").write_bytes(close_ledger())
+    (out / "september-statement.csv").write_bytes(statement_csv(None))
+    pg.goto(f"{base}/#/costcentres")
+    pg.get_by_role("button", name="Import ledger").click()
+    pg.set_input_files("label:has-text('Upload ledger file') input[type=file]", str(out / "Close GL.xlsx"))
+    pg.wait_for_selector("text=now in the ledger “Close GL · General ledger”")
+    pg.goto(f"{base}/#/close")
+    pg.wait_for_selector("text=Prepare a month")
+    gl = pg.locator("select option", has_text="Close GL").get_attribute("value")
+    pg.locator(".close-start select").select_option(gl)
+    pg.locator(".close-start input[type=month]").fill("2026-09")
+    pg.get_by_role("button", name="Prepare the close").click()
+    pg.wait_for_selector("text=Ready to close")
+    pg.wait_for_selector(".close-item:has-text('Accrue Rent')")
+    pg.set_input_files("label:has-text('Upload statement') input[type=file]", str(out / "september-statement.csv"))
+    pg.wait_for_selector("text=Adjusted ledger balance")
+    pg.wait_for_selector(".close-item:has-text('Bank charge')")
+    rent = pg.locator(".close-item:has-text('Accrue Rent')")
+    rent.get_by_role("button", name="Approve").click()
+    pg.wait_for_selector(".close-item.approved:has-text('Accrue Rent')")
+    dep = pg.locator(".close-item:has-text('Charge Depreciation')")
+    dep.get_by_role("button", name="Reject").click()
+    dep.get_by_label("Why is this entry not needed?").fill("Vehicle sold in August")
+    dep.locator("form button:text-is('Reject')").click()
+    pg.wait_for_selector(".close-item.rejected:has-text('Charge Depreciation')")
+    fees = pg.locator(".close-item:has-text('Professional fees')")
+    fees.get_by_label("Explanation").fill("Due diligence for the Jeddah branch, one-off")
+    fees.get_by_role("button", name="Explain").click()
+    pg.wait_for_selector(".close-item.explained:has-text('Professional fees')")
+    hide_toasts(pg)
+    pg.set_viewport_size({"width": 1360, "height": 3000})
+    pg.wait_for_timeout(400)
+    pg.screenshot(path=str(out / "close.png"))
+    pg.set_viewport_size({"width": 1360, "height": 860})
+    hide_toasts(pg, False)
+    with pg.expect_download() as dl:
+        pg.get_by_role("button", name="Journal (Excel)").click()
+    assert dl.value.suggested_filename == "OfinTech-Desk-close-journal-2026-09.xlsx"
+    with pg.expect_download() as dl2:
+        pg.get_by_role("button", name="Close pack").click()
+    assert dl2.value.suggested_filename == "OfinTech-Desk-close-pack-2026-09.xlsx"
+    pg.goto(f"{base}/#/close")
+    pg.wait_for_selector("td:has-text('September 2026')")
+    pg.screenshot(path=str(out / "close-list.png"))
     # Arabic (right to left), Spanish and French
     pg.goto(f"{base}/#/settings/account")
     pg.get_by_role("button", name="العربية").click()
@@ -413,7 +460,7 @@ def run_steps(pg, base, out, xlsx):
     assert pg.evaluate("document.fonts.check('600 16px \"IBM Plex Sans Arabic\"', 'مرحبا')")
     pg.screenshot(path=str(out / "ar-settings.png"))
     for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
-                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية")):
+                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر")):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_selector(f"text={needle}")
         pg.wait_for_timeout(300)

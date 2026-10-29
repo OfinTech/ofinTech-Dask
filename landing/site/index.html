@@ -198,10 +198,11 @@ footer .cols>div{display:flex;flex-direction:column;gap:8px}
 <li><strong>A general ledger template</strong> to fill in or export to, one row per journal line, uploaded under Cost centres. Entries that do not balance are named before anything is built.</li>
 <li><strong>Cost centres by rule</strong>: tags, accounts, suppliers, words and dates, so projects can be followed in books that were never tagged.</li>
 <li><strong>Account roles suggested</strong> from account names in English, Arabic, Spanish or French, and confirmed by you.</li>
+<li><strong>The month-end close, prepared overnight</strong>: missing accruals and depreciation proposed with the lines behind them, the bank matched to its statement, variances to explain. You approve; nothing is posted for you.</li>
 <li><strong>Workflows for the close</strong>: month-end pack, receivables follow-up and bills due, on a schedule, from an e-mail or from another system's webhook.</li>
 </ul>
 <p class="ask"><span>Ask the assistant</span>“Fill in the March management accounts from the ledger and flag anything you could not trace.”</p>
-<p><a href="#cost-centres">Cost centres</a> · <a href="#workspace">The workspace</a></p>
+<p><a href="#close">Month-end close</a> · <a href="#cost-centres">Cost centres</a></p>
 </article>
 <article aria-labelledby="exec-title">
 <p class="eyebrow">Executive managers</p>
@@ -230,6 +231,7 @@ footer .cols>div{display:flex;flex-direction:column;gap:8px}
 <nav aria-label="Features on this page" class="btns small">
 <a href="#analysis" class="btn">Financial analysis</a>
 <a href="#forecasting" class="btn">Forecasting</a>
+<a href="#close" class="btn">Month-end close</a>
 <a href="#cost-centres" class="btn">Cost centres</a>
 <a href="#connections" class="btn">Connections and webhooks</a>
 <a href="#workspace" class="btn">The workspace</a>
@@ -318,6 +320,26 @@ footer .cols>div{display:flex;flex-direction:column;gap:8px}
 </div>
 </section>
 
+<section id="close" aria-labelledby="close-title" class="band">
+<div class="wrap feature" style="align-items:start">
+<div class="stack">
+<p class="eyebrow">Month-end close</p>
+<h2 id="close-title">The close, prepared while you sleep</h2>
+<p>At 2 a.m. on the 1st, OfinTech Desk reads last month's ledger and lays out what is left before the month can be closed. In the morning the finance team decides; nothing is posted to the accounting system for them.</p>
+<ul>
+<li><strong>Missing costs.</strong> Rent, salaries, subscriptions or depreciation charged every month and absent this month are proposed as entries, with the three previous months as evidence.</li>
+<li><strong>The bank against its statement.</strong> Upload the statement; lines are matched by amount and date, cheques not yet cleared and bank charges are set out, and the unexplained difference is shown, not hidden.</li>
+<li><strong>What moved.</strong> Accounts that moved more than materiality and 20% against the last three months, each with the entries behind it, wait for a one-line explanation.</li>
+<li><strong>A journal and a close pack.</strong> Approved entries download as a journal to import; the close pack workbook links every figure to its ledger lines. The finance lead closes the month, and it is frozen.</li>
+</ul>
+</div>
+<figure style="display:flex;flex-direction:column;gap:12px">
+<img loading="lazy" width="1360" height="1560" src="assets/month-end-close.png" alt="The month-end close for September: 25% ready, a rent accrual approved, depreciation rejected with a reason, a bank charge proposed, and the bank reconciled to the statement with no unexplained difference" class="shot">
+<figcaption>September's close: an accrual approved, depreciation rejected with its reason, and the bank reconciled to zero.</figcaption>
+</figure>
+</div>
+</section>
+
 <section id="connections" aria-labelledby="conn-title" class="band grey">
 <div class="wrap" style="display:flex;flex-direction:column;gap:32px">
 <div class="feature" style="align-items:start">
@@ -375,6 +397,7 @@ footer .cols>div{display:flex;flex-direction:column;gap:8px}
 <p class="small muted">Version 1.0, October 2026. The full list is in the <a href="https://github.com/OfinTech/ofinTech-Dask/blob/main/CHANGELOG.md">changelog</a>.</p>
 </div>
 <div class="changes">
+<div><h3>Month-end close</h3>Missing accruals and depreciation proposed, the bank reconciled to its statement, variances to explain, a journal to import, and a workflow that prepares it overnight.</div>
 <div><h3>Webhooks under Connections</h3>Incoming endpoints that can start a workflow, outgoing event subscriptions with signed deliveries, a delivery log and retries.</div>
 <div><h3>Ledger upload and templates</h3>A general ledger template and a budget template to fill in, and a ledger upload under Cost centres that checks every entry balances.</div>
 <div><h3>Sign in from ofintech.ai</h3>Sign in, create an account or continue with Google from this page; the session opens at desk.ofintech.ai.</div>

@@ -46,6 +46,7 @@ EVENT_GROUPS: dict[str, str] = {
     "file": "files created, revised, reviewed, edited, uploaded or deleted",
     "forecast": "forecasts created, submitted, approved, archived or made the plan",
     "cost_centre": "cost centres and their budgets",
+    "close": "month-end close prepared, entries and items decided, month closed or reopened",
     "kpi": "KPI targets and formulas changed",
     "memory": "memory proposed, saved, edited or deleted",
     "dataset": "datasets imported or deleted",

@@ -19,6 +19,7 @@ import { FilesPage } from "./pages/Files";
 import { MemoryPage } from "./pages/Memory";
 import { CostCentresPage } from "./pages/CostCentres";
 import { AnalysisPage } from "./pages/Analysis";
+import { ClosePage } from "./pages/Close";
 import { SearchPage } from "./pages/Search";
 import { WorkflowsPage } from "./pages/Workflows";
 import { SkillsPage } from "./pages/Skills";
@@ -28,7 +29,7 @@ import { SettingsPage } from "./pages/Settings";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
 
 const NAV: [string, string, string][] = [
-  ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"], ["dashboards", N("Dashboards"), "dash"], ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["data", N("Data"), "data"],
+  ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"], ["dashboards", N("Dashboards"), "dash"], ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["close", N("Month-end close"), "close"], ["data", N("Data"), "data"],
   ["files", N("Files"), "sheet"], ["documents", N("Documents"), "docs"],
   ["workflows", N("Workflows"), "flow"], ["memory", N("Memory"), "memory"], ["skills", N("Skills"), "skill"], ["inbox", N("Inbox"), "inbox"],
 ];
@@ -113,6 +114,7 @@ function App(): ReactNode {
     case "memory": page = <MemoryPage />; break;
     case "analysis": page = <AnalysisPage tab={route[1]} id={route[2]} />; break;
     case "costcentres": page = <CostCentresPage id={route[1]} />; break;
+    case "close": page = <ClosePage id={route[1]} />; break;
     case "search": page = <SearchPage key={location.hash} />; break;
     case "workflows": page = <WorkflowsPage id={route[1]} />; break;
     case "skills": page = <SkillsPage name={route[1]} />; break;
