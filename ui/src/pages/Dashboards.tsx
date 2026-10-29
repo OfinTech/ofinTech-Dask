@@ -4,7 +4,7 @@ import { can, useApp, wsPath } from "../lib/app";
 import { fmtMoney, fmtNumber, fmtRelative } from "../lib/format";
 import { Chart, DataTable, toSeries } from "../components/charts";
 import { Comments } from "../components/comments";
-import { Confirm, Empty, ErrorBox, Field, Icon, Loading, Modal, PageHead, go, useAction, useLoad } from "../components/ui";
+import { Confirm, Empty, ErrorBox, Field, Icon, Loading, Modal, PageHead, go, useAction, useLoad, useToast } from "../components/ui";
 import { tr } from "../lib/i18n";
 
 type Widget = { id?: string; title: string; type: string; width: number; query: any; data?: any; error?: string };
@@ -98,13 +98,39 @@ function WidgetBody({ w, currency }: { w: Widget; currency: string }): ReactNode
 
 function DashboardView({ id }: { id: string }): ReactNode {
   const { ws } = useApp();
-  const dash = useLoad(() => get<any>(wsPath(ws, `/dashboards/${id}`)), [id, ws.id]);
+  const [fresh, setFresh] = useState<any>(null);
+  const dash = useLoad(() => get<any>(wsPath(ws, `/dashboards/${id}`)).then((r) => { setFresh(null); return r; }), [id, ws.id]);
   const [editing, setEditing] = useState<{ index: number | null; widget: Widget } | null>(null);
   const [confirm, setConfirm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { run } = useAction();
+  const toast = useToast();
   if (dash.loading && !dash.data) return <div className="page"><Loading /></div>;
   if (dash.error) return <div className="page"><ErrorBox error={dash.error} /></div>;
-  const d = dash.data;
+  const d = fresh || dash.data;
+  const sources: any[] = d.sources || [];
+  const syncable = sources.filter((x) => x.connection?.syncable);
+  const oldest = sources.reduce((m: number | null, x: any) => (x.refreshed_at && (m === null || x.refreshed_at < m) ? x.refreshed_at : m), null);
+
+  async function refresh() {
+    setRefreshing(true);
+    try {
+      if (can(ws, "editor") && syncable.length) {
+        const r: any = await run(() => post(wsPath(ws, `/dashboards/${id}/refresh`)));
+        if (r) {
+          setFresh(r);
+          const failed = Object.entries(r.sync_errors || {});
+          if (failed.length) toast(tr("Updated, with problems: {0}", { 0: failed.map(([k, v]) => `${k}: ${v}`).join("; ") }), "error");
+          else toast(tr("Updated from {0}", { 0: (r.synced || []).join(", ") }));
+        }
+      } else {
+        const r: any = await run(() => get(wsPath(ws, `/dashboards/${id}`)));
+        if (r) { setFresh(r); toast(tr("Figures recalculated from the latest data")); }
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }
   const widgets: Widget[] = d.widgets;
 
   async function saveWidgets(next: Widget[]) {
@@ -115,9 +141,12 @@ function DashboardView({ id }: { id: string }): ReactNode {
 
   return (
     <div className="page" style={{ maxWidth: 1400 }}>
-      <PageHead title={d.name} sub={d.description || tr("Figures in {0} unless the data says otherwise.", { 0: ws.base_currency })}
+      <PageHead title={d.name} sub={<>{d.description || tr("Figures in {0} unless the data says otherwise.", { 0: ws.base_currency })}
+        {oldest ? <span className="muted"> · {tr("data as of {0}", { 0: fmtRelative(oldest) })}</span> : null}</>}
         actions={<>
-          <button className="btn" onClick={dash.reload}><Icon name="refresh" />{tr("Refresh")}</button>
+          <button className="btn" disabled={refreshing} onClick={refresh}
+            title={syncable.length && can(ws, "editor") ? tr("Fetch new data from {0} and recalculate", { 0: syncable.map((x) => x.connection.label).join(", ") }) : tr("Recalculate from the latest data")}>
+            <span className={refreshing ? "spin" : ""} style={{ display: "inline-flex" }}><Icon name="refresh" /></span>{refreshing ? tr("Updating…") : tr("Refresh")}</button>
           {can(ws, "editor") && <button className="btn" onClick={() => setEditing({ index: null, widget: { title: "", type: "bar", width: 1,
             query: { dataset: "", measures: [{ column: "", agg: "sum" }], group_by: [], filters: [], sort: [], limit: 1000 } } })}>
             <Icon name="plus" />{tr("Add widget")}</button>}

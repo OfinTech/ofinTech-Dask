@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-cd engine && python -m unittest discover -s tests -t .     # 136 tests, about 15 seconds (Tesseract, LibreOffice optional)
+cd engine && python -m unittest discover -s tests -t .     # 138 tests, about 15 seconds (Tesseract, LibreOffice optional)
 cd ui && npx tsc --noEmit && npm run i18n:check && node build.mjs
 cd desktop && npx tsc --noEmit -p tsconfig.json
 python e2e/ui_smoke.py                                       # real UI in Chromium + engine + fake model
@@ -46,9 +46,9 @@ process.
 
 | Check | Result |
 |---|---|
-| Engine tests | 136 passed (Python 3.13, SQLite 3.53, Tesseract 5.3.4 with English data, LibreOffice 24.2 for the recalculation check) |
+| Engine tests | 138 passed (Python 3.13, SQLite 3.53, Tesseract 5.3.4 with English data, LibreOffice 24.2 for the recalculation check) |
 | UI type check (`tsc --noEmit`, strict, React 19 types) | passed |
-| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,446 of 1,446 strings |
+| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,467 of 1,467 strings |
 | Desktop type check against Electron 44 type definitions | passed |
 | UI browser smoke (`e2e/ui_smoke.py`, Chromium) | passed: onboarding, model set-up, chat with tool and figure check, approval, Excel import, document upload and search, an answer with citations, the document viewer, a file attached in chat and cited, a workbook created in chat with its evidence panel and reviewer finding, connections, a workflow draft, dashboard; **new:** workspace search, a memory added by hand, the user's own Excel file uploaded and its contents shown, a workflow template with the schedule preview, a conversation deleted, a general ledger imported from Excel and a cost centre created with its budget read from an Excel file (run-out date, cost against cash, budget cells, the unassigned bank payment), financial analysis on a 15-month ledger (the scorecard, a KPI target that turns the card to *watch*, the accounts behind DSO, account roles, a forecast submitted, approved and made the plan), and the app in Arabic (right to left), Spanish and French; **webhooks** (an outgoing webhook created, its secret shown once, a test event delivered to a signature-checking receiver and shown in the delivery log with its payload; an incoming webhook with its endpoint) and the **ledger upload** (both templates downloaded, the general ledger template filled in and uploaded as a new ledger from the Cost centres page); the **month-end close** (September prepared, the statement matched to zero, an accrual approved, depreciation rejected with a reason, a variance explained, the journal and close pack downloaded) |
 | Desktop shell under Xvfb (Electron 44.0.0, Linux) | engine started by Electron, UI loaded at `http://localhost:47821/`, token bridge present, no Node in the page |

@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { del, get, openExternal, patch, post, put } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
 import { fmtRelative } from "../lib/format";
-import { Confirm, ErrorBox, Field, Icon, Loading, Modal, PageHead, StatusTag, useAction, useLoad, useToast } from "../components/ui";
+import { Confirm, ErrorBox, Field, Icon, Loading, Modal, PageHead, StatusTag, query, useAction, useLoad, useToast } from "../components/ui";
 import { N, tr } from "../lib/i18n";
 
 /** Event groups and delivery statuses named by the engine (listed so they are translated). */
@@ -20,10 +20,42 @@ const ACCOUNTING = [
   ["xero", "Xero", "Profit and loss, balance sheet, invoices and bills (read-only, granular scopes)."],
 ] as const;
 
+/** Back from a provider's sign-in: the server added ?connected=<id> or ?connect_error=<message> to the page address.
+ * Says what happened once, then removes it from the address so a reload does not repeat it. */
+export function useConnectResult(onConnected?: () => void): string | null {
+  const toast = useToast();
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const q = query();
+    const connected = q.get("connected");
+    const failed = q.get("connect_error");
+    if (!connected && failed === null) return;
+    if (connected) { toast(tr("Connected. The first sync is running.")); onConnected?.(); }
+    else setError(failed || tr("The connection was not completed."));
+    history.replaceState(null, "", location.pathname + location.search + location.hash.split("?")[0]);
+  }, []);
+  return error;
+}
+
+/** Start a provider's sign-in. In the browser the same tab goes to the provider and comes back to this page; in the
+ * desktop app the system browser opens it and the page refreshes until the connection appears. */
+export async function startAuthorize(run: any, ws: any, provider: string, connectionId: string | undefined,
+  toast: (t: string) => void, onChange: () => void): Promise<void> {
+  const back = "/" + (location.hash.replace(/^#\/?/, "").split("?")[0] || "connections");
+  const r = await run(() => post<{ url: string }>(wsPath(ws, `/connections/${provider}/authorize`), { connection_id: connectionId, return_to: back }));
+  if (!r) return;
+  if (!window.desk) { window.location.assign(r.url); return; }
+  openExternal(r.url);
+  toast(tr("Finish signing in in your browser. This page updates when the connection is ready."));
+  let tries = 0;
+  const t = setInterval(() => { onChange(); if (++tries > 40) clearInterval(t); }, 3000);
+}
+
 export function ConnectionsPage(): ReactNode {
   const { ws, session } = useApp();
   const data = useLoad(() => get<any>(wsPath(ws, "/connections")), [ws.id]);
   const [oauthOpen, setOauthOpen] = useState(false);
+  const connectError = useConnectResult(() => data.reload());
   if (data.loading && !data.data) return <div className="page"><Loading /></div>;
   const conns: any[] = data.data?.connections || [];
   const admin = can(ws, "admin");
@@ -33,6 +65,7 @@ export function ConnectionsPage(): ReactNode {
       <PageHead title={tr("Connections")} sub={tr("Accounting systems, Google, messaging apps and MCP servers this workspace can use. Credentials are encrypted on this device or server and never shown again.")}
         actions={session.user?.instance_admin && <button className="btn" onClick={() => setOauthOpen(true)}>{tr("OAuth apps")}</button>} />
       <ErrorBox error={data.error} />
+      {connectError && <div className="notice error" style={{ marginBottom: 12 }}><strong>{tr("The connection was not completed.")}</strong> {connectError}</div>}
       <h2>{tr("Accounting systems")}</h2>
       <div className="grid3" style={{ marginTop: 12 }}>
         {ACCOUNTING.map(([key, label, desc]) => (
@@ -284,14 +317,7 @@ function ProviderCard({ provider, label, desc, conns, configured, admin, onChang
   const { busy, run } = useAction();
   const [confirm, setConfirm] = useState<any>(null);
 
-  async function connect(connectionId?: string) {
-    const r = await run(() => post<{ url: string }>(wsPath(ws, `/connections/${provider}/authorize`), { connection_id: connectionId }));
-    if (!r) return;
-    openExternal(r.url);
-    toast(tr("Finish signing in in your browser. This page updates when the connection is ready."));
-    let tries = 0;
-    const t = setInterval(() => { onChange(); if (++tries > 40) clearInterval(t); }, 3000);
-  }
+  const connect = (connectionId?: string) => startAuthorize(run, ws, provider, connectionId, toast, onChange);
 
   return (
     <div className="panel panel-pad stack">

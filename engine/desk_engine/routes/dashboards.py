@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from ..data.dashboards import TEMPLATES, DashboardIn, get_dashboard, render_dashboard, save_dashboard, template_widgets
 from ..data.query import run_query
 from ..data.store import get_dataset
-from ..errors import NotFound
+from ..errors import AppError, NotFound
 from ..web import Ctx, Router
 
 router = Router()
@@ -57,6 +57,34 @@ async def create(ctx: Ctx) -> dict[str, Any]:
 @router.get("/api/w/{ws}/dashboards/{did}", role="viewer")
 async def view(ctx: Ctx) -> dict[str, Any]:
     return render_dashboard(ctx.engine, ctx.workspace, ctx.request.path_params["did"])
+
+
+@router.post("/api/w/{ws}/dashboards/{did}/refresh", role="editor")
+async def refresh(ctx: Ctx) -> dict[str, Any]:
+    """Fetch fresh data for the dashboard: sync the accounting connections its datasets come from, then recompute
+    every widget. Datasets that were imported from a file or pushed by another system are recomputed as they are."""
+    from ..connectors.accounting import sync_connection
+    from ..data.dashboards import dashboard_sources
+
+    did = ctx.request.path_params["did"]
+    dash = get_dashboard(ctx.engine, ctx.ws_id, did)
+    synced, errors = [], {}
+    done: set[str] = set()
+    for src in dashboard_sources(ctx.engine, ctx.ws_id, dash):
+        c = src.get("connection")
+        if not c or not c["syncable"] or c["id"] in done:
+            continue
+        done.add(c["id"])
+        conn = ctx.engine.db.one("SELECT * FROM connections WHERE id = ?", (c["id"],))
+        try:
+            result = await sync_connection(ctx.engine, conn, user_id=ctx.user_id)
+            synced.append(c["label"])
+            if result.get("errors"):
+                errors[c["label"]] = "; ".join(f"{k}: {v}" for k, v in result["errors"].items())[:300]
+            ctx.audit("connection.sync", c["id"], {"errors": result.get("errors"), "from": "dashboard"})
+        except AppError as exc:
+            errors[c["label"]] = exc.message
+    return render_dashboard(ctx.engine, ctx.workspace, did) | {"synced": synced, "sync_errors": errors}
 
 
 @router.put("/api/w/{ws}/dashboards/{did}", role="editor", body=DashboardIn)

@@ -93,6 +93,8 @@ async def set_oauth_app(ctx: Ctx) -> dict[str, Any]:
 
 class AuthorizeIn(BaseModel):
     connection_id: str | None = None
+    # the app page to come back to after the provider's sign-in, e.g. "/connections" (an app route, never a URL)
+    return_to: str | None = Field(default=None, max_length=120, pattern=r"^/[A-Za-z0-9_\-/]*$")
 
 
 @router.post("/api/w/{ws}/connections/{provider}/authorize", role="admin", body=AuthorizeIn)
@@ -107,6 +109,7 @@ async def authorize(ctx: Ctx) -> dict[str, Any]:
         if existing is None or existing["provider"] != provider:
             raise NotFound("Connection not found.")
         extra["connection_id"] = ctx.body.connection_id
+    extra["return_to"] = ctx.body.return_to or "/connections"
     url = authorization_url(ctx.engine, provider, ctx.ws_id, ctx.user_id, extra)
     return {"url": url}
 
