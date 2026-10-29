@@ -55,6 +55,7 @@ zoho-books/                      import into Zoho Books in this order
 ofintech-desk/
   HarborLine_General_Ledger.xlsx the same transactions as journal lines, for OfinTech Desk → Data → Import
   EWF_Project_Budget.xlsx        the project budget, for Cost centres → Read budget from a file
+  HarborLine_Bank_Statement_2026-10.csv  the bank's October statement, for Month-end close
 generate.py                      rebuilds everything (deterministic; needs openpyxl)
 ```
 
@@ -102,7 +103,7 @@ Rules for specific files:
    - "What was gross margin in Q2 2026?"
    - "Draft a reminder for Kestrel Auto Parts."
 3. **Import the ledger.** The Zoho Books connector does not read journal lines yet. For cost centres, the KPIs and
-   forecasts, import **ofintech-desk/HarborLine_General_Ledger.xlsx** under **Data → Import Excel or CSV**. It holds
+   forecasts, import **ofintech-desk/HarborLine_General_Ledger.xlsx** under **Cost centres → Import ledger** (or Data → Import Excel or CSV). It holds
    exactly the same transactions as the Zoho files.
 
 ## 4. Try every part
@@ -154,7 +155,21 @@ Then:
 4. Add a second rule for the supplier *Eastport Fitout Contractors* and watch the untagged share and the missing
    lines change.
 
+**Month-end close** (October 2026)
+1. Prepare **October 2026**. Expected:
+   - depreciation of the vehicles (7,800) proposed: it was charged every month and is missing in October;
+   - *Professional Fees* listed under *What moved*: 19,900 against a 6,700 average, mostly Eastport fit-out work;
+   - *Fleet Maintenance* also listed.
+2. Upload **ofintech-desk/HarborLine_Bank_Statement_2026-10.csv**. Expected:
+   - 19 of 21 statement lines matched;
+   - the 31,415.57 payment of 26 October not yet on the statement;
+   - a 45.00 bank fee proposed as an entry;
+   - a 3,150.00 transfer from Meridian Retail Group to review;
+   - an unexplained difference of **0.00**.
+3. Approve the depreciation, explain the variances, and download the journal and the close pack.
+
 **Assistant**
+- "Where is the October close?"
 - "How is the Eastport project doing against its budget?"
 - "Show our liquidity KPIs."
 - "What does the FY2027 forecast say about cash?"

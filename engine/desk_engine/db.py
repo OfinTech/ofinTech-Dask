@@ -688,6 +688,45 @@ MIGRATIONS: list[str] = [
     CREATE INDEX ix_webhook_deliveries ON webhook_deliveries(webhook_id, created_at);
     CREATE INDEX ix_webhook_pending ON webhook_deliveries(status, next_attempt_at) WHERE status = 'pending';
     """,
+    # 16 — month-end close: one run per ledger and month, its proposed entries and review items
+    """
+    CREATE TABLE close_runs (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        dataset_id TEXT NOT NULL,
+        month TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'open',
+        settings TEXT NOT NULL DEFAULT '{}',
+        result TEXT,
+        statement TEXT,
+        prepared_by TEXT,
+        prepared_via TEXT,
+        prepared_at REAL,
+        closed_by TEXT,
+        closed_at REAL,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL,
+        UNIQUE (workspace_id, dataset_id, month)
+    );
+    CREATE INDEX ix_close_runs_ws ON close_runs(workspace_id, month);
+    CREATE TABLE close_items (
+        id TEXT PRIMARY KEY,
+        run_id TEXT NOT NULL REFERENCES close_runs(id) ON DELETE CASCADE,
+        workspace_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        key TEXT NOT NULL,
+        status TEXT NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0,
+        data TEXT NOT NULL,
+        note TEXT,
+        decided_by TEXT,
+        decided_at REAL,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL,
+        UNIQUE (run_id, key)
+    );
+    CREATE INDEX ix_close_items_run ON close_items(run_id, kind, position);
+    """,
 ]
 
 

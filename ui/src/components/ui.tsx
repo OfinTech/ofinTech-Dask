@@ -30,6 +30,7 @@ const paths: Record<string, string> = {
   trend: "M3 17l6-6 4 4 8-8M15 7h6v6",
   centre: "M12 3a9 9 0 1 0 9 9h-9zM15 3.2A9 9 0 0 1 20.8 9H15z",
   search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm5-2 5 5",
+  close: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M9 14.5l2 2 4-4",
 };
 
 export function Icon({ name, size = 18 }: { name: string; size?: number }): ReactNode {

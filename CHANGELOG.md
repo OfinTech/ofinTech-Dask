@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Month-end close** (docs/CLOSE.md, migration 16): a month prepared from the general ledger with a readiness
+  score and checklist; regular costs missing this month (accruals) and depreciation not charged proposed as entries
+  with their evidence; the bank statement (Excel or CSV) matched to the ledger by amount and date and reconciled to
+  the closing balance, with bank charges and interest proposed and unknown items to review; variances above
+  materiality to explain; regular customers not invoiced; decisions kept across refreshes and items resolved when the
+  ledger catches up; the approved journal (general ledger template columns) and a close pack workbook with evidence
+  links; administrators close and reopen the month. The *Close while you sleep* workflow template, the assistant's
+  `month_end_close` and `prepare_month_end_close` tools, the `close` webhook event group, and an October bank
+  statement in the demo company.
 - **Webhooks under Connections** (docs/WEBHOOKS.md): **incoming** endpoints other systems call with a secret
   (bearer token or HMAC-SHA256 signature), logged and able to start a workflow with the delivery as its trigger;
   **outgoing** subscriptions that post signed JSON (`X-OfinTech-Signature-256`) for chosen event groups, with

@@ -30,6 +30,25 @@ TEMPLATES: list[dict[str, Any]] = [
         },
     },
     {
+        "key": "close_overnight",
+        "name": "Close while you sleep",
+        "description": "At 2 a.m. on the 1st of each month: prepare last month's close from the general ledger "
+                       "(missing accruals and depreciation proposed, the bank matched if a statement was added, large "
+                       "variances and customers not invoiced listed), then tell the finance team it is ready to "
+                       "review. Nothing is posted to the accounting system.",
+        "category": "Close",
+        "definition": {
+            "trigger": {"type": "schedule", "cron": "0 2 1 * *"},
+            "steps": [
+                {"id": "close", "type": "tool", "name": "Prepare the close", "tool": "prepare_month_end_close",
+                 "arguments": {}, "retries": 2, "retry_delay": 300},
+                {"id": "tell", "type": "notify", "name": "Tell the finance team", "recipients": "editors",
+                 "channels": ["in_app", "email"], "message":
+                    "Last month's close is ready to review: {{steps.close.data.link}}\n\n{{steps.close.output}}"},
+            ],
+        },
+    },
+    {
         "key": "weekly_ar",
         "name": "Weekly receivables follow-up",
         "description": "Every Monday: list overdue customer invoices by age, draft polite reminder e-mails for the "
@@ -134,6 +153,7 @@ def get_template(key: str) -> dict[str, Any] | None:
 # answers in each person's language).
 LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
     "ar": {
+        "close_overnight": {"name": "الإقفال وأنت نائم", "category": "الإقفال", "description": "الساعة 2 فجراً في أول كل شهر: إعداد إقفال الشهر الماضي من دفتر الأستاذ (اقتراح المستحقات والإهلاك الناقصة، ومطابقة البنك إن أُضيف كشف الحساب، وعرض الانحرافات الكبيرة والعملاء الذين لم تصدر لهم فواتير)، ثم إبلاغ الفريق المالي بأنه جاهز للمراجعة. لا يُرحَّل شيء إلى النظام المحاسبي.", "steps": ["إعداد الإقفال", "إبلاغ الفريق المالي"]},
         "month_end_pack": {"name": "حزمة نهاية الشهر", "category": "الإقفال", "description": "في اليوم الثاني من كل شهر: إعداد مصنف الفعلي مقابل الموازنة للشهر الماضي، ومراجعته من المراجع، ثم طلب موافقة المراقب المالي، ثم إبلاغ الفريق بمكانه.", "steps": ["إعداد الحزمة", "موافقة المراقب المالي", "إبلاغ الفريق"]},
         "weekly_ar": {"name": "متابعة الذمم المدينة أسبوعياً", "category": "الذمم المدينة", "description": "كل يوم إثنين: عرض فواتير العملاء المتأخرة حسب العمر، وصياغة رسائل تذكير مهذبة لأكبرها (مسودات فقط، لا يُرسل شيء)، ونشر الملخص.", "steps": ["الفواتير المتأخرة", "هل هناك متأخرات؟", "نشر الملخص"]},
         "ap_due": {"name": "فواتير الموردين المستحقة هذا الأسبوع", "category": "الذمم الدائنة", "description": "كل يوم خميس: عرض فواتير الموردين المستحقة خلال الأيام السبعة القادمة مع النقد المطلوب، وطلب الموافقة على قائمة الدفعات.", "steps": ["الفواتير المستحقة", "الموافقة على قائمة الدفع", "تأكيد"]},
@@ -142,6 +162,7 @@ LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
         "refresh_file": {"name": "تحديث مصنف كل صباح", "category": "الملفات", "description": "إعادة تشغيل استعلامات مصنف مرتبط بالأدلة كل يوم عمل وإبلاغك عندما يجهز الإصدار الجديد. اختر المصنف قبل التفعيل.", "steps": ["تحديث المصنف", "إبلاغي"]},
     },
     "es": {
+        "close_overnight": {"name": "Cierre mientras duermes", "category": "Cierre", "description": "A las 2 de la madrugada del día 1 de cada mes: prepara el cierre del mes anterior desde el libro mayor (propone devengos y amortizaciones que faltan, concilia el banco si se añadió el extracto, lista variaciones grandes y clientes sin facturar) y avisa al equipo financiero de que está listo para revisar. No se contabiliza nada en el sistema contable.", "steps": ["Preparar el cierre", "Avisar al equipo financiero"]},
         "month_end_pack": {"name": "Paquete de cierre mensual", "category": "Cierre", "description": "El día 2 de cada mes: crea el libro de real frente a presupuesto del mes anterior, lo revisa el revisor, pide la aprobación del controller y avisa al equipo de dónde está.", "steps": ["Crear el paquete", "Aprobación del controller", "Avisar al equipo"]},
         "weekly_ar": {"name": "Seguimiento semanal de cobros", "category": "Cobros", "description": "Cada lunes: lista las facturas de clientes vencidas por antigüedad, redacta recordatorios corteses para las mayores (solo borradores, no se envía nada) y publica el resumen.", "steps": ["Facturas vencidas", "¿Hay algo vencido?", "Publicar el resumen"]},
         "ap_due": {"name": "Facturas de proveedores de esta semana", "category": "Pagos", "description": "Cada jueves: lista las facturas de proveedores que vencen en los próximos siete días con la caja necesaria y pide aprobación de la remesa de pagos.", "steps": ["Facturas que vencen", "Aprobar la remesa", "Confirmar"]},
@@ -150,6 +171,7 @@ LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
         "refresh_file": {"name": "Actualizar un libro cada mañana", "category": "Archivos", "description": "Vuelve a ejecutar las consultas de un libro con evidencias cada día laborable y te avisa cuando la nueva versión está lista. Elige el libro antes de activarlo.", "steps": ["Actualizar el libro", "Avisarme"]},
     },
     "fr": {
+        "close_overnight": {"name": "La clôture pendant votre sommeil", "category": "Clôture", "description": "À 2 h le 1er de chaque mois : prépare la clôture du mois précédent depuis le grand livre (charges à payer et dotations manquantes proposées, banque rapprochée si un relevé a été ajouté, écarts importants et clients non facturés listés), puis prévient l’équipe finance qu’elle est prête à être revue. Rien n’est comptabilisé dans le logiciel comptable.", "steps": ["Préparer la clôture", "Prévenir l’équipe finance"]},
         "month_end_pack": {"name": "Dossier de clôture mensuelle", "category": "Clôture", "description": "Le 2 de chaque mois : construit le classeur réel vs budget du mois précédent, le fait contrôler par le réviseur, demande l’approbation du contrôleur, puis indique à l’équipe où il se trouve.", "steps": ["Construire le dossier", "Approbation du contrôleur", "Prévenir l’équipe"]},
         "weekly_ar": {"name": "Suivi hebdomadaire des créances", "category": "Créances", "description": "Chaque lundi : liste les factures clients échues par ancienneté, rédige des relances courtoises pour les plus importantes (brouillons uniquement, rien n’est envoyé) et publie la synthèse.", "steps": ["Factures échues", "Des retards ?", "Publier la synthèse"]},
         "ap_due": {"name": "Factures fournisseurs de la semaine", "category": "Dettes fournisseurs", "description": "Chaque jeudi : liste les factures fournisseurs à échéance dans les sept jours avec la trésorerie nécessaire, et demande l’approbation de la liste de paiements.", "steps": ["Factures à échéance", "Approuver la liste", "Confirmer"]},

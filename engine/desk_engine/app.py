@@ -23,6 +23,7 @@ from .agent.tools import ToolContext, registry
 from .channels.service import Channels
 from .config import VERSION, Settings
 from .analysis import Analysis
+from .close import Close
 from .costcentres import CostCentres
 from .db import Database, dumps, new_id, now
 from .events import EventHub
@@ -69,6 +70,7 @@ class Engine:
         self.costcentres = CostCentres(self)
         self.analysis = Analysis(self)
         self.webhooks = Webhooks(self)
+        self.close = Close(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
 
