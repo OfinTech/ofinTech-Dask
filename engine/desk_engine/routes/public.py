@@ -7,12 +7,14 @@ import hmac
 import html
 import json
 import logging
+import re
 from typing import Any
 
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.routing import Route
 
+from ..db import loads
 from ..errors import AppError
 from ..security import hmac_sha256_hex
 
@@ -37,15 +39,46 @@ async def oauth_callback(request: Request) -> Response:
     params = dict(request.query_params)
     if engine.db.one("SELECT 1 FROM login_states WHERE state = ?", (params.get("state", ""),)):
         return await _google_login(request, engine, params)
+    pending = engine.db.one("SELECT workspace_id, extra FROM oauth_states WHERE state = ?", (params.get("state", ""),))
+    extra = loads(pending["extra"], {}) if pending else {}
+    back = extra.get("return_to") if re.fullmatch(r"/[A-Za-z0-9_\-/]{0,119}", str(extra.get("return_to") or "")) else "/connections"
+    ws_id = pending["workspace_id"] if pending else None
+    if pending is None:  # not started from this app (or already used): no page to return to
+        return page("Connection not completed", "This sign-in link has expired or was already used. Start the "
+                    "connection again from OfinTech Desk.", 400)
     try:
         result = await complete_callback(engine, params)
     except AppError as exc:
-        return page("Connection not completed", exc.message, 400)
+        return _connect_back(engine, back, ws_id, None, exc.message)
     except Exception:
         log.exception("oauth callback failed")
-        return page("Connection not completed", "Something went wrong. The details are in the engine log.", 500)
-    label = engine.db.scalar("SELECT label FROM connections WHERE id = ?", (result["connection_id"],))
-    return page("Connected", f"{label} is connected. You can close this tab and return to OfinTech Desk.")
+        return _connect_back(engine, back, ws_id, None, "Something went wrong. The details are in the engine log.")
+    return _connect_back(engine, back, ws_id, result["connection_id"], None)
+
+
+def _connect_back(engine: Any, back: str, ws_id: str | None, connection_id: str | None, error: str | None) -> Response:
+    """After a provider's sign-in, return to the app page the connection was started from.
+
+    On the Team Server the browser tab that started it is sent back there (the app shows the result). The desktop app
+    started the sign-in in the system browser, so that tab offers to return to the app, which reloads the page."""
+    from urllib.parse import urlencode
+
+    from starlette.responses import RedirectResponse
+
+    query = {"ws": ws_id} if ws_id else {}
+    query |= {"connected": connection_id} if connection_id else {"connect_error": (error or "")[:300]}
+    if not engine.settings.is_desktop:
+        return RedirectResponse(f"/#{back}?{urlencode(query)}", status_code=303, headers={"cache-control": "no-store"})
+    label = engine.db.scalar("SELECT label FROM connections WHERE id = ?", (connection_id,)) if connection_id else None
+    link = f"ofintech-desk://open{back}" + (f"?ws={ws_id}" if ws_id else "")
+    title = "Connected" if connection_id else "Connection not completed"
+    text = (f"{label} is connected." if connection_id else (error or "The connection was not completed."))
+    return HTMLResponse(f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="1;url={html.escape(link)}">
+<title>{html.escape(title)}</title><style>body{{font:16px system-ui,sans-serif;max-width:32rem;margin:15vh auto;
+padding:0 1rem;color:#1d2433}}a{{color:#1e4fa3}}</style></head><body><h1>{html.escape(title)}</h1>
+<p>{html.escape(text)}</p><p><a href="{html.escape(link)}">Return to OfinTech Desk</a>. You can close this tab.</p></body></html>""",
+                        status_code=200 if connection_id else 400, headers={"cache-control": "no-store"})
 
 
 async def _google_login(request: Request, engine: Any, params: dict[str, str]) -> Response:

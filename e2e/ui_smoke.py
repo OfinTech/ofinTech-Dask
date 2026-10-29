@@ -245,6 +245,9 @@ def run_steps(pg, base, out, xlsx):
     pg.locator(".modal-foot .btn.primary").click()
     pg.wait_for_selector(".widget svg")
     pg.screenshot(path=str(out / "dashboard.png"), full_page=True)
+    pg.get_by_role("button", name="Refresh").click()
+    pg.wait_for_selector("text=Figures recalculated from the latest data")
+    pg.wait_for_selector("text=data as of")
     for path in ("workflows", "skills", "connections", "inbox", "settings/members", "settings/files"):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_timeout(600)
@@ -260,6 +263,12 @@ def run_steps(pg, base, out, xlsx):
     pg.get_by_label("What should the assistant remember?").fill("Accruals are posted by working day 3.")
     pg.locator(".panel .btn.primary:text-is('Save')").click()
     pg.wait_for_selector("text=Accruals are posted by working day 3.")
+    pg.get_by_label("Search memory").fill("accru")
+    pg.wait_for_timeout(600)
+    assert pg.locator(".memory-item").count() == 1
+    pg.get_by_label("Search memory").fill("nothing like this")
+    pg.wait_for_selector("text=Nothing matches")
+    pg.get_by_label("Search memory").fill("")
     pg.screenshot(path=str(out / "memory.png"))
     # the user's own Excel file
     pg.goto(f"{base}/#/files")

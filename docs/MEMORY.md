@@ -24,9 +24,20 @@ in Connections, where they are encrypted.
 
 ## How a memory is used
 
-- Before each answer the engine picks **at most 8** memories: the ones marked **Always include** (pinned), then the
-  best matches for the latest message (full-text search). Only saved (active) memories you are allowed to see are
-  considered; other workspaces never see them.
+- Before each answer the engine picks up to **6** memories marked **Always include** (pinned) and the **8** that best
+  match the conversation. Only saved (active) memories you are allowed to see are considered; other workspaces never
+  see them.
+- **Matching:**
+  - It reads the latest three messages you wrote, with the newest counting most. A short follow-up such as "and
+    last month?" still finds what the conversation is about.
+  - Words are compared after normalising case, accents and Arabic letter forms, and after removing common words.
+  - Each word is reduced to a light stem: Arabic articles, prefixes and endings, and English, Spanish and French
+    plurals and endings. So "متى نرحل المستحقات؟" finds "الحسابات المستحقة تُرحَّل…" and "accrual entries" finds
+    "Accruals are posted…".
+  - Rare words count more than common ones.
+- **Correcting a memory.** When you tell the assistant that a saved memory is out of date, it proposes the corrected
+  one with `replaces`. The card shows what it replaces. Saving it archives the old memory and keeps its *Always
+  include* setting.
 - They are given to the model as *memory saved by this workspace's people (approved, may be out of date)*.
 - Under the answer the app shows **Memory consulted**, with links to each entry. Every use increases the entry's use
   count and *last used* date.
@@ -35,7 +46,8 @@ in Connections, where they are encrypted.
 
 ## Transparency
 
-The **Memory** page lists saved, waiting and archived entries. Each shows:
+The **Memory** page lists saved, waiting and archived entries, with a search that matches words as you type them
+("accru" finds *Accruals…*). Each entry shows:
 
 - where it came from (*Suggested by the assistant in “conversation”*, with the reason it gave, or *Added by hand*);
 - who created it and who saved it, and when it last changed;
