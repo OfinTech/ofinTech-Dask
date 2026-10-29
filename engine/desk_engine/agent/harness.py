@@ -305,9 +305,10 @@ class Agent:
                                      datasets=datasets,
                                      extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
                                      language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
-        last_user = engine.db.one("SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at "
-                                  "DESC LIMIT 1", (thread["id"],))
-        memories = engine.memory.relevant(workspace["id"], run["user_id"], (last_user or {}).get("content") or "")
+        recent = [r["content"] or "" for r in engine.db.all(
+            "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
+            (thread["id"],))]
+        memories = engine.memory.relevant(workspace["id"], run["user_id"], recent)
         mem_block = engine.memory.prompt_block(memories)
         if mem_block:
             dynamic += "\n\n" + mem_block

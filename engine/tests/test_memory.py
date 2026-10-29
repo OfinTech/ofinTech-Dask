@@ -92,6 +92,44 @@ class MemoryFlow(unittest.TestCase):
         found = h.api("GET", f"/api/w/{ws}/memories", params={"q": "rent account"})["memories"]
         self.assertEqual([x["id"] for x in found], [m["id"]])
 
+    def test_retrieval_in_other_words_follow_ups_and_replacing(self) -> None:
+        h, ws = self.h, self.ws
+        uid = h.engine.db.scalar("SELECT id FROM users LIMIT 1")
+        ids = {}
+        for c in ("الحسابات المستحقة تُرحَّل في اليوم الثالث من كل شهر", "Accruals are posted by working day 3.",
+                  "Materiality threshold for the audit is 5,000.", "El cierre mensual termina el quinto día hábil",
+                  "Rent account 6100 maps to Premises costs"):
+            ids[c] = h.api("POST", f"/api/w/{ws}/memories", json={"content": c})["id"]
+
+        def found(text: str | list[str]) -> list[str]:
+            return [m["content"] for m in h.engine.memory.relevant(ws, uid, text)]
+
+        # other forms of the same words: Arabic articles and endings, plurals, other languages
+        self.assertEqual(found("متى نرحل المستحقات؟")[:1], ["الحسابات المستحقة تُرحَّل في اليوم الثالث من كل شهر"])
+        self.assertEqual(found("When do we post accrual entries?")[:1], ["Accruals are posted by working day 3."])
+        self.assertEqual(found("¿Cuándo termina el cierre?")[:1], ["El cierre mensual termina el quinto día hábil"])
+        self.assertEqual(found("hello there"), [])
+        # a short follow-up keeps the conversation's subject
+        self.assertEqual(found(["and for the group?", "What is our materiality threshold?"])[:1],
+                         ["Materiality threshold for the audit is 5,000."])
+        # the Memory page finds words as they are being typed
+        listed = h.api("GET", f"/api/w/{ws}/memories?status=active&q=accru")["memories"]
+        self.assertEqual([m["content"] for m in listed], ["Accruals are posted by working day 3."])
+        self.assertEqual(len(h.api("GET", f"/api/w/{ws}/memories?status=active&q=مستحق")["memories"]), 1)
+        # the assistant corrects an outdated memory: saving the new one archives the old one and keeps it pinned
+        old = ids["Materiality threshold for the audit is 5,000."]
+        h.api("PATCH", f"/api/w/{ws}/memories/{old}", json={"pinned": True})
+        h.llm.script = [[("propose_memory", {"content": "Materiality threshold for the audit is 7,500.",
+                                             "category": "policy", "replaces": old[-6:]})], "Suggested the new threshold."]
+        data = self.chat("The audit materiality is now 7,500, not 5,000")
+        card = next(m for m in data["messages"] if m["role"] == "tool")["payload"]["blocks"][0]["memory"]
+        self.assertEqual(card["replaces"], "Materiality threshold for the audit is 5,000.")
+        h.api("POST", f"/api/w/{ws}/memories/{card['id']}/decide", json={"approve": True})
+        statuses = {m["content"]: (m["status"], m["pinned"]) for m in h.api("GET", f"/api/w/{ws}/memories")["memories"]}
+        self.assertEqual(statuses["Materiality threshold for the audit is 5,000."], ("archived", 0))
+        self.assertEqual(statuses["Materiality threshold for the audit is 7,500."], ("active", 1))
+        self.assertNotIn("5,000", " ".join(found("materiality")))
+
 
 if __name__ == "__main__":
     unittest.main()

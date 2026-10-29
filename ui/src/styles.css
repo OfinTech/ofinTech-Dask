@@ -588,3 +588,6 @@ details.evidence { margin-top: 8px; }
 details.evidence summary { cursor: pointer; color: var(--blue-ink); }
 .pos { color: var(--green); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.spin { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
