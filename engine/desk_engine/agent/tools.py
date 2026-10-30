@@ -48,9 +48,11 @@ class ToolOutput:
     data: Any = None  # structured value for workflows ({{steps.x.data}})
 
     def for_model(self, limit: int = 12000) -> str:
-        if len(self.text) <= limit:
-            return self.text
-        return self.text[:limit] + f"\n…(truncated, {len(self.text) - limit} more characters)"
+        from ..egress import mask_bank_identifiers
+        text = mask_bank_identifiers(self.text)   # the model never needs a full IBAN or card number
+        if len(text) <= limit:
+            return text
+        return text[:limit] + f"\n…(truncated, {len(text) - limit} more characters)"
 
 
 Handler = Callable[[ToolContext, dict[str, Any]], Awaitable[ToolOutput]]
@@ -85,6 +87,13 @@ class Tool:
         return f"{self.name}({json.dumps(args, default=str)[:300]})"
 
     async def run(self, ctx: ToolContext, args: dict[str, Any]) -> ToolOutput:
+        # checked again at the call, whatever path reached it (agent, workflow step, MCP server, approval)
+        from ..egress import SEALED_MESSAGE, is_payment_tool, tool_sends_out, workspace_sealed
+        if is_payment_tool(self.name, self.description, acts=self.needs_approval()):
+            return ToolOutput("Refused: OfinTech Desk never initiates, approves or changes payments, transfers or "
+                              "beneficiaries.")
+        if tool_sends_out(self) and workspace_sealed(ctx.engine, ctx.workspace):
+            return ToolOutput(SEALED_MESSAGE)
         if "_invalid_json" in args:
             return ToolOutput("The arguments were not valid JSON. Call the tool again with a JSON object.")
         missing = [k for k in self.parameters.get("required", []) if k not in args]
@@ -112,6 +121,10 @@ class ToolRegistry:
     def add(self, tool: Tool) -> Tool:
         if tool.name in self._tools:
             raise ValueError(f"duplicate tool {tool.name}")
+        from ..egress import is_payment_tool
+        if is_payment_tool(tool.name, tool.description, acts=tool.effect == "write"):
+            raise ValueError(f"{tool.name}: OfinTech Desk never initiates, approves or changes payments, transfers or "
+                             "beneficiaries, so tools that do are not registered.")
         self._tools[tool.name] = tool
         return tool
 
@@ -127,12 +140,16 @@ class ToolRegistry:
         self._providers.append(fn)
 
     async def for_context(self, ctx: ToolContext, *, categories: set[str] | None = None) -> dict[str, Tool]:
+        from ..egress import is_payment_tool, tool_sends_out, workspace_sealed
+
         tools = {n: t for n, t in self._tools.items() if t.available is None or t.available(ctx)}
         for provider in self._providers:
             for t in await provider(ctx):
-                if t.policy == "off":
+                if t.policy == "off" or is_payment_tool(t.name, t.description, acts=t.needs_approval()):
                     continue
                 tools[t.name] = t
+        if workspace_sealed(ctx.engine, ctx.workspace):
+            tools = {n: t for n, t in tools.items() if not tool_sends_out(t)}
         if categories is not None:
             tools = {n: t for n, t in tools.items() if t.category in categories}
         return tools

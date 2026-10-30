@@ -46,6 +46,8 @@ def resolve_choice(engine: Engine, workspace: dict[str, Any], provider_id: str |
 
 def build_model(engine: Engine, ws_id: str, provider_id: str, model: str) -> ChatModel:
     row = provider_row(engine, ws_id, provider_id)
+    from ..egress import check_model_endpoint
+    check_model_endpoint(engine, ws_id, row["base_url"])
     kind = get_kind(row["kind"])
     api_key = None
     if row["secret_id"]:
