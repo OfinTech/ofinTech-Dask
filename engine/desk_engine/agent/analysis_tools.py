@@ -4,8 +4,37 @@ from __future__ import annotations
 
 from typing import Any
 
+import re
+
+from ..analysis.kpis import CATALOG
 from ..errors import Invalid, NotFound
 from .tools import ToolContext, ToolOutput, registry, schema, table_block, table_text
+
+
+KPI_IDS = [k["id"] for k in CATALOG]
+
+
+def _words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z0-9]+", text.lower().replace("_", " ")) if w not in {"the", "of", "to", "our"}}
+
+
+def match_kpi(kpis: list[dict[str, Any]], asked: str) -> dict[str, Any] | None:
+    """The KPI the model meant: its id ("gross_margin", "gross margin", "Gross-Margin"), its name, a name that
+    contains what was asked, or a name whose words all appear in it ("gross profit margin")."""
+    want = re.sub(r"[\s\-]+", "_", asked.strip().lower())
+    for k in kpis:
+        if want in (k["id"], re.sub(r"[\s\-]+", "_", k["name"].lower())):
+            return k
+    plain = asked.strip().lower()
+    hit = next((k for k in kpis if plain and plain in k["name"].lower()), None)
+    if hit:
+        return hit
+    asked_words = _words(asked)
+    for k in kpis:
+        core = _words(re.sub(r"\(.*?\)", "", k["name"]))  # "Days sales outstanding (DSO)" -> days sales outstanding
+        if core and core <= asked_words:
+            return k
+    return None
 
 
 def _has_ledger(ctx: ToolContext) -> bool:
@@ -31,7 +60,8 @@ def fmt(v: float | None, unit: str) -> str:
 
 @registry.tool("financial_kpis", "The company's KPI scorecard from the general ledger: growth and profitability, "
                "liquidity, working capital, leverage, cash flow and cost control, each with its value, the previous "
-               "month, the target and status set by the finance lead. Optional month (YYYY-MM) and category.",
+               "month, the target and status set by the finance lead. Optional month (YYYY-MM) and category. For one KPI "
+               "(explain it, break it down, what drives it) use kpi_detail instead.",
                schema({"month": {"type": "string"},
                        "category": {"type": "string", "enum": ["growth_profitability", "liquidity", "working_capital",
                                                                "leverage", "cash_flow", "cost_control"]}}),
@@ -58,15 +88,16 @@ async def _kpis(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 
 @registry.tool("kpi_detail", "One KPI explained: its formula, the last 24 months, and the measures and ledger accounts "
-               "behind the latest value. Use the KPI id or name.",
-               schema({"kpi": {"type": "string"}, "month": {"type": "string"}}, ["kpi"]),
+               "behind the latest value. Use it when the user asks about one KPI: to explain it, break it down or say "
+               "what drives it.",
+               schema({"kpi": {"type": "string", "description": "the KPI id, in English whatever the user's language: "
+                               + ", ".join(KPI_IDS)},
+                       "month": {"type": "string", "description": "YYYY-MM; the latest month when left out"}}, ["kpi"]),
                category="analysis", available=_has_ledger)
 async def _detail(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         sc = await ctx.engine.analysis.scorecard(ctx.ws_id)
-        want = a["kpi"].strip().lower()
-        k = next((x for x in sc["kpis"] if x["id"] == want or x["name"].lower() == want), None) or \
-            next((x for x in sc["kpis"] if want in x["name"].lower()), None)
+        k = match_kpi(sc["kpis"], a["kpi"])
         if k is None:
             return ToolOutput(f"No KPI matches “{a['kpi']}”. Ids: " + ", ".join(x["id"] for x in sc["kpis"]))
         d = await ctx.engine.analysis.detail(ctx.ws_id, k["id"], a.get("month"))

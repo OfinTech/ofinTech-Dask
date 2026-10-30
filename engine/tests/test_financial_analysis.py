@@ -115,6 +115,26 @@ class Roles(unittest.TestCase):
         self.assertEqual(suggest("Other expense", "Intereses bancarios"), "interest")
         self.assertEqual(suggest("Expense", "Office rent"), "opex")
         self.assertEqual(suggest("Asset", "Warehouse Racking"), "fixed_assets")
+        # found by Desk-Bench: the article ال, Spanish overdraft, social insurance
+        self.assertEqual(suggest("Asset", "مجمع إهلاك السيارات"), "fixed_assets")
+        self.assertEqual(suggest("Asset", "الشهرة"), "other_non_current_assets")
+        self.assertEqual(suggest("Liability", "Descubierto bancario"), "short_term_debt")
+        self.assertEqual(suggest("Expense", "Social insurance"), "payroll")
+        self.assertEqual(suggest("Expense", "التأمينات الاجتماعية"), "payroll")
+
+
+class KpiNames(unittest.TestCase):
+    def test_the_kpi_the_model_meant(self) -> None:
+        from desk_engine.agent.analysis_tools import KPI_IDS, match_kpi
+        from desk_engine.agent.prompts import RULES
+        for asked, want in [("dso", "dso"), ("DSO", "dso"), ("gross margin", "gross_margin"), ("Gross-Margin", "gross_margin"),
+                            ("gross profit margin", "gross_margin"), ("Days sales outstanding", "dso"),
+                            ("net profit margin", "net_margin")]:
+            self.assertEqual((match_kpi(CATALOG, asked) or {}).get("id"), want, asked)
+        self.assertIsNone(match_kpi(CATALOG, "margen bruto"))  # the tool then lists the ids
+        self.assertIn("gross_margin", KPI_IDS)
+        self.assertIn("call kpi_detail", RULES)
+        self.assertIn("IBANs", RULES)
 
 
 class Formula(unittest.TestCase):
