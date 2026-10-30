@@ -56,6 +56,15 @@ class Engine:
         self.secrets = SecretStore(self.db, SecretBox(settings.master_key))
         self.events = EventHub()
         self.tools = registry
+        if settings.sealed:   # nothing leaves the private network, whatever code asks (egress.py)
+            # internal addresses are what a sealed server talks to, and checking a public name would be a DNS lookup
+            # out; stdio MCP servers would be processes with their own network access
+            import dataclasses
+            settings = dataclasses.replace(settings, allow_private_network_urls=True, allow_stdio_mcp=False)
+            self.settings = settings
+            from .egress import SealedTransport
+            http_transport = SealedTransport(http_transport, frozenset(settings.egress_allow))
+            mcp_http_transport = SealedTransport(mcp_http_transport, frozenset(settings.egress_allow))
         self.http_transport = http_transport
         self.mcp_http_transport = mcp_http_transport
         self.agent = Agent(self)
@@ -66,6 +75,12 @@ class Engine:
         self.storage = build_storage(settings, transport=http_transport)
         self.files = Files(self)
         self.mailer = Mailer.from_env()
+        if settings.sealed and self.mailer.host:
+            from .egress import host_internal
+            if not host_internal(self.mailer.host, frozenset(settings.egress_allow)):
+                log.warning("DESK_SEALED: e-mail is off because DESK_SMTP_HOST %s is outside the private network",
+                            self.mailer.host)
+                self.mailer = Mailer()   # not configured: the app shows links instead of sending e-mail
         self.memory = Memory(self)
         self.costcentres = CostCentres(self)
         self.analysis = Analysis(self)

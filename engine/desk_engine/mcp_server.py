@@ -60,8 +60,12 @@ def build_mcp_app(engine: Engine) -> ASGIApp:
     from mcp.server.lowlevel import Server
     from mcp.server.transport_security import TransportSecuritySettings
 
+    from .egress import workspace_sealed
+
     async def list_tools(ctx: Any, params: Any) -> Any:
         tctx = _ctx_from_request(engine, ctx)
+        if workspace_sealed(engine, tctx.workspace):   # an outside client must not read a sealed workspace
+            return types.ListToolsResult(tools=[])
         tools = await engine.tools.for_context(tctx, categories=EXPOSED_CATEGORIES)
         return types.ListToolsResult(tools=[
             types.Tool(name=t.name, description=t.description, input_schema=t.parameters,
@@ -71,6 +75,10 @@ def build_mcp_app(engine: Engine) -> ASGIApp:
 
     async def call_tool(ctx: Any, params: Any) -> Any:
         tctx = _ctx_from_request(engine, ctx)
+        if workspace_sealed(engine, tctx.workspace):
+            return types.CallToolResult(content=[types.TextContent(type="text", text="This workspace keeps its data "
+                                        "inside the organization; its tools are not offered to outside clients.")],
+                                        is_error=True)
         tools = await engine.tools.for_context(tctx, categories=EXPOSED_CATEGORIES)
         tool = tools.get(params.name)
         if tool is None or tool.effect != "read" or tool.policy is not None or tool.name in NOT_EXPOSED:

@@ -49,6 +49,7 @@ function WorkspaceSettings(): ReactNode {
       {admin && <div className="row"><button className="btn primary" disabled={busy} onClick={() => run(() => patch(wsPath(ws, ""), {
         name: f.name, base_currency: f.base_currency, country: f.country, fiscal_year_start_month: f.fiscal_year_start_month,
         accounting_framework: f.accounting_framework, timezone: f.timezone }), tr("Saved")).then(reloadSession)}>{tr("Save")}</button></div>}
+      <DataBoundary />
       {ws.role === "owner" && (
         <div style={{ borderTop: "1px solid var(--rule)", paddingTop: 16, marginTop: 16 }}>
           <h3>{tr("Delete workspace")}</h3>
@@ -58,6 +59,29 @@ function WorkspaceSettings(): ReactNode {
       )}
       {confirm && <Confirm text={tr("Delete {0} and everything in it? This cannot be undone.", { 0: ws.name })} onClose={() => setConfirm(false)}
         onYes={async () => { await run(() => del(wsPath(ws, ""))); await reloadSession(); go("chat"); }} />}
+    </div>
+  );
+}
+
+function DataBoundary(): ReactNode {
+  const { ws, session, reloadSession } = useApp();
+  const { busy, run } = useAction();
+  const serverSealed = !!session.features.sealed;
+  const sealed = serverSealed || ws.egress_policy === "sealed";
+  const set = (policy: "open" | "sealed") => run(() => patch(wsPath(ws, ""), { egress_policy: policy }),
+    policy === "sealed" ? tr("Data now stays inside the organization") : tr("Outside services are allowed again")).then(reloadSession);
+  return (
+    <div style={{ borderTop: "1px solid var(--rule)", paddingTop: 16, marginTop: 16 }} className="stack">
+      <h3>{tr("Keep data inside the organization")}</h3>
+      <p className="small muted">{tr("When on, nothing is sent to outside services: e-mail, Telegram, WhatsApp, Google Drive, MCP servers and outgoing webhooks are switched off, and only a model on your own network can be used. OfinTech Desk never makes payments, whether this is on or off.")}</p>
+      <div className="row">
+        <span className={"tag " + (sealed ? "green" : "")}>{sealed ? tr("On") : tr("Off")}</span>
+        {serverSealed && <span className="small muted">{tr("Set for the whole server by its administrator.")}</span>}
+        {!serverSealed && ws.role === "owner" && (sealed
+          ? <button className="btn" disabled={busy} onClick={() => set("open")}>{tr("Allow outside services")}</button>
+          : <button className="btn primary" disabled={busy} onClick={() => set("sealed")}>{tr("Keep data inside")}</button>)}
+        {!serverSealed && ws.role !== "owner" && <span className="small muted">{tr("Only the workspace owner can change this.")}</span>}
+      </div>
     </div>
   );
 }

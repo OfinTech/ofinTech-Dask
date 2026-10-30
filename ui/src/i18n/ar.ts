@@ -1468,5 +1468,14 @@ const d: Record<string, string> = {
   "changed {0}": "عُدّلت {0}",
   "replaces an older memory, which is archived when this one is saved": "تحل محل ذاكرة أقدم تُؤرشف عند حفظ هذه",
   "Replaces: “{0}”": "تحل محل: «{0}»",
+  "Keep data inside the organization": "إبقاء البيانات داخل المنشأة",
+  "When on, nothing is sent to outside services: e-mail, Telegram, WhatsApp, Google Drive, MCP servers and outgoing webhooks are switched off, and only a model on your own network can be used. OfinTech Desk never makes payments, whether this is on or off.": "عند التفعيل لا يُرسل شيء إلى خدمات خارجية: يتوقف البريد الإلكتروني وتيليجرام وواتساب وGoogle Drive وخوادم MCP والـ webhooks الصادرة، ولا يُستخدم إلا نموذج يعمل على شبكتكم. ولا ينفّذ OfinTech Desk أي مدفوعات، سواء كان هذا الخيار مفعّلاً أم لا.",
+  "Off": "غير مفعّل",
+  "Set for the whole server by its administrator.": "مفعّل للخادم كله من قبل مسؤوله.",
+  "Allow outside services": "السماح بالخدمات الخارجية",
+  "Keep data inside": "إبقاء البيانات في الداخل",
+  "Only the workspace owner can change this.": "مالك مساحة العمل وحده يستطيع تغيير هذا.",
+  "Data now stays inside the organization": "البيانات الآن تبقى داخل المنشأة",
+  "Outside services are allowed again": "الخدمات الخارجية مسموحة مرة أخرى",
 };
 export default d;
