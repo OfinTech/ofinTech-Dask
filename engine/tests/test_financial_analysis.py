@@ -115,7 +115,7 @@ class Roles(unittest.TestCase):
         self.assertEqual(suggest("Other expense", "Intereses bancarios"), "interest")
         self.assertEqual(suggest("Expense", "Office rent"), "opex")
         self.assertEqual(suggest("Asset", "Warehouse Racking"), "fixed_assets")
-        # found by Desk-Bench: the article ال, Spanish overdraft, social insurance
+        # found by the CFAI benchmark: the article ال, Spanish overdraft, social insurance
         self.assertEqual(suggest("Asset", "مجمع إهلاك السيارات"), "fixed_assets")
         self.assertEqual(suggest("Asset", "الشهرة"), "other_non_current_assets")
         self.assertEqual(suggest("Liability", "Descubierto bancario"), "short_term_debt")
