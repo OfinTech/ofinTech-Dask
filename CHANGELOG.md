@@ -84,6 +84,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **Guidance for local models, from Desk-Bench** (an open-model and Claude comparison on 376 OfinTech Desk tasks):
+  - the assistant is told not to try storing passwords, PINs, card numbers or IBANs in memory, and to say where
+    credentials belong instead (the engine already refused them; open models still tried);
+  - a question about one KPI goes to `kpi_detail`, the scorecard to `financial_kpis`; `kpi_detail` lists the KPI
+    ids and now also finds a KPI by `gross margin`, `Gross-Margin` or `gross profit margin`;
+  - suggested account roles: accumulated depreciation and goodwill written with the Arabic article (مجمع إهلاك،
+    الشهرة), the Spanish *descubierto* (overdraft) and social insurance (GOSI, التأمينات الاجتماعية) now get
+    the right role. All 120 accounts of Desk-Bench's chart in four languages are suggested correctly.
+
 - **Memory** found saved memories only when the question used the same word forms: Arabic words with another
   article or ending (المستحقات / المستحقة), plurals, and short follow-ups were missed. Retrieval now normalises and
   stems words in four languages, weighs rare words, and reads the latest three messages. The Memory page search finds
