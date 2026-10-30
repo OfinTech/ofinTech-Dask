@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Any
 
 from .config import VERSION
 from .db import dumps, loads, new_id, now
-from .errors import AppError, Invalid, NotFound
+from .errors import AppError, Forbidden, Invalid, NotFound
 from .security import check_outbound_url, hmac_sha256_hex, new_token, token_hash
 
 if TYPE_CHECKING:
@@ -118,6 +118,10 @@ class Webhooks:
         if direction not in ("in", "out"):
             raise Invalid("direction is 'in' or 'out'.")
         if direction == "out":
+            from .egress import workspace_sealed
+            if workspace_sealed(self.engine, ws_id):
+                raise Forbidden("This workspace keeps its data inside the organization, so it cannot send events to "
+                                "other systems.", code="egress_blocked")
             if not url:
                 raise Invalid("An outgoing webhook needs the address to post to.")
             url = self._check_url(url)
@@ -308,7 +312,14 @@ class Webhooks:
                                  "JOIN webhooks w ON w.id = d.webhook_id WHERE d.status = 'pending' AND d.next_attempt_at <= ? "
                                  "ORDER BY d.next_attempt_at LIMIT ?", (now(), limit))
         sent = 0
+        from .egress import workspace_sealed
+
         for d in due:
+            if workspace_sealed(self.engine, d["ws"]):
+                self.engine.db.update("webhook_deliveries", d["id"], {
+                    "status": "failed", "finished_at": now(),
+                    "response": "not sent: this workspace keeps its data inside the organization"})
+                continue
             if not d["enabled"] or not d["url"]:
                 self.engine.db.update("webhook_deliveries", d["id"], {"status": "failed", "response": "webhook disabled",
                                                                       "finished_at": now()})

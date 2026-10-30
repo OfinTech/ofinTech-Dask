@@ -84,6 +84,11 @@ class PipesHub:
         secret = (engine.secrets.get(connection["secret_id"], workspace_id=connection["workspace_id"])
                   if connection else {})
         self.base = (base_url or self.config.get("base_url") or "").rstrip("/")
+        from ..egress import allowed_hosts, url_internal, workspace_sealed
+        if connection and workspace_sealed(engine, connection["workspace_id"]) and not url_internal(self.base, allowed_hosts(engine)):
+            from ..errors import Forbidden
+            raise Forbidden("This workspace keeps its data inside the organization: PipesHub must run on your own network.",
+                            code="egress_blocked")
         self.headers = {"Authorization": f"Bearer {token or secret.get('token', '')}", "User-Agent": "OfinTech-Desk"}
 
     @property

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 import httpx2 as httpx
 
 from ..db import dumps, loads, new_id, now
-from ..errors import AppError, Invalid, NotConfigured, UpstreamError
+from ..errors import AppError, Forbidden, Invalid, NotConfigured, UpstreamError
 from ..security import new_token, token_hash
 
 if TYPE_CHECKING:
@@ -106,7 +106,14 @@ class Channels:
         self.offsets: dict[str, int] = {}
 
     # -- setup -------------------------------------------------------------------------------------
+    def _check_open(self, ws_id: str) -> None:
+        from ..egress import workspace_sealed
+        if workspace_sealed(self.engine, ws_id):
+            raise Forbidden("This workspace keeps its data inside the organization, so Telegram and WhatsApp are off.",
+                            code="egress_blocked")
+
     async def connect_telegram(self, ws_id: str, user_id: str, bot_token: str) -> dict[str, Any]:
+        self._check_open(ws_id)
         if not re.match(r"^\d{5,15}:[A-Za-z0-9_-]{30,}$", bot_token.strip()):
             raise Invalid("That does not look like a Telegram bot token from @BotFather.")
         bot = await Telegram(self.engine, bot_token.strip()).call("getMe")
@@ -130,6 +137,7 @@ class Channels:
     def connect_whatsapp(self, ws_id: str, user_id: str, *, phone_number_id: str, display_number: str,
                          access_token: str, app_secret: str, template_name: str | None,
                          template_language: str | None) -> dict[str, Any]:
+        self._check_open(ws_id)
         if not self.engine.settings.public_url.startswith("https://"):
             raise NotConfigured("WhatsApp delivers messages to a public HTTPS webhook. Run the Team Server (or set "
                                 "DESK_PUBLIC_URL to an HTTPS tunnel) to connect WhatsApp.", code="needs_public_url")
@@ -255,7 +263,12 @@ class Channels:
         await self.reply(connection, external_id, f"Linked to the workspace '{ws['name']}'. Ask me anything about your "
                          "finances. Send /new to start a new conversation.")
 
-    async def reply(self, connection: dict[str, Any], external_id: str, text: str, *, notification: bool = False) -> None:
+    async def reply(self, connection: dict[str, Any], external_id: str, text: str, *, notification: bool = False) -> bool:
+        from ..egress import workspace_sealed
+        if workspace_sealed(self.engine, connection["workspace_id"]):
+            log.warning("not replying via %s: workspace %s keeps its data inside", connection["provider"],
+                        connection["workspace_id"])
+            return False
         secret = self.engine.secrets.get(connection["secret_id"], workspace_id=connection["workspace_id"])
         try:
             if connection["provider"] == "telegram":
@@ -267,14 +280,17 @@ class Channels:
             log.warning("reply via %s failed: %s", connection["provider"], exc.message)
             self.engine.db.update("connections", connection["id"], {"last_error": exc.message[:300]},
                                   workspace_id=connection["workspace_id"])
+            return False
+        return True
 
     async def send_to_member(self, ws_id: str, user_id: str, provider: str, text: str) -> int:
         links = self.engine.db.all("SELECT l.*, c.provider FROM channel_links l JOIN connections c ON c.id = l.connection_id "
                                    "WHERE l.workspace_id = ? AND l.user_id = ? AND c.provider = ?", (ws_id, user_id, provider))
+        sent = 0
         for link in links:
             conn = self.engine.db.one("SELECT * FROM connections WHERE id = ?", (link["connection_id"],))
-            await self.reply(conn, link["external_id"], text, notification=True)
-        return len(links)
+            sent += await self.reply(conn, link["external_id"], text, notification=True)
+        return sent
 
     # -- results back to the chat --------------------------------------------------------------------
     async def on_agent_done(self, run: dict[str, Any], parent: dict[str, Any]) -> None:

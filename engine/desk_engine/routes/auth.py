@@ -48,7 +48,7 @@ def is_instance_admin(ctx: Ctx) -> bool:
 
 def workspaces_for(engine: Any, user_id: str) -> list[dict[str, Any]]:
     return engine.db.all("SELECT w.id, w.name, w.base_currency, w.country, w.fiscal_year_start_month, "
-                         "w.accounting_framework, w.timezone, m.role FROM workspaces w JOIN members m ON "
+                         "w.accounting_framework, w.timezone, w.egress_policy, m.role FROM workspaces w JOIN members m ON "
                          "m.workspace_id = w.id WHERE m.user_id = ? ORDER BY w.name", (user_id,))
 
 
@@ -62,7 +62,7 @@ async def session(ctx: Ctx) -> dict[str, Any]:
             "needs_first_user": not engine.settings.is_desktop and not users_exist,
             "public_url": engine.settings.public_url,
             "site_url": engine.settings.site_url,
-            "features": {"stdio_mcp": engine.settings.allow_stdio_mcp,
+            "features": {"stdio_mcp": engine.settings.allow_stdio_mcp, "sealed": engine.settings.sealed,
                          "whatsapp": engine.settings.public_url.startswith("https://"),
                          "team": not engine.settings.is_desktop,
                          "google_login": google_login_available(engine),

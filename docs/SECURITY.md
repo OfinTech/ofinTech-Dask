@@ -161,3 +161,5 @@
 - Admin-configurable data retention.
 - Code signing and notarisation are configured in CI, but need the company's certificates.
 - An external penetration test.
+
+What the assistant can never do (payments, data leaving the organization), and the tests that prove it: [DATA_BOUNDARIES.md](DATA_BOUNDARIES.md).

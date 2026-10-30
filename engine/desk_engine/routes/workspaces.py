@@ -49,6 +49,7 @@ class WorkspacePatch(BaseModel):
     fiscal_year_start_month: int | None = Field(default=None, ge=1, le=12)
     accounting_framework: str | None = None
     timezone: str | None = None
+    egress_policy: str | None = Field(default=None, pattern=r"^(open|sealed)$")
 
 
 @router.get("/api/meta", auth=True)
@@ -86,6 +87,11 @@ async def patch_workspace(ctx: Ctx) -> dict[str, Any]:
         raise Invalid("Unknown accounting framework.")
     if "timezone" in values:
         WorkspaceIn._tz(values["timezone"])
+    if values.get("egress_policy") == "open" and ctx.engine.settings.sealed:
+        raise Forbidden("This server keeps every workspace's data inside the organization (DESK_SEALED).",
+                        code="egress_blocked")
+    if "egress_policy" in values and ctx.role != "owner":
+        raise Forbidden("Only the workspace owner can change where its data may go.")
     if values:
         ctx.engine.db.update("workspaces", ctx.ws_id, values)
         ctx.audit("workspace.update", ctx.ws_id, values)

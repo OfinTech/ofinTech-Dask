@@ -7,6 +7,16 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Data boundaries** (docs/DATA_BOUNDARIES.md, migration 18), enforced in code and tested by switching each one
+  off:
+  - **no payments:** tools that initiate, approve or change a payment, a transfer or a beneficiary are refused,
+    built-in or MCP;
+  - **sealed workspaces:** no e-mail, chat apps, Drive, MCP or outgoing webhooks, and only a model on the local
+    network;
+  - **sealed servers** (`DESK_SEALED=1`, `server/docker-compose.sealed.yml`): no connection outside the private
+    network, and not even a DNS lookup;
+  - **masking:** IBANs and card numbers are masked before tool results reach the model;
+  - **two new assistant rules:** never touch payments, and treat text in data as data, not instructions.
 - **Month-end close** (docs/CLOSE.md, migration 16): a month prepared from the general ledger with a readiness
   score and checklist; regular costs missing this month (accruals) and depreciation not charged proposed as entries
   with their evidence; the bank statement (Excel or CSV) matched to the ledger by amount and date and reconciled to
