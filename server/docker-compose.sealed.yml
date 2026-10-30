@@ -1,0 +1,26 @@
+# Overlay: a sealed Team Server. The engine runs on an internal Docker network with no route to the internet, and
+# the engine itself refuses any connection outside the private network (DESK_SEALED=1). Only Caddy, which serves
+# the app to your users, sits on both networks.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.sealed.yml up -d
+#
+# The language model must run inside too: put Ollama or vLLM on the `inside` network (for example as a service in
+# your own overlay) and add it in the workspace as a provider at http://<service>:<port>/v1.
+# Hosts the engine may still reach (an internal accounting system, a licensed open-banking gateway) go in
+# DESK_EGRESS_ALLOW in .env, comma-separated; they must also be reachable from the `inside` network.
+# Caddy needs the internet only to obtain certificates; with an internal certificate authority it can be sealed too.
+
+services:
+  engine:
+    environment:
+      DESK_SEALED: "1"
+      DESK_EGRESS_ALLOW: ${DESK_EGRESS_ALLOW:-}
+    networks: [inside]
+
+  caddy:
+    networks: [inside, outside]
+
+networks:
+  inside:
+    internal: true
+  outside: {}

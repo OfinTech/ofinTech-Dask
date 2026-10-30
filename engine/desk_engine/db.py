@@ -731,6 +731,10 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE memories ADD COLUMN replaces_id TEXT;
     """,
+    # 18 — a workspace can keep its data inside the organization: no outside tools, a model on the local network only
+    """
+    ALTER TABLE workspaces ADD COLUMN egress_policy TEXT NOT NULL DEFAULT 'open';
+    """,
 ]
 
 

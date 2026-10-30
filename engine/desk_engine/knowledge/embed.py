@@ -30,6 +30,8 @@ class Embedder:
         if row["kind"] in NO_EMBEDDINGS:
             raise NotConfigured(f"{kind.label} does not offer an embeddings API. Choose another provider for "
                                 "document search, or use keyword search only.", code="no_embeddings")
+        from ..egress import check_model_endpoint
+        check_model_endpoint(engine, ws_id, row["base_url"])   # documents are not sent to a cloud embedding model
         self.label = row["label"]
         self.base_url = row["base_url"].rstrip("/")
         self.model = model

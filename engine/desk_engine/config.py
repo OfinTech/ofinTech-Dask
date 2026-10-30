@@ -56,6 +56,8 @@ class Settings:
     log_level: str = "info"
     extra: dict[str, str] = field(default_factory=dict)
     storage: dict[str, Any] = field(default_factory=lambda: {"kind": "local", "encrypt": True})
+    sealed: bool = False                     # DESK_SEALED: no connection outside the private network (egress.py)
+    egress_allow: tuple[str, ...] = ()       # DESK_EGRESS_ALLOW: hosts a sealed server may still reach
 
     @property
     def is_desktop(self) -> bool:
@@ -190,4 +192,6 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),
         log_level=_env("DESK_LOG_LEVEL", "info"),
         storage=storage_settings(),
+        sealed=_bool("DESK_SEALED", False),
+        egress_allow=tuple(h.strip().lower() for h in _env("DESK_EGRESS_ALLOW", "").split(",") if h.strip()),
     )

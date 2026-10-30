@@ -81,6 +81,8 @@ async def add_provider(ctx: Ctx) -> dict[str, Any]:
     if kind.local and not ctx.engine.settings.allow_private_network_urls:
         raise Invalid(f"{kind.label} runs on your own computer; add it in the desktop app.")
     url = _check_url(ctx, b.kind, b.base_url or kind.base_url)
+    from ..egress import check_model_endpoint
+    check_model_endpoint(ctx.engine, ctx.workspace, url)   # a sealed workspace accepts only a model on its own network
     if kind.needs_key and not (b.api_key or "").strip():
         raise Invalid(f"{kind.label} needs an API key.", code="no_api_key")
     pid = new_id("llm_")

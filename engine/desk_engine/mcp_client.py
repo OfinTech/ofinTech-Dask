@@ -171,7 +171,14 @@ class MCPManager:
         for sid in list(self.workers):
             await self.stop(sid)
 
+    def _check_open(self, ws_id: str) -> None:
+        from .egress import workspace_sealed
+        if workspace_sealed(self.engine, ws_id):
+            raise Forbidden("This workspace keeps its data inside the organization: MCP servers are off.",
+                            code="egress_blocked")
+
     async def refresh_tools(self, ws_id: str, server_id: str) -> list[dict[str, Any]]:
+        self._check_open(ws_id)
         server = self._server(ws_id, server_id)
         try:
             w = await self._worker(server)
@@ -196,6 +203,7 @@ class MCPManager:
         return tools
 
     async def call(self, ws_id: str, server_id: str, name: str, arguments: dict[str, Any]) -> ToolOutput:
+        self._check_open(ws_id)
         server = self._server(ws_id, server_id)
         w = await self._worker(server)
         try:

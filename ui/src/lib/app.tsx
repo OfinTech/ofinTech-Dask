@@ -2,12 +2,12 @@ import { createContext, useContext } from "react";
 
 export type Workspace = {
   id: string; name: string; role: "viewer" | "editor" | "admin" | "owner"; base_currency: string; country: string;
-  fiscal_year_start_month: number; accounting_framework: string; timezone: string;
+  fiscal_year_start_month: number; accounting_framework: string; timezone: string; egress_policy?: "open" | "sealed";
 };
 
 export type Session = {
   version: string; mode: "desktop" | "server"; signup_open: boolean; needs_first_user: boolean; public_url: string;
-  features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean };
+  features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean; sealed?: boolean };
   user: { id: string; email: string; name: string; instance_admin: boolean } | null;
   workspaces: Workspace[];
 };

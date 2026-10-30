@@ -88,6 +88,12 @@ class GoogleClient(HttpBase):
     label = "Google"
 
     def __init__(self, engine: Engine, connection: dict[str, Any]) -> None:
+        # every Gmail and Drive call passes here: tools, workflow e-mail steps, e-mail triggers, Drive collections
+        from ..egress import workspace_sealed
+        if workspace_sealed(engine, connection.get("workspace_id")):
+            from ..errors import Forbidden
+            raise Forbidden("This workspace keeps its data inside the organization, so Google services are off.",
+                            code="egress_blocked")
         super().__init__(engine, connection)
 
     async def post(self, url: str, json_body: dict[str, Any]) -> Any:

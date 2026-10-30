@@ -77,13 +77,21 @@ def parse_sse(body: str) -> list[tuple[str, Any]]:
 
 class PipesHub:
     def __init__(self, engine: Engine, connection: dict[str, Any] | None = None, *, base_url: str | None = None,
-                 token: str | None = None) -> None:
+                 token: str | None = None, ws_id: str | None = None) -> None:
         self.engine = engine
         self.connection = connection
         self.config = loads(connection["config"], {}) if connection else {}
         secret = (engine.secrets.get(connection["secret_id"], workspace_id=connection["workspace_id"])
                   if connection else {})
         self.base = (base_url or self.config.get("base_url") or "").rstrip("/")
+        from ..egress import allowed_hosts, url_internal, workspace_sealed
+        ws = connection["workspace_id"] if connection else ws_id
+        if ws is None and not engine.settings.sealed:
+            raise ValueError("PipesHub needs the workspace it acts for")
+        if workspace_sealed(engine, ws) and not url_internal(self.base, allowed_hosts(engine)):
+            from ..errors import Forbidden
+            raise Forbidden("This workspace keeps its data inside the organization: PipesHub must run on your own network.",
+                            code="egress_blocked")
         self.headers = {"Authorization": f"Bearer {token or secret.get('token', '')}", "User-Agent": "OfinTech-Desk"}
 
     @property
