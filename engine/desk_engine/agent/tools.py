@@ -89,7 +89,7 @@ class Tool:
     async def run(self, ctx: ToolContext, args: dict[str, Any]) -> ToolOutput:
         # checked again at the call, whatever path reached it (agent, workflow step, MCP server, approval)
         from ..egress import SEALED_MESSAGE, is_payment_tool, tool_sends_out, workspace_sealed
-        if is_payment_tool(self.name, self.description, acts=self.needs_approval()):
+        if is_payment_tool(self.name, self.description, acts=self.category == "mcp" or self.needs_approval()):
             return ToolOutput("Refused: OfinTech Desk never initiates, approves or changes payments, transfers or "
                               "beneficiaries.")
         if tool_sends_out(self) and workspace_sealed(ctx.engine, ctx.workspace):
@@ -145,7 +145,7 @@ class ToolRegistry:
         tools = {n: t for n, t in self._tools.items() if t.available is None or t.available(ctx)}
         for provider in self._providers:
             for t in await provider(ctx):
-                if t.policy == "off" or is_payment_tool(t.name, t.description, acts=t.needs_approval()):
+                if t.policy == "off" or is_payment_tool(t.name, t.description, acts=True):   # never trust a server's read-only claim
                     continue
                 tools[t.name] = t
         if workspace_sealed(ctx.engine, ctx.workspace):

@@ -246,7 +246,7 @@ async def connect_pipeshub(ctx: Ctx) -> dict[str, Any]:
             raise Invalid("Enter a PipesHub personal access token.")
         token = ctx.engine.secrets.get(existing["secret_id"], workspace_id=ctx.ws_id)["token"]
     old = loads(existing["config"], {}) if existing else {}
-    client = PipesHub(ctx.engine, base_url=url, token=token)
+    client = PipesHub(ctx.engine, base_url=url, token=token, ws_id=ctx.ws_id)
     await client.check()  # address and token
     kb_id = (b.kb_id or "").strip() or (old.get("kb_id") if old.get("base_url") == url else None)
     if kb_id:

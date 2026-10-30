@@ -42,12 +42,27 @@ _PAY_TEXT = re.compile(
     r"schedule (a |the )?payment|add (a |the )?(beneficiary|payee)|payment initiation|wire (money|funds))\b", re.I)
 
 
+_PAY_EXTRA = re.compile(
+    r"(^|_)(send_money|move_money|release_funds|transfer_funds|funds_transfer|bank_details|bank_account_details|iban|"
+    r"vendor_bank|supplier_bank|payee_bank|bill_pay|paybill|pay_bill|payment_order|payment_run|sadad|mada|"
+    r"paiement|paiements|virement|virements|pago|pagos|transferencia|transferencias|zahlung|ueberweisung)(_|$)")
+
+
+def _words(name: str) -> str:
+    """createPayment, Create-Payment and create.payment all become create_payment."""
+    s = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
+    return re.sub(r"[^a-z0-9]+", "_", s.lower()).strip("_")
+
+
 def is_payment_tool(name: str, description: str = "", *, acts: bool = True) -> bool:
-    """A tool that moves money or changes who receives it. ``acts`` is False for tools known to only read or compute
-    (a loan schedule's "payment" column is not a payment)."""
+    """A tool that moves money or changes who receives it. ``acts`` is False for built-in tools known to only read or
+    compute (a loan schedule's "payment" column is not a payment); tools from MCP servers always count as acting."""
     if not acts:
         return False
-    return bool(_PAY_NAME.search(name) or _PAY_TEXT.search(description or ""))
+    words = _words(name)
+    return bool(_PAY_NAME.search(words) or _PAY_EXTRA.search(words) or _PAY_TEXT.search(description or "")
+                or re.search(r"\b(bank details|beneficiary details|release (the )?funds|move money|send money|"
+                             r"payment order|change (the )?iban|update (the )?iban)\b", description or "", re.I))
 
 
 # ---- what leaves the workspace -------------------------------------------------------------------------------------
@@ -69,13 +84,11 @@ def workspace_sealed(engine: Engine, workspace: dict[str, Any] | str | None) -> 
         return True
     if workspace is None:
         return False
-    if isinstance(workspace, str):
-        row = engine.db.one("SELECT egress_policy FROM workspaces WHERE id = ?", (workspace,))
+    ws_id = workspace if isinstance(workspace, str) else workspace.get("id")
+    if ws_id:   # read now, not from a copy taken when a run started: sealing applies to runs already in progress
+        row = engine.db.one("SELECT egress_policy FROM workspaces WHERE id = ?", (ws_id,))
         return bool(row and row["egress_policy"] == "sealed")
-    policy = workspace.get("egress_policy")
-    if policy is None and workspace.get("id"):
-        return workspace_sealed(engine, workspace["id"])
-    return policy == "sealed"
+    return isinstance(workspace, dict) and workspace.get("egress_policy") == "sealed"
 
 
 def tool_sends_out(tool: Tool) -> bool:
@@ -87,11 +100,32 @@ _LOCAL_NAMES = ("localhost", "host.docker.internal")
 _LOCAL_SUFFIXES = (".local", ".internal", ".lan", ".localdomain", ".home.arpa")
 
 
-def _ip_internal(addr: str) -> bool:
+_EXTERNAL_V6 = [ipaddress.ip_network(n) for n in ("2002::/16", "64:ff9b::/96", "64:ff9b:1::/48", "2001::/32")]
+
+
+def _ip(addr: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    """Any IP literal, including the forms the C resolver accepts (134744072, 0x8080808, 010.0.0.1, 8.8.2056)."""
     try:
-        ip = ipaddress.ip_address(addr)
+        return ipaddress.ip_address(addr)
     except ValueError:
+        pass
+    if re.fullmatch(r"[0-9a-fx.]+", addr) and any(ch.isdigit() for ch in addr):
+        try:
+            return ipaddress.IPv4Address(socket.inet_aton(addr))
+        except OSError:
+            return None
+    return None
+
+
+def _ip_internal(addr: str) -> bool:
+    ip = _ip(addr)
+    if ip is None:
         return False
+    if ip.version == 6:
+        if ip.ipv4_mapped is not None:
+            return _ip_internal(str(ip.ipv4_mapped))
+        if any(ip in n for n in _EXTERNAL_V6):   # 6to4, NAT64 and Teredo carry traffic to public IPv4 hosts
+            return False
     return ip.is_private or ip.is_loopback or ip.is_link_local
 
 
@@ -104,9 +138,9 @@ def host_internal(host: str | None, allow: frozenset[str] = frozenset(), *, reso
     h = host.strip("[]").lower().rstrip(".")
     if h in allow or any(h.endswith("." + a) for a in allow):
         return True
+    if _ip(h) is not None:          # an address in any notation is judged as an address, never as a name
+        return _ip_internal(h)
     if h in _LOCAL_NAMES or h.endswith(_LOCAL_SUFFIXES) or ("." not in h and ":" not in h):
-        return True
-    if _ip_internal(h):
         return True
     if not resolve:
         return False
@@ -158,8 +192,12 @@ class SealedTransport(httpx.AsyncBaseTransport):
 
 
 # ---- bank identifiers the model never needs in full ----------------------------------------------------------------
-_IBAN = re.compile(r"\b([A-Z]{2}\d{2})((?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4})?)\b")
-_CARD = re.compile(r"(?<![\d.,])([3-6]\d{3})(?:([ -]?)(\d{4})\2(\d{4})\2(\d{1,4})|(\d{11,12}))(?![\d]|[.,]\d)")
+_SEP = r"[ \u00a0\-.]?"
+_IBAN = re.compile(rf"(?<![A-Za-z0-9])([A-Za-z]{{2}}\d{{2}})((?:{_SEP}[A-Za-z0-9]{{4}}){{2,7}}(?:{_SEP}\d{{1,4}})?)", re.I)
+_CARD = re.compile(r"(?<![\d.,])[2-6]\d{3}(?:[ \u00a0\-.]?\d){9,15}(?![\d]|[.,]\d\d?(?!\d))")
+
+
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 
 
 def _luhn(digits: str) -> bool:
@@ -173,21 +211,49 @@ def _luhn(digits: str) -> bool:
     return total % 10 == 0
 
 
+def mask_messages(messages: list[Any]) -> list[Any]:
+    """Every message on its way to a language model: user text, tool results, documents, memory and workflow steps."""
+    from dataclasses import replace
+    return [replace(m, content=mask_bank_identifiers(m.content)) if isinstance(getattr(m, "content", None), str) else m
+            for m in messages]
+
+
+class MaskedModel:
+    """Wraps a chat model so that nothing reaches it with a full IBAN or card number, whichever code built the
+    messages."""
+
+    def __init__(self, inner: Any) -> None:
+        self.inner = inner
+
+    async def stream(self, messages: list[Any], tools: list[Any], **kw: Any) -> Any:
+        async for event in self.inner.stream(mask_messages(messages), tools, **kw):
+            yield event
+
+    async def list_models(self) -> list[str]:
+        return await self.inner.list_models()
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self.inner, name)
+
+
 def mask_bank_identifiers(text: str) -> str:
     """IBANs keep their country, check digits and last four characters; card numbers keep their last four. Reports and
     reconciliations still work on the last four; a full number never reaches a language model or its logs."""
     if not text:
         return text
+    if any("\u0660" <= ch <= "\u0669" or "\u06f0" <= ch <= "\u06f9" for ch in text):
+        text = text.translate(_ARABIC_DIGITS)   # a card written in Arabic-Indic digits is still a card
 
     def iban(m: re.Match[str]) -> str:
-        body = m.group(2).replace(" ", "")
-        if not 11 <= len(body) <= 30 or not any(c.isdigit() for c in body):
+        body = re.sub(r"[ \u00a0\-.]", "", m.group(2))
+        if not 11 <= len(body) <= 30 or sum(c.isdigit() for c in body) < 8:
             return m.group(0)
-        return f"{m.group(1)} **** {body[-4:]}"
+        return f"{m.group(1).upper()} **** {body[-4:]}"
 
     def card(m: re.Match[str]) -> str:
         digits = re.sub(r"\D", "", m.group(0))
-        if not 13 <= len(digits) <= 19 or not _luhn(digits):
+        seps = set(re.sub(r"\d", "", m.group(0)))
+        if len(seps) > 1 or not 13 <= len(digits) <= 19 or not _luhn(digits):   # one kind of separator, like a card
             return m.group(0)
         return f"**** **** **** {digits[-4:]}"
 

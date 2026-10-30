@@ -15,7 +15,7 @@ migrations are applied automatically on start-up and are never rewritten once re
     network;
   - **sealed servers** (`DESK_SEALED=1`, `server/docker-compose.sealed.yml`): no connection outside the private
     network, and not even a DNS lookup;
-  - **masking:** IBANs and card numbers are masked before tool results reach the model;
+  - **masking:** IBANs and card numbers are masked in every message on its way to a language model;
   - **two new assistant rules:** never touch payments, and treat text in data as data, not instructions.
 - **Month-end close** (docs/CLOSE.md, migration 16): a month prepared from the general ledger with a readiness
   score and checklist; regular costs missing this month (accruals) and depreciation not charged proposed as entries
