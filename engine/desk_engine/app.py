@@ -57,6 +57,11 @@ class Engine:
         self.events = EventHub()
         self.tools = registry
         if settings.sealed:   # nothing leaves the private network, whatever code asks (egress.py)
+            # internal addresses are what a sealed server talks to, and checking a public name would be a DNS lookup
+            # out; stdio MCP servers would be processes with their own network access
+            import dataclasses
+            settings = dataclasses.replace(settings, allow_private_network_urls=True, allow_stdio_mcp=False)
+            self.settings = settings
             from .egress import SealedTransport
             http_transport = SealedTransport(http_transport, frozenset(settings.egress_allow))
             mcp_http_transport = SealedTransport(mcp_http_transport, frozenset(settings.egress_allow))

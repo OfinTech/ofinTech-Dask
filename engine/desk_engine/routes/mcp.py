@@ -7,7 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from ..db import dumps, loads, new_id, now
-from ..errors import Conflict, Invalid, NotFound
+from ..errors import Conflict, Forbidden, Invalid, NotFound
 from ..mcp_client import command_preview, tool_prefix, validate_server_input
 from ..security import new_token, token_hash
 from ..web import Ctx, Router
@@ -36,6 +36,13 @@ def _server(ctx: Ctx) -> dict[str, Any]:
     return row
 
 
+def _not_sealed(ctx: Ctx) -> None:
+    from ..egress import workspace_sealed
+    if workspace_sealed(ctx.engine, ctx.ws_id):
+        raise Forbidden("This workspace keeps its data inside the organization: MCP servers and access keys for "
+                        "outside clients are off.", code="egress_blocked")
+
+
 @router.get("/api/w/{ws}/mcp-servers", role="viewer")
 async def list_servers(ctx: Ctx) -> dict[str, Any]:
     rows = ctx.engine.db.all("SELECT * FROM mcp_servers WHERE workspace_id = ? ORDER BY name", (ctx.ws_id,))
@@ -56,6 +63,7 @@ class ServerIn(BaseModel):
 
 @router.post("/api/w/{ws}/mcp-servers", role="admin", body=ServerIn)
 async def add_server(ctx: Ctx) -> dict[str, Any]:
+    _not_sealed(ctx)
     b: ServerIn = ctx.body
     validate_server_input(ctx.engine, b.transport, b.command, b.args, b.url)
     if ctx.engine.db.one("SELECT 1 FROM mcp_servers WHERE workspace_id = ? AND name = ?", (ctx.ws_id, b.name)):
@@ -118,6 +126,7 @@ async def patch_server(ctx: Ctx) -> dict[str, Any]:
 
 @router.post("/api/w/{ws}/mcp-servers/{sid}/refresh", role="admin")
 async def refresh(ctx: Ctx) -> dict[str, Any]:
+    _not_sealed(ctx)
     row = _server(ctx)
     await ctx.engine.mcp.stop(row["id"])
     await ctx.engine.mcp.refresh_tools(ctx.ws_id, row["id"])
@@ -148,6 +157,7 @@ class KeyIn(BaseModel):
 
 @router.post("/api/w/{ws}/mcp-keys", role="viewer", body=KeyIn)
 async def create_key(ctx: Ctx) -> dict[str, Any]:
+    _not_sealed(ctx)
     count = ctx.engine.db.scalar("SELECT COUNT(*) FROM mcp_keys WHERE workspace_id = ? AND user_id = ?",
                                  (ctx.ws_id, ctx.user_id))
     if count >= 20:
