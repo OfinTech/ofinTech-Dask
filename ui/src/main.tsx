@@ -6,7 +6,7 @@ try {
   const theme = localStorage.getItem("desk-theme");
   if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
 } catch { /* storage unavailable */ }
-import { get } from "./lib/api";
+import { SIGNED_OUT_EVENT, get, post } from "./lib/api";
 import { AppCtx, type Session, type Workspace } from "./lib/app";
 import { BrandMark, ErrorBox, Icon, ToastProvider, Wordmark, errorText, go, useRoute } from "./components/ui";
 import { AuthPage, InvitePage, ResetPage } from "./pages/Auth";
@@ -39,17 +39,72 @@ function storedWs(): string | null {
   try { return localStorage.getItem("desk-ws"); } catch { return null; }
 }
 
+const ACTIVITY: readonly string[] = ["pointerdown", "keydown", "wheel", "touchstart", "scroll"];
+// Every tab of the app writes here, so working in one tab counts for all of them. Without it a tab left
+// untouched beside a busy one would reach its own idle limit and sign the person out of both.
+const ACTIVITY_KEY = "desk-last-activity";
+
+function readSharedActivity(): number {
+  try {
+    const v = Number(localStorage.getItem(ACTIVITY_KEY));
+    // never in the future: a stale clock must not hold the session open for ever
+    return Number.isFinite(v) ? Math.min(v, Date.now()) : 0;
+  } catch {
+    return 0;  // private mode: this tab falls back to watching only itself
+  }
+}
+
+/** Keeps the session open while the person is doing something, and signs them out when they stop.
+ *  `minutes` is the engine's own idle window (0 on the desktop app, which has no accounts). */
+function useIdleSignOut(minutes: number, signedIn: boolean, onIdle: () => void): void {
+  useEffect(() => {
+    if (!minutes || !signedIn) return;
+    const limit = minutes * 60_000;
+    const every = Math.min(60_000, limit / 4);  // a short window needs a faster heartbeat to stay reachable
+    let last = Date.now();
+    let shared = last;   // last activity in any tab, written at most every 5s
+    let pinged = last;
+    const seen = () => {
+      last = Date.now();
+      if (last - shared > 5_000) {
+        shared = last;
+        try { localStorage.setItem(ACTIVITY_KEY, String(last)); } catch { /* private mode */ }
+      }
+    };
+    for (const ev of ACTIVITY) window.addEventListener(ev, seen, { passive: true, capture: true });
+    const t = setInterval(() => {
+      if (Date.now() - Math.max(last, readSharedActivity()) >= limit) {
+        clearInterval(t);  // sign out once, not again on every tick while the two requests are in flight
+        onIdle();
+        return;
+      }
+      // Anything done since the last ping is reported, however sparse. Only the tab the person is
+      // actually in has activity of its own, so open tabs do not all ping at once.
+      if (last > pinged && Date.now() - pinged >= every) {
+        pinged = Date.now();
+        post("/api/session/ping").catch(() => undefined);
+      }
+    }, Math.max(1_000, Math.min(15_000, every / 4)));
+    return () => {
+      clearInterval(t);
+      for (const ev of ACTIVITY) window.removeEventListener(ev, seen, { capture: true });
+    };
+  }, [minutes, signedIn, onIdle]);
+}
+
 function App(): ReactNode {
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wsId, setWsId] = useState<string | null>(storedWs());
   const [counts, setCounts] = useState({ unread: 0, pending_approvals: 0 });
   const [menu, setMenu] = useState(false);
+  const [idleOut, setIdleOut] = useState(false);
   const route = useRoute();
 
   const reloadSession = useCallback(async () => {
     try {
       const s = await get<Session>("/api/session");
+      if (s.user) setIdleOut(false);
       const pref = (s as any)?.user?.language as Lang | undefined;
       if (pref && pref !== lang()) setLang(pref);  // the person's saved language follows them to every device
       setSession(s);
@@ -76,6 +131,25 @@ function App(): ReactNode {
     }
   }, [route.join("/"), session]);
 
+  const onIdle = useCallback(async () => {
+    setIdleOut(true);
+    try { await post("/api/auth/logout"); } catch { /* the engine has ended it anyway */ }
+    await reloadSession();
+  }, [reloadSession]);
+  useIdleSignOut(session?.idle_minutes ?? 0, Boolean(session?.user), onIdle);
+
+  // the engine refused a request: show the sign-in screen instead of a page that cannot load anything
+  const haveUser = Boolean(session?.user);
+  useEffect(() => {
+    if (!haveUser) return;  // on the sign-in screen a 401 is a wrong password, not a lost session
+    const refused = (e: Event) => {
+      if ((e as CustomEvent).detail === "session_idle") setIdleOut(true);
+      void reloadSession();
+    };
+    window.addEventListener(SIGNED_OUT_EVENT, refused);
+    return () => window.removeEventListener(SIGNED_OUT_EVENT, refused);
+  }, [haveUser, reloadSession]);
+
   const ws: Workspace | undefined = session?.workspaces.find((w) => w.id === wsId) || session?.workspaces[0];
 
   const refreshCounts = useCallback(() => {
@@ -96,7 +170,7 @@ function App(): ReactNode {
   if (!session) return <div className="page muted">{tr("Starting…")}</div>;
   if (route[0] === "invite" && route[1]) return <InvitePage token={route[1]} session={session} onDone={reloadSession} />;
   if (route[0] === "reset" && route[1]) return <ResetPage token={route[1]} onDone={reloadSession} />;
-  if (!session.user) return <AuthPage session={session} onDone={reloadSession} />;
+  if (!session.user) return <AuthPage session={session} onDone={reloadSession} signedOutForIdling={idleOut} />;
   if (!ws) return <Onboarding session={session} onDone={async (id) => { selectWs(id); await reloadSession(); }} />;
 
   function selectWs(id: string) {

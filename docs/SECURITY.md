@@ -51,6 +51,20 @@
 - scrypt password hashing (N=2^15) and a minimum password policy.
 - Opaque session tokens, stored hashed. Cookies are HttpOnly, Secure and SameSite=Strict, and cookie-authenticated
   writes must come from the server's own origin.
+- A session ends after `DESK_SESSION_IDLE_MINUTES` (60 by default) with no activity, and the row is deleted rather
+  than merely refused. Activity is a request that changes something, which includes the page's heartbeat
+  (`POST /api/session/ping`, sent at most once a minute and only after the person has used the page). **Reading
+  never counts**, so the pages that poll while a document is processed, a file review runs or a workflow run is open
+  cannot hold a session open with nobody there; deciding by method keeps that true for polls added later. While
+  somebody is working the session renews with no second sign-in. `DESK_SESSION_DAYS` adds an absolute cap on top of
+  that, and is off by default: a leaked token then lives 60 minutes past the last use rather than the 14 days it
+  used to, but a token an attacker keeps using has no upper bound, so set the cap where that matters. Both knobs
+  refuse a negative or non-numeric value at start-up. `DESK_SESSION_IDLE_MINUTES=0` turns the idle check off and
+  leaves a session with no server-side limit at all. Signing out happens by browser event too: the page watches
+  real pointer, key and scroll activity (not mouse movement, so reading for an hour without touching anything ends
+  the session) and open tabs share one activity clock, so working in one keeps the others signed in.
+- Only sessions work this way. The MCP keys, a push connection's ingest key and a workflow's webhook secret are
+  not sessions: they do not expire and are revoked by rotating them.
 - Rate limits on sign-up and sign-in. Sign-up is by single-use invitation, except for the first account.
 - Behind Caddy with automatic HTTPS and HSTS.
 
