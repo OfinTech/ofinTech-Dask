@@ -5,6 +5,7 @@ Run on each target OS (the desktop installers bundle this folder):
     python packaging/build_engine.py
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,4 +27,10 @@ cmd = [
     str(root / "packaging" / "entry.py"),
 ]
 print(" ".join(cmd))
-subprocess.run(cmd, check=True)
+# desk_engine is not installed by requirements-dev.txt, and running this file by path puts packaging/ on
+# sys.path rather than the engine root. --paths covers PyInstaller's own analysis, but --collect-submodules
+# and --collect-all import the package for real, in isolated subprocesses that go by the interpreter's own
+# sys.path. Those inherit PYTHONPATH, so the root belongs there too.
+env = dict(os.environ)
+env["PYTHONPATH"] = os.pathsep.join([str(root), *([env["PYTHONPATH"]] if env.get("PYTHONPATH") else [])])
+subprocess.run(cmd, check=True, env=env)
