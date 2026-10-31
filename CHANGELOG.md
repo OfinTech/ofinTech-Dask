@@ -3,7 +3,7 @@
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/); database
 migrations are applied automatically on start-up and are never rewritten once released.
 
-## Unreleased
+## 1.1.0 — 2026-11-01
 
 ### Added
 
