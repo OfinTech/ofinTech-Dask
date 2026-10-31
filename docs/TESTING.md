@@ -42,7 +42,27 @@ External services (model providers, Intuit, Zoho, Xero, Google, Telegram, Meta) 
 transport that returns responses shaped like each provider's documented format. The MCP tests use a real MCP server
 process.
 
-## What was executed for this version (28 Oct 2026, release 1.0.0)
+## What was executed for this version (1 Nov 2026, release 1.1.0)
+
+Run by CI on the release commit, not by hand: `build.yml` on Ubuntu 24.04 (Python 3.12, Node 24) for the checks,
+and on macOS 15, Windows 2022 and Ubuntu 22.04 for the installers.
+
+| Check | Result |
+|---|---|
+| Engine tests | 182 passed |
+| UI type check (`tsc --noEmit`) | passed |
+| Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,477 of 1,477 strings |
+| UI build (`node build.mjs`) | passed |
+| UI browser smoke (`e2e/ui_smoke.py`, Chromium) | passed; same flows as the 1.0.0 run below |
+| Desktop type check | passed |
+| Installers on macOS 15, Windows 2022 and Ubuntu 22.04 | built: .dmg/.zip, .exe, .AppImage/.deb — the first time this job has run |
+| Team Server image | built |
+
+Not done for this version: the manual desktop-shell smoke under Xvfb from RELEASING.md, and no installer was
+launched and used. The packaging path is built but nothing yet runs the packaged app, so a module missing from the
+bundle would not be caught by these checks.
+
+## What was executed for 1.0.0 (28 Oct 2026)
 
 | Check | Result |
 |---|---|

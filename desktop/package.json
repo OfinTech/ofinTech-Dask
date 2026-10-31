@@ -1,7 +1,7 @@
 {
   "name": "ofintech-desk",
   "productName": "OfinTech Desk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "AI workspace for finance and accounting teams",
   "private": true,
   "main": "dist/main.js",
