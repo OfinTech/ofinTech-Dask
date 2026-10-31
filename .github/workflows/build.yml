@@ -95,6 +95,13 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' }}
         shell: bash
         run: |
+          # An empty CSC_LINK is worse than none: electron-builder reads it as a certificate path, resolves
+          # the empty string to the project directory and stops with "<projectDir> not a file". Unsigned
+          # builds must not see these variables at all.
+          if [ -z "$CSC_LINK" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
           npm install --no-audit --no-fund
           set +e
           npm run dist 2>&1 | tee package.log
