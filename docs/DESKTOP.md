@@ -47,7 +47,7 @@ Privacy & Security â†’ Open Anyway*) and Windows SmartScreen warns (*More info â
 | Platform | You need | Repository secrets |
 |---|---|---|
 | macOS | Apple Developer Program membership; a *Developer ID Application* certificate exported as .p12; an app-specific password | `CSC_LINK` (base64 of the .p12), `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` (signing and notarisation) |
-| Windows | A code-signing certificate (OV or EV) from a certificate authority, as .pfx, or a cloud signing service | `WIN_CSC_LINK` (base64 of the .pfx), `WIN_CSC_KEY_PASSWORD` |
+| Windows | A code-signing certificate (OV or EV) from a certificate authority, as .pfx, or a cloud signing service | `WIN_CSC_LINK` (base64 of the .pfx), `WIN_CSC_KEY_PASSWORD`; `CSC_LINK` alone also signs Windows, so these are for a separate Windows certificate |
 
 EV certificates and cloud signing services usually keep the key in hardware; signing then needs the vendor's
 tooling in the workflow instead of a .pfx. Base64 of a file: `base64 -i cert.p12 | pbcopy` (macOS) or
