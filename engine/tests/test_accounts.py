@@ -9,7 +9,9 @@ from urllib.parse import parse_qs, urlsplit
 import httpx2 as httpx
 from starlette.testclient import TestClient
 
+from desk_engine.db import now
 from desk_engine.mail import Mailer
+from desk_engine.security import token_hash
 
 from .helpers import Harness
 
@@ -177,3 +179,91 @@ class Accounts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Sessions(unittest.TestCase):
+    """Signed in for as long as you are working; signed out once you stop."""
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server")
+        self.c = self.h.client
+        r = self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
+        self.assertEqual(r.status_code, 200, r.text)
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def row(self) -> dict:
+        return self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")
+
+    def age(self, seconds: float) -> None:
+        """Pretends the last thing the person did was ``seconds`` ago."""
+        self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (seconds,))
+
+    def test_no_absolute_cap_by_default(self) -> None:
+        self.assertEqual(self.h.engine.settings.session_days, 0)
+        self.assertGreater(self.row()["expires_at"], 4e9)  # past any plausible date: only idling ends it
+
+    def test_activity_keeps_the_session_open(self) -> None:
+        idle = self.h.engine.settings.session_idle_minutes * 60
+        for _ in range(3):
+            self.age(idle - 120)  # two minutes short of the limit, three times over
+            self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+            self.assertLess(self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")["last_seen"], 4e9)
+        self.assertIsNotNone(self.row())
+
+    def test_idling_signs_the_person_out(self) -> None:
+        self.age(self.h.engine.settings.session_idle_minutes * 60 + 1)
+        self.assertIsNone(self.c.get("/api/session").json()["user"])  # the page falls back to sign-in
+        self.assertIsNone(self.row())  # and the session is gone, not merely refused
+        r = self.c.get(f"/api/w/{self.h.engine.db.scalar('SELECT id FROM workspaces LIMIT 1') or 'x'}/notifications")
+        self.assertEqual(r.status_code, 401)
+
+    def test_background_requests_do_not_count_as_activity(self) -> None:
+        idle = self.h.engine.settings.session_idle_minutes * 60
+        self.age(idle - 120)
+        before = self.row()["last_seen"]
+        self.c.get("/api/session", headers={"X-Desk-Background": "1"})
+        self.assertEqual(self.row()["last_seen"], before)  # a polling tab cannot hold the session open
+        self.age(180)
+        self.assertIsNone(self.c.get("/api/session").json()["user"])
+
+    def test_ping_counts_as_activity(self) -> None:
+        self.age(self.h.engine.settings.session_idle_minutes * 60 - 120)
+        before = self.row()["last_seen"]
+        self.assertEqual(self.c.post("/api/session/ping", headers=ORIGIN).status_code, 200)
+        self.assertGreater(self.row()["last_seen"], before)
+
+    def test_ping_needs_a_session(self) -> None:
+        c = TestClient(self.h.app, base_url="https://desk.example.com")  # no cookie, no bearer token
+        self.assertEqual(c.post("/api/session/ping", headers=ORIGIN).status_code, 401)
+
+    def test_a_bearer_token_idles_out_too(self) -> None:
+        """The API is reached with Authorization: Bearer as well as the cookie; both are the same session."""
+        token = self.c.post("/api/auth/login",
+                            json={"email": "owner@acme.test", "password": PW}, headers=ORIGIN).json()["token"]
+        c = TestClient(self.h.app, base_url="https://desk.example.com")
+        c.headers["authorization"] = f"Bearer {token}"
+        self.assertEqual(c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+        self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ? WHERE id = ?",
+                                 (self.h.engine.settings.session_idle_minutes * 60 + 1, token_hash(token)))
+        self.assertIsNone(c.get("/api/session").json()["user"])
+
+
+class SessionCap(unittest.TestCase):
+    """DESK_SESSION_DAYS is off by default; when it is set it still ends a session the person is using."""
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server", session_days=7)
+        self.c = self.h.client
+        self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_the_cap_ends_an_active_session(self) -> None:
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+        # eight days on, with the person active a moment ago: the cap wins over the activity
+        self.h.engine.db.execute("UPDATE sessions SET expires_at = ?, last_seen = ?", (now() - 1, now()))
+        self.assertIsNone(self.c.get("/api/session").json()["user"])
+        self.assertIsNone(self.h.engine.db.one("SELECT * FROM sessions LIMIT 1"))  # deleted, not just refused

@@ -84,8 +84,8 @@ padding:0 1rem;color:#1d2433}}a{{color:#1e4fa3}}</style></head><body><h1>{html.e
 async def _google_login(request: Request, engine: Any, params: dict[str, str]) -> Response:
     from starlette.responses import RedirectResponse
 
+    from ..web import SESSION_COOKIE, session_cookie_max_age
     from .auth import google_callback
-    from ..web import SESSION_COOKIE
 
     try:
         token, message = await google_callback(engine, request, params)
@@ -102,7 +102,7 @@ padding:0 1rem;color:#1d2433}}a{{color:#1e4fa3}}</style></head><body><h1>You are
     if token is None:
         return page("Sign-in not completed", message, 400)
     resp = RedirectResponse("/#/", status_code=303)
-    resp.set_cookie(SESSION_COOKIE, token, max_age=engine.settings.session_days * 86400, httponly=True,
+    resp.set_cookie(SESSION_COOKIE, token, max_age=session_cookie_max_age(engine), httponly=True,
                     secure=engine.settings.public_url.startswith("https://"), samesite="strict", path="/")
     return resp
 
