@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import io
 import shutil
 import unittest
@@ -12,7 +13,7 @@ import httpx2 as httpx
 from .helpers import Harness
 from .test_knowledge import POLICY, make_pdf
 
-HAS_OCR = shutil.which("tesseract") is not None
+HAS_OCR = shutil.which("tesseract") is not None and importlib.util.find_spec("PIL") is not None
 
 
 def text_image(lines: list[str], fmt: str = "PNG") -> bytes:
@@ -44,7 +45,7 @@ class Search(unittest.TestCase):
         self.h.client.portal.call(self.h.engine.knowledge.wait_idle)
         return r
 
-    @unittest.skipUnless(HAS_OCR, "tesseract is not installed")
+    @unittest.skipUnless(HAS_OCR, "OCR needs both Tesseract and Pillow")
     def test_ocr_for_images_and_scanned_pdfs(self) -> None:
         h, ws = self.h, self.ws
         scan = text_image(["Gulf Freight LLC", "Invoice 4471", "Total due 18,400.00"], "PDF")
