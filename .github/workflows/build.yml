@@ -64,9 +64,21 @@ jobs:
         with: { node-version: "24" }
       - name: Build engine
         working-directory: engine
+        shell: bash
         run: |
           pip install -r requirements-dev.txt
-          python packaging/build_engine.py
+          set +e
+          python packaging/build_engine.py 2>&1 | tee build-engine.log
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" -ne 0 ]; then
+            # the log of this job is not readable from everywhere; an annotation and the run summary are
+            msg=$(tail -n 25 build-engine.log | tr -d '\r' | sed -e 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
+            echo "::error title=Build engine failed::${msg}"
+            { echo "### Build engine failed on ${{ matrix.os }}"; echo '```'; tail -n 80 build-engine.log; echo '```'; } \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
       - name: Build UI
         working-directory: ui
         run: |
@@ -81,9 +93,20 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' }}
+        shell: bash
         run: |
           npm install --no-audit --no-fund
-          npm run dist
+          set +e
+          npm run dist 2>&1 | tee package.log
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" -ne 0 ]; then
+            msg=$(tail -n 25 package.log | tr -d '\r' | sed -e 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
+            echo "::error title=Package desktop app failed::${msg}"
+            { echo "### Package desktop app failed on ${{ matrix.os }}"; echo '```'; tail -n 80 package.log; echo '```'; } \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
       - uses: actions/upload-artifact@v7
         with:
           name: ofintech-desk-${{ matrix.os }}

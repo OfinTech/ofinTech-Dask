@@ -5,6 +5,7 @@ Run on each target OS (the desktop installers bundle this folder):
     python packaging/build_engine.py
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -18,7 +19,13 @@ cmd = [
     "--add-data", f"{root / 'desk_engine' / 'skills' / 'builtin'}{sep}desk_engine/skills/builtin",
     "--collect-submodules", "desk_engine",
     "--collect-submodules", "uvicorn",
-    "--collect-all", "mcp",
+    # not --collect-all mcp: that imports every submodule, and mcp.cli turns its missing optional extra
+    # (typer, from mcp[cli]) into sys.exit(1). PyInstaller tolerates an ImportError while collecting but
+    # not a SystemExit, so one CLI module the engine never uses took the whole build down. These are the
+    # parts the engine imports, and both walk cleanly.
+    "--collect-data", "mcp",
+    "--collect-submodules", "mcp.client",
+    "--collect-submodules", "mcp.server",
     "--collect-all", "mcp_types",
     "--collect-submodules", "httpx2",
     "--collect-data", "docx",
@@ -26,4 +33,10 @@ cmd = [
     str(root / "packaging" / "entry.py"),
 ]
 print(" ".join(cmd))
-subprocess.run(cmd, check=True)
+# desk_engine is not installed by requirements-dev.txt, and running this file by path puts packaging/ on
+# sys.path rather than the engine root. --paths covers PyInstaller's own analysis, but --collect-submodules
+# and --collect-all import the package for real, in isolated subprocesses that go by the interpreter's own
+# sys.path. Those inherit PYTHONPATH, so the root belongs there too.
+env = dict(os.environ)
+env["PYTHONPATH"] = os.pathsep.join([str(root), *([env["PYTHONPATH"]] if env.get("PYTHONPATH") else [])])
+subprocess.run(cmd, check=True, env=env)
