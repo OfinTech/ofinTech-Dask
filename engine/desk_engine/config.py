@@ -36,6 +36,19 @@ def _bool(name: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
+def _minutes_or_days(name: str, default: str) -> int:
+    """A session limit: whole and never negative. These two knobs gate signing in, so a typo must stop
+    the engine with a readable reason rather than lock everybody out or quietly remove the limit."""
+    raw = _env(name, default)
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ConfigError(f"{name} must be a whole number of minutes or days, not {raw!r}.") from None
+    if value < 0:
+        raise ConfigError(f"{name} cannot be negative; use 0 to turn the limit off.")
+    return value
+
+
 @dataclass(frozen=True)
 class Settings:
     mode: str
@@ -188,8 +201,8 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         allow_stdio_mcp=_bool("DESK_ALLOW_STDIO_MCP", mode == "desktop"),
         allow_private_network_urls=_bool("DESK_ALLOW_PRIVATE_URLS", mode == "desktop"),
         ui_dir=ui_dir,
-        session_days=int(_env("DESK_SESSION_DAYS", "0")),
-        session_idle_minutes=int(_env("DESK_SESSION_IDLE_MINUTES", "60")),
+        session_days=_minutes_or_days("DESK_SESSION_DAYS", "0"),
+        session_idle_minutes=_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "60"),
         max_upload_mb=int(_env("DESK_MAX_UPLOAD_MB", "25")),
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),
         log_level=_env("DESK_LOG_LEVEL", "info"),

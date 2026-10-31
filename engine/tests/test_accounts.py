@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 import unittest
+from typing import Any
+from unittest import mock
 from urllib.parse import parse_qs, urlsplit
 
 import httpx2 as httpx
 from starlette.testclient import TestClient
 
 from desk_engine.db import now
+from desk_engine.errors import ConfigError
 from desk_engine.mail import Mailer
 from desk_engine.security import token_hash
 
@@ -196,6 +201,14 @@ class Sessions(unittest.TestCase):
     def row(self) -> dict:
         return self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")
 
+    def bearer(self) -> str:
+        """Signs in again and makes the client use that session as a bearer token, not the cookie."""
+        token = self.c.post("/api/auth/login", json={"email": "owner@acme.test", "password": PW},
+                            headers=ORIGIN).json()["token"]
+        self.c.cookies.clear()
+        self.c.headers["authorization"] = f"Bearer {token}"
+        return token
+
     def age(self, seconds: float) -> None:
         """Pretends the last thing the person did was ``seconds`` ago."""
         self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (seconds,))
@@ -205,28 +218,30 @@ class Sessions(unittest.TestCase):
         self.assertGreater(self.row()["expires_at"], 4e9)  # past any plausible date: only idling ends it
 
     def test_activity_keeps_the_session_open(self) -> None:
+        """Three times the idle window with no second sign-in, because the person keeps working."""
         idle = self.h.engine.settings.session_idle_minutes * 60
         for _ in range(3):
             self.age(idle - 120)  # two minutes short of the limit, three times over
-            self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
-            self.assertLess(self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")["last_seen"], 4e9)
-        self.assertIsNotNone(self.row())
+            before = self.row()["last_seen"]
+            self.assertEqual(self.c.post("/api/session/ping", headers=ORIGIN).status_code, 200)
+            self.assertGreater(self.row()["last_seen"], before)  # the window starts again from here
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+
+    def test_reading_does_not_keep_the_session_open(self) -> None:
+        """A page that polls must not hold a session open; only something the person did counts."""
+        idle = self.h.engine.settings.session_idle_minutes * 60
+        self.age(idle - 120)
+        before = self.row()["last_seen"]
+        for _ in range(5):
+            self.assertEqual(self.c.get("/api/session").status_code, 200)
+        self.assertEqual(self.row()["last_seen"], before)
+        self.age(180)
+        self.assertIsNone(self.c.get("/api/session").json()["user"])
 
     def test_idling_signs_the_person_out(self) -> None:
         self.age(self.h.engine.settings.session_idle_minutes * 60 + 1)
         self.assertIsNone(self.c.get("/api/session").json()["user"])  # the page falls back to sign-in
         self.assertIsNone(self.row())  # and the session is gone, not merely refused
-        r = self.c.get(f"/api/w/{self.h.engine.db.scalar('SELECT id FROM workspaces LIMIT 1') or 'x'}/notifications")
-        self.assertEqual(r.status_code, 401)
-
-    def test_background_requests_do_not_count_as_activity(self) -> None:
-        idle = self.h.engine.settings.session_idle_minutes * 60
-        self.age(idle - 120)
-        before = self.row()["last_seen"]
-        self.c.get("/api/session", headers={"X-Desk-Background": "1"})
-        self.assertEqual(self.row()["last_seen"], before)  # a polling tab cannot hold the session open
-        self.age(180)
-        self.assertIsNone(self.c.get("/api/session").json()["user"])
 
     def test_ping_counts_as_activity(self) -> None:
         self.age(self.h.engine.settings.session_idle_minutes * 60 - 120)
@@ -235,19 +250,39 @@ class Sessions(unittest.TestCase):
         self.assertGreater(self.row()["last_seen"], before)
 
     def test_ping_needs_a_session(self) -> None:
-        c = TestClient(self.h.app, base_url="https://desk.example.com")  # no cookie, no bearer token
-        self.assertEqual(c.post("/api/session/ping", headers=ORIGIN).status_code, 401)
+        self.c.cookies.clear()  # no cookie, no bearer token
+        self.assertEqual(self.c.post("/api/session/ping", headers=ORIGIN).status_code, 401)
+
+    def test_ping_must_come_from_the_app(self) -> None:
+        """It is a write authenticated by the cookie, so the CSRF guard applies."""
+        self.assertEqual(self.c.post("/api/session/ping").status_code, 403)
+        self.assertEqual(self.c.post("/api/session/ping", headers={"origin": "https://evil.test"}).status_code, 403)
 
     def test_a_bearer_token_idles_out_too(self) -> None:
         """The API is reached with Authorization: Bearer as well as the cookie; both are the same session."""
-        token = self.c.post("/api/auth/login",
-                            json={"email": "owner@acme.test", "password": PW}, headers=ORIGIN).json()["token"]
-        c = TestClient(self.h.app, base_url="https://desk.example.com")
-        c.headers["authorization"] = f"Bearer {token}"
-        self.assertEqual(c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+        token = self.bearer()
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
         self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ? WHERE id = ?",
                                  (self.h.engine.settings.session_idle_minutes * 60 + 1, token_hash(token)))
-        self.assertIsNone(c.get("/api/session").json()["user"])
+        self.assertIsNone(self.c.get("/api/session").json()["user"])
+
+    def test_the_refusal_says_it_was_idling(self) -> None:
+        """The page shows its own explanation off this code, so it must not change silently."""
+        ws = self.c.post("/api/workspaces", json={"name": "Acme"}, headers=ORIGIN).json()["id"]
+        self.age(self.h.engine.settings.session_idle_minutes * 60 + 1)
+        r = self.c.get(f"/api/w/{ws}/notifications")
+        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.json()["error"], "session_idle")
+
+    def test_idling_one_session_leaves_the_others(self) -> None:
+        """Signing out of a laptop left behind must not sign the person out of the phone in their hand."""
+        phone = self.bearer()  # a second sign-in: two sessions for one person
+        self.assertEqual(self.h.engine.db.scalar("SELECT COUNT(*) FROM sessions"), 2)
+        laptop = self.h.engine.db.one("SELECT id FROM sessions WHERE id != ?", (token_hash(phone),))["id"]
+        self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ? WHERE id = ?",
+                                 (self.h.engine.settings.session_idle_minutes * 60 + 1, laptop))
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+        self.assertIsNotNone(self.h.engine.db.one("SELECT * FROM sessions WHERE id = ?", (token_hash(phone),)))
 
 
 class SessionCap(unittest.TestCase):
@@ -267,3 +302,80 @@ class SessionCap(unittest.TestCase):
         self.h.engine.db.execute("UPDATE sessions SET expires_at = ?, last_seen = ?", (now() - 1, now()))
         self.assertIsNone(self.c.get("/api/session").json()["user"])
         self.assertIsNone(self.h.engine.db.one("SELECT * FROM sessions LIMIT 1"))  # deleted, not just refused
+
+
+class SessionSettings(unittest.TestCase):
+    """The two knobs that gate signing in: their defaults, and what a typo does."""
+
+    MASTER_KEY = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="
+
+    def load(self, **env: str) -> Any:
+        from desk_engine.config import load_settings
+        clear = {"DESK_SESSION_DAYS", "DESK_SESSION_IDLE_MINUTES", "DESK_MODE"}
+        with mock.patch.dict(os.environ, dict(env), clear=False):
+            for k in clear - set(env):
+                os.environ.pop(k, None)
+            with tempfile.TemporaryDirectory() as tmp:
+                os.environ["DESK_DATA_DIR"] = tmp
+                os.environ["DESK_MASTER_KEY"] = self.MASTER_KEY
+                os.environ["DESK_LOCAL_TOKEN"] = "t" * 40
+                return load_settings()
+
+    def test_defaults(self) -> None:
+        """Read from the environment, not from the dataclass: an hour idle, no absolute cap."""
+        s = self.load()
+        self.assertEqual(s.session_idle_minutes, 60)
+        self.assertEqual(s.session_days, 0)
+
+    def test_values_are_read(self) -> None:
+        s = self.load(DESK_SESSION_IDLE_MINUTES="15", DESK_SESSION_DAYS="30")
+        self.assertEqual((s.session_idle_minutes, s.session_days), (15, 30))
+
+    def test_a_negative_limit_is_refused(self) -> None:
+        """-1 minutes used to delete every session on its first request, locking everybody out;
+        -1 days used to remove the cap altogether, which is the wrong way for a limit to fail."""
+        for name in ("DESK_SESSION_IDLE_MINUTES", "DESK_SESSION_DAYS"):
+            with self.subTest(name), self.assertRaises(ConfigError) as caught:
+                self.load(**{name: "-1"})
+            self.assertIn("negative", str(caught.exception))
+            self.assertIn(name, str(caught.exception))
+
+    def test_a_non_number_is_refused(self) -> None:
+        with self.assertRaises(ConfigError) as caught:
+            self.load(DESK_SESSION_IDLE_MINUTES="60m")
+        self.assertIn("whole number", str(caught.exception))
+
+
+class ShortIdleWindow(unittest.TestCase):
+    """A one-minute window has to be usable: last_seen must be written more often than the window."""
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server", session_idle_minutes=1)
+        self.c = self.h.client
+        self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_a_person_working_through_it_stays_signed_in(self) -> None:
+        for _ in range(4):  # something done every 30 seconds, through four windows
+            self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - 30")
+            self.assertEqual(self.c.post("/api/session/ping", headers=ORIGIN).status_code, 200,
+                             "a 1-minute window must still be reachable")
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+
+
+class NoIdleWindow(unittest.TestCase):
+    """DESK_SESSION_IDLE_MINUTES=0 is documented as never signing out."""
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server", session_idle_minutes=0)
+        self.c = self.h.client
+        self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_nothing_signs_the_person_out(self) -> None:
+        self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (400 * 86400,))
+        self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")

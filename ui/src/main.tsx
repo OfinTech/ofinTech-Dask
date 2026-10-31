@@ -6,7 +6,7 @@ try {
   const theme = localStorage.getItem("desk-theme");
   if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
 } catch { /* storage unavailable */ }
-import { get, post } from "./lib/api";
+import { SIGNED_OUT_EVENT, get, post } from "./lib/api";
 import { AppCtx, type Session, type Workspace } from "./lib/app";
 import { BrandMark, ErrorBox, Icon, ToastProvider, Wordmark, errorText, go, useRoute } from "./components/ui";
 import { AuthPage, InvitePage, ResetPage } from "./pages/Auth";
@@ -60,6 +60,7 @@ function useIdleSignOut(minutes: number, signedIn: boolean, onIdle: () => void):
   useEffect(() => {
     if (!minutes || !signedIn) return;
     const limit = minutes * 60_000;
+    const every = Math.min(60_000, limit / 4);  // a short window needs a faster heartbeat to stay reachable
     let last = Date.now();
     let shared = last;   // last activity in any tab, written at most every 5s
     let pinged = last;
@@ -72,14 +73,18 @@ function useIdleSignOut(minutes: number, signedIn: boolean, onIdle: () => void):
     };
     for (const ev of ACTIVITY) window.addEventListener(ev, seen, { passive: true, capture: true });
     const t = setInterval(() => {
-      const quiet = Date.now() - Math.max(last, readSharedActivity());
-      if (quiet >= limit) { onIdle(); return; }
-      // tell the engine the person is still here, at most once a minute and only after real activity
-      if (quiet < 60_000 && Date.now() - pinged > 60_000) {
+      if (Date.now() - Math.max(last, readSharedActivity()) >= limit) {
+        clearInterval(t);  // sign out once, not again on every tick while the two requests are in flight
+        onIdle();
+        return;
+      }
+      // Anything done since the last ping is reported, however sparse. Only the tab the person is
+      // actually in has activity of its own, so open tabs do not all ping at once.
+      if (last > pinged && Date.now() - pinged >= every) {
         pinged = Date.now();
         post("/api/session/ping").catch(() => undefined);
       }
-    }, 15_000);
+    }, Math.max(1_000, Math.min(15_000, every / 4)));
     return () => {
       clearInterval(t);
       for (const ev of ACTIVITY) window.removeEventListener(ev, seen, { capture: true });
@@ -133,11 +138,23 @@ function App(): ReactNode {
   }, [reloadSession]);
   useIdleSignOut(session?.idle_minutes ?? 0, Boolean(session?.user), onIdle);
 
+  // the engine refused a request: show the sign-in screen instead of a page that cannot load anything
+  const haveUser = Boolean(session?.user);
+  useEffect(() => {
+    if (!haveUser) return;  // on the sign-in screen a 401 is a wrong password, not a lost session
+    const refused = (e: Event) => {
+      if ((e as CustomEvent).detail === "session_idle") setIdleOut(true);
+      void reloadSession();
+    };
+    window.addEventListener(SIGNED_OUT_EVENT, refused);
+    return () => window.removeEventListener(SIGNED_OUT_EVENT, refused);
+  }, [haveUser, reloadSession]);
+
   const ws: Workspace | undefined = session?.workspaces.find((w) => w.id === wsId) || session?.workspaces[0];
 
   const refreshCounts = useCallback(() => {
     if (!ws) return;
-    get(`/api/w/${ws.id}/notifications`, { background: true }).then((n) => setCounts({ unread: n.unread, pending_approvals: n.pending_approvals }))
+    get(`/api/w/${ws.id}/notifications`).then((n) => setCounts({ unread: n.unread, pending_approvals: n.pending_approvals }))
       .catch(() => undefined);
   }, [ws?.id]);
   useEffect(() => {
