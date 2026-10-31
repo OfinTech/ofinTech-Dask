@@ -11,10 +11,19 @@ Signing (repository secrets):
 
 | Secret | Purpose |
 |---|---|
-| `CSC_LINK`, `CSC_KEY_PASSWORD` | Code-signing certificate (base64 .p12) for macOS or Windows |
-| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | macOS notarisation |
+| `CSC_LINK`, `CSC_KEY_PASSWORD` | Code-signing certificate (base64 .p12), used on both macOS and Windows |
+| `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` | A separate Windows certificate, which takes precedence there |
+| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | macOS notarisation; the packaging step asks for notarisation whenever these are set |
 
-Without these secrets the installers are built unsigned: macOS Gatekeeper and Windows SmartScreen will warn users.
+Set only what you have. The packaging step passes a certificate variable on only when it holds something, because
+an empty one is read as a path and stops the build; with no macOS certificate it also stops electron-builder
+searching the runner's keychain. Without any of these the installers are built unsigned, and the release notes say
+so: macOS Gatekeeper and Windows SmartScreen warn users.
+
+**The bundled engine is the hard part of notarising macOS.** `engine/dist/desk-engine` is a PyInstaller folder of
+Mach-O files that ships inside the app as a resource, and a hardened-runtime app is notarised only when every
+executable in it carries the same signature. Expect the first notarisation attempt to need work there — the
+`mac.binaries` option, or an `afterPack` hook that signs the engine folder — rather than certificates alone.
 
 Smoke test of the desktop shell (Linux, no display):
 
