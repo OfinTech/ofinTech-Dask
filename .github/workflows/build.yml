@@ -118,6 +118,43 @@ jobs:
             desktop/release/*.deb
           if-no-files-found: error
 
+  release:
+    # RELEASING.md says a vX.Y.Z tag attaches the installers to the release. Nothing did that until now:
+    # the jobs above only upload them as run artifacts, which expire and are not part of any release.
+    needs: [test, desktop, team-server-image]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: installers
+          pattern: ofintech-desk-*
+          merge-multiple: true
+      - name: Release notes from the changelog
+        env:
+          # the same test the packaging step uses; the secret's value never reaches the shell
+          SIGNED: ${{ secrets.CSC_LINK != '' }}
+        run: |
+          awk -v ver="${GITHUB_REF_NAME#v}" '
+            $0 ~ "^## " ver " " { f = 1; next }
+            f && /^## / { exit }
+            f { print }
+          ' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"; exit 1; }
+          if [ "$SIGNED" != "true" ]; then
+            printf '\n---\n\n**These installers are not code-signed.** macOS Gatekeeper and Windows SmartScreen will\nwarn you when you open them. See docs/RELEASING.md for the secrets that sign them.\n' >> notes.md
+          fi
+          ls -l installers
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ github.ref_name }}
+          body_path: notes.md
+          files: installers/*
+          fail_on_unmatched_files: true
+
   team-server-image:
     needs: test
     runs-on: ubuntu-24.04
