@@ -30,10 +30,23 @@ Email = Annotated[str, Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=2
 SESSION_COOKIE = "desk_session"
 # A session with no absolute cap gets this expiry (the year 33658), so one comparison covers both cases.
 NO_EXPIRY = 1e12
-# Requests a page makes by itself (count polling, event streams) carry this header. They prove the tab
-# is open, not that anyone is at it, so they never postpone the idle sign-out.
-BACKGROUND_HEADER = "x-desk-background"
-ACTIVITY_WRITE_SECONDS = 60  # how often an active session writes last_seen
+ACTIVITY_WRITE_SECONDS = 60  # at most how often an active session writes last_seen
+
+
+def is_activity(request: Request) -> bool:
+    """Whether this request postpones the idle sign-out.
+
+    Only a request that changes something counts, which includes the page's own heartbeat
+    (``POST /api/session/ping``). Reading never counts: pages poll while a document is processed, a
+    file review runs or a workflow run is open, and a tab left alone must still reach its sign-out.
+    Deciding by method keeps that true for polls added later, which naming each one would not.
+    """
+    return request.method not in {"GET", "HEAD", "OPTIONS"}
+
+
+def activity_write_seconds(idle_limit: float) -> float:
+    """Short idle windows need last_seen written more often than once a minute to stay reachable."""
+    return min(ACTIVITY_WRITE_SECONDS, idle_limit / 4) if idle_limit else ACTIVITY_WRITE_SECONDS
 
 
 def session_expiry(engine: Engine) -> float:
@@ -212,7 +225,7 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     user = engine.db.one("SELECT * FROM users WHERE id = ? AND disabled = 0", (session["user_id"],))
     if user is None:
         raise Unauthorized("Your account is disabled.")
-    if not request.headers.get(BACKGROUND_HEADER) and now() - session["last_seen"] > ACTIVITY_WRITE_SECONDS:
+    if is_activity(request) and now() - session["last_seen"] > activity_write_seconds(idle_limit):
         engine.db.execute("UPDATE sessions SET last_seen = ? WHERE id = ?", (now(), session["id"]))
     return user
 

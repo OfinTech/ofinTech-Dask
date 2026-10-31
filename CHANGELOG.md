@@ -133,10 +133,13 @@ migrations are applied automatically on start-up and are never rewritten once re
   working: a session renews itself and `DESK_SESSION_DAYS` no longer forces a new sign-in every 14 days (it is now
   an optional absolute cap, off by default). Instead the engine signs the person out after
   `DESK_SESSION_IDLE_MINUTES` (60) with nothing happening, deletes the session, and the page returns to the
-  sign-in screen saying why. Requests a page makes by itself — count polling and event streams, which carry
-  `X-Desk-Background: 1` — no longer postpone that, so a tab left open overnight does not hold a session open.
-  Open tabs share one activity clock, so working in one of them keeps the rest signed in. The desktop app is
-  unaffected: it has no accounts and signs in automatically.
+  sign-in screen saying why — including when the engine, not the page, decided it. Only a request that changes
+  something counts as activity, the page's heartbeat included; reading never does, so the pages that poll while a
+  document is processed or a workflow run is open no longer hold a session open overnight with nobody there. Open
+  tabs share one activity clock, so working in one of them keeps the rest signed in, and both knobs now refuse a
+  negative or non-numeric value at start-up. The desktop app is unaffected where it runs its own engine on the
+  computer, since that has no accounts and signs in automatically; against a Team Server it follows the same idle
+  window as the browser.
 - The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27

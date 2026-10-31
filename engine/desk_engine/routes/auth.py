@@ -81,9 +81,18 @@ class SignupIn(BaseModel):
     invite_token: str | None = None
 
 
+def forget_dead_sessions(engine: Any, user_id: str) -> None:
+    """Rows nobody can use again. A session is otherwise deleted only when its own token turns up, so
+    without this an abandoned one would sit in the table for ever."""
+    idle_limit = engine.settings.session_idle_minutes * 60
+    engine.db.execute("DELETE FROM sessions WHERE user_id = ? AND (expires_at < ? OR (? > 0 AND last_seen < ?))",
+                      (user_id, now(), idle_limit, now() - idle_limit))
+
+
 def create_session(engine: Any, request: Any, user_id: str) -> str:
     token = new_token(32)
     ts = now()
+    forget_dead_sessions(engine, user_id)
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user_id, "created_at": ts,
                                   "expires_at": session_expiry(engine), "last_seen": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})
@@ -173,7 +182,13 @@ async def login(ctx: Ctx) -> Any:
 
 @router.post("/api/session/ping")
 async def session_ping(ctx: Ctx) -> dict[str, Any]:
-    """Sent by the page after the person has actually done something, to keep the session open."""
+    """Sent by the page after the person has actually done something, to keep the session open.
+
+    Reaching here has already refreshed the session (``web.authenticate``); there is nothing else to do.
+    The limit is well above the page's own rate, which is one ping per minute per person at most.
+    """
+    assert ctx.user is not None
+    _rate_limit(ctx, f"ping:{ctx.user['id']}", limit=120, window=300)
     return {"ok": True}
 
 
@@ -439,6 +454,7 @@ async def google_callback(engine: Any, request: Any, params: dict[str, str]) -> 
         return None, "handoff:" + code
     token = new_token(32)
     ts = now()
+    forget_dead_sessions(engine, user["id"])
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user["id"], "created_at": ts,
                                   "expires_at": session_expiry(engine), "last_seen": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})

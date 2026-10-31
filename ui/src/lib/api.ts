@@ -46,9 +46,16 @@ function headers(extra?: Record<string, string>): Record<string, string> {
   return h;
 }
 
-// Requests the page makes by itself. The engine does not treat them as activity, so an open tab
-// nobody is using still reaches its idle sign-out.
-const BACKGROUND: Record<string, string> = { "X-Desk-Background": "1" };
+/** The engine has ended the session. The app listens for this and goes back to the sign-in screen, so a
+ *  tab whose own idle timer never ran (discarded, restored, or stopped by an error) cannot sit there
+ *  looking signed in while every request is refused. */
+export const SIGNED_OUT_EVENT = "desk-signed-out";
+
+function announceSignedOut(code: string): void {
+  try {
+    window.dispatchEvent(new CustomEvent(SIGNED_OUT_EVENT, { detail: code }));
+  } catch { /* no window: nothing is listening anyway */ }
+}
 
 async function handle(resp: Response): Promise<any> {
   if (resp.status === 204) return null;
@@ -56,23 +63,22 @@ async function handle(resp: Response): Promise<any> {
   const body = type.includes("application/json") ? await resp.json() : await resp.text();
   if (!resp.ok) {
     if (typeof body === "object" && body) {
-      throw new ApiError(resp.status, body.error || "error", body.message || "Request failed.", body.details);
+      const err = new ApiError(resp.status, body.error || "error", body.message || "Request failed.", body.details);
+      if (resp.status === 401) announceSignedOut(err.code);
+      throw err;
     }
+    if (resp.status === 401) announceSignedOut("unauthorized");
     throw new ApiError(resp.status, "error", String(body).slice(0, 300) || `HTTP ${resp.status}`);
   }
   return body;
 }
 
-export async function api<T = any>(method: string, path: string, body?: unknown,
-                                   opts?: { background?: boolean }): Promise<T> {
-  const extra: Record<string, string> = {};
-  if (body !== undefined) extra["Content-Type"] = "application/json";
-  if (opts?.background) extra["X-Desk-Background"] = "1";
+export async function api<T = any>(method: string, path: string, body?: unknown): Promise<T> {
   let resp: Response;
   try {
     resp = await fetch(path, {
       method,
-      headers: headers(extra),
+      headers: headers(body !== undefined ? { "Content-Type": "application/json" } : {}),
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: "same-origin",
     });
@@ -82,7 +88,7 @@ export async function api<T = any>(method: string, path: string, body?: unknown,
   return handle(resp);
 }
 
-export const get = <T = any>(p: string, opts?: { background?: boolean }) => api<T>("GET", p, undefined, opts);
+export const get = <T = any>(p: string) => api<T>("GET", p);
 export const post = <T = any>(p: string, b?: unknown) => api<T>("POST", p, b ?? {});
 export const put = <T = any>(p: string, b?: unknown) => api<T>("PUT", p, b ?? {});
 export const patch = <T = any>(p: string, b?: unknown) => api<T>("PATCH", p, b ?? {});
@@ -116,8 +122,7 @@ export function subscribe(path: string, onEvent: (ev: any) => void): () => void 
     let delay = 500;
     while (!stopped) {
       try {
-        const resp = await fetch(path, { headers: headers(BACKGROUND), signal: ctrl.signal,
-                                         credentials: "same-origin" });
+        const resp = await fetch(path, { headers: headers(), signal: ctrl.signal, credentials: "same-origin" });
         if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
         delay = 500;
         const reader = resp.body.getReader();
