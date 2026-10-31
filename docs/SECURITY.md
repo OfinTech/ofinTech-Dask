@@ -51,6 +51,11 @@
 - scrypt password hashing (N=2^15) and a minimum password policy.
 - Opaque session tokens, stored hashed. Cookies are HttpOnly, Secure and SameSite=Strict, and cookie-authenticated
   writes must come from the server's own origin.
+- A session ends after `DESK_SESSION_IDLE_MINUTES` (60 by default) with no activity, and the row is deleted on the
+  next request. Activity means something the person did: requests a page makes by itself (count polling, event
+  streams) carry `X-Desk-Background: 1` and never postpone it, so a tab left open still reaches the sign-out. While
+  somebody is working the session renews, with no second sign-in; `DESK_SESSION_DAYS` adds an absolute cap on top
+  (none by default).
 - Rate limits on sign-up and sign-in. Sign-up is by single-use invitation, except for the first account.
 - Behind Caddy with automatic HTTPS and HSTS.
 

@@ -15,7 +15,7 @@ from ..config import VERSION
 from ..db import dumps, loads, new_id, now
 from ..errors import Conflict, Forbidden, Invalid, NotFound, Unauthorized
 from ..security import check_password_policy, hash_password, new_token, token_hash, verify_password
-from ..web import SESSION_COOKIE, Ctx, Email, Router, optional_user, public_user
+from ..web import SESSION_COOKIE, Ctx, Email, Router, optional_user, public_user, session_cookie_max_age, session_expiry
 
 router = Router()
 
@@ -62,6 +62,7 @@ async def session(ctx: Ctx) -> dict[str, Any]:
             "needs_first_user": not engine.settings.is_desktop and not users_exist,
             "public_url": engine.settings.public_url,
             "site_url": engine.settings.site_url,
+            "idle_minutes": 0 if engine.settings.is_desktop else engine.settings.session_idle_minutes,
             "features": {"stdio_mcp": engine.settings.allow_stdio_mcp, "sealed": engine.settings.sealed,
                          "whatsapp": engine.settings.public_url.startswith("https://"),
                          "team": not engine.settings.is_desktop,
@@ -84,13 +85,13 @@ def create_session(engine: Any, request: Any, user_id: str) -> str:
     token = new_token(32)
     ts = now()
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user_id, "created_at": ts,
-                                  "expires_at": ts + engine.settings.session_days * 86400, "last_seen": ts,
+                                  "expires_at": session_expiry(engine), "last_seen": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})
     return token
 
 
 def set_session_cookie(engine: Any, resp: Any, token: str) -> None:
-    resp.set_cookie(SESSION_COOKIE, token, max_age=engine.settings.session_days * 86400, httponly=True,
+    resp.set_cookie(SESSION_COOKIE, token, max_age=session_cookie_max_age(engine), httponly=True,
                     secure=engine.settings.public_url.startswith("https://"), samesite="strict", path="/")
 
 
@@ -168,6 +169,12 @@ async def login(ctx: Ctx) -> Any:
     uid = login_user(ctx.engine, email=body.email, password=body.password,
                      client_host=ctx.request.client.host if ctx.request.client else "-")
     return _start_session(ctx, uid)
+
+
+@router.post("/api/session/ping")
+async def session_ping(ctx: Ctx) -> dict[str, Any]:
+    """Sent by the page after the person has actually done something, to keep the session open."""
+    return {"ok": True}
 
 
 @router.post("/api/auth/logout")
@@ -433,7 +440,7 @@ async def google_callback(engine: Any, request: Any, params: dict[str, str]) -> 
     token = new_token(32)
     ts = now()
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user["id"], "created_at": ts,
-                                  "expires_at": ts + engine.settings.session_days * 86400, "last_seen": ts,
+                                  "expires_at": session_expiry(engine), "last_seen": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})
     engine.audit(None, user["id"], "user.login", user["id"], {"method": "google"})
     return token, "Signed in."
