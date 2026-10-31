@@ -83,9 +83,11 @@ export function ResetPage({ token, onDone }: { token: string; onDone: () => Prom
   );
 }
 
-export function AuthPage({ session, onDone }: { session: Session; onDone: () => Promise<void> }): ReactNode {
+export function AuthPage({ session, onDone, signedOutForIdling }:
+    { session: Session; onDone: () => Promise<void>; signedOutForIdling?: boolean }): ReactNode {
   const [mode, setMode] = useState<"login" | "signup" | "forgot">(session.needs_first_user ? "signup" : "login");
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(
+    signedOutForIdling ? tr("You were signed out because nothing happened for a while.") : null);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

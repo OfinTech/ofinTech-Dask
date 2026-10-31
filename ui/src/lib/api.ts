@@ -46,14 +46,28 @@ function headers(extra?: Record<string, string>): Record<string, string> {
   return h;
 }
 
+/** The engine has ended the session. The app listens for this and goes back to the sign-in screen, so a
+ *  tab whose own idle timer never ran (discarded, restored, or stopped by an error) cannot sit there
+ *  looking signed in while every request is refused. */
+export const SIGNED_OUT_EVENT = "desk-signed-out";
+
+function announceSignedOut(code: string): void {
+  try {
+    window.dispatchEvent(new CustomEvent(SIGNED_OUT_EVENT, { detail: code }));
+  } catch { /* no window: nothing is listening anyway */ }
+}
+
 async function handle(resp: Response): Promise<any> {
   if (resp.status === 204) return null;
   const type = resp.headers.get("content-type") || "";
   const body = type.includes("application/json") ? await resp.json() : await resp.text();
   if (!resp.ok) {
     if (typeof body === "object" && body) {
-      throw new ApiError(resp.status, body.error || "error", body.message || "Request failed.", body.details);
+      const err = new ApiError(resp.status, body.error || "error", body.message || "Request failed.", body.details);
+      if (resp.status === 401) announceSignedOut(err.code);
+      throw err;
     }
+    if (resp.status === 401) announceSignedOut("unauthorized");
     throw new ApiError(resp.status, "error", String(body).slice(0, 300) || `HTTP ${resp.status}`);
   }
   return body;

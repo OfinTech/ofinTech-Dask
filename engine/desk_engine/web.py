@@ -28,6 +28,37 @@ log = logging.getLogger("desk.web")
 ROLES = ["viewer", "editor", "admin", "owner"]
 Email = Annotated[str, Field(pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=254)]
 SESSION_COOKIE = "desk_session"
+# A session with no absolute cap gets this expiry (the year 33658), so one comparison covers both cases.
+NO_EXPIRY = 1e12
+ACTIVITY_WRITE_SECONDS = 60  # at most how often an active session writes last_seen
+
+
+def is_activity(request: Request) -> bool:
+    """Whether this request postpones the idle sign-out.
+
+    Only a request that changes something counts, which includes the page's own heartbeat
+    (``POST /api/session/ping``). Reading never counts: pages poll while a document is processed, a
+    file review runs or a workflow run is open, and a tab left alone must still reach its sign-out.
+    Deciding by method keeps that true for polls added later, which naming each one would not.
+    """
+    return request.method not in {"GET", "HEAD", "OPTIONS"}
+
+
+def activity_write_seconds(idle_limit: float) -> float:
+    """Short idle windows need last_seen written more often than once a minute to stay reachable."""
+    return min(ACTIVITY_WRITE_SECONDS, idle_limit / 4) if idle_limit else ACTIVITY_WRITE_SECONDS
+
+
+def session_expiry(engine: Engine) -> float:
+    """When a session ends whatever the person does. ``session_days = 0`` means never."""
+    days = engine.settings.session_days
+    return now() + days * 86400 if days > 0 else NO_EXPIRY
+
+
+def session_cookie_max_age(engine: Engine) -> int:
+    """Longer than the idle window on purpose: the engine decides when a session ends, not the browser."""
+    days = engine.settings.session_days
+    return days * 86400 if days > 0 else 400 * 86400  # 400 days is the longest a browser keeps a cookie
 
 
 def role_at_least(role: str, required: str) -> bool:
@@ -180,12 +211,21 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     if from_cookie and request.method not in {"GET", "HEAD", "OPTIONS"}:
         check_origin(engine, request)
     session = engine.db.one("SELECT * FROM sessions WHERE id = ?", (token_hash(token),))
-    if session is None or session["expires_at"] < now():
+    if session is None:
+        raise Unauthorized("Your session has ended. Sign in again.")
+    # A session that is over is deleted, not merely refused: nothing is left to steal or to reuse.
+    idle_limit = settings.session_idle_minutes * 60
+    idle = bool(idle_limit) and now() - session["last_seen"] > idle_limit
+    if idle or session["expires_at"] < now():
+        engine.db.execute("DELETE FROM sessions WHERE id = ?", (session["id"],))
+        if idle:
+            raise Unauthorized("You were signed out because nothing happened for a while. Sign in again.",
+                               code="session_idle")
         raise Unauthorized("Your session has ended. Sign in again.")
     user = engine.db.one("SELECT * FROM users WHERE id = ? AND disabled = 0", (session["user_id"],))
     if user is None:
         raise Unauthorized("Your account is disabled.")
-    if now() - session["last_seen"] > 300:
+    if is_activity(request) and now() - session["last_seen"] > activity_write_seconds(idle_limit):
         engine.db.execute("UPDATE sessions SET last_seen = ? WHERE id = ?", (now(), session["id"]))
     return user
 

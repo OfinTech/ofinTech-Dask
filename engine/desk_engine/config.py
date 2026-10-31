@@ -10,8 +10,8 @@ Two modes share one code base:
 from __future__ import annotations
 
 import base64
-import re
 import os
+import re
 import secrets
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -36,6 +36,19 @@ def _bool(name: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
+def _minutes_or_days(name: str, default: str) -> int:
+    """A session limit: whole and never negative. These two knobs gate signing in, so a typo must stop
+    the engine with a readable reason rather than lock everybody out or quietly remove the limit."""
+    raw = _env(name, default)
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ConfigError(f"{name} must be a whole number of minutes or days, not {raw!r}.") from None
+    if value < 0:
+        raise ConfigError(f"{name} cannot be negative; use 0 to turn the limit off.")
+    return value
+
+
 @dataclass(frozen=True)
 class Settings:
     mode: str
@@ -50,7 +63,8 @@ class Settings:
     allow_stdio_mcp: bool
     allow_private_network_urls: bool
     ui_dir: Path | None
-    session_days: int = 14
+    session_days: int = 0          # absolute cap on a session, in days; 0 = none (stay signed in while active)
+    session_idle_minutes: int = 60  # sign out after this long with no activity; 0 = never
     max_upload_mb: int = 25
     whatsapp_graph_version: str = "v26.0"
     log_level: str = "info"
@@ -187,7 +201,8 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         allow_stdio_mcp=_bool("DESK_ALLOW_STDIO_MCP", mode == "desktop"),
         allow_private_network_urls=_bool("DESK_ALLOW_PRIVATE_URLS", mode == "desktop"),
         ui_dir=ui_dir,
-        session_days=int(_env("DESK_SESSION_DAYS", "14")),
+        session_days=_minutes_or_days("DESK_SESSION_DAYS", "0"),
+        session_idle_minutes=_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "60"),
         max_upload_mb=int(_env("DESK_MAX_UPLOAD_MB", "25")),
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),
         log_level=_env("DESK_LOG_LEVEL", "info"),

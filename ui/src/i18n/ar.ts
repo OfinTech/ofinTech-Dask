@@ -763,6 +763,7 @@ const d: Record<string, string> = {
   "You can use {{trigger.text}} and {{today}}": "يمكنك استخدام {{trigger.text}} و{{today}}",
   "You get an ingest key once. Your system then posts profit and loss, balance sheet, invoices and bills as JSON to this server. Push needs the Team Server, which is reachable from your network.": "تحصل على مفتاح إدخال مرة واحدة. ثم يرسل نظامك قائمة الدخل والميزانية والفواتير بصيغة JSON إلى هذا الخادم. يتطلب الدفع خادم الفريق الذي يمكن الوصول إليه من شبكتك.",
   "You were invited to": "تمت دعوتك إلى",
+  "You were signed out because nothing happened for a while.": "تم تسجيل خروجك لعدم وجود أي نشاط لفترة.",
   "Your Excel file": "ملف Excel الخاص بك",
   "Your Word file": "ملف Word الخاص بك",
   "a conversation": "محادثة",
