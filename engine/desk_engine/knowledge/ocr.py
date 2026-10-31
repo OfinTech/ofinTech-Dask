@@ -1,7 +1,8 @@
 """Local OCR with the Tesseract command-line tool, for scanned PDFs and images.
 
 Tesseract (Apache-2.0) is an optional system package (``tesseract-ocr`` plus language packs such as ``-ara``, ``-spa``,
-``-fra``); the Team Server image installs it. Without it, such files are refused with a clear message, or read by
+``-fra``); the Team Server image installs it. Pillow reads and normalises the images for it and is a requirement of
+the engine, so ``available()`` checks for both rather than letting a scan fail part-way. Without it, such files are refused with a clear message, or read by
 PipesHub when that is connected. DESK_OCR=off turns local OCR off; DESK_OCR_LANGS chooses languages
 (default: every installed one of eng, ara, spa, fra).
 """
@@ -9,6 +10,7 @@ PipesHub when that is connected. DESK_OCR=off turns local OCR off; DESK_OCR_LANG
 from __future__ import annotations
 
 import functools
+import importlib.util
 import io
 import os
 import shutil
@@ -42,8 +44,14 @@ def languages() -> str:
     return "+".join(langs)
 
 
+@functools.lru_cache(maxsize=1)
+def pillow() -> bool:
+    """Every image is normalised with Pillow before Tesseract reads it, so OCR needs both."""
+    return importlib.util.find_spec("PIL") is not None
+
+
 def available() -> bool:
-    return bool(tesseract() and languages())
+    return bool(tesseract() and languages()) and pillow()
 
 
 def image_text(data: bytes) -> str:
