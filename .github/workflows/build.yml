@@ -64,9 +64,21 @@ jobs:
         with: { node-version: "24" }
       - name: Build engine
         working-directory: engine
+        shell: bash
         run: |
           pip install -r requirements-dev.txt
-          python packaging/build_engine.py
+          set +e
+          python packaging/build_engine.py 2>&1 | tee build-engine.log
+          code=${PIPESTATUS[0]}
+          set -e
+          if [ "$code" -ne 0 ]; then
+            # the log of this job is not readable from everywhere; an annotation and the run summary are
+            msg=$(tail -n 25 build-engine.log | tr -d '\r' | sed -e 's/%/%25/g' | awk '{ printf "%s%%0A", $0 }')
+            echo "::error title=Build engine failed::${msg}"
+            { echo "### Build engine failed on ${{ matrix.os }}"; echo '```'; tail -n 80 build-engine.log; echo '```'; } \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit $code
       - name: Build UI
         working-directory: ui
         run: |
