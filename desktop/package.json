@@ -5,7 +5,11 @@
   "description": "AI workspace for finance and accounting teams",
   "private": true,
   "main": "dist/main.js",
-  "author": "OfinTech",
+  "homepage": "https://ofintech.ai",
+  "author": {
+    "name": "OfinTech",
+    "email": "it@ofintech.ai"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "npm run build && electron .",
