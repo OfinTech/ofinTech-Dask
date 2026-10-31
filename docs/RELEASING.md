@@ -33,5 +33,8 @@ app. The desktop shell passes them to the engine. Read the distribution note in 
 2. Set the version in `engine/desk_engine/config.py` (`VERSION`), `engine/pyproject.toml`, `ui/package.json` and
    `desktop/package.json`.
 3. Run the full checks (`docs/TESTING.md`) and update its *What was executed* table.
-4. Tag `vX.Y.Z` and push the tag: CI builds and attaches the installers and the Team Server image. Publish the
-   release notes from the changelog, and mention any new migrations or settings.
+4. Tag `vX.Y.Z` and push the tag. The `release` job in `build.yml` waits for the tests, the installers on all
+   three systems and the Team Server image, then creates the GitHub release with the installers attached and the
+   notes taken from this version's section of `CHANGELOG.md`. It fails rather than publishing an empty release if
+   the changelog has no section for the tag, or if an installer is missing. Mention any new migrations or settings
+   in the notes, and say so in the release if the installers are unsigned.
