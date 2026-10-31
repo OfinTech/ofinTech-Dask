@@ -46,6 +46,10 @@ function headers(extra?: Record<string, string>): Record<string, string> {
   return h;
 }
 
+// Requests the page makes by itself. The engine does not treat them as activity, so an open tab
+// nobody is using still reaches its idle sign-out.
+const BACKGROUND = { "X-Desk-Background": "1" };
+
 async function handle(resp: Response): Promise<any> {
   if (resp.status === 204) return null;
   const type = resp.headers.get("content-type") || "";
@@ -59,12 +63,14 @@ async function handle(resp: Response): Promise<any> {
   return body;
 }
 
-export async function api<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+export async function api<T = any>(method: string, path: string, body?: unknown,
+                                   opts?: { background?: boolean }): Promise<T> {
   let resp: Response;
   try {
     resp = await fetch(path, {
       method,
-      headers: headers(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      headers: headers({ ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+                         ...(opts?.background ? BACKGROUND : {}) }),
       body: body !== undefined ? JSON.stringify(body) : undefined,
       credentials: "same-origin",
     });
@@ -74,7 +80,7 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
   return handle(resp);
 }
 
-export const get = <T = any>(p: string) => api<T>("GET", p);
+export const get = <T = any>(p: string, opts?: { background?: boolean }) => api<T>("GET", p, undefined, opts);
 export const post = <T = any>(p: string, b?: unknown) => api<T>("POST", p, b ?? {});
 export const put = <T = any>(p: string, b?: unknown) => api<T>("PUT", p, b ?? {});
 export const patch = <T = any>(p: string, b?: unknown) => api<T>("PATCH", p, b ?? {});
@@ -108,7 +114,8 @@ export function subscribe(path: string, onEvent: (ev: any) => void): () => void 
     let delay = 500;
     while (!stopped) {
       try {
-        const resp = await fetch(path, { headers: headers(), signal: ctrl.signal, credentials: "same-origin" });
+        const resp = await fetch(path, { headers: headers(BACKGROUND), signal: ctrl.signal,
+                                         credentials: "same-origin" });
         if (!resp.ok || !resp.body) throw new Error(`HTTP ${resp.status}`);
         delay = 500;
         const reader = resp.body.getReader();

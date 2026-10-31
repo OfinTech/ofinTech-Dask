@@ -177,3 +177,57 @@ class Accounts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Sessions(unittest.TestCase):
+    """Signed in for as long as you are working; signed out once you stop."""
+
+    def setUp(self) -> None:
+        self.h = Harness(mode="server")
+        self.c = self.h.client
+        r = self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
+        self.assertEqual(r.status_code, 200, r.text)
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def row(self) -> dict:
+        return self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")
+
+    def age(self, seconds: float) -> None:
+        """Pretends the last thing the person did was ``seconds`` ago."""
+        self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (seconds,))
+
+    def test_no_absolute_cap_by_default(self) -> None:
+        self.assertEqual(self.h.engine.settings.session_days, 0)
+        self.assertGreater(self.row()["expires_at"], 4e9)  # past any plausible date: only idling ends it
+
+    def test_activity_keeps_the_session_open(self) -> None:
+        idle = self.h.engine.settings.session_idle_minutes * 60
+        for _ in range(3):
+            self.age(idle - 120)  # two minutes short of the limit, three times over
+            self.assertEqual(self.c.get("/api/session").json()["user"]["email"], "owner@acme.test")
+            self.assertLess(self.h.engine.db.one("SELECT * FROM sessions LIMIT 1")["last_seen"], 4e9)
+        self.assertIsNotNone(self.row())
+
+    def test_idling_signs_the_person_out(self) -> None:
+        self.age(self.h.engine.settings.session_idle_minutes * 60 + 1)
+        self.assertIsNone(self.c.get("/api/session").json()["user"])  # the page falls back to sign-in
+        self.assertIsNone(self.row())  # and the session is gone, not merely refused
+        r = self.c.get(f"/api/w/{self.h.engine.db.scalar('SELECT id FROM workspaces LIMIT 1') or 'x'}/notifications")
+        self.assertEqual(r.status_code, 401)
+
+    def test_background_requests_do_not_count_as_activity(self) -> None:
+        idle = self.h.engine.settings.session_idle_minutes * 60
+        self.age(idle - 120)
+        before = self.row()["last_seen"]
+        self.c.get("/api/session", headers={"X-Desk-Background": "1"})
+        self.assertEqual(self.row()["last_seen"], before)  # a polling tab cannot hold the session open
+        self.age(180)
+        self.assertIsNone(self.c.get("/api/session").json()["user"])
+
+    def test_ping_counts_as_activity(self) -> None:
+        self.age(self.h.engine.settings.session_idle_minutes * 60 - 120)
+        before = self.row()["last_seen"]
+        self.assertEqual(self.c.post("/api/session/ping", headers=ORIGIN).status_code, 200)
+        self.assertGreater(self.row()["last_seen"], before)

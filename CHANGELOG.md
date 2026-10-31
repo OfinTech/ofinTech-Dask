@@ -119,6 +119,13 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Changed
 
+- **Sessions on the Team Server now follow activity.** Signing in once is enough for as long as somebody is
+  working: a session renews itself and `DESK_SESSION_DAYS` no longer forces a new sign-in every 14 days (it is now
+  an optional absolute cap, off by default). Instead the engine signs the person out after
+  `DESK_SESSION_IDLE_MINUTES` (60) with nothing happening, deletes the session, and the page returns to the
+  sign-in screen saying why. Requests a page makes by itself — count polling and event streams, which carry
+  `X-Desk-Background: 1` — no longer postpone that, so a tab left open overnight does not hold a session open. The
+  desktop app is unaffected: it has no accounts and signs in automatically.
 - The README describes the product for finance teams in any country.
 
 ## 1.0.0 — 2026-10-27
