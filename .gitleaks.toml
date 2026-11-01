@@ -14,5 +14,13 @@ regexes = [
   '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
   # fake tokens that test fixtures hand to mocked services
   '''[A-Za-z0-9_-]*_test_token_[A-Za-z0-9_-]*''',
+  # the bytes 0x00..0x1f, base64: the test master key of tests/test_accounts.py
+  '''AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=''',
+  # a password the memory test offers so that the engine refuses to remember it
+  '''Gulf-2026-secret''',
+  # Odoo API keys the connector tests send to a mocked Odoo
+  '''(wrong|legacy|adapter)-(secret-)?key(-[0-9]+)?''',
+  # the placeholder of the example accounting adapter, named as such
+  '''change-me''',
 ]
 stopwords = ["example", "fake", "test-only"]
