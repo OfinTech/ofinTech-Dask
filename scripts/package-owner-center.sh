@@ -5,7 +5,7 @@
 # verified with `unzip -t` and its commit is written into the manifest.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-OUT="${1:-OfinTech-Desk-Owner-Control-Center.zip}"
+OUT="$(realpath -m "${1:-OfinTech-Desk-Owner-Control-Center.zip}")"
 NAME="OfinTech-Desk-Owner-Control-Center"
 SHA="$(git rev-parse HEAD)"
 TMP="$(mktemp -d)"
@@ -36,6 +36,6 @@ Install and build: see INTEGRATION-GUIDE.md and docs/DEPLOYMENT.md. Nothing in t
 production data or customer data; external integrations are off until configured in the dashboard.
 EOF
 rm -f "$OUT"
-(cd "$TMP" && zip -qr -X "$OLDPWD/$OUT" "$NAME")
+(cd "$TMP" && zip -qr -X "$OUT" "$NAME")
 unzip -tq "$OUT"
 echo "wrote $OUT ($(du -h "$OUT" | cut -f1)) from $SHA"
