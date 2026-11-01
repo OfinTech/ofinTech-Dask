@@ -90,9 +90,24 @@ def _tokens(text: str) -> list[tuple[str, str]]:
     return out
 
 
+MAX_DEPTH = 32  # brackets nested deeper than this are refused before parsing, so the parser's recursion is bounded
+
+
+def check_depth(text: str, limit: int = MAX_DEPTH) -> None:
+    depth = 0
+    for ch in text:
+        if ch == "(":
+            depth += 1
+            if depth > limit:
+                raise Invalid(f"A formula may not nest brackets more than {limit} deep.")
+        elif ch == ")":
+            depth -= 1
+
+
 def parse(text: str) -> Any:
     if not text or len(text) > 600:
         raise Invalid("A formula must be between 1 and 600 characters.")
+    check_depth(text)
     toks = _tokens(text)
     i = 0
 
@@ -295,6 +310,8 @@ def evaluate(node: Any, value: Callable[[Any], Any]) -> float | None:
                 return abs(go(n.args[0]))
             if n.name == "ROUND":
                 digits = int(go(n.args[1])) if len(n.args) > 1 else 0
+                if not -30 <= digits <= 30:
+                    raise _Err("#NUM!")  # Excel shows an error for such a digit count; the cell stays blank here
                 return excel_round(go(n.args[0]), digits)
         raise TypeError(n)
 

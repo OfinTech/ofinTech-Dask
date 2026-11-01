@@ -7,6 +7,8 @@ import csv
 import io
 from typing import Any
 
+from ..files.cells import csv_safe, set_cell
+
 JOURNAL_COLUMNS = ["Date", "Entry", "Type", "Account code", "Account", "Account class", "Debit", "Credit",
                    "Description", "Party", "Cost centre tags"]
 ENTRY_KINDS = {"accrual", "depreciation", "bank_fee", "bank_interest"}
@@ -35,7 +37,7 @@ def journal_csv(view: dict[str, Any]) -> bytes:
     w = csv.writer(buf)
     w.writerow(JOURNAL_COLUMNS)
     for r in journal_rows(view):
-        w.writerow(["" if v is None else v for v in r])
+        w.writerow(["" if v is None else csv_safe(v) for v in r])
     return buf.getvalue().encode("utf-8-sig")
 
 
@@ -57,7 +59,7 @@ def _table(ws: Any, header: list[str], rows: list[list[Any]], widths: list[int],
         c.font, c.fill = st["head"], st["fill"]
     for r, row in enumerate(rows, start + 1):
         for i, v in enumerate(row, 1):
-            c = ws.cell(row=r, column=i, value=v)
+            c = set_cell(ws.cell(row=r, column=i), v)
             if isinstance(v, float):
                 c.number_format = "#,##0.00;[Red]-#,##0.00"
             c.alignment = st["wrap"]
@@ -122,11 +124,11 @@ def pack_xlsx(view: dict[str, Any], company: str, currency: str) -> bytes:
 
     # summary
     r = view["readiness"]
-    summary["A1"] = f"Month-end close: {company}, {view['month']}"
+    set_cell(summary["A1"], f"Month-end close: {company}, {view['month']}")
     summary["A1"].font = st["title"]
-    summary["A2"] = (f"Ledger “{view['ledger']['name']}”. Amounts in {currency}. Prepared "
-                     f"{view.get('prepared_at_text') or ''}{' by ' + view['prepared_by_name'] if view.get('prepared_by_name') else ''}. "
-                     f"Status: {view['status']}.")
+    set_cell(summary["A2"], f"Ledger “{view['ledger']['name']}”. Amounts in {currency}. Prepared "
+             f"{view.get('prepared_at_text') or ''}{' by ' + view['prepared_by_name'] if view.get('prepared_by_name') else ''}. "
+             f"Status: {view['status']}.")
     summary["A2"].font = st["muted"]
     summary["A4"] = "Ready"
     summary["B4"] = r["score"] / 100
@@ -168,7 +170,7 @@ def pack_xlsx(view: dict[str, Any], company: str, currency: str) -> bytes:
                  ["Matched", f"{b['matched']} of {b['statement_lines']} statement lines"]]
         for i, (k, v) in enumerate(lines, 1):
             bank_ws.cell(row=i, column=1, value=k).font = st["bold"]
-            bank_ws.cell(row=i, column=2, value=v)
+            set_cell(bank_ws.cell(row=i, column=2), v)
         rec = [["Balance per statement", b.get("closing_balance")],
                ["+ in the ledger, not yet on the statement", b["ledger_only_total"]],
                ["= adjusted bank balance", b.get("adjusted_bank")],

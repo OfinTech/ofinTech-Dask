@@ -88,5 +88,89 @@ class OB02OriginCheck(unittest.TestCase):
             h.close()
 
 
+class OB03FormulaInjection(unittest.TestCase):
+    """Text imported from ledgers and typed by people never becomes a formula in a file the engine writes."""
+
+    HOSTILE = ["=HYPERLINK(\"https://attacker.test\",\"x\")", "+1+cmd|' /C calc'!A0", "-2+3", "@SUM(A1)",
+               "\t=1+1", "\r=1+1", "==2*3"]
+
+    def _view(self, text: str) -> dict:
+        line = {"account_code": "6100", "account": text, "account_class": "Expense", "debit": 100.0, "credit": 0}
+        return {"month": "2026-09", "month_end": "2026-09-30",
+                "items": [{"id": "it1", "kind": "accrual", "status": "approved", "note": text,
+                           "data": {"title": text, "lines": [line, {**line, "debit": 0, "credit": 100.0}]}}]}
+
+    def test_journal_csv_neutralises_every_prefix(self) -> None:
+        import csv
+        import io
+
+        from desk_engine.close.pack import journal_csv
+
+        for text in self.HOSTILE:
+            rows = list(csv.reader(io.StringIO(journal_csv(self._view(text)).decode("utf-8-sig"))))
+            self.assertEqual(rows[1][4], "'" + text, text)   # account
+            self.assertEqual(rows[1][8], "'" + text, text)   # description
+        self.assertEqual(rows[1][6], "100.0")                # numbers untouched
+
+    def test_journal_and_pack_workbooks_store_text_as_text(self) -> None:
+        import io
+
+        from openpyxl import load_workbook
+
+        from desk_engine.close.pack import journal_xlsx
+
+        for text in self.HOSTILE:
+            ws = load_workbook(io.BytesIO(journal_xlsx(self._view(text))))["Journal"]
+            self.assertEqual(ws["E2"].data_type, "s", text)
+            self.assertEqual(ws["E2"].value, text)
+            self.assertEqual(ws["I2"].data_type, "s", text)
+        # the engine's own totals are still formulas
+        self.assertEqual(ws["G4"].data_type, "f")
+
+    def test_dataset_export_and_cell_helper(self) -> None:
+        from openpyxl import Workbook
+
+        from desk_engine.files.cells import csv_safe, set_cell
+
+        for text in self.HOSTILE:
+            self.assertEqual(csv_safe(text), "'" + text)
+            self.assertEqual(set_cell(Workbook().active["A1"], text).data_type, "s")
+        self.assertEqual(csv_safe("plain"), "plain")
+        self.assertEqual(csv_safe(12.5), 12.5)
+        self.assertIsNone(csv_safe(None))
+
+    def test_evidence_workbook_double_equals_is_text(self) -> None:
+        from openpyxl import Workbook
+
+        from desk_engine.files.xlsx import _set
+
+        c = Workbook().active["A1"]
+        _set(c, "==2*3")
+        self.assertEqual(c.data_type, "s")
+
+
+class OB15FormulaEngineRobustness(unittest.TestCase):
+    """Hostile formulas get a validation error or a blank cell, never an unhandled exception."""
+
+    def test_deep_nesting_is_refused_cleanly(self) -> None:
+        from desk_engine.analysis import formula
+        from desk_engine.errors import Invalid
+        from desk_engine.files import expr
+
+        deep = "(" * 300 + "1" + ")" * 300
+        with self.assertRaises(Invalid):
+            expr.parse(deep)
+        with self.assertRaises(Invalid):
+            formula.parse(deep[:399])
+        expr.parse("(" * 10 + "1" + ")" * 10)   # ordinary nesting still parses
+
+    def test_round_with_absurd_digits_gives_blank(self) -> None:
+        from desk_engine.files import expr
+
+        node = expr.parse("ROUND(1.5, 1000000)")
+        self.assertIsNone(expr.evaluate(node, lambda ref: 0))
+        self.assertEqual(expr.evaluate(expr.parse("ROUND(2.345, 2)"), lambda ref: 0), 2.35)
+
+
 if __name__ == "__main__":
     unittest.main()
