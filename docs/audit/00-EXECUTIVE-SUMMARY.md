@@ -2,7 +2,8 @@
 
 Audit of release 1.1.0 (`e8de370`, 1 November 2026) by an independent review acting as principal engineer, with
 remediation carried out on `main` the same day. This page is the current state; the numbered documents hold the
-evidence. **Rating: Moderate Risk** (scale: Critical · High Risk · Moderate Risk · Low Risk · Production Ready;
+evidence. **Final gate (1 November 2026): READY WITH ACCEPTED RISKS** — see `ENTERPRISE-READINESS-REPORT.md`,
+`SECURITY-ASSURANCE-REPORT.md` and `OPEN-RISKS.md`. Earlier rating: Moderate Risk (scale: Critical · High Risk · Moderate Risk · Low Risk · Production Ready;
 the rating is a judgement from the evidence in document 10, not a numerical score).
 
 ## 1. Architecture
@@ -34,19 +35,20 @@ enforced in code.
 | OB-04 | P2 | Outbound policy only at save time (rebinding, CGNAT) | fixed 87e0196 |
 | OB-06 | P2 | Parser resource limits (zip bombs, image formats, OCR time) | fixed 4bc1d39 |
 | OB-07 | P2 | Body limits relied on Content-Length | fixed 1435e17 |
-| OB-08 | P2 | Tool args unchecked, no timeouts, effects by label | 2 of 3 fixed 78644c1; owner decision |
-| OB-09 | P2 | Prompt-injection surface | mitigated e705701 (skills gated); delimiting planned |
-| OB-10 | P2 | MCP trust and audit hygiene | partly fixed 87e0196 |
+| OB-08 | P2 | Tool args unchecked, no timeouts, effects by label | fixed 78644c1, 3fa9da4 (Google imports and `edit_file` are writes) |
+| OB-09 | P2 | Prompt-injection surface | skills gated e705701; containment proven by 13 AI cases; delimiting accepted as AR-2 |
+| OB-10 | P2 | MCP trust and audit hygiene | fixed 87e0196, 3fa9da4 (tool fingerprint re-approval) |
 | OB-11 | P2 | Open event streams never re-authorised | fixed 1435e17 |
 | OB-17 | P2 | No CI security gates | fixed 40db1e1 (green on main) |
-| OB-12..16, 18, 19 | P3 | IPC senders, Telegram token, SMTP, parsers, viewer scope, ops, masker | fixed except backups/retention |
-| DB-01..06 | P2/P3 | Plaintext backups, loop stalls, checkpoint, retention | DB-02/03 fixed c9138a0, 76496d2; DB-01 owner decision |
+| OB-12..16, 18, 19 | P3 | IPC senders, Telegram token, SMTP, parsers, viewer scope, ops, masker | fixed (IPC rules tested 2c7773c); viewer scope accepted AR-6 |
+| DB-01..06 | P2/P3 | Plaintext backups, loop stalls, checkpoint, retention | DB-01 fixed 6110d9a (encrypted backups); DB-02/03 fixed; retention open OP-3 |
+| WH-01, WF-01, NEW-01/02 | P2/P3 | Found by the adversarial and gate passes: webhook credential keys, departed workflow creator, oversight page scope | fixed 34fac0e, 055e67b, 75e14d5 |
 
 ## 4. Database and storage (document 04)
 
 SQLite is the right choice for the desktop and for team-sized servers; heavy dataset work now runs off the event
 loop and the WAL is checkpointed hourly. PostgreSQL becomes necessary only with multiple engine replicas; the
-access layer is ready for it. Backups are consistent but plaintext — the one open P2 in this area.
+access layer is ready for it. Backups are consistent and encrypted under a separate key, with a rehearsal command.
 
 ## 5. AI and agent (document 06)
 
@@ -71,15 +73,13 @@ security updates. Full record: document 08.
 
 ## 8. Remaining risks and decisions
 
-- Owner decisions: OB-08 approval policy for state-changing "read" tools; acceptance of the OB-05 behaviour
-  change; lockfiles for `ui/` and `desktop/`; backup encryption (DB-01).
-- Planned: structural delimiting of untrusted text (R8 part 2), MCP tool-list re-approval, `/metrics` and
-  alerting, retention/secure delete, SHA-pinned actions, multi-user load test.
-- Compliance: PDPL and SAMA CSF gap assessments are outlined in document 10 and not claimed as met.
+All owner decisions were resolved at the final gate (OB-08 split, OB-05 strict default, encrypted backups,
+lockfiles via CI, CI verification, Electron IPC tests). Ten accepted risks (AR-1..AR-10) and six open items
+(OP-1..OP-6) are listed with owner, impact, mitigation and review date in `OPEN-RISKS.md`. Compliance: PDPL and
+SAMA CSF gap assessments are outlined in document 10 and not claimed as met.
 
 ## 9. Production-readiness decision
 
-**Not yet Production Ready; Moderate Risk.** The product can be deployed for a team that accepts plaintext
-backups on an encrypted volume and single-process scale, with the deployment checklist in `docs/DEPLOYMENT.md`.
-The path to *Low Risk* is the four owner decisions plus R8 part 2 and monitoring; *Production Ready* additionally
-needs a multi-user load test and an independent penetration test of a staged deployment.
+**READY WITH ACCEPTED RISKS** (1 November 2026). Engine suite 269/269; pre-audit suite 180/182 with only the two
+intended behaviour changes; golden financial fixture identical; CI gates green. Not a certification; the
+conditions of deployment and what would change the decision are in `ENTERPRISE-READINESS-REPORT.md`.

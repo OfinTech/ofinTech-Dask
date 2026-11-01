@@ -79,7 +79,14 @@ migrations are applied automatically on start-up and are never rewritten once re
   (`DESK_BACKUP_KEY_FILE`); `restore` authenticates and integrity-checks a backup before writing it; `backup-check`
   is a restore rehearsal. `backup.sh` uses them. `backup --plain` keeps the old unencrypted copy for one-off use.
 - CI: read-only workflow token, a `security` job (gitleaks, ruff security rules, pip-audit, npm audit) and a Trivy
-  scan of the Team Server image gate the image and the release; the engine container drops all capabilities.
+  scan of the Team Server image gate the image and the release; the engine container drops all capabilities;
+  npm dependencies install from committed lockfiles; the desktop's IPC sender and link rules are unit-tested.
+- Webhook payloads shed credentials under any key that looks like one (`client_secret`, `refresh_token`,
+  `Authorization`, `X-Api-Key`, …) and the query string of any URL value, before storage and the model.
+- A workflow run acts with its creator's rights only while the creator is still an active member of the workspace.
+- The oversight desk and the audit activity it shows need the admin role; the executive overview's forecast and
+  dataset lookups are scoped to the workspace.
+- Export cells that begin with an invisible character before a formula prefix are kept as text too.
 
 ## 1.1.0 — 2026-11-01
 

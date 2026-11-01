@@ -79,7 +79,9 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 
 ## Rating
 
-**Moderate Risk** (1 November 2026, after R5/R6). All P1 findings are fixed with tests; no P0 was found. The
-product is not yet *Production Ready* on this scale because: the AI security suite is outstanding, CI gates have not produced a first result, backups are plaintext, and performance has not
-been measured. Each of these has an owner and a round in the roadmap. The rating is a judgement from the evidence
-above, not a numerical score.
+**READY WITH ACCEPTED RISKS** (1 November 2026, final gate; previously Moderate Risk after R5/R6). All P1 and P2
+findings are closed with executed negative, positive and regression tests; no P0 was found; the AI security suite,
+CI gates, encrypted backups and single-user performance measurements that held the earlier rating are in place.
+The accepted risks (AR-1..AR-10) and open items (OP-1..OP-6) are in `OPEN-RISKS.md`; the decision, its conditions
+and what would change it are in `ENTERPRISE-READINESS-REPORT.md`. The rating is a judgement from the evidence
+above, not a numerical score and not a certification.
