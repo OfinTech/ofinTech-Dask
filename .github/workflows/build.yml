@@ -8,7 +8,43 @@ on:
     tags: ["v*"]
   pull_request:
 
+# Jobs get a read-only token unless they say otherwise (only `release` writes, to attach installers).
+permissions:
+  contents: read
+
 jobs:
+  security:
+    # Security gates (docs/audit/09-SECURITY-TEST-RESULTS.md): every step blocks the build when it finds something.
+    # Accepted exceptions are listed in docs/audit/08-REMEDIATION-ROADMAP.md with an owner and an expiry date.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v7
+        with: { node-version: "24" }
+      - name: Secrets in the history or the tree (gitleaks)
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 detect --source /repo --redact \
+            --report-format sarif --report-path /repo/gitleaks.sarif --exit-code 1
+      - name: Static security analysis of the engine (ruff, Bandit-equivalent rules)
+        working-directory: engine
+        run: |
+          pip install ruff==0.16.9
+          # S101 (assert) and S608 (string-built SQL) were reviewed: every S608 site interpolates engine identifiers
+          # or "?" placeholders only. S110/S603/S314 are accepted and listed in the roadmap with an expiry.
+          ruff check --select S --ignore S101,S110,S314,S603,S608 desk_engine
+      - name: Known vulnerabilities in Python dependencies (pip-audit)
+        working-directory: engine
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --strict --progress-spinner off
+      - name: Known vulnerabilities in runtime npm dependencies
+        run: |
+          (cd ui && npm install --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
+          (cd desktop && npm install --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
+
   test:
     runs-on: ubuntu-24.04
     steps:
@@ -138,7 +174,7 @@ jobs:
   release:
     # RELEASING.md says a vX.Y.Z tag attaches the installers to the release. Nothing did that until now:
     # the jobs above only upload them as run artifacts, which expire and are not part of any release.
-    needs: [test, desktop, team-server-image]
+    needs: [test, security, desktop, team-server-image]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:
@@ -173,9 +209,17 @@ jobs:
           fail_on_unmatched_files: true
 
   team-server-image:
-    needs: test
+    needs: [test, security]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Build Team Server image
         run: docker build -f server/Dockerfile -t ofintech-desk:ci .
+      - name: Scan the image for known vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: ofintech-desk:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
