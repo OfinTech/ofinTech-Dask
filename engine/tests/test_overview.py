@@ -128,3 +128,108 @@ class OverviewTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StatementsTests(unittest.TestCase):
+    """The CFO's pages agree with the overview and with each other, on the demo company."""
+
+    def setUp(self) -> None:
+        self.h = Harness()
+        self.ws = self.h.setup_workspace(with_model=False)
+        self.h.api("POST", f"/api/w/{self.ws}/cost-centres/ledger/upload", files={"file": ("GL.xlsx", GL.read_bytes())})
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_statements_reconcile(self) -> None:
+        h, ws = self.h, self.ws
+        st = h.api("GET", f"/api/w/{ws}/overview/statements?month=2026-10&periods=6")
+        self.assertEqual(st["columns"], ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"])
+        ov = h.api("GET", f"/api/w/{ws}/overview?month=2026-10")
+        pl = {ln["measure"]: ln for ln in st["profit_and_loss"]["lines"]}
+        self.assertAlmostEqual(pl["net_profit"]["values"][-1], ov["headline"]["net_profit"]["value"], places=2)
+        self.assertAlmostEqual(pl["revenue"]["ytd"], ov["headline"]["revenue"]["ytd"], places=2)
+        self.assertIsNone(pl["revenue"]["plan"])
+        # balance sheet: assets = liabilities + equity in every column, and sections add up to their totals
+        bs = st["balance_sheet"]
+        for n in range(len(st["columns"])):
+            assets = bs["sections"][0]["total"][n] + bs["sections"][1]["total"][n]
+            liabilities = bs["sections"][2]["total"][n] + bs["sections"][3]["total"][n]
+            self.assertAlmostEqual(assets, bs["totals"]["total_assets"][n], places=2)
+            self.assertAlmostEqual(liabilities, bs["totals"]["total_liabilities"][n], places=2)
+            self.assertAlmostEqual(assets - liabilities, bs["totals"]["equity"][n], places=2)
+            for sec in bs["sections"]:
+                self.assertAlmostEqual(sum(r["values"][n] for r in sec["rows"]), sec["total"][n], places=2)
+        self.assertAlmostEqual(bs["sections"][0]["rows"][0]["values"][-1], ov["headline"]["cash"]["value"], places=2)
+        # cash flow: opening + operating + investing + financing = closing, every month, with nothing unexplained
+        for cf in st["cash_flow"]:
+            self.assertAlmostEqual(cf["opening"] + cf["net"], cf["closing"], places=2)
+            self.assertAlmostEqual(cf["unexplained"], 0.0, places=2)
+        self.assertAlmostEqual(st["cash_flow"][-1]["operating"], ov["headline"]["ocf"]["value"], places=2)
+        h.api("GET", f"/api/w/{ws}/overview/statements?periods=0", expect=422)
+
+    def test_budget_against_actual_needs_a_plan_then_uses_it(self) -> None:
+        h, ws = self.h, self.ws
+        b = h.api("GET", f"/api/w/{ws}/overview/budget?month=2026-10")
+        self.assertFalse(b["has_plan"])
+        self.assertTrue(all(ln["plan"] is None for ln in b["lines"]))
+        # the ledger starts in September 2025, so a year-on-year plan can start in September 2026
+        f = h.api("POST", f"/api/w/{ws}/forecasts", json={"name": "FY plan", "start_month": "2026-09", "months": 3})
+        h.api("POST", f"/api/w/{ws}/forecasts/{f['id']}/status", json={"status": "submitted"})
+        h.api("POST", f"/api/w/{ws}/forecasts/{f['id']}/status", json={"status": "approved"})
+        h.api("POST", f"/api/w/{ws}/forecasts/{f['id']}/plan")
+        b = h.api("GET", f"/api/w/{ws}/overview/budget?month=2026-10")
+        self.assertTrue(b["has_plan"])
+        lines = {ln["measure"]: ln for ln in b["lines"]}
+        rev = lines["revenue"]
+        self.assertIsNotNone(rev["plan"])
+        self.assertAlmostEqual(rev["variance"]["amount"], rev["actual"] - rev["plan"], places=2)
+        self.assertEqual(rev["variance"]["favourable"], rev["actual"] >= rev["plan"])
+        cogs = lines["cogs"]
+        self.assertEqual(cogs["variance"]["favourable"], cogs["actual"] <= cogs["plan"])
+        # the plan's net profit is the plan's lines combined, as the actual is
+        self.assertAlmostEqual(lines["net_profit"]["plan"], lines["revenue"]["plan"] + lines["other_income"]["plan"] - sum(
+            lines[c]["plan"] for c in ("cogs", "payroll", "opex", "depreciation", "interest", "tax", "other_expense")), places=2)
+        self.assertTrue(all(d["accounts"] for d in b["drivers"]))
+        # the statements carry the plan too
+        st = h.api("GET", f"/api/w/{ws}/overview/statements?month=2026-10&periods=3")
+        pl = {ln["measure"]: ln for ln in st["profit_and_loss"]["lines"]}
+        self.assertEqual(pl["revenue"]["plan"][-1], rev["plan"])
+
+    def test_receivables_and_payables_by_party_with_ageing(self) -> None:
+        h, ws = self.h, self.ws
+        ar = h.api("GET", f"/api/w/{ws}/overview/parties/receivables?month=2026-10")
+        ov = h.api("GET", f"/api/w/{ws}/overview?month=2026-10")
+        self.assertEqual(ar["as_of"], "2026-10-31")
+        self.assertAlmostEqual(ar["ledger_balance"], ov["headline"]["receivables"]["value"], places=2)
+        self.assertAlmostEqual(ar["difference"], 0.0, places=2)             # every open item is explained by a document
+        self.assertAlmostEqual(sum(r["closing"] for r in ar["rows"]), ar["totals"]["closing"], places=2)
+        for r in ar["rows"]:
+            self.assertAlmostEqual(sum(r["buckets"]) - r["unapplied"], r["closing"], places=2)
+            self.assertAlmostEqual(r["opening"] + r["raised"] - r["settled"], r["closing"], places=2)
+        kestrel = next(r for r in ar["rows"] if r["party"] == "Kestrel Auto Parts")   # the demo's slow payer
+        self.assertGreater(kestrel["buckets"][3], 40000)
+        self.assertLess(kestrel["oldest"], "2026-05-01")
+        self.assertEqual(ar["rows"], sorted(ar["rows"], key=lambda r: -abs(r["closing"])))
+        ap = h.api("GET", f"/api/w/{ws}/overview/parties/payables?month=2026-10")
+        self.assertAlmostEqual(ap["ledger_balance"], ov["headline"]["payables"]["value"], places=2)
+        self.assertAlmostEqual(ap["difference"], 0.0, places=2)
+        self.assertTrue(all(r["party"] != "—" for r in ap["rows"]))
+        h.api("GET", f"/api/w/{ws}/overview/parties/loans", expect=422)
+        # an earlier month ages against that month's end
+        feb = h.api("GET", f"/api/w/{ws}/overview/parties/receivables?month=2026-02")
+        self.assertEqual(feb["as_of"], "2026-02-28")
+        self.assertAlmostEqual(feb["difference"], 0.0, places=2)
+
+    def test_anomalies_find_what_the_demo_planted(self) -> None:
+        h, ws = self.h, self.ws
+        an = h.api("GET", f"/api/w/{ws}/overview/anomalies?month=2026-10")
+        kinds = {(a["kind"], a["account"]) for a in an["items"]}
+        self.assertIn(("unusual_amount", "6400 Professional Fees"), kinds)       # the fit-out contractor's bill
+        self.assertIn(("missing_posting", "6500 Depreciation - Vehicles"), kinds)  # depreciation not charged in October
+        self.assertNotIn(("unusual_amount", "6500 Depreciation - Vehicles"), kinds)
+        self.assertGreaterEqual(an["materiality"], 500)
+        fees = next(a for a in an["items"] if a["account"] == "6400 Professional Fees")
+        self.assertEqual(fees["level"], "high")
+        self.assertGreater(fees["value"], fees["average"] * 3)
+        self.assertEqual(an["items"], sorted(an["items"], key=lambda a: {"high": 0, "medium": 1}[a["level"]]))

@@ -786,3 +786,11 @@ details.evidence summary { cursor: pointer; color: var(--blue-ink); }
 @media (max-width: 1100px) { .exec-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .exec-cols, .exec-cols.three { grid-template-columns: 1fr; }
   .health { grid-template-columns: 1fr; } .entry-layout { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .exec-tiles { grid-template-columns: 1fr; } }
+.page.wide { max-width: 1440px; }
+.ledger.pl tr.pl-section td { font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); background: var(--sunk); padding-top: 10px; }
+.ledger.pl tr.pl-plan td, .ledger.pl tr.pl-margin td { padding-top: 0; padding-bottom: 6px; border-bottom: 0; background: transparent; }
+.ledger.pl tr.pl-plan + tr td, .ledger.pl tr.pl-margin + tr td { border-top: 1px solid var(--rule); }
+.ledger tr.aged td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+[dir="rtl"] .ledger tr.aged td:first-child { box-shadow: inset -3px 0 0 var(--red); }
+.exec-kpi-head a { color: var(--blue); text-decoration: none; }
+.exec-kpi-head a:hover { text-decoration: underline; }

@@ -66,6 +66,22 @@ observations from the overview figures only; the result is returned as an estima
 
 Everything is read-only: nothing here is posted to the accounting system.
 
+## The CFO's pages (Statements)
+
+Under **Statements** in the Finance and Accounting views, from the same ledger, so every figure agrees with the
+overview and the KPI scorecard:
+
+| Tab | What it shows | API (viewer role) |
+|---|---|---|
+| Statements | Profit and loss by month (twelve months and year to date, the plan in grey when one is approved, margins under each subtotal); balance sheet at month end (current and non-current assets and liabilities, equity as assets less liabilities, working capital, net debt); cash flow by month (opening, operating, investing, financing, net change, closing, free cash flow, money in and out). Every line opens the accounts behind it. | `GET …/overview/statements?month=&periods=` |
+| Budget vs actual | Each profit and loss line against the approved plan for the month and the year to date, variances marked favourable or not (income over plan, cost under plan), and the accounts that drove the largest cost overruns. | `GET …/overview/budget?month=` |
+| Receivables / Payables | Balances by customer or supplier at the month end, opening, invoiced or billed, settled, closing, aged 0–30, 31–60, 61–90 and 90+ days from the document date (each settlement is applied to that party's oldest open documents first), the oldest open document, and a check against the ledger balance. | `GET …/overview/parties/{receivables|payables}?month=` |
+| Anomalies | Postings in the month that break the pattern of the previous months, above a materiality of 1% of average monthly revenue (at least 500): an unusual amount against the six-month average, a regular posting that is missing, a first posting to an account, and the same account, party and amount posted twice within a week. | `GET …/overview/anomalies?month=` |
+
+The balance sheet always balances (assets − liabilities = equity by construction); the cash-flow statement reports
+any movement of cash the classification cannot explain. Ratios, targets, forecasts, scenarios and account roles stay
+under **Financial analysis**.
+
 ## Views
 
 One application, three views of the navigation rail (docs/DESIGN.md):
@@ -73,7 +89,7 @@ One application, three views of the navigation rail (docs/DESIGN.md):
 | View | Default for | Shows |
 |---|---|---|
 | Executive | viewer | Overview, Assistant, Dashboards, Inbox, Search |
-| Finance | admin, owner | plus Financial analysis, Cost centres, Month-end close, Data, Files, Documents |
+| Finance | admin, owner | plus Statements, Financial analysis, Cost centres, Month-end close, Data, Files, Documents |
 | Accounting | editor | everything |
 
 A view only changes what the rail shows. The person can switch at any time; the server checks the role on every

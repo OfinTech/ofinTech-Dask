@@ -20,20 +20,21 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from . import agent as _agent_pkg  # noqa: F401  (registers tools)
 from .agent.harness import Agent
 from .agent.tools import ToolContext, registry
-from .channels.service import Channels
-from .config import VERSION, Settings
 from .analysis import Analysis
 from .analysis.overview import Overview
+from .analysis.statements import Statements
+from .channels.service import Channels
 from .close import Close
+from .config import VERSION, Settings
 from .costcentres import CostCentres
 from .db import Database, dumps, new_id, now
 from .events import EventHub
 from .files.service import Files
 from .knowledge.base import Knowledge
-from .mail import Mailer
-from .memory import Memory
 from .llm.base import Usage
+from .mail import Mailer
 from .mcp_client import MCPManager
+from .memory import Memory
 from .security import SecretBox, SecretStore
 from .storage import build_storage
 from .web import ROLES
@@ -92,6 +93,7 @@ class Engine:
         self.costcentres = CostCentres(self)
         self.analysis = Analysis(self)
         self.overview = Overview(self)
+        self.statements = Statements(self)
         self.webhooks = Webhooks(self)
         self.close = Close(self)
         self.mcp_server_lifespan: Any = None
