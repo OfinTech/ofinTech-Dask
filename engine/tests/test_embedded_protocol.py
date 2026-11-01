@@ -125,7 +125,14 @@ class Lifecycle(unittest.TestCase):
                 break
             time.sleep(0.05)
         self.assertEqual(run["status"], "error", run)
-        usage = self.h.engine.db.one("SELECT status FROM embedded_usage")
+        # the usage row is written when the cancelled stream generator is closed, a moment after the disconnect
+        usage = None
+        for _ in range(100):
+            usage = self.h.engine.db.one("SELECT status FROM embedded_usage")
+            if usage:
+                break
+            time.sleep(0.05)
+        self.assertIsNotNone(usage, "no usage row after the disconnect")
         self.assertIn(usage["status"], {"cancelled", "error"})
 
     def test_cancel_endpoint_and_reattach_replay(self) -> None:
