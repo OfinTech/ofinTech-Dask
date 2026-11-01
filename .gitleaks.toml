@@ -24,5 +24,12 @@ regexes = [
   '''change-me''',
   # canary values the leakage tests plant to prove they never reach logs or responses
   '''[A-Za-z0-9-]*NEVER-IN-LOGS[A-Za-z0-9-]*''',
+  # mock Stripe test-mode values of the Owner Control Center work that was moved to its own repository (commits
+  # eacd9b4..4fc2240, reverted in 7e38e58): they remain in the history only, were never real keys and were never used
+  # against Stripe. The allow-list keeps the history scan honest about everything else.
+  '''sk_test_51MockStripeKeyForTests000000000000''',
+  '''whsec_test_0123456789abcdef0123456789abcdef''',
+  '''sk_test_51Browser000000000000000ABCD''',
+  '''whsec_browser0000000000000000WXYZ''',
 ]
 stopwords = ["example", "fake", "test-only"]
