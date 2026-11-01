@@ -313,7 +313,9 @@ class OperationsTests(unittest.TestCase):
         self.assertIsNone(o["unmatched"])
         self.assertEqual(o["exceptions"]["validation"]["issues"], 18)
         self.assertGreaterEqual(o["exceptions"]["anomalies"]["count"], 2)
-        self.assertEqual(o["team"][0]["name"], "Root")
+        self.assertEqual(len(o["team"]), 1)                                   # the desktop user, whatever the machine calls them
+        self.assertGreaterEqual(o["team"][0]["actions"], 2)
+        self.assertEqual({x["action"] for x in o["team"][0]["top"]} & {"dataset.import", "workspace.create"}, {"dataset.import", "workspace.create"})
         self.assertIn("dataset.import", {x["action"] for x in o["recent"]})
         self.assertEqual(o["documents"]["total"], 0)
         self.assertEqual(o["operations"]["entries_last_month"], 40)
