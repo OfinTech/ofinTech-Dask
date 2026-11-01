@@ -80,8 +80,9 @@ The website has no deploy hook of its own: deploys are a `git pull` by someone w
 
 ## Editing
 
-- **Look.** Plain HTML with one stylesheet in the `<head>`, in the OFINTECH design system: monochrome, system fonts,
-  and corners rounded on the top-right and bottom-left only.
+- **Look.** Plain HTML with one stylesheet in the `<head>`, in the OfinTech design system (docs/DESIGN.md): Deep
+  Navy for dark bands and the footer, Primary Blue for actions, white and cool neutral surfaces, Inter served from
+  `site/assets/fonts` (no font CDN: the CSP allows `self` only).
 - **Images.** Keep them under 200 KB each: PNG with 256 colours suits screenshots.
 - **Facts.** Product facts must match the README and docs. Screenshots come from the demo company
   (`examples/demo-company`) and the UI smoke test (`e2e/ui_smoke.py`).

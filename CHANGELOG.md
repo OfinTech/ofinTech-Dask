@@ -5,6 +5,18 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Changed
+
+- **OfinTech identity** (docs/DESIGN.md). The app and the website now follow the OfinTech design system: Deep Navy
+  (`#14243A`) as the brand foundation — the navigation rail and dark surfaces — Primary Blue (`#2563EB`) as the one
+  interactive colour, white and cool neutral surfaces, and the four semantic colours for success, warning, error and
+  information. Colours are defined once as brand primitives, mapped to semantic tokens (`--color-*`) and from there
+  to the names the components use, so the palette is maintained in one place. Latin text and figures are set in
+  **Inter** (bundled, SIL Open Font License; no font download), Arabic stays in IBM Plex Sans Arabic; financial
+  figures use tabular numerals everywhere. Tables lost the green-bar banding for a quiet zebra on the muted surface.
+  Dark mode keeps the same palette on navy surfaces. Value provenance badges (actual, forecast, budget, estimate,
+  unverified) are part of the design system.
+
 ### Security (enterprise audit, docs/audit/)
 
 - The Zoho sign-in callback accepts only Zoho's own accounts servers and API hosts, matched exactly.

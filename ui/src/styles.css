@@ -1,7 +1,19 @@
 /* OfinTech Desk — design tokens and components.
-   Direction: the materials of the accounts office. Blue-black ink on cool ledger paper, green-bar
-   banding on every table (continuous-form printout), and approval "vouchers" with a perforated
-   edge. Everything else stays quiet. */
+   Identity: an intelligent financial command centre. Deep Navy is the brand foundation (the navigation rail,
+   the brand tile, dark surfaces), Primary Blue is the one interactive colour, everything else is white and
+   cool neutral. Figures are set in tabular numerals. Executive-first: quiet surfaces, clear hierarchy, no
+   decoration.
+
+   Layers (edit the top one, never hard-code a colour in a component):
+     1. --ofin-*   brand primitives — the official OfinTech palette, light and dark
+     2. --color-*  semantic tokens — what a colour is for (surface, text, primary, success …)
+     3. aliases    the short names the components use (--paper, --ink, --blue, --rule …) */
+
+/* English and all Latin-script interface text: Inter (SIL Open Font License 1.1, src/fonts/OFL-Inter.txt), one
+   variable file for every weight the UI uses (100–900) with an optical-size axis, so headings get the Display cut
+   automatically. Bundled so the app works offline and under the strict CSP. */
+@font-face { font-family: "Inter"; src: url("./fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap; }
 
 /* Arabic interface: IBM Plex Sans Arabic (SIL Open Font License 1.1, see src/fonts/OFL.txt), bundled so the app
    works offline and under the strict CSP. Weight ranges map the UI's in-between weights (540, 620, 650) to the
@@ -16,66 +28,168 @@
   font-weight: 640 900; font-style: normal; font-display: swap; }
 
 :root {
-  --paper: #f6f7f5;
-  --panel: #ffffff;
-  --sunk: #eef1ee;
-  --ink: #18202b;
-  --ink-2: #4a5462;
-  --ink-3: #7a8491;
-  --rule: #d6dcd7;
-  --rule-strong: #b9c2bb;
-  --band: #eaf3ec;
-  --blue: #1f4c9a;
-  --blue-ink: #163a78;
-  --blue-wash: #e7eef9;
-  --red: #b2342b;
-  --red-wash: #fbeceb;
-  --amber: #9a6411;
-  --amber-wash: #fbf2e1;
-  --green: #2e7d4f;
-  --green-wash: #e5f3ea;
-  --focus: #2f6fe0;
-  --shadow: 0 1px 2px rgba(24, 32, 43, .06), 0 4px 16px rgba(24, 32, 43, .06);
+  /* ---- 1. OfinTech brand primitives (official palette) ---------------------------------------- */
+  --ofin-navy: #14243A;          /* Deep Navy — brand foundation */
+  --ofin-blue: #2563EB;          /* Primary Blue — the interactive colour */
+  --ofin-blue-2: #3B82F6;        /* Secondary Blue — hover, focus, charts */
+  --ofin-blue-light: #EFF6FF;    /* Light Blue — selected and tinted surfaces */
+  --ofin-white: #FFFFFF;
+  --ofin-bg: #F8FAFC;            /* main background */
+  --ofin-surface: #FFFFFF;
+  --ofin-text: #172033;
+  --ofin-text-2: #64748B;
+  --ofin-border: #E2E8F0;
+  --ofin-muted: #F1F5F9;         /* muted background */
+  --ofin-success: #16A34A;
+  --ofin-warning: #D97706;
+  --ofin-error: #DC2626;
+  --ofin-info: #0284C7;
+
+  /* ---- 2. semantic tokens --------------------------------------------------------------------- */
+  --color-bg: var(--ofin-bg);
+  --color-surface: var(--ofin-surface);
+  --color-surface-muted: var(--ofin-muted);
+  --color-surface-selected: var(--ofin-blue-light);
+  --color-text: var(--ofin-text);
+  --color-text-secondary: var(--ofin-text-2);
+  --color-text-tertiary: color-mix(in srgb, var(--ofin-text-2) 72%, var(--ofin-surface));
+  --color-border: var(--ofin-border);
+  --color-border-strong: color-mix(in srgb, var(--ofin-border) 55%, var(--ofin-text-2));
+  --color-brand: var(--ofin-navy);
+  --color-on-brand: var(--ofin-white);
+  --color-primary: var(--ofin-blue);
+  --color-primary-hover: color-mix(in srgb, var(--ofin-blue) 82%, var(--ofin-navy));
+  --color-primary-soft: var(--ofin-blue-light);
+  --color-on-primary: var(--ofin-white);
+  --color-focus: var(--ofin-blue-2);
+  --color-success: var(--ofin-success);
+  --color-success-soft: color-mix(in srgb, var(--ofin-success) 11%, var(--ofin-surface));
+  --color-warning: var(--ofin-warning);
+  --color-warning-soft: color-mix(in srgb, var(--ofin-warning) 12%, var(--ofin-surface));
+  --color-error: var(--ofin-error);
+  --color-error-soft: color-mix(in srgb, var(--ofin-error) 10%, var(--ofin-surface));
+  --color-info: var(--ofin-info);
+  --color-info-soft: color-mix(in srgb, var(--ofin-info) 11%, var(--ofin-surface));
+  --color-scrim: rgba(20, 36, 58, .5);
+  /* navigation rail: navy in both themes */
+  --rail-bg: var(--ofin-navy);
+  --rail-text: color-mix(in srgb, var(--ofin-white) 78%, var(--ofin-navy));
+  --rail-text-strong: var(--ofin-white);
+  --rail-text-muted: color-mix(in srgb, var(--ofin-white) 50%, var(--ofin-navy));
+  --rail-hover: color-mix(in srgb, var(--ofin-white) 8%, var(--ofin-navy));
+  --rail-active: color-mix(in srgb, var(--ofin-blue) 42%, var(--ofin-navy));
+  --rail-active-text: var(--ofin-white);
+  --rail-border: color-mix(in srgb, var(--ofin-white) 12%, var(--ofin-navy));
+  --rail-field: color-mix(in srgb, var(--ofin-white) 6%, var(--ofin-navy));
+  /* chart series, all from the palette; adjacent series differ in hue or lightness */
+  --series-1: var(--ofin-blue); --series-2: var(--ofin-navy); --series-3: var(--ofin-info);
+  --series-4: var(--ofin-success); --series-5: var(--ofin-warning); --series-6: var(--ofin-text-2);
+  --series-7: color-mix(in srgb, var(--ofin-blue-2) 55%, var(--ofin-blue-light)); --series-8: var(--ofin-error);
+  /* value provenance: actual, forecast, budget, estimate, unverified */
+  --prov-actual: var(--color-text); --prov-forecast: var(--ofin-blue-2); --prov-budget: var(--ofin-text-2);
+  --prov-estimate: var(--ofin-info); --prov-unverified: var(--ofin-warning);
+
+  /* ---- 3. component aliases -------------------------------------------------------------------- */
+  --paper: var(--color-bg);
+  --panel: var(--color-surface);
+  --sunk: var(--color-surface-muted);
+  --ink: var(--color-text);
+  --ink-2: var(--color-text-secondary);
+  --ink-3: var(--color-text-tertiary);
+  --rule: var(--color-border);
+  --rule-strong: var(--color-border-strong);
+  --band: var(--color-surface-muted);
+  --blue: var(--color-primary);
+  --blue-ink: var(--color-primary-hover);
+  --blue-wash: var(--color-primary-soft);
+  --red: var(--color-error);
+  --red-wash: var(--color-error-soft);
+  --amber: var(--color-warning);
+  --amber-wash: var(--color-warning-soft);
+  --green: var(--color-success);
+  --green-wash: var(--color-success-soft);
+  --focus: var(--color-focus);
+  --shadow: 0 1px 2px rgba(20, 36, 58, .05), 0 4px 16px rgba(20, 36, 58, .05);
   --radius: 6px;
-  --brand-tile: #0b0f14; --brand-tile-ink: #ffffff;
-  --font: "Segoe UI Variable Text", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Roboto,
-          "Noto Sans", Arial, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue",
-          Roboto, Arial, sans-serif;
+  --radius-lg: 10px;
+  --brand-tile: var(--ofin-blue); --brand-tile-ink: var(--ofin-white);
+
+  /* typography: Inter for Latin, IBM Plex Sans Arabic for Arabic (see :root:lang(ar)) */
+  --font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Roboto, "Noto Sans", Arial, sans-serif;
+  --font-display: var(--font);
   --font-figures: var(--font);
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
-  --t-xs: 12px; --t-sm: 13px; --t-md: 14px; --t-lg: 16px; --t-xl: 20px; --t-2xl: 26px; --t-3xl: 34px;
-  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100; --series-5: #e87ba4;
-  --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+  --t-xs: 12px; --t-sm: 13px; --t-md: 14px; --t-lg: 16px; --t-xl: 20px; --t-2xl: 26px; --t-3xl: 34px; --t-4xl: 44px;
   color-scheme: light;
 }
 
+/* dark theme: the same palette on navy surfaces; interactive blue lifts one step for contrast */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #10151b; --panel: #161d25; --sunk: #1c242e; --ink: #e5e9ee; --ink-2: #b2bac4; --ink-3: #8690a0;
-    --rule: #2a3440; --rule-strong: #3a4654; --band: #16231c; --blue: #86a9f0; --blue-ink: #a9c2f5;
-    --blue-wash: #1a2740; --red: #f08a80; --red-wash: #3a1f1d; --amber: #e3b25c; --amber-wash: #3a2d16;
-    --green: #74c79a; --green-wash: #183224; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
-    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
-    --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-    --brand-tile: #e5e9ee; --brand-tile-ink: #10151b;
+    --color-bg: color-mix(in srgb, var(--ofin-navy) 70%, #000);
+    --color-surface: var(--ofin-navy);
+    --color-surface-muted: color-mix(in srgb, var(--ofin-white) 6%, var(--ofin-navy));
+    --color-surface-selected: color-mix(in srgb, var(--ofin-blue) 22%, var(--ofin-navy));
+    --color-text: color-mix(in srgb, var(--ofin-white) 92%, var(--ofin-navy));
+    --color-text-secondary: color-mix(in srgb, var(--ofin-white) 62%, var(--ofin-navy));
+    --color-text-tertiary: color-mix(in srgb, var(--ofin-white) 46%, var(--ofin-navy));
+    --color-border: color-mix(in srgb, var(--ofin-white) 12%, var(--ofin-navy));
+    --color-border-strong: color-mix(in srgb, var(--ofin-white) 22%, var(--ofin-navy));
+    --color-primary: var(--ofin-blue-2);
+    --color-primary-hover: color-mix(in srgb, var(--ofin-blue-2) 80%, var(--ofin-white));
+    --color-primary-soft: color-mix(in srgb, var(--ofin-blue) 22%, var(--ofin-navy));
+    --color-success: color-mix(in srgb, var(--ofin-success) 70%, var(--ofin-white));
+    --color-success-soft: color-mix(in srgb, var(--ofin-success) 18%, var(--ofin-navy));
+    --color-warning: color-mix(in srgb, var(--ofin-warning) 72%, var(--ofin-white));
+    --color-warning-soft: color-mix(in srgb, var(--ofin-warning) 18%, var(--ofin-navy));
+    --color-error: color-mix(in srgb, var(--ofin-error) 70%, var(--ofin-white));
+    --color-error-soft: color-mix(in srgb, var(--ofin-error) 18%, var(--ofin-navy));
+    --color-info: color-mix(in srgb, var(--ofin-info) 70%, var(--ofin-white));
+    --color-info-soft: color-mix(in srgb, var(--ofin-info) 18%, var(--ofin-navy));
+    --color-scrim: rgba(0, 0, 0, .6);
+    --rail-bg: color-mix(in srgb, var(--ofin-navy) 85%, #000);
+    --series-2: color-mix(in srgb, var(--ofin-white) 70%, var(--ofin-navy));
+    --series-6: color-mix(in srgb, var(--ofin-text-2) 60%, var(--ofin-white));
+    --prov-actual: var(--color-text);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #10151b; --panel: #161d25; --sunk: #1c242e; --ink: #e5e9ee; --ink-2: #b2bac4; --ink-3: #8690a0;
-  --rule: #2a3440; --rule-strong: #3a4654; --band: #16231c; --blue: #86a9f0; --blue-ink: #a9c2f5;
-  --blue-wash: #1a2740; --red: #f08a80; --red-wash: #3a1f1d; --amber: #e3b25c; --amber-wash: #3a2d16;
-  --green: #74c79a; --green-wash: #183224; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
-  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; --series-5: #d55181;
-  --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-  --brand-tile: #e5e9ee; --brand-tile-ink: #10151b;
+  --color-bg: color-mix(in srgb, var(--ofin-navy) 70%, #000);
+  --color-surface: var(--ofin-navy);
+  --color-surface-muted: color-mix(in srgb, var(--ofin-white) 6%, var(--ofin-navy));
+  --color-surface-selected: color-mix(in srgb, var(--ofin-blue) 22%, var(--ofin-navy));
+  --color-text: color-mix(in srgb, var(--ofin-white) 92%, var(--ofin-navy));
+  --color-text-secondary: color-mix(in srgb, var(--ofin-white) 62%, var(--ofin-navy));
+  --color-text-tertiary: color-mix(in srgb, var(--ofin-white) 46%, var(--ofin-navy));
+  --color-border: color-mix(in srgb, var(--ofin-white) 12%, var(--ofin-navy));
+  --color-border-strong: color-mix(in srgb, var(--ofin-white) 22%, var(--ofin-navy));
+  --color-primary: var(--ofin-blue-2);
+  --color-primary-hover: color-mix(in srgb, var(--ofin-blue-2) 80%, var(--ofin-white));
+  --color-primary-soft: color-mix(in srgb, var(--ofin-blue) 22%, var(--ofin-navy));
+  --color-success: color-mix(in srgb, var(--ofin-success) 70%, var(--ofin-white));
+  --color-success-soft: color-mix(in srgb, var(--ofin-success) 18%, var(--ofin-navy));
+  --color-warning: color-mix(in srgb, var(--ofin-warning) 72%, var(--ofin-white));
+  --color-warning-soft: color-mix(in srgb, var(--ofin-warning) 18%, var(--ofin-navy));
+  --color-error: color-mix(in srgb, var(--ofin-error) 70%, var(--ofin-white));
+  --color-error-soft: color-mix(in srgb, var(--ofin-error) 18%, var(--ofin-navy));
+  --color-info: color-mix(in srgb, var(--ofin-info) 70%, var(--ofin-white));
+  --color-info-soft: color-mix(in srgb, var(--ofin-info) 18%, var(--ofin-navy));
+  --color-scrim: rgba(0, 0, 0, .6);
+  --rail-bg: color-mix(in srgb, var(--ofin-navy) 85%, #000);
+  --series-2: color-mix(in srgb, var(--ofin-white) 70%, var(--ofin-navy));
+  --series-6: color-mix(in srgb, var(--ofin-text-2) 60%, var(--ofin-white));
+  --prov-actual: var(--color-text);
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
   color-scheme: dark;
 }
 
 :root:lang(ar) {
   --font: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
   --font-display: var(--font);
+  /* Latin figures inside Arabic text still use Inter's tabular digits */
+  --font-figures: "Inter", var(--font);
 }
 /* tracking pulls Arabic letters apart and breaks their joins */
 :root:lang(ar) body, :root:lang(ar) body * { letter-spacing: normal !important; }
@@ -84,7 +198,7 @@
 html, body, #root { height: 100%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink); font: var(--t-md)/1.5 var(--font);
-  -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 1;
+  -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 1, "cv11" 1; font-optical-sizing: auto;
 }
 h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01em; }
 h1 { font-size: var(--t-2xl); font-weight: 650; line-height: 1.2; }
@@ -94,7 +208,7 @@ p { margin: 0 0 var(--s3); }
 a { color: var(--blue); }
 button, input, select, textarea { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.num { font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
+.num { font-family: var(--font-figures); font-variant-numeric: tabular-nums; text-align: end; white-space: nowrap; }
 .neg { color: var(--red); }
 .muted { color: var(--ink-3); }
 .small { font-size: var(--t-sm); }
@@ -109,26 +223,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---- shell ---------------------------------------------------------------------------------- */
 .shell { display: grid; grid-template-columns: 228px 1fr; height: 100vh; }
-.rail { background: var(--panel); border-inline-end: 1px solid var(--rule); display: flex; flex-direction: column; min-height: 0; }
-.brand { display: flex; align-items: center; gap: 10px; padding: 16px 16px 12px; }
+.rail { background: var(--rail-bg); color: var(--rail-text); display: flex; flex-direction: column; min-height: 0; color-scheme: dark; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 18px 16px 14px; }
 .brand-mark { width: 28px; height: 28px; flex: none; }
 .wordmark { display: inline-block; vertical-align: baseline; color: var(--ink); }
+.rail .wordmark, .mobilebar .wordmark { color: var(--rail-text-strong); }
 .brand-name .wordmark { display: inline-block; margin-inline-end: 6px; }
-.brand-desk { font-weight: 600; color: var(--ink-2); font-size: 13px; }
-.brand-name { font-family: var(--font-display); font-weight: 680; font-size: 15px; letter-spacing: -0.01em; }
-.brand-name small { display: block; font-weight: 450; color: var(--ink-3); font-size: 12px; letter-spacing: 0; }
-.ws-switch { margin: 0 12px 8px; }
-.ws-switch select { width: 100%; padding: 7px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper); }
-.nav { padding: 4px 8px; display: flex; flex-direction: column; gap: 1px; overflow: auto; flex: 1; }
-.nav a { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: var(--radius); color: var(--ink-2);
+.brand-desk { font-weight: 600; color: var(--rail-text); font-size: 13px; }
+.brand-name { font-family: var(--font-display); font-weight: 680; font-size: 15px; letter-spacing: -0.01em; color: var(--rail-text-strong); }
+.brand-name small { display: block; font-weight: 450; color: var(--rail-text-muted); font-size: 12px; letter-spacing: 0; }
+.ws-switch { margin: 0 12px 10px; }
+.ws-switch select { width: 100%; padding: 7px 8px; border: 1px solid var(--rail-border); border-radius: var(--radius);
+  background: var(--rail-field); color: var(--rail-text-strong); }
+.nav { padding: 4px 8px; display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius); color: var(--rail-text);
   text-decoration: none; font-weight: 520; }
-.nav a:hover { background: var(--sunk); color: var(--ink); }
-.nav a[aria-current="page"] { background: var(--blue-wash); color: var(--blue-ink); }
-.nav svg { width: 18px; height: 18px; flex: none; }
-.nav .count { margin-inline-start: auto; background: var(--amber); color: var(--panel); border-radius: 10px; font-size: 11px;
-  padding: 0 7px; font-weight: 700; line-height: 18px; }
-.nav-sep { height: 1px; background: var(--rule); margin: 8px 6px; }
-.rail-foot { padding: 10px 14px; border-top: 1px solid var(--rule); font-size: var(--t-xs); color: var(--ink-3); }
+.nav a:hover { background: var(--rail-hover); color: var(--rail-text-strong); }
+.nav a[aria-current="page"] { background: var(--rail-active); color: var(--rail-active-text); font-weight: 600; }
+.nav svg { width: 18px; height: 18px; flex: none; opacity: .9; }
+.nav .count { margin-inline-start: auto; background: var(--ofin-warning); color: var(--ofin-white); border-radius: 10px; font-size: 11px;
+  padding: 0 7px; font-weight: 700; line-height: 18px; font-variant-numeric: tabular-nums; }
+.nav-sep { height: 1px; background: var(--rail-border); margin: 8px 6px; }
+.rail-foot { padding: 10px 14px; border-top: 1px solid var(--rail-border); font-size: var(--t-xs); color: var(--rail-text-muted); }
+.rail :focus-visible { outline-color: var(--ofin-white); }
 .main { min-width: 0; min-height: 0; overflow: auto; }
 .page { padding: var(--s5) var(--s6) var(--s7); max-width: 1240px; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); margin-bottom: var(--s5); }
@@ -162,7 +279,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .seg button[aria-pressed="true"] { background: var(--blue-wash); color: var(--blue-ink); }
 
 /* ---- surfaces ---------------------------------------------------------------------------------- */
-.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-lg); }
 .panel-pad { padding: var(--s4) var(--s5); }
 .section { margin-top: var(--s6); }
 .section > h2 { margin-bottom: var(--s3); }
@@ -176,6 +293,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tag.green { background: var(--green-wash); color: var(--green); }
 .tag.red { background: var(--red-wash); color: var(--red); }
 .tag.amber { background: var(--amber-wash); color: var(--amber); }
+.tag.info { background: var(--color-info-soft); color: var(--color-info); }
+/* value provenance — every figure says what kind of number it is (directive §6) */
+.prov { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; letter-spacing: .02em;
+  padding: 0 6px; border-radius: 4px; line-height: 16px; vertical-align: middle; border: 1px solid transparent; }
+.prov.actual { color: var(--ink-2); background: var(--sunk); }
+.prov.forecast { color: var(--prov-forecast); background: var(--color-primary-soft); }
+.prov.budget { color: var(--prov-budget); background: transparent; border-color: var(--rule-strong); }
+.prov.estimate { color: var(--prov-estimate); background: var(--color-info-soft); }
+.prov.unverified { color: var(--prov-unverified); background: var(--color-warning-soft); }
+.notice.info { background: var(--color-info-soft); border-color: color-mix(in srgb, var(--color-info) 35%, transparent); }
 .empty { padding: var(--s6); text-align: center; color: var(--ink-2); }
 .empty h3 { margin-bottom: 6px; color: var(--ink); }
 .notice { padding: 10px 14px; border-radius: var(--radius); background: var(--blue-wash); color: var(--ink); border: 1px solid
@@ -183,14 +310,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .notice.warn { background: var(--amber-wash); border-color: color-mix(in srgb, var(--amber) 35%, transparent); }
 .notice.error { background: var(--red-wash); border-color: color-mix(in srgb, var(--red) 35%, transparent); }
 
-/* ---- green-bar tables (the signature) ------------------------------------------------------------ */
+/* ---- financial tables ------------------------------------------------------------------------------ */
 .ledger { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
-.ledger th { text-align: start; font-weight: 620; color: var(--ink-2); padding: 7px 10px; border-bottom: 1.5px solid var(--ink);
-  background: var(--panel); position: sticky; top: 0; }
-.ledger td { padding: 6px 10px; border-bottom: 1px solid transparent; vertical-align: top; }
-.ledger tbody tr:nth-child(6n+1), .ledger tbody tr:nth-child(6n+2), .ledger tbody tr:nth-child(6n+3) { background: var(--band); }
+.ledger th { text-align: start; font-weight: 600; color: var(--ink-2); padding: 8px 10px; border-bottom: 1px solid var(--rule-strong);
+  background: var(--panel); position: sticky; top: 0; font-size: var(--t-xs); letter-spacing: .01em; }
+.ledger td { padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.ledger tbody tr:nth-child(even) { background: var(--band); }
 .ledger th.num, .ledger td.num { text-align: end; }
-.ledger tfoot td { border-top: 1px solid var(--ink); font-weight: 650; }
+.ledger tfoot td { border-top: 1px solid var(--rule-strong); border-bottom: 0; font-weight: 650; background: var(--panel); }
 .table-wrap { overflow: auto; max-height: 520px; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); }
 .table-title { font-weight: 620; font-size: var(--t-sm); padding: 8px 10px 0; }
 
@@ -200,7 +327,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .kpi { padding: 12px 16px; border-inline-start: 1px solid var(--rule); }
 .kpi:first-child { border-inline-start: 0; }
 .kpi .label { color: var(--ink-2); font-size: var(--t-sm); }
-.kpi .value { font-family: var(--font-display); font-size: var(--t-2xl); font-weight: 650; font-variant-numeric: tabular-nums;
+.kpi .value { font-family: var(--font-figures); font-size: var(--t-2xl); font-weight: 650; font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em; line-height: 1.2; }
 .chart { width: 100%; height: auto; display: block; }
 .chart text { fill: var(--ink-3); font-size: 11px; }
@@ -211,11 +338,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---- dashboards ------------------------------------------------------------------------------------ */
 .dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
-.widget { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.widget { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 14px 16px; min-width: 0; }
 .widget.w2 { grid-column: span 2; }
 .widget.w3 { grid-column: span 3; }
 .widget h3 { font-size: var(--t-md); margin-bottom: 8px; }
-.widget .big { font-family: var(--font-display); font-size: var(--t-3xl); font-weight: 650; font-variant-numeric: tabular-nums;
+.widget .big { font-family: var(--font-figures); font-size: var(--t-3xl); font-weight: 650; font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em; }
 
 /* ---- chat --------------------------------------------------------------------------------------------- */
@@ -269,7 +396,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .stamp.pending { color: var(--amber); }
 
 /* ---- modal / toast ---------------------------------------------------------------------------------- */
-.scrim { position: fixed; inset: 0; background: rgba(16, 21, 27, .45); display: grid; place-items: center; z-index: 50; padding: 20px; }
+.scrim { position: fixed; inset: 0; background: var(--color-scrim); display: grid; place-items: center; z-index: 50; padding: 20px; }
 .modal { background: var(--panel); border-radius: 10px; width: min(640px, 100%); max-height: calc(100vh - 40px); overflow: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 .modal.wide { width: min(980px, 100%); }
@@ -277,8 +404,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .modal-body { padding: 16px 20px; }
 .modal-foot { padding: 12px 20px 18px; display: flex; justify-content: flex-end; gap: 8px; }
 .toasts { position: fixed; left: 50%; transform: translateX(-50%); bottom: 88px; align-items: center; display: flex; flex-direction: column; gap: 8px; z-index: 60; }
-.toast { background: var(--ink); color: var(--paper); padding: 10px 14px; border-radius: 6px; max-width: 380px; box-shadow: var(--shadow); }
-.toast.error { background: var(--red); color: #fff; }
+.toast { background: var(--color-brand); color: var(--color-on-brand); padding: 10px 14px; border-radius: 6px; max-width: 380px; box-shadow: var(--shadow); }
+.toast.error { background: var(--ofin-error); color: var(--ofin-white); }
 
 /* ---- workflows -------------------------------------------------------------------------------------- */
 .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
@@ -294,7 +421,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .auth-art { background: var(--panel); border-inline-end: 1px solid var(--rule); padding: 56px; display: flex; flex-direction: column;
   justify-content: space-between; overflow: hidden; }
 .auth-form { padding: 56px 48px; display: flex; flex-direction: column; justify-content: center; }
-.tape { font-variant-numeric: tabular-nums; font-size: 15px; line-height: 1.9; max-width: 340px; }
+.tape { font-family: var(--font-figures); font-variant-numeric: tabular-nums; font-size: 15px; line-height: 1.9; max-width: 340px; }
 .tape div { display: flex; justify-content: space-between; border-bottom: 1px dotted var(--rule-strong); }
 .tape .total { border-bottom: 3px double var(--ink); font-weight: 700; }
 
@@ -385,7 +512,7 @@ button.fig:hover { background: var(--blue-wash); }
 .tally div { padding: 8px 10px; border-inline-start: 1px solid var(--rule); }
 .tally div:first-child { border-inline-start: 0; }
 .tally dt { font-size: var(--t-xs); color: var(--ink-2); }
-.tally dd { margin: 2px 0 0; font-size: var(--t-xl); font-weight: 650; font-variant-numeric: tabular-nums; }
+.tally dd { margin: 2px 0 0; font-family: var(--font-figures); font-size: var(--t-xl); font-weight: 650; font-variant-numeric: tabular-nums; }
 .findings { list-style: none; margin: 0; padding: 0; }
 .finding { padding: 10px 0; border-top: 1px solid var(--rule); }
 .finding:first-child { border-top: 0; }
@@ -539,7 +666,7 @@ tr.clickable:hover td { background: var(--blue-wash); }
 .kpi-card.watch { border-inline-start-color: var(--amber); }
 .kpi-card.act { border-inline-start-color: var(--red); }
 .kpi-name { font-size: var(--t-sm); color: var(--ink-2); line-height: 1.3; min-height: 2.6em; }
-.kpi-value { font-family: var(--font-display); font-size: var(--t-xl); font-weight: 650; font-variant-numeric: tabular-nums; }
+.kpi-value { font-family: var(--font-figures); font-size: var(--t-xl); font-weight: 650; font-variant-numeric: tabular-nums; }
 .kpi-value.big { font-size: var(--t-3xl); }
 .kpi-status { font-weight: 600; }
 .kpi-status.good { color: var(--green); }
@@ -565,7 +692,7 @@ tr.clickable:hover td { background: var(--blue-wash); }
 @media (max-width: 760px) { .close-ready { grid-template-columns: 1fr; } }
 .close-score { padding: var(--s4) var(--s5); border-inline-end: 1px solid var(--rule); display: flex; flex-direction: column; gap: 6px; }
 .close-score .label { color: var(--ink-2); font-size: var(--t-sm); }
-.close-score .value { font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 680; }
+.close-score .value { font-family: var(--font-figures); font-size: 44px; line-height: 1; font-weight: 680; }
 .score-bar { display: inline-block; height: 6px; width: 90px; background: var(--rule); border-radius: 3px; overflow: hidden; vertical-align: middle; }
 .score-bar > span { display: block; height: 100%; background: var(--amber); }
 .score-bar.ok > span { background: var(--green); }
@@ -577,7 +704,7 @@ tr.clickable:hover td { background: var(--blue-wash); }
 .check-row:last-child { border-bottom: 0; }
 .check-mark { width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; font-weight: 700;
   border: 1.5px solid var(--rule-strong); color: var(--ink-2); margin-top: 2px; }
-.check-row.ok .check-mark { background: var(--green); border-color: var(--green); color: #fff; }
+.check-row.ok .check-mark { background: var(--green); border-color: var(--green); color: var(--ofin-white); }
 .check-row.warn .check-mark { background: var(--amber-wash); border-color: var(--amber); color: var(--amber); }
 .close-item { border: 1px solid var(--rule); background: var(--panel); padding: 12px 14px; margin-top: 10px; border-inline-start: 3px solid var(--amber); }
 .close-item.approved, .close-item.explained, .close-item.reviewed { border-inline-start-color: var(--green); }
