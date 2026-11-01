@@ -44,7 +44,7 @@ class EncryptedBackups(unittest.TestCase):
     def test_round_trip_keeps_every_financial_figure(self) -> None:
         target = self.dir / "b1.desk-backup"
         info = bk.write_backup(self.h.settings.db_path, target, self.key)
-        self.assertEqual(info["schema_version"], 20)
+        self.assertEqual(info["schema_version"], 21)
         self.assertEqual(info["workspaces"], 1)
         self.assertEqual(info["datasets"], 1)
         self.assertEqual(oct(target.stat().st_mode)[-3:], "600")

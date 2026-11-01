@@ -110,6 +110,8 @@ class Settings:
     storage: dict[str, Any] = field(default_factory=lambda: {"kind": "local", "encrypt": True})
     sealed: bool = False                     # DESK_SEALED: no connection outside the private network (egress.py)
     egress_allow: tuple[str, ...] = ()       # DESK_EGRESS_ALLOW: hosts a sealed server may still reach
+    hosted: bool = False                     # DESK_HOSTED: the hosted SaaS edition — plan limits and billing apply
+    platform_owners: tuple[str, ...] = ()    # DESK_PLATFORM_OWNERS: e-mail addresses provisioned as platform owners
 
     @property
     def is_desktop(self) -> bool:
@@ -250,4 +252,6 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         storage=storage_settings(),
         sealed=_bool("DESK_SEALED", False),
         egress_allow=tuple(h.strip().lower() for h in _env("DESK_EGRESS_ALLOW", "").split(",") if h.strip()),
+        hosted=_bool("DESK_HOSTED", False) and mode == "server",
+        platform_owners=tuple(e.strip().lower() for e in _env("DESK_PLATFORM_OWNERS", "").split(",") if e.strip()),
     )

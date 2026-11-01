@@ -7,6 +7,20 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Owner Control Center** (`#/owner`, docs/owner/): platform administration for the people who run an installation,
+  separate from workspace roles and from customer data. Users (directory, suspension, forced reset, restrictions,
+  sessions, MFA reset), workspaces (state, members, usage, time-limited audited support access), plans and feature
+  entitlements enforced on the server (hosted edition only: `DESK_HOSTED`), Stripe billing (Checkout, Customer
+  Portal, signed idempotent webhooks, reconciliation, invoices, MRR/ARR), coupons mirrored to Stripe, Contact Sales
+  leads, privacy-preserving website and product analytics with CSV exports, announcements and owner alerts,
+  SMTP settings with bilingual templates and a durable queue, a Security Center (MFA policy, lockout, session limits,
+  dual approval, delegated administrators, audit), integrations (Google sign-in policy, analytics, storage) and
+  platform settings with feature flags. Platform roles are provisioned by `DESK_PLATFORM_OWNERS` or
+  `python -m desk_engine owner grant`, never from the public form. Migration 21 (additive).
+- **Two-factor authentication** (TOTP) for Team Server accounts, with an owner policy (`none | admins | all`).
+- **Pricing page** (`#/pricing`), Settings → Plan, platform notifications and preferences under Settings → Account,
+  e-mail verification links, a consent-gated analytics snippet for the public website.
+
 - **Executive overview** (docs/OVERVIEW.md): the landing page for every workspace. A financial health score with its
   reasons (judged against the finance lead's targets, or reference levels until targets are set), revenue, expenses,
   net profit and cash with a plain-language note on each, the twelve-month trend, cash and liquidity, risks that need

@@ -798,3 +798,11 @@ details.evidence summary { cursor: pointer; color: var(--blue-ink); }
 
 /* the desktop lock screen: nothing of the workspace is rendered behind it */
 .page.lock { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+
+/* Owner Control Center */
+.kpi-card .up { color: var(--green); }
+.kpi-card .down { color: var(--red); }
+.owner-shell dl.small dt { font-weight: 600; margin-top: 6px; color: var(--ink-2); }
+.owner-shell dl.small dd { margin: 0; }
+.owner-shell blockquote { border-inline-start: 3px solid var(--rule-strong); margin: 8px 0; padding: 4px 12px; color: var(--ink-2); }
+.owner-shell .kpi-card { cursor: default; }

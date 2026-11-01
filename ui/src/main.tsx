@@ -26,6 +26,9 @@ import { SkillsPage } from "./pages/Skills";
 import { InboxPage } from "./pages/Inbox";
 import { ConnectionsPage } from "./pages/Connections";
 import { SettingsPage } from "./pages/Settings";
+import { PricingPage } from "./pages/Pricing";
+import { ForcedPasswordChange, MfaEnrollGate, VerifyEmailPage } from "./pages/AccountSecurity";
+import { OwnerApp } from "./owner/OwnerApp";
 import { OverviewPage } from "./pages/Overview";
 import { FinancePage } from "./pages/Finance";
 import { LedgerPage } from "./pages/Ledger";
@@ -357,8 +360,21 @@ function App(): ReactNode {
   if (!session) return <div className="page muted">{tr("Starting…")}</div>;
   if (route[0] === "invite" && route[1]) return <InvitePage token={route[1]} session={session} onDone={reloadSession} />;
   if (route[0] === "reset" && route[1]) return <ResetPage token={route[1]} onDone={reloadSession} />;
-  if (!session.user) return <AuthPage session={session} onDone={reloadSession} signedOutForIdling={idleOut} />;
+  if (route[0] === "verify-email" && route[1]) return <VerifyEmailPage token={route[1]} onDone={reloadSession} />;
+  if (!session.user) return <AuthPage session={session} onDone={reloadSession} signedOutForIdling={idleOut} mfaChallenge={new URLSearchParams(location.hash.split("?")[1] || "").get("mfa")} />;
   if (locked) return <LockScreen onResume={() => setLocked(false)} />;
+  // account-level gates set by the platform: the engine refuses everything else until they are satisfied
+  const gates = (
+    <AppCtx.Provider value={{ session, ws: ws as Workspace, reloadSession, counts, refreshCounts }}>
+      {session.user.must_reset_password ? <ForcedPasswordChange /> : <MfaEnrollGate />}
+    </AppCtx.Provider>);
+  if (session.user.must_reset_password || session.user.must_enroll_mfa) return gates;
+  if (route[0] === "owner") {
+    return <AppCtx.Provider value={{ session, ws: ws as Workspace, reloadSession, counts, refreshCounts }}>
+      {reauth && <ReauthDialog google={!session.user?.has_password && Boolean(session.features.google_login)} onDone={(ok) => { reauth.resolve(ok); setReauth(null); }} />}
+      {timer.state === "warning" && <SessionWarning secondsLeft={timer.secondsLeft} onStay={() => { void stay(); }} onLogout={() => { void signOut("user"); }} />}
+      <OwnerApp route={route} /></AppCtx.Provider>;
+  }
   if (!ws) return <Onboarding session={session} onDone={async (id) => { selectWs(id); await reloadSession(); }} />;
 
   function selectWs(id: string) {
@@ -396,6 +412,7 @@ function App(): ReactNode {
     case "new-workspace": page = <Onboarding session={session} embedded onDone={async (id) => { selectWs(id);
       await reloadSession(); go("overview"); }} />; break;
     case "chat": page = <ChatPage threadId={route[1]} />; break;
+    case "pricing": page = <PricingPage />; break;
     default: page = <OverviewPage />;
   }
 
@@ -443,7 +460,9 @@ function App(): ReactNode {
             {NAV2.map(([key, label, icon]) => (
               <a key={key} href={`#/${key}`} aria-current={section === key ? "page" : undefined}><Icon name={icon} />{tr(label)}</a>
             ))}
+            {session.user.platform_role && <a href="#/owner" data-testid="owner-link"><Icon name="shield" />{tr("Owner Center")}</a>}
           </nav>
+          {session.platform?.["platform.maintenance_mode"] && <div className="notice warn small" style={{ margin: "0 12px" }}>{tr("Maintenance mode is on.")}</div>}
           <div className="rail-foot">{session.user.name}, {ws.role}<br />{tr("Version")}{" "}{session.version}</div>
         </aside>
         <main className="main" id="main">{page}</main>

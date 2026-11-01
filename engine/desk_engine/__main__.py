@@ -1,4 +1,4 @@
-"""Command line: ``python -m desk_engine [serve|keygen|check]``.
+"""Command line: ``python -m desk_engine [serve|keygen|check|owner …]``.
 
 In desktop mode the desktop app starts ``serve`` with its environment and waits for the line
 ``DESK_READY <port>`` on standard output.
@@ -82,8 +82,11 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="desk_engine", description="OfinTech Desk engine")
     parser.add_argument("command", nargs="?", default="serve",
                         choices=["serve", "keygen", "check", "backup", "restore", "backup-check", "storage-migrate",
-                                 "storage-encrypt"])
-    parser.add_argument("target", nargs="?", help="backup: destination file; restore/backup-check: the backup file")
+                                 "storage-encrypt", "owner"])
+    parser.add_argument("target", nargs="?", help="backup: destination file; restore/backup-check: the backup file; "
+                                                  "owner: grant | revoke | list")
+    parser.add_argument("email", nargs="?", help="owner grant/revoke: the account's e-mail address")
+    parser.add_argument("--role", default="owner", choices=["owner", "admin"], help="owner grant: the platform role (default owner)")
     parser.add_argument("--key-file", help="backup, restore, backup-check: file holding the backup key (base64, 32 bytes); "
                                            "or set DESK_BACKUP_KEY_FILE")
     parser.add_argument("--to", help="restore: where to write the database (default: the configured database path)")
@@ -164,7 +167,42 @@ def main(argv: list[str] | None = None) -> None:
         s = load_settings()
         print(f"mode={s.mode} data_dir={s.data_dir} public_url={s.public_url or '(set at start)'}")
         return
+    if args.command == "owner":
+        owner_command(args)
+        return
     serve()
+
+
+def owner_command(args: argparse.Namespace) -> None:
+    """The secure bootstrap for the Owner Control Center: platform roles are granted on the server, never from the
+    public interface. ``owner grant <email> [--role admin]``, ``owner revoke <email>``, ``owner list``."""
+    from .app import Engine
+    from .config import load_settings
+    from .platform import owner as platform_owner
+
+    s = load_settings()
+    if s.is_desktop:
+        raise SystemExit("The desktop app has no platform administration.")
+    engine = Engine(s)
+    engine.bootstrap()
+    try:
+        if args.target == "list":
+            for a in platform_owner.list_admins(engine):
+                print(f"{a['role']:<6} {a['email']}  ({a['name']}; granted by {a.get('granted_by') or '-'})")
+            return
+        if args.target not in {"grant", "revoke"} or not args.email:
+            raise SystemExit("usage: desk_engine owner grant <email> [--role owner|admin] | owner revoke <email> | owner list")
+        user = engine.db.one("SELECT id FROM users WHERE email = ? AND is_local = 0", (args.email.lower(),))
+        if user is None:
+            raise SystemExit(f"No account with the address {args.email}. The person signs up first; then grant the role.")
+        if args.target == "grant":
+            platform_owner.grant(engine, user_id=user["id"], role=args.role, granted_by="cli")
+            print(f"{args.email} is now a platform {args.role}")
+        else:
+            platform_owner.revoke(engine, user_id=user["id"], revoked_by="cli")
+            print(f"{args.email} is no longer a platform administrator")
+    finally:
+        engine.db.close()
 
 
 if __name__ == "__main__":

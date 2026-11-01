@@ -45,6 +45,9 @@ async def list_workflows(ctx: Ctx) -> list[dict[str, Any]]:
 
 @router.post("/api/w/{ws}/workflows", role="editor", body=WorkflowIn)
 async def create(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "workflows")
     b: WorkflowIn = ctx.body
     wf = ctx.engine.workflows.save(ctx.workspace, ctx.user_id, b.name, b.description, b.definition, b.enabled)
     ctx.audit("workflow.create", wf["id"])

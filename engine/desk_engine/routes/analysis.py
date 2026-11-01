@@ -96,6 +96,9 @@ class ForecastIn(BaseModel):
 
 @router.post("/api/w/{ws}/forecasts", role="editor", body=ForecastIn)
 async def create(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "financial_intelligence")
     return ctx.engine.analysis.create_forecast(ctx.ws_id, ctx.user_id, ctx.body.model_dump())
 
 

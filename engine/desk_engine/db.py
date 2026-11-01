@@ -759,6 +759,312 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE sessions ADD COLUMN reauth_at REAL;
     """,
+    # 21 — the Owner Control Center: platform administration separate from workspace roles, hosted plans and
+    #      entitlements, Stripe billing records, coupons, e-mail templates and queue, announcements, platform-level
+    #      notifications, sales leads, privacy-preserving analytics events, workspace state and support access,
+    #      two-factor authentication. Every table is additive; nothing existing is changed or dropped.
+    """
+    CREATE TABLE platform_admins (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        role TEXT NOT NULL,
+        granted_by TEXT,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE platform_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_by TEXT,
+        updated_at REAL NOT NULL
+    );
+    CREATE TABLE plans (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        monthly_price INTEGER NOT NULL DEFAULT 0,
+        annual_price INTEGER NOT NULL DEFAULT 0,
+        currency TEXT NOT NULL DEFAULT 'USD',
+        max_workspaces INTEGER NOT NULL DEFAULT 1,
+        storage_quota_mb INTEGER NOT NULL DEFAULT 0,
+        max_members INTEGER NOT NULL DEFAULT 0,
+        features TEXT NOT NULL DEFAULT '{}',
+        trial_days INTEGER NOT NULL DEFAULT 0,
+        billing_interval TEXT NOT NULL DEFAULT 'both',
+        visibility TEXT NOT NULL DEFAULT 'public',
+        contact_sales INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'active',
+        is_default INTEGER NOT NULL DEFAULT 0,
+        position INTEGER NOT NULL DEFAULT 0,
+        stripe_product_id TEXT,
+        stripe_price_monthly TEXT,
+        stripe_price_annual TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE TABLE subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        plan_id TEXT NOT NULL REFERENCES plans(id),
+        status TEXT NOT NULL,
+        interval TEXT,
+        source TEXT NOT NULL DEFAULT 'stripe',
+        stripe_subscription_id TEXT UNIQUE,
+        stripe_customer_id TEXT,
+        current_period_start REAL,
+        current_period_end REAL,
+        cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+        canceled_at REAL,
+        trial_end REAL,
+        scheduled_plan_id TEXT,
+        grace_until REAL,
+        coupon_id TEXT,
+        last_event_at REAL,
+        note TEXT,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE INDEX ix_subscriptions_user ON subscriptions(user_id, status, updated_at DESC);
+    CREATE TABLE entitlement_overrides (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        overrides TEXT NOT NULL,
+        note TEXT,
+        granted_by TEXT,
+        created_at REAL NOT NULL,
+        expires_at REAL
+    );
+    CREATE TABLE billing_customers (
+        user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+        stripe_customer_id TEXT NOT NULL UNIQUE,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE stripe_events (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL,
+        created REAL,
+        received_at REAL NOT NULL,
+        processed_at REAL,
+        status TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        error TEXT,
+        payload TEXT NOT NULL
+    );
+    CREATE INDEX ix_stripe_events_status ON stripe_events(status, received_at);
+    CREATE TABLE invoices (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        status TEXT NOT NULL,
+        amount_due INTEGER NOT NULL DEFAULT 0,
+        amount_paid INTEGER NOT NULL DEFAULT 0,
+        amount_refunded INTEGER NOT NULL DEFAULT 0,
+        currency TEXT,
+        hosted_invoice_url TEXT,
+        created REAL,
+        paid_at REAL,
+        updated_at REAL NOT NULL
+    );
+    CREATE INDEX ix_invoices_user ON invoices(user_id, created DESC);
+    CREATE TABLE coupons (
+        id TEXT PRIMARY KEY,
+        code TEXT NOT NULL UNIQUE COLLATE NOCASE,
+        percent_off REAL,
+        amount_off INTEGER,
+        currency TEXT,
+        duration TEXT NOT NULL,
+        duration_months INTEGER,
+        expires_at REAL,
+        max_redemptions INTEGER,
+        per_customer_limit INTEGER NOT NULL DEFAULT 1,
+        plan_ids TEXT NOT NULL DEFAULT '[]',
+        first_time_only INTEGER NOT NULL DEFAULT 0,
+        min_amount INTEGER,
+        active INTEGER NOT NULL DEFAULT 1,
+        stripe_coupon_id TEXT,
+        stripe_promotion_code_id TEXT,
+        redemptions INTEGER NOT NULL DEFAULT 0,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE TABLE coupon_redemptions (
+        id TEXT PRIMARY KEY,
+        coupon_id TEXT NOT NULL REFERENCES coupons(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
+        subscription_id TEXT,
+        plan_id TEXT,
+        amount_discounted INTEGER NOT NULL DEFAULT 0,
+        created_at REAL NOT NULL
+    );
+    CREATE INDEX ix_coupon_redemptions ON coupon_redemptions(coupon_id, user_id);
+    CREATE TABLE email_templates (
+        key TEXT NOT NULL,
+        lang TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body TEXT NOT NULL,
+        updated_by TEXT,
+        updated_at REAL NOT NULL,
+        PRIMARY KEY (key, lang)
+    );
+    CREATE TABLE email_jobs (
+        id TEXT PRIMARY KEY,
+        to_address TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body TEXT NOT NULL,
+        template_key TEXT,
+        category TEXT,
+        status TEXT NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT,
+        next_attempt_at REAL,
+        dedupe_key TEXT UNIQUE,
+        created_at REAL NOT NULL,
+        sent_at REAL
+    );
+    CREATE INDEX ix_email_jobs_pending ON email_jobs(status, next_attempt_at);
+    CREATE TABLE email_suppressions (
+        address TEXT PRIMARY KEY COLLATE NOCASE,
+        reason TEXT NOT NULL,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE announcements (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        category TEXT NOT NULL,
+        channels TEXT NOT NULL DEFAULT '["in_app"]',
+        target TEXT NOT NULL DEFAULT '{}',
+        status TEXT NOT NULL,
+        scheduled_at REAL,
+        sent_at REAL,
+        delivered INTEGER NOT NULL DEFAULT 0,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE TABLE announcement_deliveries (
+        announcement_id TEXT NOT NULL REFERENCES announcements(id) ON DELETE CASCADE,
+        user_id TEXT NOT NULL,
+        channel TEXT NOT NULL,
+        created_at REAL NOT NULL,
+        PRIMARY KEY (announcement_id, user_id, channel)
+    );
+    CREATE TABLE notification_preferences (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        category TEXT NOT NULL,
+        in_app INTEGER NOT NULL DEFAULT 1,
+        email INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (user_id, category)
+    );
+    CREATE TABLE user_notifications (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        category TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT,
+        link TEXT,
+        read_at REAL,
+        created_at REAL NOT NULL
+    );
+    CREATE INDEX ix_user_notifications ON user_notifications(user_id, read_at, created_at DESC);
+    CREATE TABLE sales_leads (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        company TEXT NOT NULL,
+        country TEXT,
+        company_size TEXT,
+        users_estimate INTEGER,
+        workspaces_needed INTEGER,
+        storage_estimate TEXT,
+        features TEXT NOT NULL DEFAULT '[]',
+        deployment TEXT,
+        message TEXT,
+        status TEXT NOT NULL DEFAULT 'NEW',
+        assigned_to TEXT,
+        follow_up_at REAL,
+        source TEXT,
+        converted_user_id TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE INDEX ix_sales_leads_status ON sales_leads(status, created_at DESC);
+    CREATE TABLE lead_notes (
+        id TEXT PRIMARY KEY,
+        lead_id TEXT NOT NULL REFERENCES sales_leads(id) ON DELETE CASCADE,
+        author_id TEXT,
+        body TEXT NOT NULL,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE analytics_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL,
+        name TEXT NOT NULL,
+        visitor TEXT,
+        user_id TEXT,
+        workspace_id TEXT,
+        path TEXT,
+        referrer TEXT,
+        source TEXT,
+        device TEXT,
+        browser TEXT,
+        country TEXT,
+        lang TEXT,
+        props TEXT,
+        created_at REAL NOT NULL
+    );
+    CREATE INDEX ix_analytics_events ON analytics_events(kind, name, created_at);
+    CREATE INDEX ix_analytics_time ON analytics_events(created_at);
+    CREATE TABLE workspace_state (
+        workspace_id TEXT PRIMARY KEY REFERENCES workspaces(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'active',
+        reason TEXT,
+        changed_by TEXT,
+        changed_at REAL NOT NULL
+    );
+    CREATE TABLE support_access (
+        id TEXT PRIMARY KEY,
+        admin_id TEXT NOT NULL,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        reason TEXT NOT NULL,
+        granted_at REAL NOT NULL,
+        expires_at REAL NOT NULL,
+        revoked_at REAL
+    );
+    CREATE TABLE owner_change_requests (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        requested_by TEXT NOT NULL,
+        status TEXT NOT NULL,
+        decided_by TEXT,
+        decided_at REAL,
+        created_at REAL NOT NULL
+    );
+    CREATE TABLE email_verifications (
+        token_hash TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at REAL NOT NULL,
+        expires_at REAL NOT NULL,
+        used_at REAL
+    );
+    CREATE TABLE mfa_challenges (
+        token_hash TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at REAL NOT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0
+    );
+    ALTER TABLE users ADD COLUMN email_verified_at REAL;
+    ALTER TABLE users ADD COLUMN signup_method TEXT;
+    ALTER TABLE users ADD COLUMN suspended_reason TEXT;
+    ALTER TABLE users ADD COLUMN must_reset_password INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE users ADD COLUMN restrictions TEXT NOT NULL DEFAULT '{}';
+    ALTER TABLE users ADD COLUMN mfa_secret_id TEXT;
+    ALTER TABLE users ADD COLUMN mfa_enabled_at REAL;
+    ALTER TABLE users ADD COLUMN last_login_at REAL;
+    ALTER TABLE sessions ADD COLUMN mfa_at REAL;
+    """,
 ]
 
 
