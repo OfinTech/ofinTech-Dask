@@ -268,12 +268,19 @@ def main() -> int:
             # expired on the engine (31 min) while the page still believes 28: Stay cannot revive it
             server.age(email, 31 * 60)
             page.clock.fast_forward(28 * MIN + 1_000)
-            page.wait_for_selector("[role=alertdialog]", timeout=15000)
-            page.click("[role=alertdialog] button.primary")
+            # the page either shows the warning (and Stay signed in is refused) or has already learnt from one of its
+            # own background reads that the session is over; both end on the login screen without a revival
+            page.wait_for_selector("[role=alertdialog], form input[type=email]", timeout=15000)
+            path_taken = "warning → Stay signed in refused" if page.query_selector("[role=alertdialog]") else "background read saw 401"
+            if page.query_selector("[role=alertdialog]"):
+                try:
+                    page.click("[role=alertdialog] button.primary", timeout=5000)
+                except Exception:   # noqa: BLE001 - the dialog closed by itself: the session was already gone
+                    path_taken = "dialog closed by a 401 before the click"
             page.wait_for_selector("form input[type=email]", timeout=15000)
             r = api(page, "POST", "/api/session/ping")
             ev.record("S3-revive", "Team Server, Chromium", "a session already over on the engine is not revived by Stay signed in: 401 and the login screen",
-                      f"ping={r['status']} login form={bool(page.query_selector('form input[type=email]'))}", r["status"] == 401 and bool(page.query_selector("form input[type=email]")), page, "s3-revive")
+                      f"{path_taken}; ping={r['status']} login form={bool(page.query_selector('form input[type=email]'))}", r["status"] == 401 and bool(page.query_selector("form input[type=email]")), page, "s3-revive")
             # a revoked session (signed out everywhere from another device) cannot be renewed either
             login(page, server.base, email)
             open_ledger()
