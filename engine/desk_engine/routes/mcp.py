@@ -15,6 +15,17 @@ from ..web import Ctx, Router
 router = Router()
 
 
+def public_url(url: str | None) -> str | None:
+    """A URL as it may appear in the audit log and in outgoing webhooks: scheme, host and path only. Query strings
+    sometimes carry access tokens, and the audit log is readable by every admin and forwarded to webhook receivers."""
+    from urllib.parse import urlsplit
+
+    if not url:
+        return url
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.hostname or ''}{':' + str(parts.port) if parts.port else ''}{parts.path}"
+
+
 def _out(row: dict[str, Any]) -> dict[str, Any]:
     out = {k: row[k] for k in ("id", "name", "transport", "command", "url", "default_policy", "last_error", "created_at")}
     out["enabled"] = bool(row["enabled"])
@@ -77,7 +88,7 @@ async def add_server(ctx: Ctx) -> dict[str, Any]:
                                          "transport": b.transport, "command": b.command, "args": dumps(b.args),
                                          "url": b.url, "secret_id": secret_id, "default_policy": b.default_policy,
                                          "created_by": ctx.user_id, "created_at": now()})
-    ctx.audit("mcp.add", sid, {"transport": b.transport, "url": b.url,
+    ctx.audit("mcp.add", sid, {"transport": b.transport, "url": public_url(b.url),
                                "command": command_preview(b.command, b.args) if b.command else None})
     try:
         await ctx.engine.mcp.refresh_tools(ctx.ws_id, sid)

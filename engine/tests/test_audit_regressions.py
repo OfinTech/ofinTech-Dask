@@ -288,5 +288,104 @@ class OB11StreamReauthorisation(unittest.TestCase):
         finally:
             h.close()
 
+class OB04ConnectionTimeNetworkPolicy(unittest.TestCase):
+    """On a Team Server, a request to a private or local address is refused when it is made, not only when the
+    URL was saved, so a name that changes what it resolves to gains nothing."""
+
+    def test_guard_refuses_private_hosts_and_passes_exempt_ones(self) -> None:
+        import asyncio
+
+        import httpx2 as httpx
+
+        from desk_engine.egress import EgressBlocked, PrivateNetworkGuard
+
+        seen: list[str] = []
+        inner = httpx.MockTransport(lambda req: (seen.append(str(req.url)), httpx.Response(200))[1])
+        guard = PrivateNetworkGuard(inner, frozenset({"minio", "erp.corp.example"}))
+
+        async def get(url: str) -> int:
+            async with httpx.AsyncClient(transport=guard) as client:
+                return (await client.get(url)).status_code
+
+        for url in ("http://10.0.0.8/", "http://192.168.1.1:9000/", "http://169.254.169.254/latest/meta-data/",
+                    "http://100.64.0.1/", "http://127.0.0.1:8700/", "http://localhost/", "http://[::1]/",
+                    "http://[::ffff:10.0.0.8]/", "http://0x7f000001/", "http://2130706433/", "http://ollama.internal/",
+                    "http://engine/"):
+            with self.assertRaises(EgressBlocked, msg=url):
+                asyncio.run(get(url))
+        self.assertEqual(seen, [])
+        for url in ("http://minio:9000/bucket", "https://api.erp.corp.example/v1", "https://8.8.8.8/"):
+            self.assertEqual(asyncio.run(get(url)), 200, url)
+        self.assertEqual(len(seen), 3)
+
+    def test_server_engine_installs_the_guard_and_desktop_does_not(self) -> None:
+        from desk_engine.egress import PrivateNetworkGuard
+
+        h = Harness("server")
+        try:
+            self.assertIsInstance(h.engine.http_transport, PrivateNetworkGuard)
+            self.assertIsInstance(h.engine.mcp_http_transport, PrivateNetworkGuard)
+        finally:
+            h.close()
+        h = Harness()
+        try:
+            self.assertNotIsInstance(h.engine.http_transport, PrivateNetworkGuard)
+        finally:
+            h.close()
+
+    def test_url_policy_refuses_shared_address_space(self) -> None:
+        from desk_engine.egress import _ip_internal
+
+        self.assertTrue(_ip_internal("100.64.0.1"))
+        self.assertTrue(_ip_internal("100.127.255.254"))
+        self.assertFalse(_ip_internal("100.128.0.1"))
+
+
+class OB10MCPAuditURL(unittest.TestCase):
+    def test_audit_entry_drops_query_strings_and_credentials(self) -> None:
+        from desk_engine.routes.mcp import public_url
+
+        self.assertEqual(public_url("https://mcp.example.com/sse?token=abc"), "https://mcp.example.com/sse")
+        self.assertEqual(public_url("https://u:p@mcp.example.com:8443/x?k=v#f"), "https://mcp.example.com:8443/x")
+        self.assertIsNone(public_url(None))
+
+
+class OB13TelegramTokenNeverInErrors(unittest.TestCase):
+    def test_transport_failure_message_has_no_token(self) -> None:
+        import asyncio
+
+        import httpx2 as httpx
+
+        from desk_engine.channels.service import Telegram
+        from desk_engine.errors import UpstreamError
+
+        h = Harness()
+        try:
+            def boom(request: httpx.Request) -> httpx.Response:
+                raise httpx.ConnectError("could not reach " + str(request.url), request=request)
+
+            h.engine.http_transport = httpx.MockTransport(boom)
+            tg = Telegram(h.engine, "123456:SECRET-BOT-TOKEN")
+            with self.assertRaises(UpstreamError) as caught:
+                asyncio.run(tg.call("getMe"))
+            self.assertNotIn("SECRET-BOT-TOKEN", str(caught.exception.message))
+            self.assertNotIn("SECRET-BOT-TOKEN", repr(caught.exception))
+        finally:
+            h.close()
+
+
+class OB14MailNeverLogsInInClear(unittest.TestCase):
+    def test_security_modes(self) -> None:
+        from desk_engine.errors import ConfigError
+        from desk_engine.mail import Mailer
+
+        Mailer(host="relay.internal", security="none", sender="a@b.test")
+        Mailer(host="smtp.example", user="u", password="p", security="starttls", sender="a@b.test")
+        with self.assertRaises(ConfigError):
+            Mailer(host="smtp.example", user="u", password="p", security="none")
+        with self.assertRaises(ConfigError):
+            Mailer(host="smtp.example", security="plain")
+
+
 if __name__ == "__main__":
     unittest.main()

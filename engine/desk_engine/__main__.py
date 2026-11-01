@@ -79,7 +79,8 @@ async def migrate_local_files(settings: object) -> int:
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="desk_engine", description="OfinTech Desk engine")
-    parser.add_argument("command", nargs="?", default="serve", choices=["serve", "keygen", "check", "backup", "storage-migrate"])
+    parser.add_argument("command", nargs="?", default="serve",
+                        choices=["serve", "keygen", "check", "backup", "storage-migrate", "storage-encrypt"])
     parser.add_argument("target", nargs="?", help="backup: destination file")
     args = parser.parse_args(argv)
     if args.command == "keygen":
@@ -107,6 +108,17 @@ def main(argv: list[str] | None = None) -> None:
         s = load_settings()
         n = asyncio.run(migrate_local_files(s))
         print(f"copied {n} files from {s.files_dir} to {s.storage.get('kind')} storage")
+        return
+    if args.command == "storage-encrypt":
+        from .config import load_settings
+        from .storage import EncryptedStorage, build_storage
+
+        s = load_settings()
+        store = build_storage(s)
+        if not isinstance(store, EncryptedStorage):
+            raise SystemExit("DESK_STORAGE_ENCRYPTION is off; turn it on first.")
+        n = asyncio.run(store.encrypt_in_place())
+        print(f"encrypted {n} files that were stored in clear; DESK_STORAGE_ALLOW_PLAINTEXT can now be removed")
         return
     if args.command == "check":
         from .config import load_settings

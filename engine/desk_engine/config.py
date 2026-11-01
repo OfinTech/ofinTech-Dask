@@ -115,7 +115,8 @@ def storage_settings() -> dict[str, Any]:
     kind = _env("DESK_STORAGE", "local").lower()
     if kind not in {"local", "s3"}:
         raise ConfigError("DESK_STORAGE must be 'local' or 's3'")
-    out: dict[str, Any] = {"kind": kind, "encrypt": _bool("DESK_STORAGE_ENCRYPTION", True)}
+    out: dict[str, Any] = {"kind": kind, "encrypt": _bool("DESK_STORAGE_ENCRYPTION", True),
+                           "allow_plaintext": _bool("DESK_STORAGE_ALLOW_PLAINTEXT", False)}
     if kind == "s3":
         endpoint = _env("DESK_S3_ENDPOINT")
         out.update(endpoint=endpoint, bucket=_env("DESK_S3_BUCKET"), region=_env("DESK_S3_REGION", "us-east-1"),

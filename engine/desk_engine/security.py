@@ -157,9 +157,11 @@ def check_outbound_url(url: str, *, allow_private: bool, allow_http: bool = Fals
         infos = socket.getaddrinfo(parsed.hostname, parsed.port or 443, proto=socket.IPPROTO_TCP)
     except socket.gaierror as exc:
         raise Invalid(f"Cannot resolve {parsed.hostname}", code="bad_url") from exc
+    from .egress import _ip_internal
+
     for info in infos:
         addr = ipaddress.ip_address(info[4][0])
-        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved or addr.is_multicast:
+        if _ip_internal(str(addr)) or addr.is_reserved or addr.is_multicast or addr.is_unspecified:
             raise Invalid("URLs that point to private or local networks are not allowed on the Team Server",
                           code="bad_url")
     return url

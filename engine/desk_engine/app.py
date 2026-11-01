@@ -65,6 +65,12 @@ class Engine:
             from .egress import SealedTransport
             http_transport = SealedTransport(http_transport, frozenset(settings.egress_allow))
             mcp_http_transport = SealedTransport(mcp_http_transport, frozenset(settings.egress_allow))
+        elif not settings.allow_private_network_urls:
+            # a Team Server: user-supplied URLs are judged again at every connection, not only when they are saved
+            from .egress import PrivateNetworkGuard
+            exempt = frozenset(settings.egress_allow) | self._storage_hosts(settings)
+            http_transport = PrivateNetworkGuard(http_transport, exempt)
+            mcp_http_transport = PrivateNetworkGuard(mcp_http_transport, exempt)
         self.http_transport = http_transport
         self.mcp_http_transport = mcp_http_transport
         self.agent = Agent(self)
@@ -88,6 +94,14 @@ class Engine:
         self.close = Close(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
+
+    @staticmethod
+    def _storage_hosts(settings: Settings) -> frozenset[str]:
+        """The S3 endpoint is the operator's own service (often MinIO on the Compose network)."""
+        from urllib.parse import urlparse
+
+        host = urlparse(str(settings.storage.get("endpoint") or "")).hostname if settings.storage.get("kind") == "s3" else None
+        return frozenset({host.lower()}) if host else frozenset()
 
     # -- start-up ------------------------------------------------------------------------------
     def bootstrap(self) -> None:
