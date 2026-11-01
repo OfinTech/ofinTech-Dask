@@ -31,7 +31,7 @@ import { FinancePage } from "./pages/Finance";
 import { LedgerPage } from "./pages/Ledger";
 import { OversightPage } from "./pages/Oversight";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
-import { ACTIVITY_EVENTS, fromServer, idleState, isUserActivity, mergeActivity, secondsLeft, tickMs, type IdleState } from "./lib/idle";
+import { ACTIVITY_EVENTS, FUTURE_TOLERANCE_MS, fromServer, idleState, isUserActivity, mergeActivity, secondsLeft, tickMs, type IdleState } from "./lib/idle";
 
 const NAV: [string, string, string][] = [
   ["overview", N("Overview"), "pulse"], ["finance", N("Statements"), "ledger"], ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"],
@@ -74,8 +74,8 @@ const SIGNED_OUT_KEY = "desk-signed-out";
 function readSharedActivity(): number {
   try {
     const v = Number(localStorage.getItem(ACTIVITY_KEY));
-    // never in the future: a stale clock must not hold the session open for ever
-    return Number.isFinite(v) ? Math.min(v, Date.now()) : 0;
+    // a value from the future (a skewed clock, a forged entry) is ignored, never clamped: see mergeActivity
+    return Number.isFinite(v) && v <= Date.now() + FUTURE_TOLERANCE_MS ? v : 0;
   } catch {
     return 0;  // private mode: this tab falls back to watching only itself
   }

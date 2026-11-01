@@ -50,9 +50,15 @@ export function fromServer(now: number, idleSecondsLeft: number | null | undefin
   return Math.min(localLast, implied);
 }
 
-/** The newest activity among this tab and the shared value, never in the future. */
+/** The newest activity among this tab and the shared value. A shared value from the future (a skewed clock in
+ *  another tab, or a forged entry) is ignored rather than clamped: clamping it to "now" would keep the session
+ *  alive for ever, which is exactly what a forged value would be for. A few seconds of tolerance cover tabs whose
+ *  clocks differ slightly. */
+export const FUTURE_TOLERANCE_MS = 5_000;
+
 export function mergeActivity(now: number, own: number, shared: number): number {
-  return Math.min(now, Math.max(own, shared));
+  const trusted = shared > now + FUTURE_TOLERANCE_MS ? 0 : shared;
+  return Math.min(now, Math.max(own, trusted));
 }
 
 /** How often the page should look at the clock: often enough that a 2-minute warning is never late. */

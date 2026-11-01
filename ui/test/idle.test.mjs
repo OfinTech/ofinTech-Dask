@@ -51,11 +51,13 @@ test("the engine's view of the remaining time wins over the page's, in the safe 
   assert.equal(fromServer(now, undefined, limit, T0), T0);
 });
 
-test("several tabs share the newest activity, and a clock from the future is ignored", () => {
+test("several tabs share the newest activity; a value from the future is ignored, not trusted", () => {
   const now = T0 + 10 * MIN;
   assert.equal(mergeActivity(now, T0, T0 + 8 * MIN), T0 + 8 * MIN);        // the other tab was used later
   assert.equal(mergeActivity(now, T0 + 9 * MIN, T0), T0 + 9 * MIN);        // this tab was
-  assert.equal(mergeActivity(now, T0 + 99 * MIN, T0), now);                // a stale or forged future value
+  assert.equal(mergeActivity(now, T0, now + 99 * MIN), T0);                // a forged or skewed future value: ignored
+  assert.equal(mergeActivity(now, T0, now + 2_000), now);                  // two seconds of skew: tolerated
+  assert.equal(mergeActivity(now, now + 99 * MIN, T0), now);               // this tab's own value never exceeds now
 });
 
 test("the clock is looked at often enough for a 2-minute warning to be on time", () => {

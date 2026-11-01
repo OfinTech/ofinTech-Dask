@@ -321,7 +321,7 @@ def main() -> int:
             login(page, server.base, email)
             open_ledger()
             tab2 = ctx.new_page()
-            tab2.clock.install()
+            tab2.clock.install(time=page.evaluate("Date.now()"))   # one browser, one clock: both tabs see the same time
             open_ledger(tab2)
             # logout in tab 1 (Settings → Sign out) propagates to tab 2 through localStorage
             page.goto(f"{server.base}/#/settings/account")
