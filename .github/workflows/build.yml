@@ -71,6 +71,8 @@ jobs:
           npm run i18n:check
           npm test
           node build.mjs
+      - name: Two organisations on one real server (multi-tenant integration)
+        run: python e2e/multi_tenant.py e2e-output/multi-tenant-evidence.json
       - name: Browser smoke test
         run: |
           pip install playwright==1.63.0
@@ -79,7 +81,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: ui-smoke-screenshots
+          name: e2e-evidence
           path: e2e-output/
           if-no-files-found: ignore
       - name: Desktop typecheck and security tests
