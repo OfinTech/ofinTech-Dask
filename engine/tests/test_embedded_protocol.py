@@ -100,8 +100,13 @@ class Lifecycle(unittest.TestCase):
         self.h.close()
 
     def test_disconnect_cancels_run(self) -> None:
-        # a model that never answers: the client gives up and the engine must stop the run
+        # a model that never answers: the client gives up and the engine must stop the run. The stream generator is
+        # driven directly (what the ASGI server does on an http.disconnect), so the check does not depend on the test
+        # client's disconnect timing.
+        import asyncio
+
         import httpx2 as httpx
+        from desk_engine.embedded import agui
         from tests.helpers import Router
 
         gate = threading.Event()
@@ -114,26 +119,37 @@ class Lifecycle(unittest.TestCase):
         self.h = new_harness(script=[], router=router)
         router.add("POST", "https://llm.test/v1/chat/completions", slow)
         org = make_org(self.h, email="o@acme.test")
-        with self.h.client.stream("POST", "/api/embedded/agents/finance-copilot/run", headers=org.page(), json=run_input("x")) as resp:
-            self.assertEqual(resp.status_code, 200)
-            first = next(resp.iter_lines())
-            self.assertIn("RUN_STARTED", first)
-        gate.set()
-        for _ in range(100):
-            run = self.h.engine.db.one("SELECT status, error FROM agent_runs")
-            if run["status"] != "running":
-                break
-            time.sleep(0.05)
+        svc = self.h.engine.embedded
+
+        class Req:   # the parts of a request the gateway's auth reads
+            headers = {"authorization": f"Bearer {org.session_token}", "origin": "https://erp.partner.test"}
+            client = None
+            url = type("U", (), {"path": "/api/embedded/agents/finance-copilot/run"})()
+
+        async def drive() -> list[str]:
+            principal = svc.auth.principal(Req())   # type: ignore[arg-type]
+            agent = svc.agent_for(principal, "finance-copilot")
+            body = await svc.run(principal, agent, agui.RunAgentInput(**run_input("x")), None)
+            seen = []
+            async for frame in body:
+                seen.append(frame.decode())
+                if "RUN_STARTED" in seen[-1]:
+                    break
+            await body.aclose()   # the client disconnected
+            return seen
+
+        seen = self.h.client.portal.call(drive)
+        self.assertTrue(seen and "RUN_STARTED" in seen[0])
+        run = self.h.engine.db.one("SELECT status, error FROM agent_runs")
         self.assertEqual(run["status"], "error", run)
-        # the usage row is written when the cancelled stream generator is closed, a moment after the disconnect
-        usage = None
-        for _ in range(100):
-            usage = self.h.engine.db.one("SELECT status FROM embedded_usage")
-            if usage:
-                break
-            time.sleep(0.05)
-        self.assertIsNotNone(usage, "no usage row after the disconnect")
-        self.assertIn(usage["status"], {"cancelled", "error"})
+        self.assertIn("disconnected", run["error"])
+        usage = self.h.engine.db.one("SELECT status FROM embedded_usage")
+        self.assertEqual(usage["status"], "cancelled")
+        gate.set()
+        # the HTTP path still answers a stream that starts with RUN_STARTED
+        with self.h.client.stream("POST", "/api/embedded/agents/finance-copilot/run", headers=org.page(), json=run_input("y", thread="t2")) as resp:
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("RUN_STARTED", next(resp.iter_lines()))
 
     def test_cancel_endpoint_and_reattach_replay(self) -> None:
         self.h = new_harness(script=[[("calc_growth", {"values": [1, 2]})], "Doubled."])
