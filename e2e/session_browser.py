@@ -298,7 +298,7 @@ def main() -> int:
             page.goto(f"{server.base}/#/chat/{thread}")
             page.reload()
             page.wait_for_selector(".shell", timeout=15000)
-            page.clock.fast_forward(60_000)
+            advance(page, server, email, 60_000)          # one more minute: 28 in all, with the stream open
             page.wait_for_timeout(300)
             for _ in range(3):
                 api(page, "GET", f"/api/w/{ws}/notifications")
