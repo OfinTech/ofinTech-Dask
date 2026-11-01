@@ -64,7 +64,8 @@ class FakeModel(BaseHTTPRequestHandler):
             self.calls.append({"key": key, "n": len(body["messages"])})
             # a deterministic rule for the concurrency scenario: "sum ledger <id>" → one query of that dataset
             if last.get("role") == "user" and isinstance(last.get("content"), str) and "sum ledger " in last["content"]:
-                ds = last["content"].split("sum ledger ", 1)[1].split()[0]
+                # by name: a dataset id can look like a bank identifier and be masked on its way to the model
+                ds = last["content"].split("sum ledger ", 1)[1].split(" please")[0].strip()
                 item: Any = [("query_dataset", {"dataset": ds, "measures": [{"column": "amount", "agg": "sum"}]})]
             elif last.get("role") == "tool" and key and self.scripts.get(key) and not isinstance(self.scripts[key][0], str) and False:
                 item = self.scripts[key].pop(0)
@@ -180,6 +181,9 @@ def fingerprint(db_path: Path, ws_id: str) -> str:
         h = hashlib.sha256()
         for table in AUTHORITATIVE:
             rows = [dict(r) for r in conn.execute(f"SELECT * FROM {table} WHERE workspace_id = ? ORDER BY 1", (ws_id,))]  # noqa: S608
+            for r in rows:   # usage counters move when the workspace's own people use their own memories
+                r.pop("last_used_at", None)
+                r.pop("use_count", None)
             h.update(json.dumps(rows, sort_keys=True, default=str).encode())
         for (table,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'ds_%'"):
             ds = conn.execute("SELECT id FROM datasets WHERE workspace_id = ? AND id = ?", (ws_id, table[3:])).fetchone()
@@ -324,7 +328,14 @@ def main() -> int:
             owner.post(f"/api/w/{ws}/memories", {"content": f"{label} auditor is {label}-AUDITOR-LLP", "scope": "workspace"})
             results[f"ds_{label}"] = ds["id"]
             results[f"doc_{label}"] = doc["added"][0]["id"]
-        time.sleep(1.5)   # indexing
+        # wait for indexing to settle so the baseline fingerprint is taken on a quiet database
+        end = time.time() + 30
+        while time.time() < end:
+            sa = alice.get(f"/api/w/{A}/documents/{results['doc_Alpha']}")[1]["document"]["status"]
+            sb = bob.get(f"/api/w/{B}/documents/{results['doc_Beta']}")[1]["document"]["status"]
+            if sa != "processing" and sb != "processing":
+                break
+            time.sleep(0.2)
         fp_a0, fp_b0 = fingerprint(db_path, A), fingerprint(db_path, B)
 
         # ---- 2. each organisation reads its own dashboard / overview --------------------------------------------
@@ -422,7 +433,7 @@ def main() -> int:
         def agent_noscript(name: str, client: Client, ws: str) -> None:
             try:
                 s, t, _ = client.post(f"/api/w/{ws}/threads", {})
-                client.post(f"/api/w/{ws}/threads/{t['id']}/messages", {"text": f"{name}: sum ledger {results['ds_Alpha' if ws == A else 'ds_Beta']} please"})
+                client.post(f"/api/w/{ws}/threads/{t['id']}/messages", {"text": f"{name}: sum ledger {'Alpha GL' if ws == A else 'Beta GL'} please"})
                 d = wait_run(client, ws, t["id"])
                 outcomes[name] = {m["payload"]["name"]: m["content"] for m in d["messages"] if m["role"] == "tool"}
             except Exception as exc:  # noqa: BLE001

@@ -56,7 +56,11 @@ class Engine:
                "DESK_PUBLIC_URL": self.base, "DESK_UI_DIR": str(ROOT / "ui" / "dist"), "DESK_LOG_LEVEL": "warning",
                "DESK_MASTER_KEY": base64.urlsafe_b64encode(secrets.token_bytes(32)).decode(),
                "DESK_SESSION_IDLE_MINUTES": str(idle_minutes), "DESK_ALLOW_HTTP": "true", "DESK_ALLOW_PRIVATE_URLS": "1",
-               "DESK_DEV": "1", "DESK_LOCAL_TOKEN": self.token}
+               "DESK_LOCAL_TOKEN": self.token}
+        if mode == "desktop":
+            env["DESK_DEV"] = "1"          # lets the page take the local token from the URL (desktop dev flow)
+        else:
+            env.pop("DESK_DEV", None)
         self.proc = subprocess.Popen([sys.executable, "-m", "desk_engine"], cwd=ROOT / "engine", env=env,
                                      stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         deadline = time.time() + 60
@@ -65,7 +69,8 @@ class Engine:
             if "DESK_READY" in line:
                 break
             if self.proc.poll() is not None:
-                raise SystemExit("engine exited: " + line + (self.proc.stdout.read() if self.proc.stdout else ""))
+                rest = self.proc.stdout.read() if self.proc.stdout else ""
+                raise SystemExit("engine exited:\n" + line + rest)
         else:
             raise SystemExit("engine did not start")
         self.db = next(Path(self.tmp).glob("*.sqlite3"))
