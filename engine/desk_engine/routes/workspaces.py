@@ -150,6 +150,8 @@ async def set_role(ctx: Ctx) -> dict[str, Any]:
     ctx.engine.db.execute("UPDATE members SET role = ? WHERE workspace_id = ? AND user_id = ?",
                           (new_role, ctx.ws_id, target))
     ctx.audit("member.role", target, {"from": current["role"], "to": new_role})
+    if new_role == "viewer":
+        ctx.engine.approvals.expire_for_member(ctx.ws_id, target, "demoted")
     return {"user_id": target, "role": new_role}
 
 
@@ -171,6 +173,7 @@ async def remove_member(ctx: Ctx) -> None:
         c.execute("DELETE FROM channel_links WHERE workspace_id = ? AND user_id = ?", (ctx.ws_id, target))
         c.execute("DELETE FROM mcp_keys WHERE workspace_id = ? AND user_id = ?", (ctx.ws_id, target))
     ctx.audit("member.remove", target)
+    ctx.engine.approvals.expire_for_member(ctx.ws_id, target, "removed")
 
 
 class InviteIn(BaseModel):

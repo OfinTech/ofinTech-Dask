@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import hmac
 import inspect
+import re
 import json
 import logging
 from collections.abc import Awaitable, Callable
@@ -65,6 +66,23 @@ def role_at_least(role: str, required: str) -> bool:
     return ROLES.index(role) >= ROLES.index(required)
 
 
+_ID_SHAPE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+
+def _audit_denied(engine: Engine, request: Request, user: dict[str, Any] | None, role: str | None,
+                  exc: AppError) -> None:
+    """A 403 on any route: recorded against the workspace in the path when its id looks like one (a made-up id is
+    not written into the log), with the route, the role it needed and the user who asked."""
+    ws = request.path_params.get("ws") if role is not None else None
+    ws_id = ws if ws and _ID_SHAPE.match(ws) else None
+    try:
+        engine.audit(ws_id, user["id"] if user else None, "access.denied", f"{request.method} {request.url.path}"[:200],
+                     {"needed": role, "reason": getattr(exc, "code", None) or exc.message}, resource_type="route",
+                     decision="denied", result="refused")
+    except Exception:  # pragma: no cover - the refusal itself must still reach the client
+        log.exception("could not audit a refusal")
+
+
 @dataclass
 class Ctx:
     request: Request
@@ -111,7 +129,13 @@ class Router:
 
         def decorator(fn: Handler) -> Handler:
             async def endpoint(request: Request) -> Response:
+                from .audit import current_request_id, new_request_id
+
                 engine: Engine = request.app.state.engine
+                request_id = new_request_id()
+                request.state.request_id = request_id
+                reset = current_request_id.set(request_id)
+                user = None
                 try:
                     user = authenticate(engine, request) if auth else optional_user(engine, request)
                     ctx = Ctx(request=request, engine=engine, user=user)
@@ -123,16 +147,24 @@ class Router:
                     if inspect.isawaitable(result):
                         result = await result
                 except AppError as exc:
+                    if exc.status == 403:
+                        # every refusal of a protected operation is a security event: who, where, what, why
+                        _audit_denied(engine, request, user, role, exc)
                     return JSONResponse(exc.to_dict(), status_code=exc.status)
                 except Exception:  # pragma: no cover - logged, generic message to the client
                     log.exception("unhandled error on %s %s", method, path)
                     return JSONResponse({"error": "internal", "message": "Something went wrong. "
                                          "The details are in the engine log."}, status_code=500)
+                finally:
+                    current_request_id.reset(reset)
                 if isinstance(result, Response):
-                    return result
-                if result is None:
-                    return Response(status_code=204)
-                return JSONResponse(result)
+                    resp = result
+                elif result is None:
+                    resp = Response(status_code=204)
+                else:
+                    resp = JSONResponse(result)
+                resp.headers["x-request-id"] = request_id
+                return resp
 
             endpoint.__name__ = fn.__name__
             self.routes.append(Route(path, endpoint, methods=[method]))
@@ -246,6 +278,9 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     idle = bool(idle_limit) and now() - session["last_seen"] > idle_limit
     if idle or session["expires_at"] < now():
         engine.db.execute("DELETE FROM sessions WHERE id = ?", (session["id"],))
+        engine.audit(None, session["user_id"], "session.expired", None,
+                     {"reason": "idle" if idle else "lifetime", "idle_minutes": settings.session_idle_minutes},
+                     resource_type="session", decision="denied", result="signed_out")
         if idle:
             raise Unauthorized("You were signed out because nothing happened for a while. Sign in again.",
                                code="session_idle")
@@ -296,6 +331,10 @@ def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:
         (ws_id, ctx.user["id"]),
     )
     if row is None:
+        if _ID_SHAPE.match(ws_id) and ctx.engine.db.one("SELECT 1 FROM workspaces WHERE id = ?", (ws_id,)):
+            # a real workspace the caller is not a member of: a cross-tenant attempt, recorded against that tenant
+            ctx.engine.audit(ws_id, ctx.user["id"], "access.denied", f"{ctx.request.method} {ctx.request.url.path}"[:200],
+                             {"reason": "not_a_member"}, resource_type="workspace", decision="denied", result="refused")
         raise NotFound("Workspace not found.")
     ctx.role = row.pop("member_role")
     ctx.workspace = row

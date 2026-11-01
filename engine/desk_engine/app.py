@@ -76,6 +76,8 @@ class Engine:
             mcp_http_transport = PrivateNetworkGuard(mcp_http_transport, exempt)
         self.http_transport = http_transport
         self.mcp_http_transport = mcp_http_transport
+        from .approvals import Approvals
+        self.approvals = Approvals(self)
         self.agent = Agent(self)
         self.workflows = Workflows(self)
         self.channels = Channels(self)
@@ -176,14 +178,23 @@ class Engine:
 
     # -- shared services -----------------------------------------------------------------------
     def audit(self, workspace_id: str | None, user_id: str | None, action: str, target: str | None = None,
-              detail: Any = None) -> None:
-        self.db.insert("audit_log", {"workspace_id": workspace_id, "user_id": user_id, "action": action,
-                                     "target": target, "detail": dumps(detail) if detail is not None else None,
-                                     "created_at": now()})
+              detail: Any = None, *, resource_type: str | None = None, decision: str | None = None,
+              approval_id: str | None = None, result: str | None = None, request_id: str | None = None) -> str:
+        """Writes one immutable security audit entry and returns its event id (see ``desk_engine.audit``)."""
+        from . import audit as audit_mod
+
+        event_id = audit_mod.new_event_id()
+        clean = audit_mod.sanitize(detail) if detail is not None else None
+        self.db.insert("audit_log", {"event_id": event_id, "workspace_id": workspace_id, "user_id": user_id,
+                                     "action": action, "target": (target or None) and str(target)[:200],
+                                     "resource_type": resource_type, "decision": decision, "approval_id": approval_id,
+                                     "result": result, "request_id": request_id or audit_mod.current_request_id.get(),
+                                     "detail": dumps(clean) if clean is not None else None, "created_at": now()})
         try:
-            self.webhooks.emit(workspace_id, user_id, action, target, detail)
+            self.webhooks.emit(workspace_id, user_id, action, target, clean)
         except Exception:  # pragma: no cover - a webhook must never break the action that was audited
             log.exception("outgoing webhook could not be queued")
+        return event_id
 
     def record_usage(self, ws_id: str, provider_id: str, model: str, usage: Usage, source: str) -> None:
         self.db.insert("usage", {"workspace_id": ws_id, "provider_id": provider_id, "model": model,

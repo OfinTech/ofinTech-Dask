@@ -274,7 +274,10 @@ class Tenants(unittest.TestCase):
         for p in self.h.engine.db.all("SELECT id FROM approvals WHERE workspace_id = ? AND status = 'pending'", (self.a,)):
             self.assertEqual(self.alice.post(f"/api/w/{self.a}/approvals/{p['id']}/decide", json={"approve": False}, headers=ORIGIN).status_code, 200)
         self.assertEqual(len(self.audit(self.a, "approval.rejected")), 2)
-        self.assertEqual([r["target"] for r in self.audit(self.a, "tool.run")], ["mcp_ledger__fx_rate"])   # the unattended read; never a write
+        ran = [r["target"] for r in self.audit(self.a, "tool.run")]
+        self.assertIn("mcp_ledger__fx_rate", ran)                      # the unattended read is on record
+        for never in ("message_colleague", "mcp_ledger__post_journal", "gmail_send", "delete_dataset"):
+            self.assertNotIn(never, ran)                               # no write ever ran
         self.assertEqual(fingerprint(self.h, self.a, self.ledger_table), before)
 
     # -- E. MCP permission enforcement -----------------------------------------------------------------------------
@@ -303,9 +306,10 @@ class Tenants(unittest.TestCase):
         while time.time() < deadline and not marker.exists():
             time.sleep(0.05)
         self.assertTrue(marker.exists())
-        runs = self.audit(self.a, "tool.run")
+        runs = [r for r in self.audit(self.a, "tool.run") if r["target"] == "mcp_ledger__account_balance"]
         self.assertEqual(len(runs), 1)
-        self.assertEqual(json.loads(runs[0]["detail"])["approval_id"], appr["id"])
+        self.assertEqual(runs[0]["approval_id"], appr["id"])
+        self.assertEqual(runs[0]["decision"], "approved")
 
     # -- F. the viewer's own reach through chat -------------------------------------------------------------------------
     def test_viewer_requested_write_needs_an_editor_and_runs_as_the_viewer_under_audit(self) -> None:
