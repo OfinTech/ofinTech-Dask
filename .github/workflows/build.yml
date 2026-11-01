@@ -217,10 +217,8 @@ jobs:
       - name: Build Team Server image
         run: docker build -f server/Dockerfile -t ofintech-desk:ci .
       - name: Scan the image for known vulnerabilities (Trivy)
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ofintech-desk:ci
-          format: table
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
+        # Trivy's own image, like the gitleaks step; pin the tag to a release once a maintainer has checked the
+        # current one (the audit environment could not query Docker Hub).
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image \
+            --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --no-progress ofintech-desk:ci
