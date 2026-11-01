@@ -1,0 +1,848 @@
+{
+ "calc": {
+  "breakeven": {
+   "data": {
+    "revenue": 642857.1428571428,
+    "units": 14285.714285714286
+   },
+   "text": "Break-even: 14,286 units, revenue 642,857.14; contribution margin 38.89%"
+  },
+  "dep_ddb": {
+   "data": [
+    [
+     1,
+     60000.0,
+     60000.0,
+     60000.0
+    ],
+    [
+     2,
+     30000.0,
+     90000.0,
+     30000.0
+    ],
+    [
+     3,
+     15000.0,
+     105000.0,
+     15000.0
+    ],
+    [
+     4,
+     5000.0,
+     110000.0,
+     10000.0
+    ]
+   ],
+   "text": "Year | Depreciation | Accumulated | Book value\n----------------------------------------------\n1 | 60,000.00 | 60,000.00 | 60,000.00\n2 | 30,000.00 | 90,000.00 | 30,000.00\n3 | 15,000.00 | 105,000.00 | 15,000.00\n4 | 5,000.00 | 110,000.00 | 10,000.00"
+  },
+  "dep_sl": {
+   "data": [
+    [
+     1,
+     112600.0,
+     112600.0,
+     480400.0
+    ],
+    [
+     2,
+     112600.0,
+     225200.0,
+     367800.0
+    ],
+    [
+     3,
+     112600.0,
+     337800.0,
+     255200.0
+    ],
+    [
+     4,
+     112600.0,
+     450400.0,
+     142600.0
+    ],
+    [
+     5,
+     112600.0,
+     563000.0,
+     30000.0
+    ]
+   ],
+   "text": "Year | Depreciation | Accumulated | Book value\n----------------------------------------------\n1 | 112,600.00 | 112,600.00 | 480,400.00\n2 | 112,600.00 | 225,200.00 | 367,800.00\n3 | 112,600.00 | 337,800.00 | 255,200.00\n4 | 112,600.00 | 450,400.00 | 142,600.00\n5 | 112,600.00 | 563,000.00 | 30,000.00"
+  },
+  "dep_syd": {
+   "data": [
+    [
+     1,
+     44000.0,
+     44000.0,
+     76000.0
+    ],
+    [
+     2,
+     33000.0,
+     77000.0,
+     43000.0
+    ],
+    [
+     3,
+     22000.0,
+     99000.0,
+     21000.0
+    ],
+    [
+     4,
+     11000.0,
+     110000.0,
+     10000.0
+    ]
+   ],
+   "text": "Year | Depreciation | Accumulated | Book value\n----------------------------------------------\n1 | 44,000.00 | 44,000.00 | 76,000.00\n2 | 33,000.00 | 77,000.00 | 43,000.00\n3 | 22,000.00 | 99,000.00 | 21,000.00\n4 | 11,000.00 | 110,000.00 | 10,000.00"
+  },
+  "fx": {
+   "data": [
+    3750.0,
+    9377.81,
+    -1125.0
+   ],
+   "text": "Converted USD\u2192SAR at 3.75 (rate dated 2026-10-31): 3,750.00, 9,377.81, -1,125.00"
+  },
+  "growth": {
+   "data": {
+    "cagr": 1.5922700073770142,
+    "changes": [
+     3.23950056753689,
+     0.5850602409638554
+    ]
+   },
+   "text": "CAGR over 2 years: 159.23%\nPeriod changes: 323.95%, 58.51%"
+  },
+  "loan": {
+   "data": {
+    "payment": 18971.96,
+    "total_interest": 110654.2
+   },
+   "text": "Payment per period: 18,971.96; total interest: 110,654.20; total paid: 910,654.20\nPeriod | Payment | Interest | Principal | Balance\n-------------------------------------------------\n1 | 18,971.96 | 4,333.33 | 14,638.63 | 785,361.37\n2 | 18,971.96 | 4,254.04 | 14,717.92 | 770,643.45\n3 | 18,971.96 | 4,174.32 | 14,797.64 | 755,845.81\n4 | 18,971.96 | 4,094.16 | 14,877.80 | 740,968.01\n5 | 18,971.96 | 4,013.58 | 14,958.38 | 726,009.63\n6 | 18,971.96 | 3,932.55 | 15,039.41 | 710,970.22\n7 | 18,971.96 | 3,851.09 | 15,120.87 | 695,849.35\n8 | 18,971.96 | 3,769.18 | 15,202.78 | 680,646.57\n9 | 18,971.96 | 3,686.84 | 15,285.12 | 665,361.45\n10 | 18,971.96 | 3,604.04 | 15,367.92 | 649,993.53\n11 | 18,971.96 | 3,520.80 | 15,451.16 | 634,542.37\n12 | 18,971.96 | 3,437.10 | 15,534.86 | 619,007.51\n\u2026 36 more rows"
+  },
+  "npv_irr": {
+   "data": {
+    "irr": 0.1048452947916047,
+    "npv": 6053.635304765707
+   },
+   "text": "NPV at 8.00%: 6,053.64\nIRR: 10.48%\nUndiscounted total: 30,000.00"
+  },
+  "ratios": {
+   "data": [
+    {
+     "format": "percent",
+     "group": "Profitability",
+     "key": "gross_margin",
+     "label": "Gross margin",
+     "value": 0.8596973075233945
+    },
+    {
+     "format": "percent",
+     "group": "Profitability",
+     "key": "operating_margin",
+     "label": "Operating margin",
+     "value": 0.23647849734806256
+    },
+    {
+     "format": "percent",
+     "group": "Profitability",
+     "key": "net_margin",
+     "label": "Net margin",
+     "value": 0.22566822066822068
+    },
+    {
+     "format": "percent",
+     "group": "Profitability",
+     "key": "roa",
+     "label": "Return on assets",
+     "value": 0.1908572857142857
+    },
+    {
+     "format": "percent",
+     "group": "Profitability",
+     "key": "roe",
+     "label": "Return on equity",
+     "value": 0.24290927272727272
+    },
+    {
+     "format": "number",
+     "group": "Liquidity",
+     "key": "current_ratio",
+     "label": "Current ratio",
+     "value": 5.416666666666667
+    },
+    {
+     "format": "number",
+     "group": "Liquidity",
+     "key": "quick_ratio",
+     "label": "Quick ratio",
+     "value": 5.416666666666667
+    },
+    {
+     "format": "number",
+     "group": "Liquidity",
+     "key": "cash_ratio",
+     "label": "Cash ratio",
+     "value": 4.687936666666666
+    },
+    {
+     "format": "number",
+     "group": "Leverage",
+     "key": "debt_to_equity",
+     "label": "Debt to equity",
+     "value": 0.08642763636363636
+    },
+    {
+     "format": "percent",
+     "group": "Leverage",
+     "key": "debt_to_assets",
+     "label": "Debt to assets",
+     "value": 0.06790742857142858
+    },
+    {
+     "format": "number",
+     "group": "Leverage",
+     "key": "interest_cover",
+     "label": "Interest cover",
+     "value": 31.11111111111111
+    },
+    {
+     "format": "number",
+     "group": "Efficiency",
+     "key": "asset_turnover",
+     "label": "Asset turnover",
+     "value": 0.8457428571428571
+    },
+    {
+     "format": "days",
+     "group": "Efficiency",
+     "key": "dso",
+     "label": "Days sales outstanding",
+     "value": 55.318443633661026
+    },
+    {
+     "format": "days",
+     "group": "Efficiency",
+     "key": "dio",
+     "label": "Days inventory outstanding",
+     "value": 0.0
+    },
+    {
+     "format": "days",
+     "group": "Efficiency",
+     "key": "dpo",
+     "label": "Days payables outstanding",
+     "value": 81.99470877176086
+    },
+    {
+     "format": "days",
+     "group": "Efficiency",
+     "key": "ccc",
+     "label": "Cash conversion cycle",
+     "value": -26.67626513809983
+    }
+   ],
+   "text": "Gross margin: 85.97%\nOperating margin: 23.65%\nNet margin: 22.57%\nReturn on assets: 19.09%\nReturn on equity: 24.29%\nCurrent ratio: 5.42x\nQuick ratio: 5.42x\nCash ratio: 4.69x\nDebt to equity: 0.09x\nDebt to assets: 6.79%\nInterest cover: 31.11x\nAsset turnover: 0.85x\nDays sales outstanding: 55.3 days\nDays inventory outstanding: 0.0 days\nDays payables outstanding: 82.0 days\nCash conversion cycle: -26.7 days"
+  },
+  "tax_excl": {
+   "data": {
+    "gross": 1150.38,
+    "net": 1000.33,
+    "tax": 150.05
+   },
+   "text": "Net 1,000.33, tax 150.05, gross 1,150.38"
+  },
+  "tax_incl": {
+   "data": {
+    "gross": 1150.0,
+    "net": 1000.0,
+    "tax": 150.0
+   },
+   "text": "Net 1,000.00, tax 150.00, gross 1,150.00"
+  },
+  "variance": {
+   "data": [
+    [
+     "Revenue",
+     5920200.0,
+     5500000.0,
+     420200.0,
+     0.0764,
+     "favourable"
+    ],
+    [
+     "Rent",
+     120000.5,
+     110000.0,
+     10000.5,
+     0.09091363636363636,
+     "unfavourable"
+    ],
+    [
+     "Zero",
+     0.0,
+     0.0,
+     0.0,
+     null,
+     "favourable"
+    ]
+   ],
+   "text": "Line | Actual | Budget | Variance | Variance % | \n-------------------------------------------------\nRevenue | 5,920,200.00 | 5,500,000.00 | 420,200.00 | 0.0764 | favourable\nRent | 120,000.50 | 110,000.00 | 10,000.50 | 0.09091 | unfavourable\nZero | 0 | 0 | 0 |  | favourable"
+  },
+  "xnpv": {
+   "data": {
+    "xirr": 0.19427786921174328,
+    "xnpv": 437.1519900962569
+   },
+   "text": "XNPV: 437.15\nXIRR: 19.43%"
+  }
+ },
+ "dataset": {
+  "columns": [
+   "date",
+   "account",
+   "party",
+   "description",
+   "debit",
+   "credit"
+  ],
+  "row_count": 5000
+ },
+ "export_csv_head": [
+  "date,account,party,description,debit,credit",
+  "2026-01-01,4000.0,Party 0,Line 0,5306.0,486.5",
+  "2026-02-02,4001.0,Party 1,Line 1,2472.01,0.0",
+  "2026-03-03,4002.0,Party 2,Line 2,6469.02,0.0",
+  "2026-04-04,4003.0,Party 3,Line 3,792.03,38.5"
+ ],
+ "expr": {
+  "(1 + 2) * (3 + 4)": 21.0,
+  "1 / 0": null,
+  "1/3": 0.3333333333333333,
+  "ABS(-7.25) * 100": 725.0,
+  "MAX(1, 2) - MIN(3, 4)": -1.0,
+  "ROUND(-2.5, 0)": -3.0,
+  "ROUND(1234567.891, -3)": 1235000.0,
+  "ROUND(2.675, 2)": 2.68,
+  "ROUND(7250.5 * 1.15, 2)": 8338.08,
+  "SUM(1, 2.5, -0.5) / 3": 1.0
+ },
+ "journal_csv": [
+  "Date,Entry,Type,Account code,Account,Account class,Debit,Credit,Description,Party,Cost centre tags",
+  "2026-09-30,CLOSE-2026-09-001,Journal,6300,Audit fees,Expense,12500.0,,Audit fee accrual,,",
+  "2026-09-30,CLOSE-2026-09-001,Journal,2100,Accrued expenses,Liability,,12500.0,Audit fee accrual,,",
+  "2026-09-14,CLOSE-2026-09-002,Journal,6900,Bank charges,Expense,85.5,,Bank charges,,",
+  "2026-09-14,CLOSE-2026-09-002,Journal,1010,Bank \u2013 SNB,Asset,,85.5,Bank charges,,"
+ ],
+ "journal_rows": [
+  [
+   "2026-09-30",
+   "CLOSE-2026-09-001",
+   "Journal",
+   "6300",
+   "Audit fees",
+   "Expense",
+   12500.0,
+   null,
+   "Audit fee accrual",
+   null,
+   null
+  ],
+  [
+   "2026-09-30",
+   "CLOSE-2026-09-001",
+   "Journal",
+   "2100",
+   "Accrued expenses",
+   "Liability",
+   null,
+   12500.0,
+   "Audit fee accrual",
+   null,
+   null
+  ],
+  [
+   "2026-09-14",
+   "CLOSE-2026-09-002",
+   "Journal",
+   "6900",
+   "Bank charges",
+   "Expense",
+   85.5,
+   null,
+   "Bank charges",
+   null,
+   null
+  ],
+  [
+   "2026-09-14",
+   "CLOSE-2026-09-002",
+   "Journal",
+   "1010",
+   "Bank \u2013 SNB",
+   "Asset",
+   null,
+   85.5,
+   "Bank charges",
+   null,
+   null
+  ]
+ ],
+ "journal_xlsx": [
+  [
+   [
+    "Date",
+    "s"
+   ],
+   [
+    "Entry",
+    "s"
+   ],
+   [
+    "Type",
+    "s"
+   ],
+   [
+    "Account code",
+    "s"
+   ],
+   [
+    "Account",
+    "s"
+   ],
+   [
+    "Account class",
+    "s"
+   ],
+   [
+    "Debit",
+    "s"
+   ],
+   [
+    "Credit",
+    "s"
+   ],
+   [
+    "Description",
+    "s"
+   ],
+   [
+    "Party",
+    "s"
+   ],
+   [
+    "Cost centre tags",
+    "s"
+   ]
+  ],
+  [
+   [
+    "2026-09-30",
+    "s"
+   ],
+   [
+    "CLOSE-2026-09-001",
+    "s"
+   ],
+   [
+    "Journal",
+    "s"
+   ],
+   [
+    "6300",
+    "s"
+   ],
+   [
+    "Audit fees",
+    "s"
+   ],
+   [
+    "Expense",
+    "s"
+   ],
+   [
+    12500,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    "Audit fee accrual",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ]
+  ],
+  [
+   [
+    "2026-09-30",
+    "s"
+   ],
+   [
+    "CLOSE-2026-09-001",
+    "s"
+   ],
+   [
+    "Journal",
+    "s"
+   ],
+   [
+    "2100",
+    "s"
+   ],
+   [
+    "Accrued expenses",
+    "s"
+   ],
+   [
+    "Liability",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    12500,
+    "n"
+   ],
+   [
+    "Audit fee accrual",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ]
+  ],
+  [
+   [
+    "2026-09-14",
+    "s"
+   ],
+   [
+    "CLOSE-2026-09-002",
+    "s"
+   ],
+   [
+    "Journal",
+    "s"
+   ],
+   [
+    "6900",
+    "s"
+   ],
+   [
+    "Bank charges",
+    "s"
+   ],
+   [
+    "Expense",
+    "s"
+   ],
+   [
+    85.5,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    "Bank charges",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ]
+  ],
+  [
+   [
+    "2026-09-14",
+    "s"
+   ],
+   [
+    "CLOSE-2026-09-002",
+    "s"
+   ],
+   [
+    "Journal",
+    "s"
+   ],
+   [
+    "1010",
+    "s"
+   ],
+   [
+    "Bank \u2013 SNB",
+    "s"
+   ],
+   [
+    "Asset",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    85.5,
+    "n"
+   ],
+   [
+    "Bank charges",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ]
+  ],
+  [
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    "Total",
+    "s"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    "=SUM(G2:G5)",
+    "f"
+   ],
+   [
+    "=SUM(H2:H5)",
+    "f"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ],
+   [
+    null,
+    "n"
+   ]
+  ]
+ ],
+ "queries": {
+  "by_account_filtered": {
+   "columns": [
+    {
+     "format": "number",
+     "key": "g0",
+     "label": "account"
+    },
+    {
+     "format": "money",
+     "key": "m0",
+     "label": "debit"
+    },
+    {
+     "format": "money",
+     "key": "m1",
+     "label": "Avg of debit"
+    },
+    {
+     "format": "money",
+     "key": "m2",
+     "label": "Max of debit"
+    }
+   ],
+   "rows": [
+    [
+     4007.0,
+     167350.14,
+     3984.527142857143,
+     8708.47
+    ],
+    [
+     4017.0,
+     204362.94,
+     4865.784285714286,
+     8655.47
+    ],
+    [
+     4027.0,
+     178178.67,
+     4345.821219512195,
+     8447.87
+    ]
+   ]
+  },
+  "by_fy": {
+   "columns": [
+    {
+     "format": "text",
+     "key": "g0",
+     "label": "date (fiscal year)"
+    },
+    {
+     "format": "money",
+     "key": "m0",
+     "label": "debit"
+    }
+   ],
+   "rows": [
+    [
+     "FY2026",
+     5484951.47
+    ],
+    [
+     "FY2027",
+     16679015.53
+    ]
+   ]
+  },
+  "by_month": {
+   "columns": [
+    {
+     "format": "text",
+     "key": "g0",
+     "label": "date (month)"
+    },
+    {
+     "format": "money",
+     "key": "m0",
+     "label": "debit"
+    }
+   ],
+   "rows": [
+    [
+     "2026-01",
+     1806984.32
+    ],
+    [
+     "2026-02",
+     1887186.49
+    ],
+    [
+     "2026-03",
+     1790780.66
+    ],
+    [
+     "2026-04",
+     1846356.83
+    ],
+    [
+     "2026-05",
+     1939869.0
+    ],
+    [
+     "2026-06",
+     1747189.17
+    ],
+    [
+     "2026-07",
+     1945784.34
+    ],
+    [
+     "2026-08",
+     1837743.51
+    ],
+    [
+     "2026-09",
+     1862403.68
+    ],
+    [
+     "2026-10",
+     1816630.84
+    ],
+    [
+     "2026-11",
+     1861607.0
+    ],
+    [
+     "2026-12",
+     1821431.16
+    ]
+   ]
+  },
+  "contains": {
+   "columns": [
+    {
+     "format": "number",
+     "key": "m0",
+     "label": "Count"
+    }
+   ],
+   "rows": [
+    [
+     111
+    ]
+   ]
+  },
+  "total": {
+   "columns": [
+    {
+     "format": "money",
+     "key": "m0",
+     "label": "debit"
+    },
+    {
+     "format": "money",
+     "key": "m1",
+     "label": "credit"
+    },
+    {
+     "format": "number",
+     "key": "m2",
+     "label": "Count"
+    }
+   ],
+   "rows": [
+    [
+     22163967.0,
+     407062.5,
+     5000
+    ]
+   ]
+  }
+ }
+}
