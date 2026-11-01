@@ -156,10 +156,38 @@ class Router:
         return self.route("DELETE", path, **kw)
 
 
+class BodyTooLarge(Exception):
+    """Raised by ``read_body`` when a request body exceeds its limit."""
+
+
+async def read_body(request: Request, limit: int) -> bytes:
+    """The whole request body, read in chunks and refused the moment it exceeds ``limit`` bytes.
+
+    A ``Content-Length`` header is only a claim: a chunked request has none, and a wrong one is not checked by the
+    server before the body is handed over. Reading through ``request.stream()`` keeps the limit true whatever the
+    headers say, and stops reading as soon as it is passed, so a hostile body never sits in memory in full.
+    """
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > limit:
+        raise BodyTooLarge()
+    chunks: list[bytes] = []
+    size = 0
+    async for chunk in request.stream():
+        size += len(chunk)
+        if size > limit:
+            raise BodyTooLarge()
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
+MAX_JSON_BODY = 2 * 1024 * 1024
+
+
 async def parse_body(request: Request, model: type[BaseModel]) -> BaseModel:
-    raw = await request.body()
-    if len(raw) > 2 * 1024 * 1024:
-        raise Invalid("Request body is too large.")
+    try:
+        raw = await read_body(request, MAX_JSON_BODY)
+    except BodyTooLarge:
+        raise Invalid("Request body is too large.") from None
     try:
         data = json.loads(raw or b"{}")
     except json.JSONDecodeError as exc:

@@ -172,5 +172,121 @@ class OB15FormulaEngineRobustness(unittest.TestCase):
         self.assertEqual(expr.evaluate(expr.parse("ROUND(2.345, 2)"), lambda ref: 0), 2.35)
 
 
+class OB07BodyLimits(unittest.TestCase):
+    """Body limits hold whatever the Content-Length header says, and a hostile body is never read in full."""
+
+    def test_chunked_and_misdeclared_bodies_are_refused(self) -> None:
+        import desk_engine.routes.public as public
+
+        h = Harness()
+        try:
+            ws = h.setup_workspace(with_model=False)
+            key = h.api("POST", f"/api/w/{ws}/connections/custom", json={"label": "Push", "mode": "push"})["ingest_key"]
+            auth = {"authorization": f"Bearer {key}"}
+            old = public.INGEST_MAX_BYTES
+            public.INGEST_MAX_BYTES = 10_000   # the real cap is 100 MB; the test does not need to send that
+            try:
+                # chunked transfer: no Content-Length at all
+                r = h.client.post("/api/ingest/v1/accounting/profit-and-loss", content=(b"x" * 1024 for _ in range(100)),
+                                  headers=auth)
+                self.assertEqual(r.status_code, 413)
+                # a lying Content-Length
+                r = h.client.post("/api/ingest/v1/accounting/profit-and-loss", content=b"y" * 20_000,
+                                  headers={**auth, "content-length": "10"})
+                self.assertEqual(r.status_code, 413)
+            finally:
+                public.INGEST_MAX_BYTES = old
+            # the workflow hook and incoming webhooks share the helper
+            wf = h.api("POST", f"/api/w/{ws}/workflows", json={"name": "Hook", "enabled": True, "definition": {
+                "trigger": {"type": "webhook"},
+                "steps": [{"id": "tell", "name": "Tell", "type": "notify", "recipients": "me", "message": "hi"}]}})
+            secret = h.api("POST", f"/api/w/{ws}/workflows/{wf['id']}/webhook")["secret"]
+            r = h.client.post(f"/api/hooks/workflows/{wf['id']}", content=(b"z" * 1024 for _ in range(300)),
+                              headers={"authorization": f"Bearer {secret}"})
+            self.assertEqual(r.status_code, 413)
+            r = h.client.post(f"/api/hooks/workflows/{wf['id']}", json={"ok": 1},
+                              headers={"authorization": f"Bearer {secret}"})
+            self.assertEqual(r.status_code, 202, r.text)
+        finally:
+            h.close()
+
+
+    def test_reader_stops_at_the_limit(self) -> None:
+        """The server stops consuming a body the moment the limit is passed."""
+        import asyncio
+
+        from desk_engine.web import BodyTooLarge, read_body
+
+        class Req:
+            headers: dict = {}
+            seen = 0
+
+            async def stream(self):
+                for _ in range(1000):
+                    Req.seen += 1
+                    yield b"x" * 1024
+
+        with self.assertRaises(BodyTooLarge):
+            asyncio.run(read_body(Req(), 10_000))
+        self.assertLessEqual(Req.seen, 11)
+
+
+class OB11StreamReauthorisation(unittest.TestCase):
+    """An event stream opened by a member closes once that membership ends; nothing published after that reaches
+    the former member."""
+
+    def test_stream_closes_after_membership_is_removed(self) -> None:
+        import asyncio
+
+        import desk_engine.routes.threads as threads
+        from desk_engine.db import now
+        from desk_engine.security import new_token, token_hash
+
+        h = Harness("server")
+        try:
+            origin = {"origin": "https://desk.example.com"}
+            c = h.client
+            self.assertEqual(c.post("/api/auth/signup", json={"email": "o@acme.test", "name": "O", "password": PW}).status_code, 200)
+            ws = c.post("/api/workspaces", json={"name": "Acme", "base_currency": "USD"}, headers=origin).json()["id"]
+            t = c.post(f"/api/w/{ws}/threads", json={"title": "T"}, headers=origin).json()
+            # a viewer with a session of her own
+            db = h.engine.db
+            db.insert("users", {"id": "u_viewer", "email": "v@acme.test", "name": "V", "password_hash": None, "created_at": now()})
+            db.insert("members", {"workspace_id": ws, "user_id": "u_viewer", "role": "viewer", "created_at": now()})
+            token = new_token(32)
+            db.insert("sessions", {"id": token_hash(token), "user_id": "u_viewer", "created_at": now(),
+                                   "expires_at": now() + 3600, "last_seen": now(), "user_agent": "test"})
+            sent: list[bytes] = []
+            old = threads.KEEP_ALIVE_SECONDS
+            threads.KEEP_ALIVE_SECONDS = 0.2
+
+            async def run() -> None:
+                scope = {"type": "http", "method": "GET", "scheme": "https", "server": ("desk.example.com", 443),
+                         "path": f"/api/w/{ws}/threads/{t['id']}/events", "raw_path": b"/", "query_string": b"",
+                         "headers": [(b"host", b"desk.example.com"), (b"authorization", f"Bearer {token}".encode())],
+                         "app": h.app, "client": ("127.0.0.1", 1)}
+
+                async def receive():
+                    await asyncio.sleep(3600)   # the client never disconnects on its own
+
+                async def send(message):
+                    if message["type"] == "http.response.body":
+                        sent.append(message.get("body", b""))
+                        if sent[-1] == b": connected\n\n":
+                            db.execute("DELETE FROM members WHERE workspace_id = ? AND user_id = 'u_viewer'", (ws,))
+                            h.engine.events.publish(t["id"], {"type": "message", "message": {"content": "secret"}})
+
+                await asyncio.wait_for(h.app(scope, receive, send), 5)
+
+            try:
+                asyncio.run(run())
+            finally:
+                threads.KEEP_ALIVE_SECONDS = old
+            body = b"".join(sent)
+            self.assertTrue(body.startswith(b": connected"))
+            self.assertNotIn(b"data:", body, "an event reached a user who is no longer a member")
+        finally:
+            h.close()
+
 if __name__ == "__main__":
     unittest.main()
