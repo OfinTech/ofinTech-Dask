@@ -132,6 +132,5 @@ Each entry: reason, components, compatibility, verification.
    stays `read`), or specify another split.
 2. **OB-05 behaviour change** — confirm that refusing unauthenticated plaintext objects by default is acceptable
    for existing installations (the migration command exists).
-3. **Lockfiles** — generate `package-lock.json` in `ui/` and `desktop/` from a machine with registry access and
-   switch CI to `npm ci`; the audit environment cannot.
+3. **Lockfiles** — done: the `lockfiles` workflow generated and committed them (e30b1b1); CI and the image use `npm ci`.
 4. **Backups** — choose how `backup.sh` output is encrypted (age/GPG key held by the operator).

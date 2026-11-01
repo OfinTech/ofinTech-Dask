@@ -49,7 +49,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'macOS' && secrets.CSC_LINK != '' }}
         run: |
           case "$SERVER" in https://*) ;; *) echo "The server must be an https:// address"; exit 1;; esac
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run build
           npx electron-builder --config electron-builder.cloud.yml ${{ matrix.target }} --publish never \
             -c.extraMetadata.deskEdition.defaultServer="$SERVER"
