@@ -56,14 +56,23 @@ EVENT_GROUPS: dict[str, str] = {
     "test": "test events sent from the Connections page",
 }
 SKIP_DETAIL_KEYS = {"secret_id", "key", "token", "password", "api_key", "ingest_key", "bot_token", "secret"}
+# any key containing one of these is dropped too, so a credential under a name nobody listed (client_secret,
+# refresh_token, authorization, x-api-key) never leaves either
+_CREDENTIAL_FRAGMENTS = ("secret", "token", "password", "passwd", "api_key", "apikey", "authorization", "credential",
+                         "cookie", "private")
 
 
 def _clean(detail: Any) -> Any:
-    """Audit details without anything that looks like a credential."""
+    """Audit details without anything that looks like a credential. Keys are judged by name; string values that are
+    URLs lose their query string, where access tokens tend to travel."""
     if isinstance(detail, dict):
-        return {k: _clean(v) for k, v in detail.items() if k.lower() not in SKIP_DETAIL_KEYS}
+        return {k: _clean(v) for k, v in detail.items()
+                if k.lower() not in SKIP_DETAIL_KEYS
+                and not any(f in k.lower().replace("-", "_") for f in _CREDENTIAL_FRAGMENTS)}
     if isinstance(detail, list):
         return [_clean(v) for v in detail]
+    if isinstance(detail, str) and detail[:8].lower().startswith(("https://", "http://")):
+        return detail.split("?", 1)[0].split("#", 1)[0]
     return detail
 
 
