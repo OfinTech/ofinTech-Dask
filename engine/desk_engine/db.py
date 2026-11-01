@@ -759,6 +759,65 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE sessions ADD COLUMN reauth_at REAL;
     """,
+    # 21 — embedded agent gateway: partner integrations bound to one workspace through a viewer service user,
+    #      short-lived end-user sessions (hashes only), the Desk thread behind each partner thread, and usage per run
+    """
+    CREATE TABLE embedded_integrations (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'active',
+        service_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        key_hash TEXT NOT NULL UNIQUE,
+        key_prefix TEXT NOT NULL,
+        allowed_origins TEXT NOT NULL DEFAULT '[]',
+        capabilities TEXT NOT NULL DEFAULT '[]',
+        limits TEXT NOT NULL DEFAULT '{}',
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        last_used_at REAL,
+        rotated_at REAL,
+        revoked_at REAL
+    );
+    CREATE INDEX ix_embedded_integrations_ws ON embedded_integrations(workspace_id, created_at DESC);
+    CREATE TABLE embedded_sessions (
+        id TEXT PRIMARY KEY,
+        integration_id TEXT NOT NULL REFERENCES embedded_integrations(id) ON DELETE CASCADE,
+        token_hash TEXT NOT NULL UNIQUE,
+        subject_hash TEXT NOT NULL,
+        subject_label TEXT,
+        locale TEXT NOT NULL DEFAULT 'en',
+        created_at REAL NOT NULL,
+        expires_at REAL NOT NULL,
+        revoked_at REAL,
+        last_used_at REAL
+    );
+    CREATE INDEX ix_embedded_sessions_integration ON embedded_sessions(integration_id, created_at DESC);
+    CREATE TABLE embedded_threads (
+        integration_id TEXT NOT NULL REFERENCES embedded_integrations(id) ON DELETE CASCADE,
+        subject_hash TEXT NOT NULL,
+        client_thread_id TEXT NOT NULL,
+        thread_id TEXT NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
+        created_at REAL NOT NULL,
+        PRIMARY KEY (integration_id, subject_hash, client_thread_id)
+    );
+    CREATE UNIQUE INDEX ux_embedded_threads_thread ON embedded_threads(thread_id);
+    CREATE TABLE embedded_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        integration_id TEXT NOT NULL,
+        session_id TEXT,
+        run_id TEXT,
+        subject_hash TEXT,
+        agent_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
+        tool_calls INTEGER NOT NULL DEFAULT 0,
+        duration_ms INTEGER NOT NULL DEFAULT 0,
+        created_at REAL NOT NULL
+    );
+    CREATE INDEX ix_embedded_usage_integration ON embedded_usage(integration_id, created_at);
+    """,
 ]
 
 

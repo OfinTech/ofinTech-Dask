@@ -18,6 +18,11 @@ def all_routes(engine: Engine) -> list[Any]:
                    connections, mcp, workflows, comments, memory, costcentres, analysis, overview, webhooks, close):
         module.router.bind(engine)
         routes.extend(module.router.routes)
+    from ..embedded import routes as embedded_routes
+
+    embedded_routes.admin.bind(engine)
+    routes.extend(embedded_routes.admin.routes)
+    routes.extend(embedded_routes.public_routes(engine))
     return routes
 
 

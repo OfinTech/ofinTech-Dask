@@ -1,0 +1,68 @@
+/* @ofintech/embedded-agent — neutral styles; override the custom properties to match the host application. */
+.ofe-copilot {
+  --ofe-bg: #ffffff; --ofe-fg: #16202a; --ofe-muted: #5d6b7a; --ofe-line: #dde3ea; --ofe-accent: #0f5c8c;
+  --ofe-ok: #1d7a4a; --ofe-warn: #a65a00; --ofe-bad: #b3261e; --ofe-user: #eef3f8; --ofe-radius: 10px;
+  --ofe-font: "IBM Plex Sans Arabic", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex; flex-direction: column; gap: 12px; background: var(--ofe-bg); color: var(--ofe-fg);
+  font-family: var(--ofe-font); font-size: 14px; line-height: 1.5; border: 1px solid var(--ofe-line);
+  border-radius: var(--ofe-radius); padding: 16px; max-width: 100%; box-sizing: border-box;
+}
+.ofe-copilot * { box-sizing: border-box; }
+.ofe-header h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.ofe-muted { color: var(--ofe-muted); font-size: 12px; }
+.ofe-readonly { margin: 0; }
+.ofe-turns { display: flex; flex-direction: column; gap: 12px; min-height: 120px; max-height: 60vh; overflow: auto; padding-inline-end: 4px; }
+.ofe-turn { display: flex; flex-direction: column; gap: 8px; }
+.ofe-user .ofe-text { background: var(--ofe-user); padding: 8px 12px; border-radius: var(--ofe-radius); align-self: flex-end; max-width: 85%; white-space: pre-wrap; }
+.ofe-assistant .ofe-text { white-space: pre-wrap; }
+.ofe-tools { display: flex; flex-wrap: wrap; gap: 6px; }
+.ofe-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--ofe-line); font-size: 12px; color: var(--ofe-muted); }
+.ofe-badge.ok { color: var(--ofe-ok); border-color: currentColor; }
+.ofe-badge.warn { color: var(--ofe-warn); border-color: currentColor; }
+.ofe-components { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.ofe-components > .ofe-block, .ofe-components > .ofe-chart { grid-column: 1 / -1; }
+.ofe-block { border: 1px solid var(--ofe-line); border-radius: var(--ofe-radius); padding: 10px 12px; }
+.ofe-title { font-weight: 600; margin-bottom: 6px; }
+.ofe-kpi { border: 1px solid var(--ofe-line); border-radius: var(--ofe-radius); padding: 10px 12px; }
+.ofe-kpi-label { color: var(--ofe-muted); font-size: 12px; }
+.ofe-kpi-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ofe-kpi-meta { display: flex; gap: 8px; font-size: 12px; color: var(--ofe-muted); }
+.ofe-tone-good .ofe-kpi-value { color: var(--ofe-ok); } .ofe-tone-warn .ofe-kpi-value { color: var(--ofe-warn); } .ofe-tone-bad .ofe-kpi-value { color: var(--ofe-bad); }
+.num { font-variant-numeric: tabular-nums; text-align: end; } .neg { color: var(--ofe-bad); } .pos { color: var(--ofe-ok); }
+.ofe-table-wrap { overflow: auto; max-height: 340px; }
+.ofe-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.ofe-table caption { text-align: start; font-weight: 600; padding-bottom: 6px; }
+.ofe-table th, .ofe-table td { padding: 6px 8px; border-bottom: 1px solid var(--ofe-line); text-align: start; }
+.ofe-table th.num, .ofe-table td.num { text-align: end; }
+.ofe-table thead th { position: sticky; top: 0; background: var(--ofe-bg); }
+.ofe-chart svg { width: 100%; height: auto; display: block; }
+.ofe-axis { stroke: var(--ofe-line); stroke-width: 1; }
+.ofe-line { stroke-width: 2; } .ofe-line.s1 { stroke: var(--ofe-accent); } .ofe-line.s2 { stroke: var(--ofe-warn); } .ofe-line.s3 { stroke: var(--ofe-ok); } .ofe-line.s4 { stroke: var(--ofe-muted); }
+.ofe-tick { font-size: 10px; fill: var(--ofe-muted); }
+.ofe-legend { display: flex; gap: 12px; font-size: 12px; color: var(--ofe-muted); margin-top: 4px; }
+.ofe-legend-item::before { content: ""; display: inline-block; width: 10px; height: 3px; margin-inline-end: 6px; vertical-align: middle; background: var(--ofe-muted); }
+.ofe-legend-item.s1::before { background: var(--ofe-accent); } .ofe-legend-item.s2::before { background: var(--ofe-warn); } .ofe-legend-item.s3::before { background: var(--ofe-ok); }
+.ofe-list { list-style: none; margin: 0; padding: 0; } .ofe-list li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--ofe-line); }
+.ofe-list li:last-child { border-bottom: 0; }
+.ofe-total { display: flex; justify-content: space-between; font-weight: 600; padding-top: 6px; }
+.ofe-items li { flex-direction: column; gap: 2px; } .ofe-item-main, .ofe-item-side { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ofe-ref { font-weight: 600; }
+.ofe-sources ol { margin: 0; padding-inline-start: 20px; } .ofe-snippet { margin-top: 2px; }
+.ofe-linklike { background: none; border: 0; padding: 0; color: var(--ofe-accent); cursor: pointer; font: inherit; text-decoration: underline; }
+.ofe-approval { border-color: var(--ofe-warn); } .ofe-approval-summary { margin: 4px 0; }
+.ofe-risk-warn { border-color: var(--ofe-warn); } .ofe-risk-high { border-color: var(--ofe-bad); } .ofe-figures { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ofe-notice { color: var(--ofe-muted); font-size: 12px; font-style: italic; }
+.ofe-error { color: var(--ofe-bad); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ofe-compose { display: flex; gap: 8px; }
+.ofe-compose input { flex: 1; padding: 10px 12px; border: 1px solid var(--ofe-line); border-radius: var(--ofe-radius); font: inherit; color: inherit; background: var(--ofe-bg); }
+.ofe-compose input:focus-visible, .ofe-btn:focus-visible, .ofe-linklike:focus-visible { outline: 2px solid var(--ofe-accent); outline-offset: 2px; }
+.ofe-btn { padding: 10px 14px; border: 1px solid var(--ofe-line); border-radius: var(--ofe-radius); background: var(--ofe-bg); color: inherit; font: inherit; cursor: pointer; text-decoration: none; display: inline-block; }
+.ofe-btn.ofe-primary { background: var(--ofe-accent); color: #fff; border-color: var(--ofe-accent); }
+.ofe-btn:disabled { opacity: .5; cursor: default; }
+.ofe-fallback { font-size: 12px; white-space: pre-wrap; }
+.ofe-empty { color: var(--ofe-muted); }
+@media (prefers-reduced-motion: no-preference) { .ofe-thinking { animation: ofe-pulse 1.2s ease-in-out infinite; } }
+@keyframes ofe-pulse { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@media (prefers-color-scheme: dark) {
+  .ofe-copilot { --ofe-bg: #0f1419; --ofe-fg: #e6edf3; --ofe-muted: #9aa7b4; --ofe-line: #2a3440; --ofe-user: #1b2530; --ofe-accent: #6cb6e8; --ofe-ok: #5fbf85; --ofe-warn: #e0a24a; --ofe-bad: #f0776f; }
+}
