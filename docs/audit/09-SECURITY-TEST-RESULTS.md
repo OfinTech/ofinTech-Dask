@@ -3,7 +3,7 @@
 Updated with every round. All runs are against throw-away engine instances with mocked LLM, accounting, Google,
 Telegram and S3 endpoints; nothing touched a live system.
 
-## Run of 1 November 2026 (after R7)
+## Run of 1 November 2026 (after R8, part 1)
 
 Environment: Linux, Python 3.13.18, SQLite 3.x, Tesseract 5 (eng), no LibreOffice. Package registries were not
 reachable, so the installed versions are the preinstalled ones (starlette 1.7.0, pydantic 2.13.5, httpx2 2.13.1,
@@ -11,8 +11,9 @@ cryptography 50.0.1, pypdf 6.17.0; the rest as pinned). CI re-runs the same suit
 
 | Suite | Result |
 |---|---|
-| `python -m unittest discover -s tests -t .` | **206 tests, OK, ~20 s** |
-| `tests/test_audit_regressions.py` (new) | 24 tests, OK; each class was also run against the pre-fix code and fails there |
+| `python -m unittest discover -s tests -t .` | **220 tests, OK, ~21 s** |
+| `tests/test_audit_regressions.py` (new) | 25 tests, OK; each class was also run against the pre-fix code and fails there |
+| `tests/test_ai_security.py` (new, doc 06) | 13 tests, OK |
 | `tests/test_security_boundaries.py` (existing) | 26 tests, OK (payments, sealed workspace/server, masking, socket- and DNS-level blocking) |
 | `tests/test_team_server.py`, `test_site_auth.py`, `test_api_desktop.py` | OK (CSRF, isolation, SSRF at save time, local token and Host guard) |
 | `ruff check --select S --ignore S101,S110,S314,S603,S608 desk_engine` | 0 findings |
@@ -20,8 +21,9 @@ cryptography 50.0.1, pypdf 6.17.0; the rest as pinned). CI re-runs the same suit
 | Mermaid diagrams in `docs/audit/01` | 4/4 render with `mmdc` |
 
 Not run here (no registry or Docker access): UI/desktop `tsc --noEmit`, Playwright smoke test, Docker image
-build, gitleaks, pip-audit, npm audit, Trivy. They run in the `security` and `team-server-image` CI jobs added in
-R6; the first run's output belongs in this table.
+build, Trivy. CI results on `main` (run for 8e1b39c): `security` job green (gitleaks over 54+ commits after
+allow-listing six documented fixtures, ruff S rules, pip-audit on the pinned requirements, npm audit), `test`
+green, desktop installers green; the Trivy step runs from fa391df.
 
 ## Controlled probes (reproductions, all local)
 
@@ -46,6 +48,5 @@ R6; the first run's output belongs in this table.
 ## Gaps still to cover (see roadmap R7–R8)
 
 - A larger malicious document corpus (3,000-page PDFs, pathological single pages) under a time budget; zip bombs and EPS-as-PNG are covered.
-- The 15-case AI security suite of document 06 (direct/indirect injection, memory poisoning, MCP manipulation,
-  fabricated figures, cross-tenant leakage through the agent).
+- A reviewer-manipulation case (cell text addressing the file reviewer) for the AI suite.
 - Performance: concurrent chat turns, a 400k-line ledger import, SQLite contention on the event loop.

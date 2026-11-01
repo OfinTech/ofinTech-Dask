@@ -15,11 +15,11 @@ suite and the change is on `main`.
 | R5 | OB-08 (P2, two of three parts) | 78644c1 | 2 | done; one owner decision open |
 | R6 | OB-17 (P2), OB-18 (part), audit documents | this commit | — (CI-side) | done; CI run pending |
 | R7 | OB-06 parser limits, Caddy body limit, OB-19 masker false positive | d5b6ba0, this commit | 3 | done |
-| R8 | OB-09 prompt-injection hardening, OB-08 effects, OB-10 tool-list change, `/mcp` rate limit, AI security test suite (doc 06) | — | — | planned |
+| R8 | OB-09 skills gate (done), AI security suite + doc 06 (done), dependency bumps (done); OB-08 effects, OB-10 tool-list change, `/mcp` rate limit, structural delimiting | e705701, 8e1b39c, fa391df | 14 | partly done |
 | R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups, IP pinning | — | — | planned |
 | R10 | Threat model (03), API review (05), DB review (04), target architecture (07), readiness (10) | — | — | in progress |
 
-Engine suite after R7: **206 tests, all passing** (182 before the audit; 24 added, 1 rewritten).
+Engine suite after R8 (part 1): **220 tests, all passing** (182 before the audit; 38 added, 1 rewritten). CI: the `security` job is green on `main` (gitleaks, ruff S, pip-audit, npm audit); the Trivy image scan runs from fa391df on.
 
 ## Implementation record
 
@@ -90,6 +90,14 @@ Each entry: reason, components, compatibility, verification.
   PDF that takes more than 15 minutes of OCR is indexed partially instead of failing.
 - **Verification:** `OB06ParserLimits` (2), `OB19MaskingKeepsEngineIds`; full suite 206 OK; `test_data`'s
   garbage-file contract kept (non-zip data is left to each parser's own error).
+
+### R8 (part 1) — e705701, 8e1b39c, fa391df · Skills gate, dependency updates, AI security suite
+- **Components:** `skills/loader.py`, `routes/skills.py`, `docs/SKILLS.md`; `engine/requirements.txt`,
+  `pyproject.toml` (Pillow 13.0.0, pypdf 6.21.4 from Dependabot's security group); `tests/test_ai_security.py`,
+  `docs/audit/06-AI-SECURITY-TESTING.md`; `.gitleaks.toml`; Trivy step.
+- **Compatibility:** an editor's new skill now starts off (admins turn it on); a custom skill cannot take a
+  built-in's name (the UI already names copies `<name>-custom`).
+- **Verification:** `OB09SkillsNeedAnAdmin`; 13 AI security tests; full suite 220 OK; CI security job green.
 
 ## Accepted security exceptions
 
