@@ -13,6 +13,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, createWriteStream } from "node:fs";
 import { join } from "node:path";
+import { PROTOCOL, handoffCode, isAcceptableServerUrl, isAppUrl as appUrlOf, isOpenableExternally, isSetupPage, routeFromDeepLink, trustedSender as senderOk } from "./guards";
 
 type Config = { mode: "local" | "remote"; serverUrl?: string; serverOnly?: boolean };
 
@@ -47,7 +48,6 @@ if (!app.requestSingleInstanceLock()) {
 
 // ---- links from Excel and Word files: ofintech-desk://open/<app path>?ws=<workspace> ---------------------
 // The path is only ever used as the hash route of the app's own page; nothing in it is executed or fetched.
-const PROTOCOL = "ofintech-desk";
 let pendingDeepLink: string | null = null;
 if (process.defaultApp && process.argv.length >= 2) {
   app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [process.argv[1]]);
@@ -55,23 +55,6 @@ if (process.defaultApp && process.argv.length >= 2) {
   app.setAsDefaultProtocolClient(PROTOCOL);
 }
 
-function routeFromDeepLink(raw: string): string | null {
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== `${PROTOCOL}:` || u.hostname !== "open") return null;
-    const path = u.pathname.replace(/^\/+/, "");
-    if (!/^[A-Za-z0-9_\-/]{1,200}$/.test(path)) return null;
-    const params = new URLSearchParams();
-    for (const key of ["ws", "page", "message", "cell"]) {
-      const v = u.searchParams.get(key);
-      if (v && /^[A-Za-z0-9_\-!. &]{1,120}$/.test(v)) params.set(key, v);
-    }
-    const q = params.toString();
-    return `#/${path}${q ? `?${q}` : ""}`;
-  } catch {
-    return null;
-  }
-}
 
 // Google sign-in from the app: Google does not allow sign-in inside embedded browsers, so it runs in the system
 // browser. The page asks for a challenge (the app keeps the verifier); the browser returns a one-time code through
@@ -79,25 +62,20 @@ function routeFromDeepLink(raw: string): string | null {
 let handoffVerifier = "";
 
 function handoff(raw: string): boolean {
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== `${PROTOCOL}:` || u.hostname !== "open" || u.pathname.replace(/^\/+/, "") !== "auth") return false;
-    const code = u.searchParams.get("handoff") || "";
-    const config = readConfig();
-    if (!/^[A-Za-z0-9_-]{20,100}$/.test(code) || !handoffVerifier || config.mode !== "remote" || !config.serverUrl || !mainWindow) {
-      return true;
-    }
-    const target = new URL("/api/auth/desktop-handoff", config.serverUrl);
-    target.searchParams.set("code", code);
-    target.searchParams.set("verifier", handoffVerifier);
-    handoffVerifier = "";
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-    void mainWindow.loadURL(target.toString());
-    return true;
-  } catch {
-    return false;
+  const code = handoffCode(raw);
+  if (code === null) {
+    try { const u = new URL(raw); return u.protocol === `${PROTOCOL}:` && u.hostname === "open" && u.pathname.replace(/^\/+/, "") === "auth"; } catch { return false; }
   }
+  const config = readConfig();
+  if (!handoffVerifier || config.mode !== "remote" || !config.serverUrl || !mainWindow) return true;
+  const target = new URL("/api/auth/desktop-handoff", config.serverUrl);
+  target.searchParams.set("code", code);
+  target.searchParams.set("verifier", handoffVerifier);
+  handoffVerifier = "";
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
+  void mainWindow.loadURL(target.toString());
+  return true;
 }
 
 function openDeepLink(raw: string): void {
@@ -238,18 +216,11 @@ function stopEngine(): void {
 // ---- windows ---------------------------------------------------------------------------------------
 
 function isAppUrl(url: string): boolean {
-  try {
-    return new URL(url).origin === appOrigin;
-  } catch {
-    return false;
-  }
+  return appUrlOf(url, appOrigin);
 }
 
 function openSafe(url: string): void {
-  try {
-    const u = new URL(url);
-    if (u.protocol === "https:" || u.protocol === "http:") void shell.openExternal(u.toString());
-  } catch { /* ignore malformed */ }
+  if (isOpenableExternally(url)) void shell.openExternal(new URL(url).toString());
 }
 
 function createWindow(url: string): BrowserWindow {
@@ -299,18 +270,9 @@ function connectWindow(): void {
 // Every channel checks which frame is asking: the app's own origin, or the two bundled local pages. A frame
 // from anywhere else (a navigation that slipped through, an iframe) gets nothing.
 
-function isSetupPage(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return u.protocol === "file:" && /\/static\/(connect|offline)\.html$/.test(u.pathname);
-  } catch {
-    return false;
-  }
-}
 
 function trustedSender(event: { senderFrame?: { url: string } | null }): boolean {
-  const url = event.senderFrame?.url || "";
-  return isAppUrl(url) || isSetupPage(url);
+  return senderOk(event.senderFrame?.url, appOrigin);
 }
 
 ipcMain.on("desk:bridge", (event) => {
@@ -329,7 +291,7 @@ ipcMain.handle("desk:set-server", async (event, url: unknown) => {
   if (url === null) {
     writeConfig({ mode: "local" });
   } else {
-    if (typeof url !== "string" || !/^https:\/\/[^\s/]+/.test(url)) return { ok: false, error: "Enter an https:// address." };
+    if (!isAcceptableServerUrl(url)) return { ok: false, error: "Enter an https:// address." };
     try {
       const resp = await fetch(new URL("/health", url).toString());
       const body = await resp.json();
