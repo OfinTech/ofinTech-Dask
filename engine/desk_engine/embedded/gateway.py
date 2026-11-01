@@ -186,10 +186,12 @@ class Embedded:
                 for ev in translator.translate(desk_event):
                     yield agui.sse(ev)
             status = "done" if translator.finished and translator.final_text is not None else self._run_status(desk_run_id)
-        except asyncio.CancelledError:
-            # the client went away: stop the work it asked for, as the Desk UI's stop button would
-            self._cancel(thread["id"], "The embedded client disconnected.")
-            status = "cancelled"
+        except (asyncio.CancelledError, GeneratorExit):
+            # the client went away (the server cancels the stream task, or closes the generator): stop the work it
+            # asked for, as the Desk UI's stop button would
+            if not translator.finished:
+                self._cancel(thread["id"], "The embedded client disconnected.")
+                status = "cancelled"
             raise
         finally:
             hub.unsubscribe(thread["id"], queue)
