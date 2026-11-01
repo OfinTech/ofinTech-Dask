@@ -367,9 +367,10 @@ app.whenReady().then(async () => {
   // The computer is locked, put to sleep or left: the workspace is hidden at once (the page locks itself after
   // its inactivity window too; this makes the two moments the same). On resume the page asks the engine or the
   // server how much of the session is really left instead of trusting a clock that stood still.
-  for (const event of ["lock-screen", "suspend", "shutdown"] as const) {
-    powerMonitor.on(event, () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send("desk:lock", event); });
-  }
+  const lockAll = (why: string) => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send("desk:lock", why); };
+  powerMonitor.on("lock-screen", () => lockAll("lock-screen"));
+  powerMonitor.on("suspend", () => lockAll("suspend"));
+  powerMonitor.on("shutdown", () => lockAll("shutdown"));
   powerMonitor.on("resume", () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send("desk:resume"); });
   buildMenu();
   const config = readConfig();
