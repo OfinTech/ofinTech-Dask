@@ -321,9 +321,9 @@ def main() -> int:
             tab2.clock.install()
             open_ledger(tab2)
             # logout in tab 1 (Settings → Sign out) propagates to tab 2 through localStorage
-            page.goto(f"{server.base}/#/settings")
+            page.goto(f"{server.base}/#/settings/account")
             page.reload()
-            page.wait_for_selector("text=Sign out", timeout=15000)
+            page.wait_for_selector("button:has-text('Sign out')", timeout=15000)
             page.click("button:has-text('Sign out'):not(:has-text('other'))")
             page.wait_for_selector("form input[type=email]", timeout=15000)
             tab2.wait_for_selector("form input[type=email]", timeout=15000)
@@ -383,7 +383,7 @@ def main() -> int:
             p45.wait_for_timeout(500)
             cfg = api(p45, "GET", "/api/session")["body"]["idle_minutes"]
             api(p45, "POST", "/api/workspaces", {"name": "Acme 45", "base_currency": "USD"})
-            p45.goto(s45.base + "/#/settings")
+            p45.goto(s45.base + "/#/settings/account")
             p45.reload()
             p45.wait_for_selector(".shell", timeout=15000)
             advance(p45, s45, email, 42 * MIN)
