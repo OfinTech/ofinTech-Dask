@@ -1,0 +1,41 @@
+# Runs the browser session tests (OP-12) against a real engine with the built UI and commits the evidence
+# (JSON summary and screenshots) under docs/audit/evidence/session/, so the audit report can point at files in
+# the repository rather than at an expiring CI artifact. Run it by hand from the Actions tab or with
+# `gh workflow run session-evidence.yml`. The same tests also gate every push (build.yml).
+name: session-evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  evidence:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v7
+        with: { node-version: "24" }
+      - name: Build the UI
+        working-directory: ui
+        run: |
+          npm ci --no-audit --no-fund
+          node build.mjs
+      - name: Browser session tests
+        run: |
+          pip install -r engine/requirements.txt playwright==1.63.0
+          python -m playwright install --with-deps chromium
+          python e2e/session_browser.py e2e-output
+      - name: Commit the evidence
+        run: |
+          mkdir -p docs/audit/evidence/session
+          rm -f docs/audit/evidence/session/*
+          cp e2e-output/session/* docs/audit/evidence/session/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/audit/evidence/session
+          git diff --cached --quiet || git commit -m "Record the browser session test evidence (OP-12) for $(git rev-parse --short HEAD)"
+          git push
