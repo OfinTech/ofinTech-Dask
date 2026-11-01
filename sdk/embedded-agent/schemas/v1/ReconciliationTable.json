@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/ReconciliationTable.json",
+  "title": "ReconciliationTable",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "columns": {
+      "type": "array",
+      "maxItems": 40,
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "money",
+              "percent",
+              "date"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "label"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rows": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "array",
+        "maxItems": 40,
+        "items": {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "matched": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unmatched": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "version",
+    "columns",
+    "rows"
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/UnmatchedTransactions.json",
+  "title": "UnmatchedTransactions",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reference": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "party": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3
+          },
+          "days_overdue": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "reference",
+          "amount"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "items"
+  ]
+}

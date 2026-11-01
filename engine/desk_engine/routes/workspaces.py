@@ -145,6 +145,9 @@ async def set_role(ctx: Ctx) -> dict[str, Any]:
     if current is None:
         raise NotFound("Member not found.")
     new_role = ctx.body.role
+    if new_role != "viewer" and ctx.engine.db.one("SELECT 1 FROM embedded_integrations WHERE service_user_id = ?", (target,)):
+        # the service user behind an embedded integration is a viewer by construction (docs/embedded/ARCHITECTURE.md)
+        raise Forbidden("An embedded integration's service user stays a viewer.", code="service_user_role")
     if (new_role == "owner" or current["role"] == "owner") and ctx.role != "owner":
         raise Forbidden("Only owners can grant or remove the owner role.")
     if current["role"] == "owner" and new_role != "owner" and _owner_count(ctx) <= 1:

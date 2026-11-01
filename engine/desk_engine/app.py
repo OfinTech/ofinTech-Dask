@@ -100,6 +100,8 @@ class Engine:
         self.operations = Operations(self)
         self.webhooks = Webhooks(self)
         self.close = Close(self)
+        from .embedded.gateway import Embedded
+        self.embedded = Embedded(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
 
