@@ -15,6 +15,7 @@ from ..errors import Forbidden, Invalid, NotFound
 from ..web import Ctx, Router
 
 router = Router()
+KEEP_ALIVE_SECONDS = 15  # how often an idle event stream sends a comment, and re-checks its authorisation
 
 
 def thread_for(ctx: Ctx, thread_id: str) -> dict[str, Any]:
@@ -164,6 +165,23 @@ async def events(ctx: Ctx) -> StreamingResponse:
     queue = hub.subscribe(t["id"])
     request = ctx.request
 
+    engine = ctx.engine
+
+    def still_allowed() -> bool:
+        """The stream was authorised when it opened; a session that has ended or a membership that was removed
+        since must close it, so the check is repeated at every keep-alive and before every event."""
+        from ..errors import AppError
+        from ..web import Ctx as _Ctx, authenticate, load_workspace
+
+        try:
+            user = authenticate(engine, request)
+            c = _Ctx(request=request, engine=engine, user=user)
+            load_workspace(c, ctx.ws_id, "viewer")
+            thread_for(c, t["id"])
+        except AppError:
+            return False
+        return True
+
     async def stream() -> AsyncIterator[bytes]:
         try:
             yield b": connected\n\n"
@@ -171,10 +189,14 @@ async def events(ctx: Ctx) -> StreamingResponse:
                 if await request.is_disconnected():
                     break
                 try:
-                    event = await asyncio.wait_for(queue.get(), 15)
+                    event = await asyncio.wait_for(queue.get(), KEEP_ALIVE_SECONDS)
                 except TimeoutError:
+                    if not still_allowed():
+                        break
                     yield b": keep-alive\n\n"
                     continue
+                if not still_allowed():
+                    break
                 yield f"data: {json.dumps(event, default=str)}\n\n".encode()
         finally:
             hub.unsubscribe(t["id"], queue)

@@ -17,6 +17,7 @@ from starlette.routing import Route
 from ..db import loads
 from ..errors import AppError
 from ..security import hmac_sha256_hex
+from ..web import BodyTooLarge, read_body
 
 log = logging.getLogger("desk.public")
 
@@ -118,7 +119,9 @@ async def telegram_hook(request: Request) -> Response:
     if not hmac.compare_digest(given, secret.get("webhook_secret", "")):
         return PlainTextResponse("forbidden", status_code=403)
     try:
-        update = json.loads(await request.body())
+        update = json.loads(await read_body(request, 1024 * 1024))
+    except BodyTooLarge:
+        return PlainTextResponse("too large", status_code=413)
     except json.JSONDecodeError:
         return PlainTextResponse("bad request", status_code=400)
     import asyncio
@@ -140,7 +143,10 @@ async def whatsapp_hook(request: Request) -> Response:
                                                                     secret.get("verify_token", "")):
             return PlainTextResponse(q.get("hub.challenge", ""))
         return PlainTextResponse("forbidden", status_code=403)
-    body = await request.body()
+    try:
+        body = await read_body(request, 1024 * 1024)
+    except BodyTooLarge:
+        return PlainTextResponse("too large", status_code=413)
     signature = request.headers.get("x-hub-signature-256", "")
     expected = "sha256=" + hmac_sha256_hex(secret["app_secret"], body)
     if not hmac.compare_digest(signature, expected):
@@ -151,6 +157,10 @@ async def whatsapp_hook(request: Request) -> Response:
         return PlainTextResponse("bad request", status_code=400)
     await engine.channels.handle_whatsapp_payload(conn, payload)
     return JSONResponse({"ok": True})
+
+
+INGEST_MAX_BYTES = 100 * 1024 * 1024
+HOOK_MAX_BYTES = 256 * 1024
 
 
 async def ingest_accounting(request: Request) -> Response:
@@ -175,15 +185,15 @@ async def ingest_accounting(request: Request) -> Response:
     if len(q) >= 60:
         return JSONResponse({"error": "rate_limited", "message": "At most 60 requests a minute."}, status_code=429)
     q.append(t)
-    if int(request.headers.get("content-length") or 0) > 100 * 1024 * 1024:
-        return JSONResponse({"error": "too_large", "message": "At most 100 MB per request."}, status_code=413)
     conn = engine.db.one("SELECT * FROM connections WHERE id = ? AND workspace_id = ?",
                          (row["connection_id"], row["workspace_id"]))
     if conn is None:
         return JSONResponse({"error": "unauthorized", "message": "The connection was removed."}, status_code=401)
     try:
-        payload = json.loads(await request.body())
+        payload = json.loads(await read_body(request, INGEST_MAX_BYTES))
         result = await ingest(engine, conn, request.path_params["kind"], payload)
+    except BodyTooLarge:
+        return JSONResponse({"error": "too_large", "message": "At most 100 MB per request."}, status_code=413)
     except json.JSONDecodeError:
         return JSONResponse({"error": "invalid", "message": "Send JSON."}, status_code=400)
     except AppError as exc:
@@ -208,10 +218,9 @@ async def workflow_hook(request: Request) -> Response:
     deny = JSONResponse({"error": "unauthorized", "message": "Unknown workflow or wrong secret."}, status_code=401)
     if wf is None:
         return deny
-    if int(request.headers.get("content-length") or 0) > 256 * 1024:
-        return JSONResponse({"error": "too_large", "message": "At most 256 KB per event."}, status_code=413)
-    body = await request.body()
-    if len(body) > 256 * 1024:
+    try:
+        body = await read_body(request, HOOK_MAX_BYTES)
+    except BodyTooLarge:
         return JSONResponse({"error": "too_large", "message": "At most 256 KB per event."}, status_code=413)
     auth = request.headers.get("authorization", "")
     bearer = auth[7:].strip() if auth.lower().startswith("bearer ") else ""
@@ -358,10 +367,9 @@ async def incoming_webhook(request: Request) -> Response:
     deny = JSONResponse({"error": "unauthorized", "message": "Unknown webhook or wrong secret."}, status_code=401)
     if hook is None:
         return deny
-    if int(request.headers.get("content-length") or 0) > 256 * 1024:
-        return JSONResponse({"error": "too_large", "message": "At most 256 KB per delivery."}, status_code=413)
-    body = await request.body()
-    if len(body) > 256 * 1024:
+    try:
+        body = await read_body(request, HOOK_MAX_BYTES)
+    except BodyTooLarge:
         return JSONResponse({"error": "too_large", "message": "At most 256 KB per delivery."}, status_code=413)
     if not engine.webhooks.verify_incoming(hook, dict(request.headers), body):
         engine.webhooks.record_rejected(hook, "missing or wrong secret")
