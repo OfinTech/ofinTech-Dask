@@ -6,9 +6,10 @@ named; it is not closed. Findings that are closed with evidence are in `SECURITY
 
 ## Accepted risks
 
-Owner sign-off: **pending**. The review dates and mitigations were set by the audit; the repository holds no written
-acceptance by the owner yet. Each row stands as "accepted by the audit on the owner's behalf" until the owner records
-a decision here (keep, reject, or change the review date).
+Owner sign-off: **PENDING OWNER APPROVAL** for every row. The review dates and mitigations were set by the audit;
+the repository holds no written acceptance by the owner. The decision-ready package, with the full matrix and the
+acceptance record the owner fills in, is `FINAL-OWNER-RISK-ACCEPTANCE.md`; nothing below is accepted until a row of
+that record is completed by the owner.
 
 | ID | Risk | Owner | Business impact | Mitigation in place | Review |
 |---|---|---|---|---|---|
@@ -33,13 +34,27 @@ a decision here (keep, reject, or change the review date).
 | OP-4 | Key rotation command for the master key | document 07 M6 | 2027-02-01 |
 | OP-5 | Reviewer-manipulation case for the AI suite; a larger malicious-document corpus | R8 | 2026-12-15 |
 | OP-6 | Independent penetration test of a staged deployment | engage a third party | before the first regulated customer |
-| OP-8 | **Intermittent stall of the engine test suite** (not of the product). Seen once locally and in three CI runs on identical code (68770e0, f2ebc46, c06346c). The CI abort traceback on c06346c shows the event-loop thread *executing* `Knowledge.wait_idle` after twenty minutes — the `while tasks: await gather(tasks)` loop spinning on a finished task whose done-callback had not yet removed it. Fixed by waiting only on pending tasks and dropping finished ones (`Knowledge.wait_idle`, `FileService.wait_idle`); the tests now wait through `Harness.settle()`, which turns any stall into a failure naming the stuck tasks after 60 s. Not reproducible locally (25 runs of the indexing tests, 7 full-suite runs). | watch CI: close after ten consecutive clean `test` jobs; reopen on any `settle()` failure | 2026-11-15 |
-| OP-12 | Three page behaviours of the session policy (cross-tab sign-out through the `storage` event, the desktop suspend/resume IPC, the browser `online` resync) are implemented and reviewed but not driven by an automated browser | add them to the Playwright smoke test (`e2e/ui_smoke.py`) | 2026-12-15 |
+| OP-14 | Electron shell behaviours of the session policy (minimize/restore, OS sleep/resume IPC, lock on `powerMonitor` events) are implemented and reviewed but not driven by Electron automation (the browser-level lock and resume are verified) | an Electron-driven test on a runner with a display (`xvfb-run`) | 2026-12-15 |
 | OP-13 | The audit log lives in the application database; an attacker with the file and the ability to drop triggers can rewrite history | ship entries to an external append-only store through the outgoing webhooks (they already carry every event) for regulated deployments | 2027-02-01 |
 | OP-11 | Python dependencies pinned by version, not hash (SC-02) | `pip-compile --generate-hashes`; `pip install --require-hashes` in CI and the image | 2026-12-15 |
 | OP-7 | Dependabot alert 147 (moderate): `minimatch` 3.x/5.x in the desktop's **development** tree (electron-builder tooling); not shipped in the app and outside the CI gate (`--omit=dev --audit-level=high`) | add an `overrides` entry or bump electron-builder, regenerate the lockfile with the `lockfiles` workflow | 2026-11-15 |
 
 ## Closed since the previous report
+
+**OP-12 — browser automation of the session policy (CLOSED — VERIFIED, `0cc17c9`/`95ca47d`).** `e2e/session_browser.py`
+drives Chromium (Playwright) against real engine processes with the built UI, both clocks controlled: automatic
+sign-out at 30 and at 45 minutes, the warning at 28:00 in English and Arabic (RTL) with a live countdown and
+keyboard operation, Stay signed in validated by the engine and refused for a dead or revoked session, background
+polling/streams/reads not extending, two tabs signing out together and not reviving, offline past the limit and
+reconnection, sleep/wake, and the desktop lock and resume. 21 passed, 0 failed; evidence with screenshots in
+`docs/audit/evidence/session/` and the step in CI. The Electron-only scenarios move to OP-14.
+Report: `OP-12-BROWSER-SESSION-VERIFICATION.md`.
+
+**OP-8 — engine test-suite stall (CLOSED — VERIFIED).** Ten consecutive clean engine-test steps since the fix
+(`4068d0d` → `df5b3ae`, runs 41277460158 … 41293129846) — see `FINAL-RELEASE-GATE.md`.
+
+**Session policy (new controls, `03bdb3b`).** 12-hour lifetime (8 for administrators), step-up re-authentication for
+high-risk actions, own-session management and administrator termination. `FINAL-SESSION-SECURITY-POLICY.md`.
 
 **OP-9 — approval expiry and replay protection (CLOSED, `1f1a8de`).** Approvals carry an expiry (4 h outbound /
 24 h internal) and a digest of workspace, requester, tool and canonical arguments; a decision refuses expired or

@@ -306,7 +306,11 @@ class Tenants(unittest.TestCase):
         while time.time() < deadline and not marker.exists():
             time.sleep(0.05)
         self.assertTrue(marker.exists())
-        runs = [r for r in self.audit(self.a, "tool.run") if r["target"] == "mcp_ledger__account_balance"]
+        runs: list = []
+        deadline = time.time() + 15
+        while time.time() < deadline and not runs:   # the audit row follows the tool's return; the marker precedes it
+            runs = [r for r in self.audit(self.a, "tool.run") if r["target"] == "mcp_ledger__account_balance"]
+            time.sleep(0.05)
         self.assertEqual(len(runs), 1)
         self.assertEqual(runs[0]["approval_id"], appr["id"])
         self.assertEqual(runs[0]["decision"], "approved")

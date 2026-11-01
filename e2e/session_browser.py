@@ -167,6 +167,8 @@ def main() -> int:
             ctx: BrowserContext = browser.new_context(viewport={"width": 1280, "height": 860}, locale="en-GB")
             page = ctx.new_page()
             page.clock.install()
+            page.on("console", lambda m: ev.note(f"console[{m.type}] {m.text[:200]}") if m.type in ("error", "warning") else None)
+            page.on("pageerror", lambda e: ev.note(f"pageerror {str(e)[:300]}"))
             ev.note(f"engine (server, 30 min) at {server.base}; {chromium}")
 
             # ---- account, workspace, a ledger with a recognisable figure ------------------------------------
@@ -355,7 +357,8 @@ def main() -> int:
                 page.wait_for_selector("form input[type=email]", timeout=5000)   # signed out locally, network or not
                 offline_state = "login form, figure gone" if "98,765.43" not in page.content() else "login form but figure still in DOM"
             except Exception:  # noqa: BLE001
-                offline_state = "page still shown (FAIL)"
+                offline_state = "page still shown (FAIL): " + page.evaluate("document.body.innerText.slice(0, 160).replace(/\\s+/g, ' ')")
+                ev.note("offline diagnostics: " + json.dumps(page.evaluate("({online: navigator.onLine, now: Date.now(), act: localStorage.getItem('desk-last-activity'), out: localStorage.getItem('desk-signed-out')})")))
             ev.record("S6-offline-local", "Team Server, Chromium (offline)", "past the limit while offline the page signs itself out without waiting for the network",
                       offline_state, offline_state == "login form, figure gone", page, "s6-offline")
             ctx.set_offline(False)
