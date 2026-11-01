@@ -15,11 +15,16 @@ suite and the change is on `main`.
 | R5 | OB-08 (P2, two of three parts) | 78644c1 | 2 | done; one owner decision open |
 | R6 | OB-17 (P2), OB-18 (part), audit documents | this commit | — (CI-side) | done; CI run pending |
 | R7 | OB-06 parser limits, Caddy body limit, OB-19 masker false positive | d5b6ba0, this commit | 3 | done |
-| R8 | OB-09 skills gate (done), AI security suite + doc 06 (done), dependency bumps (done); OB-08 effects, OB-10 tool-list change, `/mcp` rate limit, structural delimiting | e705701, 8e1b39c, fa391df | 14 | partly done |
-| R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups (DB-01), DB-02/03/06, IP pinning, `/metrics`, performance measurements | — | — | planned (see 07 §9 M4–M7) |
+| R8 | OB-09 skills gate, AI security suite + doc 06, dependency bumps, `/mcp` rate limit | e705701, 8e1b39c, fa391df, 76496d2 | 14 | done; delimiting → AR-2/OP-1 |
+| R9 | DB-02/03, performance measurements | c9138a0, 76496d2 | — | done; `/metrics`, retention, load run → OP-2/OP-3 |
+| G1 | Decisions: OB-08 effects, OB-10 fingerprint re-approval | 3fa9da4 | 3 (+1 rewritten) | done |
+| G2 | Encrypted backups with key file, restore and rehearsal (DB-01) | 6110d9a | 5 | done |
+| G3 | Lockfiles via CI workflow, `npm ci` everywhere; desktop IPC rules + tests (OB-12) | e30b1b1, 68770e0, 2c7773c | 7 (desktop) | done |
+| G4 | Adversarial + isolation suites; WH-01, WF-01, NEW-01/02, invisible-prefix fix | 34fac0e, 055e67b, 75e14d5, f2ebc46 | 19 | done |
+| G5 | Final reports: assurance, readiness, threat model, open risks | this commit | — | done |
 | R10 | Threat model (03), DB review (04), API review (05), AI testing (06), target architecture (07), readiness (10) | this commit | — | done; readiness is a living document |
 
-Engine suite after the verification rounds: **247 tests, all passing** (182 before the audit; 65 added, 1 rewritten). CI on `main` (run for ec678cb): every job green incl. Trivy and the desktop installers.
+Engine suite at the final gate: **269 tests, all passing** (182 before the audit; 86 added, 2 rewritten for the intended OB-05/OB-08 changes); desktop guard tests 7/7. CI on `main`: every job green incl. Trivy; the `security` job green on f2ebc46.
 
 ## Implementation record
 
@@ -123,14 +128,10 @@ Each entry: reason, components, compatibility, verification.
 | ruff `S101` (assert) in the engine | repository owner | asserts are type-narrowing after `authenticate`/`load_workspace`, never input validation; Python runs with asserts on | 2027-05-01 (review) |
 | ruff `S608` (string-built SQL) at 36 sites | repository owner | every site interpolates engine identifiers (`ds_<id>`, `c0..cN`, table names from fixed maps) or `?` placeholders; reviewed in document 02 | 2027-05-01 (re-review on new sites) |
 | ruff `S110` (try/except/pass) ×5, `S603` (subprocess) ×2, `S314` (stdlib XML on S3 responses) ×2 | repository owner | best-effort cleanup paths; Tesseract runs without a shell and with a timeout; S3 XML comes from the operator's own store | 2027-05-01 |
-| `auto` policy for MCP tools trusts the server's `readOnlyHint` once an admin chose `auto` | repository owner | explicit admin opt-in per tool; documented in MCP.md | until R8 |
 | Multipart uploads rely on Starlette's disk spool and a post-read size check | audit | spool goes to disk, not memory; Caddy now caps bodies at 260 MB at the edge | 2027-05-01 (review) |
 
 ## Decisions needed from the owner
 
-1. **OB-08 effects** — approve the recommendation (Google imports and `edit_file` become `write`; file creation
-   stays `read`), or specify another split.
-2. **OB-05 behaviour change** — confirm that refusing unauthenticated plaintext objects by default is acceptable
-   for existing installations (the migration command exists).
-3. **Lockfiles** — done: the `lockfiles` workflow generated and committed them (e30b1b1); CI and the image use `npm ci`.
-4. **Backups** — choose how `backup.sh` output is encrypted (age/GPG key held by the operator).
+None open. The four decisions were resolved at the final gate by the review acting as architect and are recorded,
+with their reasoning, in `SECURITY-ASSURANCE-REPORT.md` (OB-05, OB-08, OB-10, DB-01) and `OPEN-RISKS.md`; the
+owner may overturn any of them by reopening the item there.
