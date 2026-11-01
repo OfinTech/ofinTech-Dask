@@ -7,8 +7,9 @@ follows them to every device. Before sign-in the browser's language is used when
 - **Arabic** switches the whole layout to right to left. Figures, codes, formulas and file contents keep their own
   direction, and every paragraph takes the direction of its first letter, so mixed Arabic and English text reads
   correctly.
-  Arabic is set in **IBM Plex Sans Arabic**, which ships with the app (`ui/src/fonts`, SIL Open Font License), so
-  it looks the same on every computer and needs no font download.
+  Arabic is set in **IBM Plex Sans Arabic** and the other languages in **Inter**; both ship with the app
+  (`ui/src/fonts`, SIL Open Font License), so the interface looks the same on every computer and needs no font
+  download. Figures inside Arabic text keep Inter's tabular digits.
 - **Numbers and dates** follow the language's conventions, always with Western digits (as most finance teams'
   reports use): `1,234.56` in English, `1.234,56` in Spanish, `1 234,56` in French.
 - **The assistant** answers in the language of your latest message, and uses your interface language when that is
