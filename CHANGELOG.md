@@ -23,6 +23,15 @@ migrations are applied automatically on start-up and are never rewritten once re
   31–60, 61–90 and 90+ days with settlements applied oldest first and a check against the ledger balance; anomalies
   (unusual amounts, missing regular postings, first postings, possible duplicates) above a materiality threshold.
   Every table opens into the same drill-down as the overview (`/api/w/{ws}/overview/statements|budget|parties|anomalies`).
+- **General ledger, for the accountant** (docs/OVERVIEW.md): journal entries searched and filtered by month, text,
+  type, account, party, amount or balance, each opening with its lines, roles, source and audit trail; the chart of
+  accounts with roles, activity and month-end balances, suspense accounts flagged; and validation the way a
+  reviewer would do it (entries that do not balance, single-line entries, missing accounts or dates, future dates,
+  both sides on one line, zero lines, suspense balances, unconfirmed roles, balances on the wrong side, postings on
+  the unusual side), for a month or the whole ledger (`/api/w/{ws}/ledger/entries|accounts|validation`).
+- **Oversight, for the accounting manager:** close and reconciliation status by month, unmatched bank items,
+  pending approvals, exceptions and anomalies, team activity from the audit log, documents, operational measures
+  and reporting progress, every item opening the page where the work is done (`/api/w/{ws}/oversight`).
 - **Three views of one application:** Executive, Finance and Accounting change what the navigation rail shows; the
   default follows the member's role (viewer, admin, editor) and the person can switch. Permissions are enforced by
   the server whatever the view.

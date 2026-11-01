@@ -794,3 +794,4 @@ details.evidence summary { cursor: pointer; color: var(--blue-ink); }
 [dir="rtl"] .ledger tr.aged td:first-child { box-shadow: inset -3px 0 0 var(--red); }
 .exec-kpi-head a { color: var(--blue); text-decoration: none; }
 .exec-kpi-head a:hover { text-decoration: underline; }
+.ledger td.nowrap, .ledger th.nowrap { white-space: nowrap; }

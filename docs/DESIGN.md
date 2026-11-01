@@ -107,8 +107,8 @@ shows.
 |---|---|---|---|
 | Executive | viewer | Executive overview | financial health, revenue, expenses, net profit, cash, cash flow, risks, AI insights, pending decisions — in plain language, every KPI with a one-line explanation |
 | CFO / Finance manager | admin | Finance analysis | statements, profitability, cash-flow forecast, budget versus actual, ratios, working capital, receivables and payables, scenarios, trends, anomalies |
-| Accountant | editor | Accounting operations | journal lines, ledger, bank reconciliation and the month-end close, imports, documents, validation, evidence, audit trail |
-| Accounting manager | editor with approval duties | Accounting oversight | reconciliation status, unmatched transactions, pending approvals, exceptions, team activity, missing documents, close progress, outstanding tasks |
+| Accountant | editor | General ledger | journal entries, accounts, validation; bank reconciliation and proposed entries under Month-end close; imports under Data; evidence under Documents and Files; the audit trail on every entry |
+| Accounting manager | editor with approval duties | Oversight | reconciliation and close status by month, unmatched bank items, pending approvals, exceptions and anomalies, team activity, documents, operational measures, reporting progress |
 
 Anyone can switch between the views their role permits (Executive overview → Finance analysis → Accounting
 operations); the switch only changes what is shown.

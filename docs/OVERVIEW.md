@@ -82,6 +82,36 @@ The balance sheet always balances (assets − liabilities = equity by constructi
 any movement of cash the classification cannot explain. Ratios, targets, forecasts, scenarios and account roles stay
 under **Financial analysis**.
 
+## The accountant's pages (General ledger)
+
+| Tab | What it shows | API (viewer role) |
+|---|---|---|
+| Journal entries | Every entry with its date, type, description, party, accounts, lines, debits and credits; filtered by month (or all months), free text, type, account, party, minimum amount, or unbalanced only; 100 a page. An entry opens with its lines and roles, whether it balances, the source dataset and the audit trail. | `GET /api/w/{ws}/ledger/entries?month=&q=&type=&account=&party=&min=&unbalanced=1&offset=&limit=` |
+| Accounts | The chart of accounts as the ledger uses it: code, name, class, role (confirmed or suggested), lines, the month's activity, and the month-end balance (or the month's amount for a cost or income account). Suspense and clearing accounts are flagged. | `GET …/ledger/accounts?month=` |
+| Validation | The ledger checked the way a reviewer would, for a month or the whole ledger: entries that do not balance, single-line entries, lines without an account or a usable date, lines dated in the future, lines with both a debit and a credit, zero lines, balances on suspense or clearing accounts, accounts whose role is still a suggestion, balances on the wrong side (a bank or receivables account in credit, payables in debit), postings on the unusual side. Each check names its level and up to eight examples that open the entry or account. | `GET …/ledger/validation?month=` |
+
+Nothing is changed from these pages; the ledger is read-only. Imports stay under Data, the bank reconciliation and
+proposed entries under Month-end close, evidence under Documents and Files.
+
+## The accounting manager's desk (Oversight)
+
+One page, read-only, every item opening the page where the work is done (`GET /api/w/{ws}/oversight`):
+
+- **Outstanding work:** approvals pending, open month-end close items by kind, forecasts waiting for sign-off,
+  workflow runs failed or waiting, validation issues in the last month.
+- **Reconciliation and close, last six months:** status (not started, in progress, closed), readiness, open
+  items, statement lines matched and unmatched, unexplained difference, who closed it or when it was prepared.
+- **Unmatched bank items** from the latest close with a statement: on the statement but not in the ledger, in the
+  ledger but not on the statement.
+- **Pending approvals**, forecasts and failed workflow runs.
+- **Exceptions in the last month:** the validation checks with a count, and the anomalies.
+- **Team, last 14 days:** actions per person from the audit log, and the latest twenty-five actions.
+- **Supporting documents:** how many are searchable or failed. Documents are not yet linked to journal entries,
+  which the page says plainly rather than reporting a count that would mean nothing.
+- **Operation:** journal entries last month, ledger lines and freshness, average days after the month end to prepare
+  a close, months closed, anomalies per entry.
+- **Reporting:** statements, budget against actual, forecasts and close packs, with their state.
+
 ## Views
 
 One application, three views of the navigation rail (docs/DESIGN.md):
@@ -89,8 +119,8 @@ One application, three views of the navigation rail (docs/DESIGN.md):
 | View | Default for | Shows |
 |---|---|---|
 | Executive | viewer | Overview, Assistant, Dashboards, Inbox, Search |
-| Finance | admin, owner | plus Statements, Financial analysis, Cost centres, Month-end close, Data, Files, Documents |
-| Accounting | editor | everything |
+| Finance | admin, owner | plus Statements, Financial analysis, Cost centres, Month-end close, Oversight, Data, Files, Documents |
+| Accounting | editor | everything, including General ledger and Oversight |
 
 A view only changes what the rail shows. The person can switch at any time; the server checks the role on every
 request, so a view never grants access.
@@ -102,4 +132,9 @@ request, so a view never grants access.
 - Reconciliation: `engine/tests/test_overview.py` checks, on the demo company, that net profit on the overview equals
   the profit and loss total, each line equals the sum of its accounts, each account equals the sum of its ledger
   lines, and each entry balances.
-- Bilingual: the smoke test renders the overview and the profitability page in Arabic.
+- Accountant test: the general ledger is searched, filtered and opened down to one entry without leaving the
+  professional tools (imports, close, documents, files stay where they are).
+- Accounting manager test: the oversight page shows the close status per month, unmatched bank items, approvals,
+  exceptions, team activity and outstanding work, each opening the page where it is handled.
+- Bilingual: the smoke test renders the overview, profitability, receivables, general ledger and oversight pages
+  in Arabic.
