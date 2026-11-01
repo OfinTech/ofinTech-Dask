@@ -162,7 +162,7 @@ jobs:
           ' CHANGELOG.md > notes.md
           test -s notes.md || { echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"; exit 1; }
           if [ "$SIGNED" != "true" ]; then
-            printf '\n---\n\n**These installers are not code-signed.** macOS Gatekeeper and Windows SmartScreen will\nwarn you when you open them. See docs/RELEASING.md for the secrets that sign them.\n' >> notes.md
+            cat .github/unsigned-install.md >> notes.md   # what a person actually has to do, not just a warning
           fi
           ls -l installers
       - uses: softprops/action-gh-release@v3
