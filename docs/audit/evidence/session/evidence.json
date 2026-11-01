@@ -1,0 +1,238 @@
+{
+ "commit": "0cc17c9f92aec8856937d7fbeaaf817c5ee81abf",
+ "browser": "Chromium (Playwright for Python 1.63, headless)",
+ "tests": 25,
+ "passed": 21,
+ "failed": 0,
+ "not_verified": 4,
+ "results": [
+  {
+   "id": "S0-config",
+   "environment": "Team Server",
+   "expected": "idle 30 min, warning 120 s, lifetime 12 h, step-up 10 min",
+   "actual": "idle_minutes=30 warn_seconds=120 session_hours=12 reauth_minutes=10",
+   "result": "PASS",
+   "screenshot": null
+  },
+  {
+   "id": "S1-visible",
+   "environment": "Team Server, Chromium",
+   "expected": "ledger figure visible while signed in",
+   "actual": "98,765.43 rendered",
+   "result": "PASS",
+   "screenshot": "session/s1-before.png"
+  },
+  {
+   "id": "S1-logout",
+   "environment": "Team Server, Chromium",
+   "expected": "at 30 min: login screen with the idle notice; figure gone; protected API 401",
+   "actual": "login form shown=True notice=True figure_gone=True api=401",
+   "result": "PASS",
+   "screenshot": "session/s1-after.png"
+  },
+  {
+   "id": "S1-audit",
+   "environment": "Team Server",
+   "expected": "sign-out recorded with the reason",
+   "actual": "[('session.expired', '{\"reason\":\"idle\",\"idle_minutes\":30}')]",
+   "result": "PASS",
+   "screenshot": null
+  },
+  {
+   "id": "S2-en",
+   "environment": "Team Server, Chromium, en-GB",
+   "expected": "warning at 28:00 with the English text and a countdown that falls",
+   "actual": "shown=True countdown 'Time left: 1:58' → 'Time left: 1:48' dir=ltr",
+   "result": "PASS",
+   "screenshot": "session/s2-en.png"
+  },
+  {
+   "id": "S2-keyboard",
+   "environment": "Team Server, Chromium",
+   "expected": "Stay signed in has focus; Enter sends the ping; the dialog closes; the engine's last_seen moves",
+   "actual": "focused='Stay signed in' last_seen moved=True dialog closed=True",
+   "result": "PASS",
+   "screenshot": "session/s2-keyboard.png"
+  },
+  {
+   "id": "S2-ar",
+   "environment": "Team Server, Chromium, Arabic",
+   "expected": "the Arabic warning in a right-to-left layout",
+   "actual": "arabic=True dir=rtl=True",
+   "result": "PASS",
+   "screenshot": "session/s2-ar.png"
+  },
+  {
+   "id": "S2-tab",
+   "environment": "Team Server, Chromium",
+   "expected": "both buttons reachable with the keyboard",
+   "actual": "after Shift+Tab focus on 'btn ghost'",
+   "result": "PASS",
+   "screenshot": null
+  },
+  {
+   "id": "S3-stay",
+   "environment": "Team Server, Chromium",
+   "expected": "Stay signed in → POST /api/session/ping → engine refreshes last_seen; status shows ~30 min left",
+   "actual": "last_seen moved=True idle_seconds_left=1799 dialog=False",
+   "result": "PASS",
+   "screenshot": "session/s3-stay.png"
+  },
+  {
+   "id": "S3-revive",
+   "environment": "Team Server, Chromium",
+   "expected": "a session already over on the engine is not revived by Stay signed in: 401 and the login screen",
+   "actual": "background read saw 401; ping=401 login form=True",
+   "result": "PASS",
+   "screenshot": "session/s3-revive.png"
+  },
+  {
+   "id": "S3-revoked",
+   "environment": "Team Server, Chromium",
+   "expected": "a revoked session cannot be renewed",
+   "actual": "ping=401",
+   "result": "PASS",
+   "screenshot": null
+  },
+  {
+   "id": "S4-background",
+   "environment": "Team Server, Chromium",
+   "expected": "polling, status checks, the chat page and its stream, reads: last_seen unchanged; ~2 min left",
+   "actual": "last_seen unchanged=True idle_seconds_left=119",
+   "result": "PASS",
+   "screenshot": "session/s4-background.png"
+  },
+  {
+   "id": "S4-logout",
+   "environment": "Team Server, Chromium",
+   "expected": "…and the sign-out still comes at 30:00",
+   "actual": "login screen",
+   "result": "PASS",
+   "screenshot": "session/s4-logout.png"
+  },
+  {
+   "id": "S4-websocket",
+   "environment": "n/a",
+   "expected": "WebSocket heartbeats do not extend the session",
+   "actual": "the product has no WebSocket; its event stream is a GET (covered above)",
+   "result": "NOT VERIFIED",
+   "screenshot": null
+  },
+  {
+   "id": "S4-jobs",
+   "environment": "Team Server",
+   "expected": "scheduled jobs / background sync do not extend sessions",
+   "actual": "engine jobs use no session (by construction; test_session_inactivity, test_session_policy)",
+   "result": "PASS",
+   "screenshot": null
+  },
+  {
+   "id": "S5-logout-propagates",
+   "environment": "Team Server, Chromium, 2 tabs",
+   "expected": "sign-out in one tab signs the other out and clears its figures",
+   "actual": "tab2 login form shown, figure gone=True",
+   "result": "PASS",
+   "screenshot": "session/s5-tab2.png"
+  },
+  {
+   "id": "S5-expiry-sync",
+   "environment": "Team Server, Chromium, 2 tabs",
+   "expected": "both tabs sign out at 30 min; the second cannot revive (401); no figure in either",
+   "actual": "tab1 login=True tab2 login=True ping=401 figure in tab2=False",
+   "result": "PASS",
+   "screenshot": "session/s5-expiry.png"
+  },
+  {
+   "id": "S6-offline",
+   "environment": "Team Server, Chromium",
+   "expected": "offline past the limit: no cached access; on reconnection the engine is asked and the login screen follows; API 401",
+   "actual": "while offline: page; after reconnect: login form; api=401; figure gone=True",
+   "result": "PASS",
+   "screenshot": "session/s6-online.png"
+  },
+  {
+   "id": "S6-wake",
+   "environment": "Team Server, Chromium",
+   "expected": "after waking, the page re-checks with the engine and shows the login screen; nothing cached is shown",
+   "actual": "login form; figure gone=True",
+   "result": "PASS",
+   "screenshot": "session/s6-wake.png"
+  },
+  {
+   "id": "S1-45min",
+   "environment": "Team Server (45 min), Chromium",
+   "expected": "idle_minutes=45; no warning at 42; warning at 43; sign-out at 45",
+   "actual": "idle_minutes=45 no_warning_at_42=True warning_at_43=True signed_out_at_45=True",
+   "result": "PASS",
+   "screenshot": "session/s1-45.png"
+  },
+  {
+   "id": "S7-lock",
+   "environment": "Desktop UI (engine in desktop mode, Chromium; not Electron)",
+   "expected": "lock_minutes=30; after 30 min the lock screen replaces every page and the figure is gone",
+   "actual": "lock_minutes=30 idle_minutes=0 lock shown, figure hidden=True",
+   "result": "PASS",
+   "screenshot": "session/s7-lock.png"
+  },
+  {
+   "id": "S7-resume",
+   "environment": "Desktop UI, Chromium",
+   "expected": "Resume (keyboard) brings the workspace back",
+   "actual": "figure visible again",
+   "result": "PASS",
+   "screenshot": "session/s7-resume.png"
+  },
+  {
+   "id": "S7-electron-minimize",
+   "environment": "Electron",
+   "expected": "minimize and restore keep the policy",
+   "actual": "Electron is not launched in this run (no display/installed shell here); the page logic is the same as S7-lock",
+   "result": "NOT VERIFIED",
+   "screenshot": null
+  },
+  {
+   "id": "S7-electron-sleep",
+   "environment": "Electron",
+   "expected": "OS sleep/resume locks at once and re-checks on resume",
+   "actual": "powerMonitor → desk:lock/desk:resume wiring reviewed in code; not driven here",
+   "result": "NOT VERIFIED",
+   "screenshot": null
+  },
+  {
+   "id": "S7-electron-reauth",
+   "environment": "Electron",
+   "expected": "re-authentication after expiry",
+   "actual": "the desktop edition has no accounts: a screen lock, not a credential re-check (documented in SECURITY.md)",
+   "result": "NOT VERIFIED",
+   "screenshot": null
+  }
+ ],
+ "log": [
+  "09:41:13 engine (server, 30 min) at http://127.0.0.1:49255; Chromium 153.0.8010.12 (Playwright, headless)",
+  "09:41:14 S0-config: PASS — idle_minutes=30 warn_seconds=120 session_hours=12 reauth_minutes=10",
+  "09:41:14 S1-visible: PASS — 98,765.43 rendered",
+  "09:41:14 S1-logout: PASS — login form shown=True notice=True figure_gone=True api=401",
+  "09:41:14 S1-audit: PASS — [('session.expired', '{\"reason\":\"idle\",\"idle_minutes\":30}')]",
+  "09:41:14 S2-en: PASS — shown=True countdown 'Time left: 1:58' → 'Time left: 1:48' dir=ltr",
+  "09:41:15 S2-keyboard: PASS — focused='Stay signed in' last_seen moved=True dialog closed=True",
+  "09:41:15 S2-ar: PASS — arabic=True dir=rtl=True",
+  "09:41:15 S2-tab: PASS — after Shift+Tab focus on 'btn ghost'",
+  "09:41:16 S3-stay: PASS — last_seen moved=True idle_seconds_left=1799 dialog=False",
+  "09:41:16 S3-revive: PASS — background read saw 401; ping=401 login form=True",
+  "09:41:16 S3-revoked: PASS — ping=401",
+  "09:41:17 S4-background: PASS — last_seen unchanged=True idle_seconds_left=119",
+  "09:41:17 S4-logout: PASS — login screen",
+  "09:41:17 S4-websocket: NOT VERIFIED — the product has no WebSocket; its event stream is a GET (covered above)",
+  "09:41:17 S4-jobs: PASS — engine jobs use no session (by construction; test_session_inactivity, test_session_policy)",
+  "09:41:17 S5-logout-propagates: PASS — tab2 login form shown, figure gone=True",
+  "09:41:18 S5-expiry-sync: PASS — tab1 login=True tab2 login=True ping=401 figure in tab2=False",
+  "09:41:19 S6-offline: PASS — while offline: page; after reconnect: login form; api=401; figure gone=True",
+  "09:41:20 S6-wake: PASS — login form; figure gone=True",
+  "09:41:22 S1-45min: PASS — idle_minutes=45 no_warning_at_42=True warning_at_43=True signed_out_at_45=True",
+  "09:41:23 S7-lock: PASS — lock_minutes=30 idle_minutes=0 lock shown, figure hidden=True",
+  "09:41:23 S7-resume: PASS — figure visible again",
+  "09:41:23 S7-electron-minimize: NOT VERIFIED — Electron is not launched in this run (no display/installed shell here); the page logic is the same as S7-lock",
+  "09:41:23 S7-electron-sleep: NOT VERIFIED — powerMonitor → desk:lock/desk:resume wiring reviewed in code; not driven here",
+  "09:41:23 S7-electron-reauth: NOT VERIFIED — the desktop edition has no accounts: a screen lock, not a credential re-check (documented in SECURITY.md)"
+ ]
+}
