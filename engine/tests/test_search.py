@@ -42,7 +42,7 @@ class Search(unittest.TestCase):
 
     def upload(self, files: dict[str, bytes]) -> dict:
         r = self.h.api("POST", f"/api/w/{self.ws}/documents", files=[("files", (n, b)) for n, b in files.items()])
-        self.h.client.portal.call(self.h.engine.knowledge.wait_idle)
+        self.h.settle()
         return r
 
     @unittest.skipUnless(HAS_OCR, "OCR needs both Tesseract and Pillow")
@@ -148,7 +148,7 @@ class DriveFolder(unittest.TestCase):
         r = h.api("POST", f"/api/w/{ws}/collections/{coll['id']}/drive",
                   json={"folder": "https://drive.google.com/drive/folders/FOLDER123?usp=sharing"})
         self.assertEqual((r["folder_name"], r["added"], r["skipped"]), ("Finance policies", 2, 1))
-        h.client.portal.call(h.engine.knowledge.wait_idle)
+        h.settle()
         names = sorted(d["name"] for d in h.api("GET", f"/api/w/{ws}/documents"))
         self.assertEqual(names, ["Board minutes.docx", "Expense policy.docx"])
         self.assertIn("capex", h.api("POST", f"/api/w/{ws}/documents/search", json={"query": "capex budget"})[0]["text"])
@@ -160,7 +160,7 @@ class DriveFolder(unittest.TestCase):
         del self.files["f2"]
         r = h.api("POST", f"/api/w/{ws}/collections/{coll['id']}/drive/sync", json={})
         self.assertEqual((r["updated"], r["removed"]), (1, 1))
-        h.client.portal.call(h.engine.knowledge.wait_idle)
+        h.settle()
         self.assertEqual([d["name"] for d in h.api("GET", f"/api/w/{ws}/documents")], ["Expense policy.docx"])
         coll = next(c for c in h.api("GET", f"/api/w/{ws}/collections") if c["name"] == "Policies")
         self.assertIn("Finance policies", coll["sync_source"])

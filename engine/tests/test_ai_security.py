@@ -50,7 +50,7 @@ class _GoogleHarness(Harness):
         """The document id once it is indexed (the agent's document tools exist only then)."""
         import time
 
-        self.client.portal.call(self.engine.knowledge.wait_idle)
+        self.settle()
         for _ in range(400):
             doc = self.api("GET", f"/api/w/{self.ws}/documents/{doc_id}")["document"]
             if doc["status"] == "indexed":

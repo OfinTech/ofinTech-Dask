@@ -36,7 +36,7 @@ class TwoTenants(unittest.TestCase):
         up = self.alice.post(f"/api/w/{self.a}/imports", files={"file": ("gl.csv", b"account,amount\n4000,777.77\n")}, headers=ORIGIN).json()
         self.ds = self.alice.post(f"/api/w/{self.a}/imports/{up['upload_id']}/commit", json={"name": "Alpha GL", "sheet": None, "header_row": 0}, headers=ORIGIN).json()["id"]
         self.doc = self.alice.post(f"/api/w/{self.a}/documents", files=[("files", ("alpha-board.md", b"# Alpha board pay\nCEO salary 1,234,567"))], headers=ORIGIN).json()["added"][0]["id"]
-        self.h.client.portal.call(self.h.engine.knowledge.wait_idle)
+        self.h.settle()
         self.mem = self.alice.post(f"/api/w/{self.a}/memories", json={"content": "Alpha's auditor is Falcon & Co", "scope": "workspace"}, headers=ORIGIN).json()
         self.thread = self.alice.post(f"/api/w/{self.a}/threads", json={"title": "Alpha secrets"}, headers=ORIGIN).json()["id"]
         self.alice.post(f"/api/w/{self.a}/threads/{self.thread}/messages", json={"text": "Our margin target is 41%"}, headers=ORIGIN)

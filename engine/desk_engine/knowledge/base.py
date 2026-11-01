@@ -94,8 +94,15 @@ class Knowledge:
         task.add_done_callback(self.tasks.discard)
 
     async def wait_idle(self) -> None:
-        while self.tasks:
-            await asyncio.gather(*list(self.tasks), return_exceptions=True)
+        """Returns once no background processing is running. Waits only on tasks that are still pending and
+        drops finished ones itself, so a finished task whose done-callback has not run yet can never make this
+        loop spin (CI caught the earlier `gather` form doing exactly that for twenty minutes)."""
+        while True:
+            pending = [t for t in self.tasks if not t.done()]
+            if not pending:
+                self.tasks.difference_update([t for t in self.tasks if t.done()])
+                return
+            await asyncio.wait(pending)
 
     # -- collections ------------------------------------------------------------------------------------
     def collection(self, ws_id: str, collection_id: str | None) -> dict[str, Any] | None:

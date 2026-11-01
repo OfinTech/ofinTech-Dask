@@ -132,7 +132,7 @@ class KnowledgeApi(unittest.TestCase):
     def upload(self, files: dict[str, bytes], collection_id: str | None = None) -> dict:
         data = {"collection_id": collection_id} if collection_id else None
         r = self.h.api("POST", f"/api/w/{self.ws}/documents", files=[("files", (n, b)) for n, b in files.items()], data=data)
-        self.h.client.portal.call(self.h.engine.knowledge.wait_idle)
+        self.h.settle()
         return r
 
     def test_upload_search_cite(self) -> None:
@@ -181,7 +181,7 @@ class KnowledgeApi(unittest.TestCase):
         r = h.api("PUT", f"/api/w/{ws}/knowledge/embeddings", json={"provider_id": h.api("GET", f"/api/w/{ws}/providers")
                                                                       ["providers"][0]["id"], "model": "fake-embed"})
         self.assertEqual(r["dimensions"], 64)
-        h.client.portal.call(h.engine.knowledge.wait_idle)
+        h.settle()
         st = h.api("GET", f"/api/w/{ws}/knowledge/settings")
         self.assertEqual(st["mode"], "hybrid")
         self.assertEqual(st["stats"]["embedded"], 2)
@@ -231,7 +231,7 @@ class KnowledgeApi(unittest.TestCase):
         r = h.api("POST", f"/api/w/{ws}/connections/pipeshub", json={"base_url": ph.base + "/api/v1", "token": ph.token})
         self.assertEqual(r["kb_name"], "OfinTech Desk · Acme Ltd")
         self.assertEqual(ph.kbs[r["kb_id"]], "OfinTech Desk · Acme Ltd")
-        h.client.portal.call(h.engine.knowledge.wait_idle)
+        h.settle()
         # a scanned PDF cannot be read here, but PipesHub parses it with OCR
         self.upload({"scan.pdf": make_pdf(["", ""])})
         docs = {d["name"]: d for d in h.api("GET", f"/api/w/{ws}/documents")}
