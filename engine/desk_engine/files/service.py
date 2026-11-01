@@ -321,8 +321,13 @@ class Files:
         task.add_done_callback(self.tasks.discard)
 
     async def wait_idle(self) -> None:
-        while self.tasks:
-            await asyncio.gather(*list(self.tasks), return_exceptions=True)
+        # Same shape as Knowledge.wait_idle: wait on pending tasks only, never spin on finished ones.
+        while True:
+            pending = [t for t in self.tasks if not t.done()]
+            if not pending:
+                self.tasks.difference_update([t for t in self.tasks if t.done()])
+                return
+            await asyncio.wait(pending)
 
     async def _review(self, workspace: dict[str, Any], file_id: str, version: int, user_id: str) -> None:
         ws_id = workspace["id"]

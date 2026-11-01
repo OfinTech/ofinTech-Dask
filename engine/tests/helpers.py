@@ -119,6 +119,21 @@ class Harness:
             self.client.headers["authorization"] = f"Bearer {LOCAL_TOKEN}"
         self.ws: str | None = None
 
+    def settle(self, timeout: float = 60) -> None:
+        """Waits for background document processing; a stall becomes a failure that names the stuck tasks."""
+        import asyncio
+
+        knowledge = self.engine.knowledge
+
+        async def run() -> None:
+            try:
+                await asyncio.wait_for(knowledge.wait_idle(), timeout)
+            except TimeoutError:
+                states = [f"{t.get_name()}: done={t.done()} coro={t.get_coro()!r}" for t in knowledge.tasks]
+                raise AssertionError(f"document processing did not finish within {timeout}s: {states}") from None
+
+        self.client.portal.call(run)
+
     def close(self) -> None:
         self.client.__exit__(None, None, None)
         self.engine.db.close()

@@ -64,7 +64,7 @@ class UserFiles(unittest.TestCase):
         up = h.api("POST", f"/api/w/{ws}/documents", data={"purpose": "chat"},
                    files=[("files", ("October pack.xlsx", template_xlsx()))])
         doc = up["added"][0]
-        h.client.portal.call(h.engine.knowledge.wait_idle)
+        h.settle()
         t = h.api("POST", f"/api/w/{ws}/threads", json={})
         h.llm.script = [[("open_file_for_editing", {"document_id": doc["id"]})], "It is open."]
         h.api("POST", f"/api/w/{ws}/threads/{t['id']}/messages",
