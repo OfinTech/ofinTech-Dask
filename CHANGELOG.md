@@ -5,6 +5,22 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **Executive overview** (docs/OVERVIEW.md): the landing page for every workspace. A financial health score with its
+  reasons (judged against the finance lead's targets, or reference levels until targets are set), revenue, expenses,
+  net profit and cash with a plain-language note on each, the twelve-month trend, cash and liquidity, risks that need
+  attention, what the numbers say (facts from the ledger, plus observations the workspace's model writes on request,
+  always labelled *AI estimate*), and what is waiting for a decision (approvals, forecasts to sign off, open closes,
+  budgets running out early). Every figure carries its provenance: actual, unverified (account roles not yet
+  confirmed), budget, forecast or estimate.
+- **Drill-down** from any executive figure: profit and loss → the accounts behind a line → the ledger lines of one
+  account in the month → one journal entry with its source dataset and audit trail. The reporting month travels in
+  the address, breadcrumbs lead back, and the viewer role is checked at every level (`/api/w/{ws}/overview…`).
+- **Three views of one application:** Executive, Finance and Accounting change what the navigation rail shows; the
+  default follows the member's role (viewer, admin, editor) and the person can switch. Permissions are enforced by
+  the server whatever the view.
+
 ### Changed
 
 - **OfinTech identity** (docs/DESIGN.md). The app and the website now follow the OfinTech design system: Deep Navy

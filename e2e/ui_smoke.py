@@ -95,7 +95,7 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#token={TOKEN}")
     pg.locator("label:has(> span:text-is('Company or workspace name')) input").fill("E2E Ltd")
     pg.get_by_role("button", name="Create workspace").click()
-    pg.wait_for_selector("text=Ask about your numbers")
+    pg.wait_for_selector("text=No general ledger yet")   # the overview is the landing page; it asks for a ledger first
     pg.goto(f"{base}/#/settings/models")
     pg.get_by_role("button", name="Add provider").click()
     m = pg.locator(".modal")
@@ -395,6 +395,41 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#/analysis/roles")
     pg.wait_for_selector("text=Confirm all suggestions")
     pg.screenshot(path=str(out / "analysis-roles.png"))
+    # executive overview and the drill-down to one journal entry, the month kept at every step
+    pg.goto(f"{base}/#/analysis")
+    pg.get_by_label("General ledger").select_option(trading)
+    pg.wait_for_selector(".kpi-card:has-text('Gross margin') >> text=60.0%")
+    pg.goto(f"{base}/#/overview")
+    pg.wait_for_selector(".health >> text=measures on track")
+    pg.wait_for_selector(".exec-tile:has-text('Net profit')")
+    assert pg.locator(".exec-risk:has-text('Days sales outstanding')").count() == 0  # the executive name is used
+    pg.wait_for_selector(".exec-risk:has-text('Days to collect a sale')")
+    pg.screenshot(path=str(out / "overview.png"))
+    pg.locator(".exec-tile:has-text('Net profit')").click()
+    pg.wait_for_selector("h1:text-is('Profitability')")
+    assert "month=" in pg.evaluate("location.hash")
+    month = pg.evaluate("new URLSearchParams(location.hash.split('?')[1]).get('month')")
+    pg.locator("table.pl a", has_text="Other operating expenses").click()
+    pg.wait_for_selector("h1:text-is('Other operating expenses')")
+    assert pg.evaluate("location.hash").endswith(f"month={month}")
+    pg.locator("table.ledger tbody tr.clickable").first.click()
+    pg.wait_for_selector("text=to open its journal entry")
+    pg.screenshot(path=str(out / "overview-transactions.png"))
+    pg.locator("table.ledger tbody tr.clickable").first.click()
+    pg.wait_for_selector("h1:has-text('Journal entry')")
+    pg.wait_for_selector("text=balanced")
+    pg.wait_for_selector("text=dataset.import")
+    assert pg.locator(".crumbs a").count() == 4, pg.locator(".crumbs").inner_text()
+    pg.screenshot(path=str(out / "overview-entry.png"))
+    pg.locator(".crumbs a", has_text="Overview").click()
+    pg.wait_for_selector(".health")
+    assert pg.evaluate("location.hash").endswith(f"month={month}")
+    # the view switch only changes the rail; the executive view shows five sections
+    pg.get_by_role("tab", name="Executive").click()
+    assert pg.locator(".nav a").count() == 5 + 2, pg.locator(".nav").inner_text()   # plus Connections and Settings
+    pg.get_by_role("tab", name="Accounting").click()
+    assert pg.locator(".nav a").count() == 14 + 2
+    pg.get_by_role("tab", name="Finance").click()
     pg.goto(f"{base}/#/analysis/forecasts")
     pg.get_by_role("button", name="New forecast").click()
     pg.locator(".modal label:has(> span:text-is('Name')) input").fill("Rolling forecast")
@@ -469,11 +504,12 @@ def run_steps(pg, base, out, xlsx):
     assert pg.evaluate("document.fonts.check('600 16px \"IBM Plex Sans Arabic\"', 'مرحبا')")
     pg.screenshot(path=str(out / "ar-settings.png"))
     for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
-                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر")):
+                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر"),
+                         ("overview", "على المسار"), ("overview/profit", "الربحية")):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_selector(f"text={needle}")
         pg.wait_for_timeout(300)
-        pg.screenshot(path=str(out / f"ar-{path}.png"))
+        pg.screenshot(path=str(out / f"ar-{path.replace('/', '-')}.png"))
     pg.goto(f"{base}/#/settings/account")
     pg.get_by_role("button", name="Español").click()
     pg.wait_for_selector("html[dir=ltr][lang=es]", state="attached")

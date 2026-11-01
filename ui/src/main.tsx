@@ -26,14 +26,36 @@ import { SkillsPage } from "./pages/Skills";
 import { InboxPage } from "./pages/Inbox";
 import { ConnectionsPage } from "./pages/Connections";
 import { SettingsPage } from "./pages/Settings";
+import { OverviewPage } from "./pages/Overview";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
 
 const NAV: [string, string, string][] = [
-  ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"], ["dashboards", N("Dashboards"), "dash"], ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["close", N("Month-end close"), "close"], ["data", N("Data"), "data"],
-  ["files", N("Files"), "sheet"], ["documents", N("Documents"), "docs"],
+  ["overview", N("Overview"), "pulse"], ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"], ["dashboards", N("Dashboards"), "dash"],
+  ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["close", N("Month-end close"), "close"],
+  ["data", N("Data"), "data"], ["files", N("Files"), "sheet"], ["documents", N("Documents"), "docs"],
   ["workflows", N("Workflows"), "flow"], ["memory", N("Memory"), "memory"], ["skills", N("Skills"), "skill"], ["inbox", N("Inbox"), "inbox"],
 ];
 const NAV2: [string, string, string][] = [["connections", N("Connections"), "plug"], ["settings", N("Settings"), "gear"]];
+
+/** One application, three views (docs/DESIGN.md). A view only chooses what the rail shows; the server enforces
+ *  permissions on every request whatever the view. The default follows the member's role; the person can switch. */
+type View = "executive" | "finance" | "accounting";
+const VIEWS: [View, string, string][] = [["executive", N("Executive"), N("Executive overview")],
+  ["finance", N("Finance"), N("Finance analysis")], ["accounting", N("Accounting"), N("Accounting operations")]];
+const VIEW_NAV: Record<View, string[]> = {
+  executive: ["overview", "chat", "dashboards", "inbox", "search"],
+  finance: ["overview", "analysis", "costcentres", "dashboards", "chat", "search", "close", "data", "files", "documents", "inbox"],
+  accounting: NAV.map(([k]) => k),
+};
+function defaultView(role: Workspace["role"]): View {
+  return role === "viewer" ? "executive" : role === "editor" ? "accounting" : "finance";
+}
+function storedView(wsId: string): View | null {
+  try {
+    const v = localStorage.getItem(`desk-view:${wsId}`);
+    return v === "executive" || v === "finance" || v === "accounting" ? v : null;
+  } catch { return null; }
+}
 
 function storedWs(): string | null {
   try { return localStorage.getItem("desk-ws"); } catch { return null; }
@@ -99,6 +121,7 @@ function App(): ReactNode {
   const [counts, setCounts] = useState({ unread: 0, pending_approvals: 0 });
   const [menu, setMenu] = useState(false);
   const [idleOut, setIdleOut] = useState(false);
+  const [viewChoice, setViewChoice] = useState<Record<string, View>>({});
   const route = useRoute();
 
   const reloadSession = useCallback(async () => {
@@ -178,9 +201,16 @@ function App(): ReactNode {
     setWsId(id);
   }
 
-  const section = route[0] || "chat";
+  const view: View = viewChoice[ws.id] || storedView(ws.id) || defaultView(ws.role);
+  function selectView(v: View) {
+    try { localStorage.setItem(`desk-view:${ws!.id}`, v); } catch { /* private mode */ }
+    setViewChoice((c) => ({ ...c, [ws!.id]: v }));
+  }
+  const navKeys = new Set(VIEW_NAV[view]);
+  const section = route[0] || "overview";
   let page: ReactNode;
   switch (section) {
+    case "overview": page = <OverviewPage view={route[1]} arg={route[2]} />; break;
     case "dashboards": page = <DashboardsPage id={route[1]} />; break;
     case "data": page = <DataPage id={route[1]} />; break;
     case "documents": page = <DocumentsPage id={route[1]} />; break;
@@ -196,8 +226,9 @@ function App(): ReactNode {
     case "connections": page = <ConnectionsPage />; break;
     case "settings": page = <SettingsPage tab={route[1]} />; break;
     case "new-workspace": page = <Onboarding session={session} embedded onDone={async (id) => { selectWs(id);
-      await reloadSession(); go("chat"); }} />; break;
-    default: page = <ChatPage threadId={route[1]} />;
+      await reloadSession(); go("overview"); }} />; break;
+    case "chat": page = <ChatPage threadId={route[1]} />; break;
+    default: page = <OverviewPage />;
   }
 
   return (
@@ -216,14 +247,19 @@ function App(): ReactNode {
             <label className="sr" htmlFor="ws-select">{tr("Workspace")}</label>
             <select id="ws-select" value={ws.id} onChange={(e) => {
               if (e.target.value === "__new") go("new-workspace");
-              else { selectWs(e.target.value); go("chat"); }
+              else { selectWs(e.target.value); go("overview"); }
             }}>
               {session.workspaces.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
               <option value="__new">{tr("+ New workspace…")}</option>
             </select>
           </div>
+          <div className="view-switch" role="tablist" aria-label={tr("View")}>
+            {VIEWS.map(([v, label, title]) => (
+              <button key={v} role="tab" aria-selected={view === v} title={tr(title)} onClick={() => selectView(v)}>{tr(label)}</button>
+            ))}
+          </div>
           <nav className="nav">
-            {NAV.map(([key, label, icon]) => (
+            {NAV.filter(([key]) => navKeys.has(key)).map(([key, label, icon]) => (
               <a key={key} href={`#/${key}`} aria-current={section === key ? "page" : undefined}>
                 <Icon name={icon} />{tr(label)}
                 {key === "inbox" && counts.pending_approvals + counts.unread > 0 && (
