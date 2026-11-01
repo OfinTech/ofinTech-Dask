@@ -113,7 +113,7 @@ def main(out_dir: str) -> int:
             page.goto(engine.base + "/#/owner")
             page.reload()
             try:
-                page.wait_for_selector("text=Owner Control Center", timeout=30_000)
+                page.wait_for_selector("aside.rail >> text=Platform owner", timeout=30_000)
             except Exception:
                 page.screenshot(path=str(out / "owner" / "failure.png"))
                 print("PAGE TEXT:", page.inner_text("body")[:1500], flush=True)
@@ -204,7 +204,7 @@ def main(out_dir: str) -> int:
             page.evaluate("localStorage.setItem('desk.lang', 'ar')")
             page.goto(engine.base + "/#/owner")
             page.reload()
-            page.wait_for_selector("text=مركز تحكم المالك", timeout=15_000)
+            page.wait_for_selector("aside.rail >> text=مالك المنصة", timeout=15_000)
             rtl = page.evaluate("document.documentElement.dir")
             ev.record("O-11", "Arabic interface renders right-to-left", f"dir={rtl}, heading in Arabic", rtl == "rtl", page, "o11-arabic")
             page.evaluate("localStorage.setItem('desk.lang', 'en')")
@@ -212,7 +212,7 @@ def main(out_dir: str) -> int:
             page.set_viewport_size({"width": 390, "height": 844})
             page.goto(engine.base + "/#/owner")
             page.reload()
-            page.wait_for_selector("text=Owner Control Center", timeout=15_000)
+            page.wait_for_selector("text=Total registered users", timeout=15_000)
             overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
             ev.record("O-12", "the layout fits a 390px viewport", f"horizontal overflow {overflow}px", overflow <= 2, page, "o12-mobile")
             ctx2.close()
