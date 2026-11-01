@@ -170,8 +170,15 @@ function useSessionTimer(minutes: number, signedIn: boolean, onExpired: () => vo
 /** Shown two minutes before the engine ends the session. Nothing on this dialog counts as activity except the
  *  explicit choice to stay, which asks the engine; closing it is not a choice. */
 function SessionWarning({ secondsLeft, onStay, onLogout }: { secondsLeft: number; onStay: () => void; onLogout: () => void }): ReactNode {
-  const m = Math.floor(secondsLeft / 60);
-  const s = secondsLeft % 60;
+  // the countdown ticks every second from the last value the timer gave it (the timer itself looks every 15 s)
+  const [left, setLeft] = useState(secondsLeft);
+  useEffect(() => { setLeft(secondsLeft); }, [secondsLeft]);
+  useEffect(() => {
+    const t = setInterval(() => setLeft((v) => Math.max(0, v - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const m = Math.floor(left / 60);
+  const s = left % 60;
   return (
     <div className="scrim" role="presentation">
       <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="session-warning-title">

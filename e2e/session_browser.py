@@ -220,8 +220,7 @@ def main() -> int:
             text = page.inner_text("[role=alertdialog]")
             shown = EN_WARNING in text
             count1 = page.inner_text("[role=alertdialog] [aria-live]")
-            page.clock.fast_forward(10_000)
-            page.wait_for_timeout(200)
+            page.clock.run_for(10_000)                     # ten seconds of the page's time, timers firing as they come
             count2 = page.inner_text("[role=alertdialog] [aria-live]")
             ev.record("S2-en", "Team Server, Chromium, en-GB", "warning at 28:00 with the English text and a countdown that falls",
                       f"shown={shown} countdown '{count1}' → '{count2}' dir={page.get_attribute('html', 'dir')}",
@@ -291,10 +290,12 @@ def main() -> int:
             # ---- S4 background activity does not extend ----------------------------------------------------------
             login(page, server.base, email)
             open_ledger()
+            thread = api(page, "POST", f"/api/w/{ws}/threads", {})["body"]["id"]     # a conversation to stream (a POST, before the clock moves)
             before = server.last_seen(email)
             advance(page, server, email, 27 * MIN)
-            # the page's own 20-second notification poll fires during the jump; an SSE stream is opened; a GET refresh
-            page.goto(f"{server.base}/#/chat")
+            # the page's own 20-second notification poll fires during the jump; the conversation page opens its
+            # event stream (a GET); a reload; explicit reads
+            page.goto(f"{server.base}/#/chat/{thread}")
             page.reload()
             page.wait_for_selector(".shell", timeout=15000)
             page.clock.fast_forward(60_000)
