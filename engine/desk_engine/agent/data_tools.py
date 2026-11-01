@@ -74,7 +74,9 @@ async def _query(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         spec = QuerySpec.model_validate(a)
     except ValidationError as exc:
         return ToolOutput(f"Invalid query: {exc.errors(include_url=False)[:3]}")
-    result = run_query(ctx.engine, ctx.workspace, spec)
+    import asyncio
+
+    result = await asyncio.to_thread(run_query, ctx.engine, ctx.workspace, spec)
     text = table_text(result["columns"], result["rows"])
     return ToolOutput(text, [table_block(result["columns"], result["rows"], spec.dataset)], result)
 

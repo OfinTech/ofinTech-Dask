@@ -41,7 +41,7 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 | Item | State | Evidence / condition |
 |---|---|---|
 | Migrations, integrity constraints, FK on | ✅ | 18 ordered migrations, `foreign_keys=ON`, WAL |
-| Concurrency | 🟡 | single process, in-process write lock; sync SQLite on the event loop (doc 04 to quantify) |
+| Concurrency | 🟡 | single process, in-process write lock; heavy dataset work off the loop (DB-02); hourly WAL checkpoint (DB-03) |
 | Backups | 🟡 | consistent online copy; **not encrypted** (decision 4 in the roadmap) |
 | Data retention / deletion | 🟡 | delete chat and workspace exist; no retention policy or secure-delete for storage objects |
 
@@ -52,7 +52,7 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 | Health check | ✅ | `/health`, Docker HEALTHCHECK |
 | Restart recovery | 🟡 | interrupted agent runs marked; workflow runs in `waiting` not resumed (baseline §9) |
 | Container privileges | ✅ | non-root, `cap_drop: ALL`, `no-new-privileges`, tmpfs `/tmp` (R6) |
-| Network exposure | ✅ | engine not published; only Caddy 80/443 |
+| Network exposure | ✅ | engine not published; only Caddy 80/443; `/mcp` rate-limited (OB-18) |
 | Configuration guards | ✅ | `DESK_DEV` refused, https required, key mandatory; SMTP modes validated |
 | Monitoring / alerting | ❌ | logs only; no metrics endpoint or alert rules |
 | Rollback procedure | 🟡 | image tags; migrations are forward-only (documented) |
@@ -62,7 +62,12 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 
 | Item | State |
 |---|---|
-| Concurrent users, DB throughput, memory under a 400k-line import, API latency under load | ⬜ not measured (R9) |
+| 200,000-row CSV ledger (9.4 MB): upload + preview | ✅ 2.1 s (audit machine, single process) |
+| Commit of those 200,000 rows into a dataset table | ✅ 2.7 s; database 11.4 MB afterwards |
+| Grouped sum over 200,000 rows (by month / by party / total) | ✅ 110 ms / 74 ms / 13 ms |
+| `/health` round trip after the import | ✅ < 1 ms |
+| Dataset parsing, commit and queries off the event loop | ✅ `asyncio.to_thread` (DB-02); other requests are not stalled by them |
+| Concurrent users, agent runs in parallel, memory ceiling | ⬜ not measured (needs a multi-client load tool; R9) |
 
 ## Compliance (gap assessment, not a certification)
 
