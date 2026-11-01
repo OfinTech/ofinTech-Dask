@@ -90,6 +90,8 @@ async def patch_workspace(ctx: Ctx) -> dict[str, Any]:
     if values.get("egress_policy") == "open" and ctx.engine.settings.sealed:
         raise Forbidden("This server keeps every workspace's data inside the organization (DESK_SEALED).",
                         code="egress_blocked")
+    if "egress_policy" in values:
+        ctx.require_fresh()
     if "egress_policy" in values and ctx.role != "owner":
         raise Forbidden("Only the workspace owner can change where its data may go.")
     if values:
@@ -98,7 +100,7 @@ async def patch_workspace(ctx: Ctx) -> dict[str, Any]:
     return ctx.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ctx.ws_id,)) | {"role": ctx.role}
 
 
-@router.delete("/api/w/{ws}", role="owner")
+@router.delete("/api/w/{ws}", role="owner", fresh=True)
 async def delete_workspace(ctx: Ctx) -> None:
     from ..data.store import list_datasets, table_name
 
@@ -136,7 +138,7 @@ def _owner_count(ctx: Ctx) -> int:
     return ctx.engine.db.scalar("SELECT COUNT(*) FROM members WHERE workspace_id = ? AND role = 'owner'", (ctx.ws_id,))
 
 
-@router.patch("/api/w/{ws}/members/{user_id}", role="admin", body=RoleIn)
+@router.patch("/api/w/{ws}/members/{user_id}", role="admin", body=RoleIn, fresh=True)
 async def set_role(ctx: Ctx) -> dict[str, Any]:
     target = ctx.request.path_params["user_id"]
     current = ctx.engine.db.one("SELECT role FROM members WHERE workspace_id = ? AND user_id = ?", (ctx.ws_id, target))
@@ -160,6 +162,7 @@ async def remove_member(ctx: Ctx) -> None:
     target = ctx.request.path_params["user_id"]
     if target != ctx.user_id:
         ctx.require("admin")
+        ctx.require_fresh()
     current = ctx.engine.db.one("SELECT role FROM members WHERE workspace_id = ? AND user_id = ?", (ctx.ws_id, target))
     if current is None:
         raise NotFound("Member not found.")

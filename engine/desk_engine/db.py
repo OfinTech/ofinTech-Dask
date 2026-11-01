@@ -755,6 +755,10 @@ MIGRATIONS: list[str] = [
     CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log
     BEGIN SELECT RAISE(ABORT, 'audit entries are immutable'); END;
     """,
+    # 20 — step-up authentication: when the person last proved who they are on this session
+    """
+    ALTER TABLE sessions ADD COLUMN reauth_at REAL;
+    """,
 ]
 
 

@@ -88,7 +88,11 @@ migrations are applied automatically on start-up and are never rewritten once re
   dataset lookups are scoped to the workspace.
 - Export cells that begin with an invisible character before a formula prefix are kept as text too.
 - **Behaviour change:** sessions on a Team Server end after 30 minutes of inactivity (was 60; configurable 30–45)
-  and after 30 days whatever happens (was never). The page warns two minutes before with *Stay signed in* /
+  and after 12 hours whatever happens — 8 hours for admins and owners (was never; `DESK_SESSION_HOURS`,
+  `DESK_ADMIN_SESSION_HOURS`). High-risk actions (roles, connections, MCP servers, model providers, closing a
+  month, deleting data, approving an assistant action that leaves the workspace, …) ask for the password again
+  unless it was entered in the last 10 minutes; people can end their other sessions, and the instance
+  administrator can end anyone's. The page warns two minutes before with *Stay signed in* /
   *Log out now*, signs every tab out together, and re-checks the session after a sleep or a reconnection. The
   desktop app locks its screen after the same window and when the computer locks or sleeps.
 - Approvals expire (4 hours for actions that leave the workspace, 24 hours for edits of the person's own files),

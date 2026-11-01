@@ -75,7 +75,13 @@ async function handle(resp: Response): Promise<any> {
   return body;
 }
 
-export async function api<T = any>(method: string, path: string, body?: unknown): Promise<T> {
+/** Step-up authentication: a high-risk request is refused with 403 `reauth_required` until the person re-enters
+ *  their password on this session. The app installs a handler that shows that dialog; when it resolves true the
+ *  request is sent once more. Nothing is retried without the person's explicit confirmation. */
+let reauthHandler: (() => Promise<boolean>) | null = null;
+export function setReauthHandler(fn: (() => Promise<boolean>) | null): void { reauthHandler = fn; }
+
+export async function api<T = any>(method: string, path: string, body?: unknown, retried = false): Promise<T> {
   let resp: Response;
   try {
     resp = await fetch(path, {
@@ -86,6 +92,15 @@ export async function api<T = any>(method: string, path: string, body?: unknown)
     });
   } catch {
     throw new ApiError(0, "offline", "The OfinTech Desk engine is not reachable.");
+  }
+  if (resp.status === 403 && !retried && reauthHandler && path !== "/api/auth/reauth") {
+    const copy = resp.clone();
+    let code = "";
+    try { code = (await copy.json())?.error || ""; } catch { /* not JSON */ }
+    if (code === "reauth_required") {
+      const confirmed = await reauthHandler();
+      if (confirmed) return api<T>(method, path, body, true);
+    }
   }
   return handle(resp);
 }

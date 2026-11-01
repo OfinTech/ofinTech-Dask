@@ -1863,5 +1863,11 @@ const d: Record<string, string> = {
   "Locked after inactivity": "Verrouillé après inactivité",
   "Nothing happened for a while, so the workspace was hidden.": "Rien ne s’est passé pendant un moment, l’espace de travail a donc été masqué.",
   "Resume": "Reprendre",
+  "Confirm it's you": "Confirmez votre identité",
+  "This action changes something sensitive. Enter your password to continue.": "Cette action modifie un élément sensible. Saisissez votre mot de passe pour continuer.",
+  "This account signs in with Google. Sign in again to continue.": "Ce compte se connecte avec Google. Reconnectez-vous pour continuer.",
+  "Confirm": "Confirmer",
+  "Sign out of other devices": "Se déconnecter des autres appareils",
+  "Other devices signed out": "Autres appareils déconnectés",
 };
 export default d;

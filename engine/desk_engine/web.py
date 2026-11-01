@@ -50,16 +50,33 @@ def activity_write_seconds(idle_limit: float) -> float:
     return min(ACTIVITY_WRITE_SECONDS, idle_limit / 4) if idle_limit else ACTIVITY_WRITE_SECONDS
 
 
-def session_expiry(engine: Engine) -> float:
-    """When a session ends whatever the person does. ``session_days = 0`` means never."""
-    days = engine.settings.session_days
-    return now() + days * 86400 if days > 0 else NO_EXPIRY
+def is_privileged(engine: Engine, user_id: str) -> bool:
+    """Admin or owner of any workspace, or the instance administrator: the shorter lifetime applies."""
+    if engine.db.one("SELECT 1 FROM members WHERE user_id = ? AND role IN ('admin', 'owner') LIMIT 1", (user_id,)):
+        return True
+    return engine.db.scalar("SELECT value FROM settings WHERE key = 'instance_admin'") == user_id
+
+
+def session_lifetime(engine: Engine, user_id: str) -> float:
+    """Seconds a session may live whatever the person does: ``session_hours`` for everyone, ``admin_session_hours``
+    for anyone with administrative rights anywhere — judged at every request from the current memberships, so a
+    promotion shortens the sitting session and nobody keeps a long one by being promoted later."""
+    s = engine.settings
+    hours = min(s.session_hours, s.admin_session_hours) if is_privileged(engine, user_id) else s.session_hours
+    return hours * 3600
+
+
+def session_expiry(engine: Engine, user_id: str | None = None) -> float:
+    """The row's own cap, set at creation from the longest lifetime; the role-dependent lifetime is checked at
+    every request on top of it (``authenticate``)."""
+    hours = engine.settings.session_hours
+    return now() + hours * 3600 if hours > 0 else NO_EXPIRY
 
 
 def session_cookie_max_age(engine: Engine) -> int:
     """Longer than the idle window on purpose: the engine decides when a session ends, not the browser."""
-    days = engine.settings.session_days
-    return days * 86400 if days > 0 else 400 * 86400  # 400 days is the longest a browser keeps a cookie
+    hours = engine.settings.session_hours
+    return hours * 3600 if hours > 0 else 400 * 86400  # 400 days is the longest a browser keeps a cookie
 
 
 def role_at_least(role: str, required: str) -> bool:
@@ -106,6 +123,17 @@ class Ctx:
         if self.role is None or not role_at_least(self.role, role):
             raise Forbidden(f"This needs the {role} role or higher.")
 
+    def require_fresh(self) -> None:
+        """A high-risk action needs the person to have proved who they are within ``reauth_minutes`` on this very
+        session (sign-in, or ``POST /api/auth/reauth``). Role checks and approvals still apply on top. The desktop
+        app has no password to ask for, so there it is the OS account that stands for the person."""
+        if self.engine.settings.is_desktop:
+            return
+        row = session_row(self.engine, self.request)
+        window = self.engine.settings.reauth_minutes * 60
+        if row is None or not row.get("reauth_at") or now() - row["reauth_at"] > window:
+            raise Forbidden("Confirm your password to do this.", code="reauth_required")
+
     def audit(self, action: str, target: str | None = None, detail: Any = None) -> None:
         self.engine.audit(self.workspace["id"] if self.workspace else None,
                           self.user["id"] if self.user else None, action, target, detail)
@@ -123,9 +151,10 @@ class Router:
         self.engine = engine
 
     def route(self, method: str, path: str, *, auth: bool = True, role: str | None = None,
-              body: type[BaseModel] | None = None) -> Callable[[Handler], Handler]:
+              body: type[BaseModel] | None = None, fresh: bool = False) -> Callable[[Handler], Handler]:
         """``role`` set means the path contains ``{ws}`` and the caller must be a member with at
-        least that role."""
+        least that role. ``fresh`` means the person must also have re-entered their password recently
+        (``Ctx.require_fresh``): the high-risk routes listed in docs/SECURITY.md."""
 
         def decorator(fn: Handler) -> Handler:
             async def endpoint(request: Request) -> Response:
@@ -141,6 +170,8 @@ class Router:
                     ctx = Ctx(request=request, engine=engine, user=user)
                     if role is not None:
                         load_workspace(ctx, request.path_params["ws"], role)
+                    if fresh:
+                        ctx.require_fresh()
                     if body is not None:
                         ctx.body = await parse_body(request, body)
                     result = fn(ctx)
@@ -276,7 +307,8 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     # A session that is over is deleted, not merely refused: nothing is left to steal or to reuse.
     idle_limit = settings.session_idle_minutes * 60
     idle = bool(idle_limit) and now() - session["last_seen"] > idle_limit
-    if idle or session["expires_at"] < now():
+    over = session["expires_at"] < now() or now() - session["created_at"] > session_lifetime(engine, session["user_id"])
+    if idle or over:
         engine.db.execute("DELETE FROM sessions WHERE id = ?", (session["id"],))
         engine.audit(None, session["user_id"], "session.expired", None,
                      {"reason": "idle" if idle else "lifetime", "idle_minutes": settings.session_idle_minutes},
@@ -350,4 +382,5 @@ def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:
 
 
 def public_user(user: dict[str, Any]) -> dict[str, Any]:
-    return {"id": user["id"], "email": user["email"], "name": user["name"], "language": user.get("language")}
+    return {"id": user["id"], "email": user["email"], "name": user["name"], "language": user.get("language"),
+            "has_password": bool(user.get("password_hash"))}

@@ -63,6 +63,8 @@ async def session(ctx: Ctx) -> dict[str, Any]:
             "public_url": engine.settings.public_url,
             "site_url": engine.settings.site_url,
             "idle_minutes": 0 if engine.settings.is_desktop else engine.settings.session_idle_minutes,
+            "session_hours": 0 if engine.settings.is_desktop else engine.settings.session_hours,
+            "reauth_minutes": 0 if engine.settings.is_desktop else engine.settings.reauth_minutes,
             "lock_minutes": engine.settings.session_idle_minutes if engine.settings.is_desktop else 0,
             "warn_seconds": 120,
             "features": {"stdio_mcp": engine.settings.allow_stdio_mcp, "sealed": engine.settings.sealed,
@@ -96,7 +98,7 @@ def create_session(engine: Any, request: Any, user_id: str) -> str:
     ts = now()
     forget_dead_sessions(engine, user_id)
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user_id, "created_at": ts,
-                                  "expires_at": session_expiry(engine), "last_seen": ts,
+                                  "expires_at": session_expiry(engine, user_id), "last_seen": ts, "reauth_at": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})
     return token
 
@@ -187,15 +189,19 @@ async def login(ctx: Ctx) -> Any:
 def _session_state(ctx: Ctx) -> dict[str, Any]:
     """How long this session has left: until the idle sign-out and until its absolute end. The page shows the warning
     and the countdown from these numbers, never from its own clock alone."""
-    from ..web import NO_EXPIRY, SESSION_COOKIE, session_row
+    from ..web import session_lifetime, session_row
 
     row = session_row(ctx.engine, ctx.request)
     idle = ctx.engine.settings.session_idle_minutes * 60
     if row is None or ctx.engine.settings.is_desktop:
-        return {"ok": True, "idle_minutes": 0, "idle_seconds_left": None, "lifetime_seconds_left": None, "warn_seconds": 120}
+        return {"ok": True, "idle_minutes": 0, "idle_seconds_left": None, "lifetime_seconds_left": None, "warn_seconds": 120,
+                "fresh_seconds_left": None}
+    life_end = min(row["expires_at"], row["created_at"] + session_lifetime(ctx.engine, row["user_id"]))
+    fresh = ctx.engine.settings.reauth_minutes * 60
     return {"ok": True, "idle_minutes": ctx.engine.settings.session_idle_minutes,
             "idle_seconds_left": max(0, int(row["last_seen"] + idle - now())) if idle else None,
-            "lifetime_seconds_left": None if row["expires_at"] >= NO_EXPIRY else max(0, int(row["expires_at"] - now())),
+            "lifetime_seconds_left": max(0, int(life_end - now())),
+            "fresh_seconds_left": max(0, int((row.get("reauth_at") or 0) + fresh - now())),
             "warn_seconds": 120}
 
 
@@ -215,6 +221,86 @@ async def session_status(ctx: Ctx) -> dict[str, Any]:
     """The session's remaining time without extending it: a GET is not activity. Used after a tab wakes up, comes
     back online or becomes visible, and to keep several tabs' countdowns in step."""
     return _session_state(ctx)
+
+
+class ReauthIn(BaseModel):
+    password: str = Field(max_length=200)
+
+
+@router.post("/api/auth/reauth", body=ReauthIn)
+async def reauth(ctx: Ctx) -> dict[str, Any]:
+    """Step-up: the person re-enters their password on an existing session before a high-risk action. Rate-limited
+    like a sign-in; a Google-only account has no password and signs in again instead (which also counts)."""
+    from ..web import session_row
+
+    assert ctx.user is not None
+    if ctx.user["is_local"]:
+        return {"ok": True, "fresh_until": None}
+    _rate_limit(ctx.engine, f"login:{ctx.user['email'].lower()}")
+    if not ctx.user["password_hash"]:
+        raise Forbidden("This account signs in with Google. Sign in again to confirm.", code="reauth_google")
+    if not verify_password(ctx.body.password, ctx.user["password_hash"]):
+        ctx.engine.audit(None, ctx.user_id, "user.reauth.failed", None, {"reason": "bad_credentials"},
+                         resource_type="session", decision="denied", result="refused")
+        raise Unauthorized("Password is wrong.", code="bad_credentials")
+    row = session_row(ctx.engine, ctx.request)
+    ts = now()
+    if row:
+        ctx.engine.db.execute("UPDATE sessions SET reauth_at = ? WHERE id = ?", (ts, row["id"]))
+    ctx.engine.audit(None, ctx.user_id, "user.reauth", None, None, resource_type="session", decision="allowed", result="ok")
+    return {"ok": True, "fresh_until": ts + ctx.engine.settings.reauth_minutes * 60}
+
+
+@router.get("/api/auth/sessions")
+async def list_sessions(ctx: Ctx) -> list[dict[str, Any]]:
+    """The person's own sessions (devices), the current one marked; ids are opaque row ids, never tokens."""
+    from ..web import session_row
+
+    current = session_row(ctx.engine, ctx.request)
+    rows = ctx.engine.db.all("SELECT id, created_at, last_seen, expires_at, user_agent FROM sessions WHERE user_id = ? "
+                             "ORDER BY last_seen DESC", (ctx.user_id,))
+    return [{"id": r["id"][:16], "created_at": r["created_at"], "last_seen": r["last_seen"], "user_agent": r["user_agent"],
+             "current": bool(current and current["id"] == r["id"])} for r in rows]
+
+
+@router.delete("/api/auth/sessions/{sid}")
+async def revoke_session(ctx: Ctx) -> None:
+    """Ends one of the person's own sessions (another device) by its listed id."""
+    sid = ctx.request.path_params["sid"]
+    with ctx.engine.db.tx() as c:
+        n = c.execute("DELETE FROM sessions WHERE user_id = ? AND substr(id, 1, 16) = ?", (ctx.user_id, sid[:16])).rowcount
+    if not n:
+        raise NotFound("Session not found.")
+    ctx.engine.audit(None, ctx.user_id, "session.revoked", sid[:16], {"by": "self"}, resource_type="session",
+                     decision="allowed", result="signed_out")
+
+
+@router.post("/api/auth/sign-out-everywhere")
+async def sign_out_everywhere(ctx: Ctx) -> dict[str, Any]:
+    """Ends every other session of the person (a lost phone, a shared computer)."""
+    from ..web import session_row
+
+    current = session_row(ctx.engine, ctx.request)
+    with ctx.engine.db.tx() as c:
+        n = c.execute("DELETE FROM sessions WHERE user_id = ? AND id != ?", (ctx.user_id, current["id"] if current else "")).rowcount
+    ctx.engine.audit(None, ctx.user_id, "session.revoked", None, {"by": "self", "count": n}, resource_type="session",
+                     decision="allowed", result="signed_out")
+    return {"revoked": n}
+
+
+@router.post("/api/admin/users/{user_id}/sign-out", fresh=True)
+async def admin_sign_out(ctx: Ctx) -> dict[str, Any]:
+    """The instance administrator terminates every session of an account (after confirming their own password)."""
+    if not is_instance_admin(ctx):
+        raise Forbidden("Only the instance administrator can do this.")
+    target = ctx.request.path_params["user_id"]
+    if ctx.engine.db.one("SELECT 1 FROM users WHERE id = ?", (target,)) is None:
+        raise NotFound("User not found.")
+    with ctx.engine.db.tx() as c:
+        n = c.execute("DELETE FROM sessions WHERE user_id = ?", (target,)).rowcount
+    ctx.engine.audit(None, ctx.user_id, "session.revoked", target, {"by": "instance_admin", "count": n},
+                     resource_type="session", decision="allowed", result="signed_out")
+    return {"revoked": n}
 
 
 @router.post("/api/auth/logout")
@@ -344,7 +430,7 @@ async def reset(ctx: Ctx) -> Any:
     return _start_session(ctx, row["user_id"])
 
 
-@router.post("/api/admin/users/{user_id}/reset-link")
+@router.post("/api/admin/users/{user_id}/reset-link", fresh=True)
 async def admin_reset_link(ctx: Ctx) -> dict[str, Any]:
     """For servers without e-mail: the instance administrator creates a one-hour reset link to pass on."""
     if not is_instance_admin(ctx):

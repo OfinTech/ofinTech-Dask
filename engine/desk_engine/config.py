@@ -52,6 +52,26 @@ def _idle_minutes(value: int, mode: str) -> int:
     return value
 
 
+def _hours(name: str, default: int, mode: str, lo: int, hi: int) -> int:
+    """An absolute session lifetime in hours, bounded on a Team Server. ``DESK_SESSION_DAYS`` from earlier releases
+    is still read (days × 24) so an existing install keeps working, with a warning to move to hours."""
+    raw = _env(name, "")
+    if not raw and name == "DESK_SESSION_HOURS" and _env("DESK_SESSION_DAYS", ""):
+        days = _minutes_or_days("DESK_SESSION_DAYS", "0")
+        logging.getLogger("desk").warning("DESK_SESSION_DAYS is replaced by DESK_SESSION_HOURS; using %s hours", days * 24 if days else default)
+        raw = str(days * 24) if days else ""
+    if raw and not raw.isdigit():
+        raise ConfigError(f"{name} must be a whole number of hours, not {raw!r}.")
+    value = int(raw) if raw else default
+    if mode == "desktop":
+        return value
+    if value < lo or value > hi:
+        clamped = max(lo, min(hi, value)) if value else default
+        logging.getLogger("desk").warning("%s=%s is outside %s-%s; using %s", name, value, lo, hi, clamped)
+        return clamped
+    return value
+
+
 def _minutes_or_days(name: str, default: str) -> int:
     """A session limit: whole and never negative. These two knobs gate signing in, so a typo must stop
     the engine with a readable reason rather than lock everybody out or quietly remove the limit."""
@@ -79,7 +99,9 @@ class Settings:
     allow_stdio_mcp: bool
     allow_private_network_urls: bool
     ui_dir: Path | None
-    session_days: int = 30         # absolute cap on a session, in days; 0 = none (stay signed in while active)
+    session_hours: int = 12         # absolute lifetime of an interactive session (Team Server: 1 to 24)
+    admin_session_hours: int = 8    # … for a person who is admin or owner anywhere (Team Server: 1 to session_hours)
+    reauth_minutes: int = 10        # how recently a person must have proved who they are for a high-risk action
     session_idle_minutes: int = 30  # sign out after this long with no activity (Team Server: 30 to 45; 0 = never)
     max_upload_mb: int = 25
     whatsapp_graph_version: str = "v26.0"
@@ -218,7 +240,9 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         allow_stdio_mcp=_bool("DESK_ALLOW_STDIO_MCP", mode == "desktop"),
         allow_private_network_urls=_bool("DESK_ALLOW_PRIVATE_URLS", mode == "desktop"),
         ui_dir=ui_dir,
-        session_days=_minutes_or_days("DESK_SESSION_DAYS", "30"),
+        session_hours=_hours("DESK_SESSION_HOURS", 12, mode, 1, 24),
+        admin_session_hours=_hours("DESK_ADMIN_SESSION_HOURS", 8, mode, 1, 24),
+        reauth_minutes=max(1, min(60, _minutes_or_days("DESK_REAUTH_MINUTES", "10") or 10)),
         session_idle_minutes=_idle_minutes(_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "30"), mode),
         max_upload_mb=int(_env("DESK_MAX_UPLOAD_MB", "25")),
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),

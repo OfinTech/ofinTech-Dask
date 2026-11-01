@@ -54,7 +54,7 @@ async def rename(ctx: Ctx) -> dict[str, Any]:
     return store.public(store.get_dataset(ctx.engine, ctx.ws_id, did))
 
 
-@router.delete("/api/w/{ws}/datasets/{did}", role="editor")
+@router.delete("/api/w/{ws}/datasets/{did}", role="editor", fresh=True)
 async def delete(ctx: Ctx) -> None:
     store.delete_dataset(ctx.engine, ctx.ws_id, ctx.request.path_params["did"])
     ctx.audit("dataset.delete", ctx.request.path_params["did"])

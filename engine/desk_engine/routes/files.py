@@ -134,7 +134,7 @@ async def settings(ctx: Ctx) -> dict[str, Any]:
             "model": w.get("reviewer_model"), "storage": ctx.engine.storage.describe()}
 
 
-@router.put("/api/w/{ws}/files-settings", role="admin", body=ReviewSettingsIn)
+@router.put("/api/w/{ws}/files-settings", role="admin", body=ReviewSettingsIn, fresh=True)
 async def put_settings(ctx: Ctx) -> dict[str, Any]:
     b: ReviewSettingsIn = ctx.body
     if b.provider_id:

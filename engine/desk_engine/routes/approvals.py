@@ -41,5 +41,11 @@ class DecideIn(BaseModel):
 
 @router.post("/api/w/{ws}/approvals/{aid}/decide", role="viewer", body=DecideIn)
 async def decide(ctx: Ctx) -> dict[str, Any]:
+    from ..approvals import INTERNAL_TOOLS
+
+    appr = ctx.engine.db.one("SELECT tool FROM approvals WHERE id = ? AND workspace_id = ?",
+                             (ctx.request.path_params["aid"], ctx.ws_id))
+    if appr and ctx.body.approve and appr["tool"] not in INTERNAL_TOOLS:
+        ctx.require_fresh()   # approving an action that leaves the workspace is a high-risk action of its own
     return await ctx.engine.agent.decide(ctx.workspace, ctx.request.path_params["aid"], ctx.user_id, ctx.role or "viewer",
                                          ctx.body.approve, ctx.body.note)

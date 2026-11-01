@@ -74,7 +74,7 @@ async def _fetch_models(ctx: Ctx, provider_id: str) -> list[str]:
     return merged
 
 
-@router.post("/api/w/{ws}/providers", role="admin", body=ProviderIn)
+@router.post("/api/w/{ws}/providers", role="admin", body=ProviderIn, fresh=True)
 async def add_provider(ctx: Ctx) -> dict[str, Any]:
     b: ProviderIn = ctx.body
     kind = get_kind(b.kind)
@@ -134,7 +134,7 @@ async def patch_provider(ctx: Ctx) -> dict[str, Any]:
     return _out(provider_row(ctx.engine, ctx.ws_id, pid))
 
 
-@router.delete("/api/w/{ws}/providers/{pid}", role="admin")
+@router.delete("/api/w/{ws}/providers/{pid}", role="admin", fresh=True)
 async def delete_provider(ctx: Ctx) -> None:
     pid = ctx.request.path_params["pid"]
     row = provider_row(ctx.engine, ctx.ws_id, pid)
