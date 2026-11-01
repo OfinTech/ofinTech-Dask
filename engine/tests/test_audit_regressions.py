@@ -288,6 +288,60 @@ class OB11StreamReauthorisation(unittest.TestCase):
         finally:
             h.close()
 
+    def test_a_member_still_receives_events(self) -> None:
+        """The positive half: the same stream delivers events to someone who stays a member."""
+        import asyncio
+
+        import desk_engine.routes.threads as threads
+        from desk_engine.db import now
+        from desk_engine.security import new_token, token_hash
+
+        h = Harness("server")
+        try:
+            origin = {"origin": "https://desk.example.com"}
+            c = h.client
+            c.post("/api/auth/signup", json={"email": "o@acme.test", "name": "O", "password": PW})
+            ws = c.post("/api/workspaces", json={"name": "Acme", "base_currency": "USD"}, headers=origin).json()["id"]
+            t = c.post(f"/api/w/{ws}/threads", json={"title": "T"}, headers=origin).json()
+            db = h.engine.db
+            db.insert("users", {"id": "u_v", "email": "v@acme.test", "name": "V", "password_hash": None, "created_at": now()})
+            db.insert("members", {"workspace_id": ws, "user_id": "u_v", "role": "viewer", "created_at": now()})
+            token = new_token(32)
+            db.insert("sessions", {"id": token_hash(token), "user_id": "u_v", "created_at": now(),
+                                   "expires_at": now() + 3600, "last_seen": now(), "user_agent": "test"})
+            sent: list[bytes] = []
+            old = threads.KEEP_ALIVE_SECONDS
+            threads.KEEP_ALIVE_SECONDS = 0.2
+
+            async def run() -> None:
+                scope = {"type": "http", "method": "GET", "scheme": "https", "server": ("desk.example.com", 443),
+                         "path": f"/api/w/{ws}/threads/{t['id']}/events", "raw_path": b"/", "query_string": b"",
+                         "headers": [(b"host", b"desk.example.com"), (b"authorization", f"Bearer {token}".encode())],
+                         "app": h.app, "client": ("127.0.0.1", 1)}
+                disconnected = asyncio.Event()
+
+                async def receive():
+                    await disconnected.wait()
+                    return {"type": "http.disconnect"}
+
+                async def send(message):
+                    if message["type"] == "http.response.body":
+                        sent.append(message.get("body", b""))
+                        if sent[-1] == b": connected\n\n":
+                            h.engine.events.publish(t["id"], {"type": "message", "message": {"content": "hello member"}})
+                        elif b"hello member" in sent[-1]:
+                            disconnected.set()
+
+                await asyncio.wait_for(h.app(scope, receive, send), 5)
+
+            try:
+                asyncio.run(run())
+            finally:
+                threads.KEEP_ALIVE_SECONDS = old
+            self.assertIn(b'data: {"type": "message", "message": {"content": "hello member"}}', b"".join(sent))
+        finally:
+            h.close()
+
 class OB04ConnectionTimeNetworkPolicy(unittest.TestCase):
     """On a Team Server, a request to a private or local address is refused when it is made, not only when the
     URL was saved, so a name that changes what it resolves to gains nothing."""
