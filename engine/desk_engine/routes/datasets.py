@@ -11,6 +11,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 from starlette.responses import Response
 
+from ..files.cells import csv_safe
 from ..data import importer, store
 from ..data.query import QuerySpec, dataset_summary, run_query
 from ..db import new_id
@@ -68,8 +69,7 @@ async def export_csv(ctx: Ctx) -> Response:
     w.writerow([c["name"] for c in ds["columns"]])
     keys = ", ".join(c["key"] for c in ds["columns"])
     for row in ctx.engine.db.conn.execute(f"SELECT {keys} FROM {store.table_name(ds['id'])} ORDER BY _row"):
-        # neutralise spreadsheet formulas in exported text cells
-        w.writerow([("'" + v) if isinstance(v, str) and v[:1] in "=+-@" else v for v in row])
+        w.writerow([csv_safe(v) for v in row])  # text that a spreadsheet would read as a formula stays text
     safe = "".join(ch if ch.isalnum() or ch in " -_." else "_" for ch in ds["name"])[:80]
     return Response(buf.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"content-disposition": f'attachment; filename="{safe}.csv"'})

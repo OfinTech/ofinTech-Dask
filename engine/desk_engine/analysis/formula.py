@@ -53,8 +53,11 @@ class _Missing(Exception):
 
 
 def parse(text: str) -> Any:
+    from ..files.expr import check_depth
+
     if not text or len(text) > 400:
         raise Invalid("A formula has 1 to 400 characters.")
+    check_depth(text)
     toks: list[tuple[str, str]] = []
     pos = 0
     text = text.replace("−", "-").replace("×", "*").replace("÷", "/")

@@ -49,9 +49,9 @@ def _q(sheet: str) -> str:
 
 
 def _set(cell: Any, value: Any) -> None:
-    cell.value = value
-    if isinstance(value, str) and value.startswith("=") and not value.startswith("=="):
-        cell.data_type = "s"  # text that looks like a formula stays text
+    from .cells import set_cell
+
+    set_cell(cell, value)  # text that looks like a formula stays text, whatever its first character
 
 
 def _value(v: Any, f: str) -> Any:
