@@ -163,6 +163,10 @@ class AuthenticationAndSessions(unittest.TestCase):
                                    ("POST", "/api/admin/users/u_x/reset-link", None)):
             r = viewer.request(method, path, json=body, headers=self.origin)
             self.assertEqual(r.status_code, 403, (method, path, r.text))
+        # the oversight desk shows team activity from the audit log, which only admins read
+        self.assertEqual(viewer.get(f"/api/w/{self.ws}/oversight").status_code, 403)
+        self.assertEqual(viewer.get(f"/api/w/{self.ws}/audit").status_code, 403)
+        self.assertEqual(self.c.get(f"/api/w/{self.ws}/oversight").status_code, 200)
         # the invite token cannot be redeemed twice or by another e-mail
         other = TestClient(self.h.app, base_url="https://desk.example.com")
         r = other.post("/api/auth/signup", json={"email": "w@acme.test", "name": "W", "password": PW,

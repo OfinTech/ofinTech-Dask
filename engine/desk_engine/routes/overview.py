@@ -116,6 +116,6 @@ async def ledger_validation(ctx: Ctx) -> dict[str, Any]:
     return await asyncio.to_thread(ctx.engine.operations.validation, ctx.ws_id, ctx.workspace, _month(ctx))
 
 
-@router.get("/api/w/{ws}/oversight", role="viewer")
+@router.get("/api/w/{ws}/oversight", role="admin")   # team activity comes from the audit log, which admins read
 async def oversight(ctx: Ctx) -> dict[str, Any]:
     return await ctx.engine.operations.oversight(ctx.ws_id, ctx.workspace)

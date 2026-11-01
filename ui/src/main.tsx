@@ -7,7 +7,7 @@ try {
   if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
 } catch { /* storage unavailable */ }
 import { SIGNED_OUT_EVENT, get, post } from "./lib/api";
-import { AppCtx, type Session, type Workspace } from "./lib/app";
+import { AppCtx, can, type Session, type Workspace } from "./lib/app";
 import { BrandMark, ErrorBox, Icon, ToastProvider, Wordmark, errorText, go, useRoute } from "./components/ui";
 import { AuthPage, InvitePage, ResetPage } from "./pages/Auth";
 import { Onboarding } from "./pages/Onboarding";
@@ -209,7 +209,7 @@ function App(): ReactNode {
     try { localStorage.setItem(`desk-view:${ws!.id}`, v); } catch { /* private mode */ }
     setViewChoice((c) => ({ ...c, [ws!.id]: v }));
   }
-  const navKeys = new Set(VIEW_NAV[view]);
+  const navKeys = new Set(VIEW_NAV[view].filter((k) => k !== "oversight" || can(ws, "admin")));   // oversight reads the audit log
   const section = route[0] || "overview";
   let page: ReactNode;
   switch (section) {
