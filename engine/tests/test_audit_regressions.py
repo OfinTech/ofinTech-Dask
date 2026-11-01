@@ -387,5 +387,64 @@ class OB14MailNeverLogsInInClear(unittest.TestCase):
             Mailer(host="smtp.example", security="plain")
 
 
+class OB08AgentIsolation(unittest.TestCase):
+    """Tool arguments are checked against the tool's own schema before a handler sees them, and no tool call can
+    hold a run for ever."""
+
+    def test_arguments_are_validated_against_the_schema(self) -> None:
+        from desk_engine.agent.tools import schema, validate_args
+
+        sch = schema({"connection_id": {"type": "string"}, "limit": {"type": "integer", "minimum": 1, "maximum": 500},
+                      "kind": {"type": "string", "enum": ["invoice", "bill"]},
+                      "ids": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
+                      "filter": {"type": "object", "properties": {"year": {"type": "integer"}},
+                                 "additionalProperties": False}}, ["connection_id"])
+        self.assertEqual(validate_args(sch, {"connection_id": "c1", "limit": 10, "kind": "bill", "ids": ["a"],
+                                             "filter": {"year": 2026}}), [])
+        self.assertEqual(validate_args(sch, {"connection_id": "c1", "limit": 10.0}), [])   # 10.0 is an integer
+        bad = {"connection_id": 5, "limit": "ten", "kind": "payment", "ids": [1, 2, 3, 4], "filter": {"year": "x", "z": 1},
+               "extra": True}
+        problems = " ".join(validate_args(sch, bad))
+        for fragment in ("connection_id must be of type string", "limit must be of type integer",
+                         "kind must be one of: invoice, bill", "ids has too many items", "ids[0] must be of type string",
+                         "filter.year must be of type integer", "filter.z is not a known argument",
+                         "extra is not a known argument"):
+            self.assertIn(fragment, problems)
+        self.assertEqual(validate_args(sch, {"limit": 0})[0], "Missing required argument: connection_id.")
+        self.assertIn("at least 1", " ".join(validate_args(sch, {"connection_id": "c", "limit": 0})))
+        self.assertIn("at most 500", " ".join(validate_args(sch, {"connection_id": "c", "limit": 501})))
+        self.assertIn("must be of type boolean", " ".join(validate_args({"type": "object", "properties": {
+            "flag": {"type": "boolean"}}}, {"flag": "yes"})))
+        # unknown keywords and schemas without a type never reject
+        self.assertEqual(validate_args({"type": "object", "properties": {"x": {"$ref": "#/defs/x"}}}, {"x": 1}), [])
+
+    def test_tool_run_refuses_bad_arguments_and_stops_slow_handlers(self) -> None:
+        import asyncio
+
+        from desk_engine.agent.tools import Tool, ToolContext, ToolOutput, schema
+
+        async def slow(ctx, args):
+            await asyncio.sleep(5)
+            return ToolOutput("late")
+
+        async def echo(ctx, args):
+            return ToolOutput(str(args["n"] * 2))
+
+        h = Harness()
+        try:
+            ws = h.setup_workspace(with_model=False)
+            ctx = ToolContext(h.engine, h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws,)), "u")
+            t = Tool("double", "Doubles.", schema({"n": {"type": "integer"}}, ["n"]), echo)
+            self.assertEqual(asyncio.run(t.run(ctx, {"n": 21})).text, "42")
+            self.assertTrue(asyncio.run(t.run(ctx, {"n": "21"})).text.startswith("Error: the arguments do not match"))
+            self.assertTrue(asyncio.run(t.run(ctx, {"n": 1, "m": 2})).text.startswith("Error: the arguments do not match"))
+            s = Tool("slow", "Slow.", schema({}), slow, timeout=0.2)
+            out = asyncio.run(s.run(ctx, {}))
+            self.assertIn("did not finish within 0 seconds", out.text)
+            self.assertTrue(out.text.startswith("Error:"))
+        finally:
+            h.close()
+
+
 if __name__ == "__main__":
     unittest.main()

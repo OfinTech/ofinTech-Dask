@@ -58,6 +58,70 @@ class ToolOutput:
 Handler = Callable[[ToolContext, dict[str, Any]], Awaitable[ToolOutput]]
 
 
+DEFAULT_TOOL_TIMEOUT = 300.0  # seconds a tool call may take before the run moves on with an error
+
+
+_TYPES: dict[str, type | tuple[type, ...]] = {"string": str, "number": (int, float), "integer": int, "boolean": bool,
+                                              "array": list, "object": dict, "null": type(None)}
+
+
+def validate_args(schema: dict[str, Any], value: Any, path: str = "") -> list[str]:
+    """Problems with ``value`` against the parts of a JSON schema the engine understands (type, enum, required,
+    properties, additionalProperties, items, minimum/maximum, minLength/maxLength). Keywords it does not know are
+    ignored, so a schema from an MCP server can only make this stricter, never fail on its own."""
+    problems: list[str] = []
+    where = path or "arguments"
+    kinds = schema.get("type")
+    if isinstance(kinds, str):
+        kinds = [kinds]
+    if kinds:
+        ok = False
+        for kind in kinds:
+            expected = _TYPES.get(kind)
+            if expected is None:
+                ok = True
+            elif kind == "number" and isinstance(value, bool):
+                continue
+            elif kind == "integer" and isinstance(value, bool):
+                continue
+            elif kind == "integer" and isinstance(value, float) and value.is_integer():
+                ok = True
+            elif isinstance(value, expected):
+                ok = True
+        if not ok:
+            return [f"{where} must be of type {' or '.join(kinds)}."]
+    if "enum" in schema and value not in schema["enum"]:
+        return [f"{where} must be one of: {', '.join(str(v) for v in schema['enum'])}."]
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if "minimum" in schema and value < schema["minimum"]:
+            problems.append(f"{where} must be at least {schema['minimum']}.")
+        if "maximum" in schema and value > schema["maximum"]:
+            problems.append(f"{where} must be at most {schema['maximum']}.")
+    if isinstance(value, str):
+        if "minLength" in schema and len(value) < schema["minLength"]:
+            problems.append(f"{where} is too short.")
+        if "maxLength" in schema and len(value) > schema["maxLength"]:
+            problems.append(f"{where} is too long (at most {schema['maxLength']} characters).")
+    if isinstance(value, list):
+        if "maxItems" in schema and len(value) > schema["maxItems"]:
+            problems.append(f"{where} has too many items (at most {schema['maxItems']}).")
+        items = schema.get("items")
+        if isinstance(items, dict):
+            for i, item in enumerate(value):
+                problems.extend(validate_args(items, item, f"{where}[{i}]"))
+    if isinstance(value, dict):
+        props = schema.get("properties") or {}
+        for key in schema.get("required", []):
+            if key not in value:
+                problems.append(f"{where}.{key} is required." if path else f"Missing required argument: {key}.")
+        for key, sub in value.items():
+            if key in props and isinstance(props[key], dict):
+                problems.extend(validate_args(props[key], sub, f"{where}.{key}" if path else key))
+            elif schema.get("additionalProperties") is False and props:
+                problems.append(f"{where}.{key} is not a known argument." if path else f"{key} is not a known argument.")
+    return problems
+
+
 @dataclass
 class Tool:
     name: str
@@ -69,6 +133,7 @@ class Tool:
     summarize: Callable[[dict[str, Any]], str] | None = None
     available: Callable[[ToolContext], bool] | None = None
     policy: str | None = None  # MCP tools: auto | ask | off (overrides effect)
+    timeout: float = DEFAULT_TOOL_TIMEOUT
 
     def spec(self) -> ToolSpec:
         return ToolSpec(self.name, self.description, self.parameters)
@@ -94,13 +159,16 @@ class Tool:
                               "beneficiaries.")
         if tool_sends_out(self) and workspace_sealed(ctx.engine, ctx.workspace):
             return ToolOutput(SEALED_MESSAGE)
-        if "_invalid_json" in args:
+        if "_invalid_json" in args or not isinstance(args, dict):
             return ToolOutput("The arguments were not valid JSON. Call the tool again with a JSON object.")
-        missing = [k for k in self.parameters.get("required", []) if k not in args]
-        if missing:
-            return ToolOutput(f"Missing required arguments: {', '.join(missing)}.")
+        problems = validate_args(self.parameters, args)
+        if problems:
+            return ToolOutput("Error: the arguments do not match the tool's schema. " + " ".join(problems[:6]))
+        import asyncio
         try:
-            return await self.handler(ctx, args)
+            return await asyncio.wait_for(self.handler(ctx, args), self.timeout)
+        except TimeoutError:
+            return ToolOutput(f"Error: {self.name} did not finish within {int(self.timeout)} seconds and was stopped.")
         except AppError as exc:
             return ToolOutput(f"Error: {exc.message}")
         except (ValueError, TypeError, KeyError, ZeroDivisionError, ArithmeticError) as exc:
@@ -130,9 +198,10 @@ class ToolRegistry:
 
     def tool(self, name: str, description: str, parameters: dict[str, Any], *, effect: Effect = "read",
              category: str = "finance", summarize: Callable[[dict[str, Any]], str] | None = None,
-             available: Callable[[ToolContext], bool] | None = None) -> Callable[[Handler], Handler]:
+             available: Callable[[ToolContext], bool] | None = None,
+             timeout: float = DEFAULT_TOOL_TIMEOUT) -> Callable[[Handler], Handler]:
         def deco(fn: Handler) -> Handler:
-            self.add(Tool(name, description, parameters, fn, effect, category, summarize, available))
+            self.add(Tool(name, description, parameters, fn, effect, category, summarize, available, timeout=timeout))
             return fn
         return deco
 
