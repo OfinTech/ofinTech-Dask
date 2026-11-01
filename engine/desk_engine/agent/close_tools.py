@@ -53,7 +53,7 @@ async def _status(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "invoiced, and scores readiness. Nothing is posted to the accounting system. Optional month (YYYY-MM, "
                "default: the last complete month) and ledger (dataset id).",
                schema({"month": {"type": "string"}, "ledger": {"type": "string"}}),
-               category="analysis", available=_has_ledger)
+               category="analysis", available=_has_ledger, min_role="editor")
 async def _prepare(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     import asyncio
 

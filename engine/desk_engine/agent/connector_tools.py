@@ -104,7 +104,7 @@ async def _invoices(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("sync_accounting", "Refresh the datasets synced from an accounting connection (P&L by month, balance "
                "sheet, invoices, bills).", schema({"connection_id": CONN}), category="accounting",
-               available=_has(ACCOUNTING_PROVIDERS), timeout=1800)
+               available=_has(ACCOUNTING_PROVIDERS), timeout=1800, min_role="editor")
 async def _sync(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     conn = get_connection(ctx.engine, ctx.ws_id, a.get("connection_id"), ACCOUNTING_PROVIDERS)
     result = await sync_connection(ctx.engine, conn, user_id=ctx.user_id)
