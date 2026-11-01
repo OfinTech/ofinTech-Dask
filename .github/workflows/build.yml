@@ -61,7 +61,8 @@ jobs:
         working-directory: engine
         run: |
           pip install -r requirements.txt
-          python -m unittest discover -s tests -t .
+          # Verbose, and abort with a traceback of every thread if the suite ever hangs (OP-8).
+          timeout -s ABRT 20m python -X faulthandler -m unittest discover -v -s tests -t .
       - name: UI typecheck, translations and build
         working-directory: ui
         run: |
