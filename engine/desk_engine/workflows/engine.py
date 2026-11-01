@@ -256,6 +256,10 @@ class Workflows:
         self._spawn(run_id)
         return run_id
 
+    def _may_act(self, ws_id: str, user_id: str) -> bool:
+        return self.engine.db.one("SELECT 1 FROM members m JOIN users u ON u.id = m.user_id WHERE m.workspace_id = ? "
+                                  "AND m.user_id = ? AND u.disabled = 0", (ws_id, user_id)) is not None
+
     def _spawn(self, run_id: str) -> None:
         self.tasks[run_id] = asyncio.get_running_loop().create_task(self._advance_safely(run_id))
 
@@ -318,6 +322,12 @@ class Workflows:
         definition = WorkflowDef.model_validate(loads(wf["definition"], {}))
         context = loads(run["context"], {})
         owner = wf["created_by"]
+        # the run acts as the workflow's creator; a creator who left the workspace or whose account was disabled
+        # can no longer act, so the run stops here rather than with that person's old rights
+        if not self._may_act(workspace["id"], owner):
+            self._log(run, "-", "The workflow's creator is no longer an active member of this workspace; the run stops.", "error")
+            self._finish(run, "failed", "The workflow's creator is no longer an active member of this workspace.")
+            return
         index = run["step_index"]
         while index < len(definition.steps):
             step = definition.steps[index]
@@ -541,6 +551,9 @@ class Workflows:
         context = loads(run["context"], {})
         if approval["tool"] != "workflow.approval":
             workspace = self.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (run["workspace_id"],))
+            if not self._may_act(run["workspace_id"], wf["created_by"]):
+                self._finish(run, "failed", "The workflow's creator is no longer an active member of this workspace.")
+                return
             ctx = ToolContext(self.engine, workspace, wf["created_by"], None, run["id"], "workflow")
             tools = await self.engine.tools.for_context(ctx)
             tool = tools.get(approval["tool"])
