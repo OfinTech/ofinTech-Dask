@@ -351,8 +351,13 @@ def main() -> int:
             open_ledger()
             ctx.set_offline(True)
             advance(page, server, email, 31 * MIN)     # offline the whole time; the logout POST fails
-            page.wait_for_timeout(500)
-            offline_state = "form" if page.query_selector("form input[type=email]") else "page"
+            try:
+                page.wait_for_selector("form input[type=email]", timeout=5000)   # signed out locally, network or not
+                offline_state = "login form, figure gone" if "98,765.43" not in page.content() else "login form but figure still in DOM"
+            except Exception:  # noqa: BLE001
+                offline_state = "page still shown (FAIL)"
+            ev.record("S6-offline-local", "Team Server, Chromium (offline)", "past the limit while offline the page signs itself out without waiting for the network",
+                      offline_state, offline_state == "login form, figure gone", page, "s6-offline")
             ctx.set_offline(False)
             page.evaluate("window.dispatchEvent(new Event('online'))")
             page.wait_for_selector("form input[type=email]", timeout=15000)
