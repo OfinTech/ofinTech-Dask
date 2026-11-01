@@ -20,6 +20,12 @@ an empty one is read as a path and stops the build; with no macOS certificate it
 searching the runner's keychain. Without any of these the installers are built unsigned, and the release notes say
 so: macOS Gatekeeper and Windows SmartScreen warn users.
 
+**macOS is built for Apple silicon only.** `mac.target` names no architecture, so each run builds for the
+runner's own, and the macOS runners are arm64. Adding `arch: [arm64, x64]` would produce an Intel installer that
+cannot work: the engine inside it comes from `extraResources`, and PyInstaller built it for the runner. Serving
+Intel means building the engine for x64 as well — a second runner, or `macos-13` — not another line of config.
+`electron-builder.cloud.yml` can list both because that edition bundles no engine.
+
 **The bundled engine is the hard part of notarising macOS.** `engine/dist/desk-engine` is a PyInstaller folder of
 Mach-O files that ships inside the app as a resource, and a hardened-runtime app is notarised only when every
 executable in it carries the same signature. Expect the first notarisation attempt to need work there — the
