@@ -106,9 +106,20 @@ def main(out_dir: str) -> int:
             ctx = browser.new_context(viewport={"width": 1280, "height": 900}, locale="en-GB")
             page = ctx.new_page()
             # 1. the owner signs up (listed in DESK_PLATFORM_OWNERS) and the Owner Center link appears
+            console: list[str] = []
+            page.on("console", lambda m: console.append(f"{m.type}: {m.text}"))
+            page.on("pageerror", lambda e: console.append(f"pageerror: {e}"))
             signup(page, engine.base, OWNER, "Olivia Owner")
             page.goto(engine.base + "/#/owner")
-            page.wait_for_selector("text=Owner Control Center", timeout=30_000)
+            page.reload()
+            try:
+                page.wait_for_selector("text=Owner Control Center", timeout=30_000)
+            except Exception:
+                page.screenshot(path=str(out / "owner" / "failure.png"))
+                print("PAGE TEXT:", page.inner_text("body")[:1500], flush=True)
+                print("SESSION:", page.evaluate("fetch('/api/session').then(r => r.text())")[:800], flush=True)
+                print("CONSOLE:", "\n".join(console[-20:]), flush=True)
+                raise
             page.wait_for_selector("text=Total registered users", timeout=30_000)
             ev.record("O-1", "owner reaches #/owner and sees the KPI overview", f"overview rendered, KPI tiles present: {page.locator('.kpi-card').count()}",
                       page.locator(".kpi-card").count() >= 10, page, "o1-overview")
