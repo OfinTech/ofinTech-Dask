@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/BankBalanceSummary.json",
+  "title": "BankBalanceSummary",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "as_of": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "accounts": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "balance": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3
+          }
+        },
+        "required": [
+          "name",
+          "balance"
+        ]
+      }
+    },
+    "total": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "version",
+    "accounts"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/RevenueExpenseChart.json",
+  "title": "RevenueExpenseChart",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "points": {
+      "type": "array",
+      "maxItems": 120,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "period": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "revenue": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "expenses": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "profit": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "period"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "points"
+  ]
+}

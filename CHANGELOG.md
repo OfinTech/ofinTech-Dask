@@ -7,6 +7,23 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Embedded Agent Gateway + AG-UI adapter** (docs/embedded/): partner applications can run Desk's financial agent
+  inside their own UI over the AG-UI protocol. A workspace admin registers an *integration* (allowed origins,
+  capabilities, limits); Desk creates a dedicated **viewer** service user for it and an integration key for the
+  partner's backend, which mints 15-minute session tokens per end user. Workspace, acting user and role always come
+  from the integration, never from the request; client-supplied tenant/user/role fields are ignored and audited.
+  Runs are limited to a **read-only** tool scope (no write tools, nothing that leaves the network), stream AG-UI
+  events over SSE (`POST /api/embedded/agents/{agent_id}/run`), and map Desk approvals to AG-UI interrupts that can
+  only be decided inside Desk by an editor. Generative UI through a validated, versioned component registry (ten
+  financial components, ar/en, RTL) — the model never produces UI. Usage metering per integration and an
+  entitlement hook (no billing). Migration 21. React SDK `@ofintech/embedded-agent` (`sdk/embedded-agent`) and a
+  CopilotKit example (`examples/copilotkit-embedded`). 53 engine tests (`tests/test_embedded_*.py`), 12 SDK tests,
+  browser verification `e2e/embedded_browser.py`. Threat model with 20 threats in
+  `docs/embedded/SECURITY-THREAT-MODEL.md`. Not a production-readiness claim.
+- `Agent.start_turn(..., state_extra=)` and `state["tool_scope"]`: a run can carry a tool scope that narrows the
+  tools it is offered; absent, nothing changes for the Desk UI, workflows, channels or MCP.
+- The members API refuses to promote an embedded integration's service user above viewer (`service_user_role`).
+
 - **Executive overview** (docs/OVERVIEW.md): the landing page for every workspace. A financial health score with its
   reasons (judged against the finance lead's targets, or reference levels until targets are set), revenue, expenses,
   net profit and cash with a plain-language note on each, the twelve-month trend, cash and liquidity, risks that need

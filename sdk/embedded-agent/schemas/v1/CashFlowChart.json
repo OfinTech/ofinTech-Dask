@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/CashFlowChart.json",
+  "title": "CashFlowChart",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3
+    },
+    "points": {
+      "type": "array",
+      "maxItems": 120,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "period": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "inflow": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "outflow": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "net": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "balance": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "period"
+        ]
+      }
+    }
+  },
+  "required": [
+    "version",
+    "points"
+  ]
+}

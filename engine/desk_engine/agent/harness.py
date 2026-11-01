@@ -156,7 +156,10 @@ class Agent:
 
     def start_turn(self, workspace: dict[str, Any], user_id: str, thread_id: str, text: str, *,
                    parent: dict[str, Any] | None = None, source: str = "chat",
-                   attachments: list[dict[str, Any]] | None = None) -> str:
+                   attachments: list[dict[str, Any]] | None = None,
+                   state_extra: dict[str, Any] | None = None) -> str:
+        """``state_extra`` adds keys to the run's persisted state (``tool_scope``, ``extra_instructions``); it never
+        overrides ``step``, ``parent`` or ``source``."""
         if self.thread_busy(thread_id):
             raise Conflict("The assistant is still working on this conversation or waiting for an approval.",
                            code="thread_busy")
@@ -171,7 +174,7 @@ class Agent:
             c.execute("INSERT INTO agent_runs (id, workspace_id, thread_id, user_id, status, state, created_at, "
                       "updated_at) VALUES (?,?,?,?,?,?,?,?)",
                       (run_id, workspace["id"], thread_id, user_id, "running",
-                       dumps({"step": 0, "parent": parent, "source": source}), ts, ts))
+                       dumps({**(state_extra or {}), "step": 0, "parent": parent, "source": source}), ts, ts))
             c.execute("UPDATE threads SET updated_at = ? WHERE id = ?", (ts, thread_id))
         self.engine.events.start_run(thread_id)
         self.engine.events.publish(thread_id, {"type": "message", "message": self._message_out(msg_id)})
@@ -264,6 +267,11 @@ class Agent:
         state = loads(run["state"], {})
         ctx = ToolContext(engine, workspace, run["user_id"], thread["id"], run["id"], state.get("source") or "chat")
         tools = await engine.tools.for_context(ctx)
+        if state.get("tool_scope"):
+            # a run started through the embedded gateway is limited to the read-only tool set of its agent; the
+            # scope is part of the persisted run state, so it holds across approval pauses and restarts too
+            from ..embedded.scope import ToolScope
+            tools = ToolScope.from_state(state["tool_scope"]).apply(tools)
         usage = Usage(**loads(run["usage"], {})) if run["usage"] and run["usage"] != "{}" else Usage()
 
         # 1. finish pending tool calls decided by approvers

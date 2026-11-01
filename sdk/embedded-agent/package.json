@@ -1,0 +1,33 @@
+{
+  "name": "@ofintech/embedded-agent",
+  "version": "0.1.0",
+  "description": "Embed OfinTech Desk's read-only financial agent in your own React application over the AG-UI protocol.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./styles.css": "./dist/styles.css",
+    "./schemas/*": "./schemas/*"
+  },
+  "files": ["dist", "schemas", "README.md"],
+  "sideEffects": ["./dist/styles.css"],
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "0.28.2",
+    "typescript": "^6.0.0"
+  },
+  "keywords": ["ofintech", "ag-ui", "copilotkit", "finance", "embedded-agent"]
+}

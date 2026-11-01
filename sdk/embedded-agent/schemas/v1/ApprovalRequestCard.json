@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://desk.ofintech.ai/schemas/embedded/v1/ApprovalRequestCard.json",
+  "title": "ApprovalRequestCard",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "approval_id": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "tool": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "expires_at": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "decided_in": {
+      "type": "string",
+      "enum": [
+        "desk"
+      ]
+    },
+    "approval_url": {
+      "type": "string",
+      "maxLength": 500
+    }
+  },
+  "required": [
+    "version",
+    "approval_id",
+    "tool",
+    "summary",
+    "decided_in"
+  ]
+}
