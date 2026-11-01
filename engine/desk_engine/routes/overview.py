@@ -84,3 +84,38 @@ async def parties(ctx: Ctx) -> dict[str, Any]:
 @router.get("/api/w/{ws}/overview/anomalies", role="viewer")
 async def anomalies(ctx: Ctx) -> dict[str, Any]:
     return await asyncio.to_thread(ctx.engine.statements.anomalies, ctx.ws_id, ctx.workspace, _month(ctx))
+
+
+# ---- the accountant's and the accounting manager's pages -------------------------------------------------------------
+@router.get("/api/w/{ws}/ledger/entries", role="viewer")
+async def ledger_entries(ctx: Ctx) -> dict[str, Any]:
+    q = ctx.request.query_params
+    offset, limit = q.get("offset") or "0", q.get("limit") or "100"
+    if not offset.isdigit() or not limit.isdigit() or not 1 <= int(limit) <= 500:
+        raise Invalid("offset is a number and limit is 1 to 500.")
+    min_amount = q.get("min")
+    if min_amount is not None and min_amount != "":
+        try:
+            min_amount_f: float | None = float(min_amount)
+        except ValueError as exc:
+            raise Invalid("min is a number.") from exc
+    else:
+        min_amount_f = None
+    return await asyncio.to_thread(ctx.engine.operations.entries, ctx.ws_id, ctx.workspace, month=_month(ctx), q=q.get("q"),
+                                   account=q.get("account"), party=q.get("party"), kind=q.get("type"), min_amount=min_amount_f,
+                                   unbalanced_only=q.get("unbalanced") == "1", offset=int(offset), limit=int(limit))
+
+
+@router.get("/api/w/{ws}/ledger/accounts", role="viewer")
+async def ledger_accounts(ctx: Ctx) -> dict[str, Any]:
+    return await asyncio.to_thread(ctx.engine.operations.accounts, ctx.ws_id, ctx.workspace, _month(ctx))
+
+
+@router.get("/api/w/{ws}/ledger/validation", role="viewer")
+async def ledger_validation(ctx: Ctx) -> dict[str, Any]:
+    return await asyncio.to_thread(ctx.engine.operations.validation, ctx.ws_id, ctx.workspace, _month(ctx))
+
+
+@router.get("/api/w/{ws}/oversight", role="viewer")
+async def oversight(ctx: Ctx) -> dict[str, Any]:
+    return await ctx.engine.operations.oversight(ctx.ws_id, ctx.workspace)

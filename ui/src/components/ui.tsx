@@ -33,6 +33,8 @@ const paths: Record<string, string> = {
   close: "M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M9 14.5l2 2 4-4",
   pulse: "M2 12h4l3-7 4 14 3-7h6",
   ledger: "M5 3h14v18H5zM9 3v18M12 8h4M12 12h4M12 16h4",
+  book: "M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zm16 0h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z",
+  shield: "M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4",
 };
 
 export function Icon({ name, size = 18 }: { name: string; size?: number }): ReactNode {

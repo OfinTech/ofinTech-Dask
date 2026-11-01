@@ -181,8 +181,8 @@ export function OverviewPage({ view, arg }: { view?: string; arg?: string }): Re
   switch (view) {
     case "profit": return <Profitability month={month} />;
     case "breakdown": return <Breakdown measure={arg || "opex"} month={month} />;
-    case "transactions": return <Transactions measure={arg || "opex"} account={query().get("account") || ""} month={month} />;
-    case "entry": return <Entry entry={arg || ""} month={month} measure={query().get("measure")} account={query().get("account")} />;
+    case "transactions": return <Transactions measure={arg || "opex"} account={query().get("account") || ""} month={month} from={query().get("from")} />;
+    case "entry": return <Entry entry={arg || ""} month={month} measure={query().get("measure")} account={query().get("account")} from={query().get("from")} />;
     default: return <Executive month={month} />;
   }
 }
@@ -472,7 +472,7 @@ function Breakdown({ measure, month }: { measure: string; month: string | null }
 }
 
 // ---- level 4: ledger lines of one account ------------------------------------------------------------------------------
-function Transactions({ measure, account, month }: { measure: string; account: string; month: string | null }): ReactNode {
+function Transactions({ measure, account, month, from }: { measure: string; account: string; month: string | null; from?: string | null }): ReactNode {
   const { ws } = useApp();
   const { data, error, loading } = useLoad<any>(() => get(wsPath(ws, `/overview/transactions/${measure}?account=${encodeURIComponent(account)}${month ? `&month=${month}` : ""}`)),
     [ws.id, measure, account, month]);
@@ -484,8 +484,9 @@ function Transactions({ measure, account, month }: { measure: string; account: s
   const line = tr(MEASURE[measure] || measure);
   return (
     <div className="page">
-      <Crumbs items={[[tr("Overview"), withMonth("overview", m)], [tr("Profitability"), withMonth("overview/profit", m)],
-        [line, withMonth(`overview/breakdown/${measure}`, m)], [t.account, null]]} />
+      <Crumbs items={from === "ledger"
+        ? [[tr("General ledger"), withMonth("ledger/entries", m)], [tr("Accounts"), withMonth("ledger/accounts", m)], [t.account, null]]
+        : [[tr("Overview"), withMonth("overview", m)], [tr("Profitability"), withMonth("overview/profit", m)], [line, withMonth(`overview/breakdown/${measure}`, m)], [t.account, null]]} />
       <PageHead title={t.account} sub={t.count === 1 ? tr("One ledger line in {0}, {1} in total. Select it to open its journal entry.", { 0: monthName(m), 1: fmtMoney(t.total, cur) })
         : tr("{0} ledger lines in {1}, {2} in total. Select a line to open its journal entry.", { 0: t.count, 1: monthName(m), 2: fmtMoney(t.total, cur) })}
         actions={<MonthPicker months={t.months} month={m} onChange={(x) => go(withMonth(`overview/transactions/${measure}`, x, { account }))} />} />
@@ -497,9 +498,9 @@ function Transactions({ measure, account, month }: { measure: string; account: s
               <th className="num">{tr("Debit")}</th><th className="num">{tr("Credit")}</th><th className="num">{tr("Amount")}</th></tr></thead>
             <tbody>
               {t.rows.map((r: any) => (
-                <tr key={`${r.entry}-${r.row}`} className="clickable" onClick={() => go(withMonth(`overview/entry/${encodeURIComponent(r.entry)}`, m, { measure, account }))}>
+                <tr key={`${r.entry}-${r.row}`} className="clickable" onClick={() => go(withMonth(`overview/entry/${encodeURIComponent(r.entry)}`, m, { measure, account, ...(from ? { from } : {}) }))}>
                   <td className="num" style={{ textAlign: "start" }}>{fmtDate(r.date)}</td>
-                  <td><a href={`#/${withMonth(`overview/entry/${encodeURIComponent(r.entry)}`, m, { measure, account })}`} onClick={(e) => e.stopPropagation()}>{r.entry}</a>
+                  <td><a href={`#/${withMonth(`overview/entry/${encodeURIComponent(r.entry)}`, m, { measure, account, ...(from ? { from } : {}) })}`} onClick={(e) => e.stopPropagation()}>{r.entry}</a>
                     {r.type && <span className="xs muted"> · {r.type}</span>}</td>
                   <td>{r.description || <span className="muted">—</span>}</td>
                   <td>{r.party || <span className="muted">—</span>}</td>
@@ -532,7 +533,7 @@ const SOURCE_KIND: Record<string, string> = {
   open_accounting: N("Open Accounting Connector"), gmail: N("Gmail attachment"), google_drive: "Google Drive",
 };
 
-function Entry({ entry, month, measure, account }: { entry: string; month: string | null; measure: string | null; account: string | null }): ReactNode {
+function Entry({ entry, month, measure, account, from }: { entry: string; month: string | null; measure: string | null; account: string | null; from?: string | null }): ReactNode {
   const { ws } = useApp();
   const { data, error, loading } = useLoad<any>(() => get(wsPath(ws, `/overview/entries/${encodeURIComponent(entry)}${month ? `?month=${month}` : ""}`)), [ws.id, entry, month]);
   if (loading && !data) return <Loading />;
@@ -544,7 +545,10 @@ function Entry({ entry, month, measure, account }: { entry: string; month: strin
   const credit = e.lines.reduce((s: number, l: any) => s + (l.credit || 0), 0);
   return (
     <div className="page">
-      <Crumbs items={[[tr("Overview"), withMonth("overview", m)], [tr("Profitability"), withMonth("overview/profit", m)],
+      <Crumbs items={from === "ledger" ? [[tr("General ledger"), withMonth("ledger/entries", m)],
+        ...(measure && account ? [[e.lines.find((l: any) => account === `${l.account_code || ""}|${l.account}`)?.account || tr("Accounts"),
+          withMonth(`overview/transactions/${measure}`, m, { account, from: "ledger" })] as [string, string | null]] : []), [e.entry, null]]
+        : [[tr("Overview"), withMonth("overview", m)], [tr("Profitability"), withMonth("overview/profit", m)],
         ...(measure ? [[tr(MEASURE[measure] || measure), withMonth(`overview/breakdown/${measure}`, m)] as [string, string | null]] : []),
         ...(measure && account ? [[e.lines.find((l: any) => account === `${l.account_code || ""}|${l.account}`)?.account || tr("Ledger lines"),
           withMonth(`overview/transactions/${measure}`, m, { account })] as [string, string | null]] : []),

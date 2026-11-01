@@ -233,3 +233,104 @@ class StatementsTests(unittest.TestCase):
         self.assertEqual(fees["level"], "high")
         self.assertGreater(fees["value"], fees["average"] * 3)
         self.assertEqual(an["items"], sorted(an["items"], key=lambda a: {"high": 0, "medium": 1}[a["level"]]))
+
+
+class OperationsTests(unittest.TestCase):
+    """The general-ledger browser, accounting validation and the accounting manager's desk, on the demo company."""
+
+    def setUp(self) -> None:
+        self.h = Harness()
+        self.ws = self.h.setup_workspace(with_model=False)
+        up = self.h.api("POST", f"/api/w/{self.ws}/cost-centres/ledger/upload", files={"file": ("GL.xlsx", GL.read_bytes())})
+        self.did = up["dataset"]["id"]
+
+    def tearDown(self) -> None:
+        self.h.close()
+
+    def test_ledger_browser(self) -> None:
+        h, ws = self.h, self.ws
+        e = h.api("GET", f"/api/w/{ws}/ledger/entries?month=2026-10&limit=10")
+        self.assertEqual((e["count"], e["unbalanced"], len(e["rows"])), (40, 0, 10))
+        self.assertEqual(e["rows"], sorted(e["rows"], key=lambda r: (r["date"], r["entry"]), reverse=True))
+        self.assertTrue(all(r["balanced"] and r["lines"] >= 2 for r in e["rows"]))
+        self.assertIn("Invoice", e["types"])
+        page2 = h.api("GET", f"/api/w/{ws}/ledger/entries?month=2026-10&limit=10&offset=10")
+        self.assertEqual(len(page2["rows"]), 10)
+        self.assertFalse({r["entry"] for r in page2["rows"]} & {r["entry"] for r in e["rows"]})
+        # text search across the whole ledger, filters by type, party and account, and the month travels
+        s = h.api("GET", f"/api/w/{ws}/ledger/entries?q=kestrel")
+        self.assertGreater(s["count"], 10)
+        self.assertTrue(all("Kestrel" in (r["party"] or "") or "Kestrel" in (r["description"] or "") for r in s["rows"]))
+        inv = h.api("GET", f"/api/w/{ws}/ledger/entries?month=2026-10&type=Invoice")
+        self.assertTrue(all(r["type"] == "Invoice" for r in inv["rows"]) and inv["count"] > 0)
+        acc = h.api("GET", f"/api/w/{ws}/ledger/entries?month=2026-10&account=6400|Professional Fees")
+        self.assertEqual(acc["count"], 1)
+        big = h.api("GET", f"/api/w/{ws}/ledger/entries?month=2026-10&min=50000")
+        self.assertTrue(all(max(r["debit"], r["credit"]) >= 50000 for r in big["rows"]))
+        h.api("GET", f"/api/w/{ws}/ledger/entries?limit=0", expect=422)
+        h.api("GET", f"/api/w/{ws}/ledger/entries?min=abc", expect=422)
+        # accounts: every account with its role, month activity and month-end balance; the suspense account is flagged
+        a = h.api("GET", f"/api/w/{ws}/ledger/accounts?month=2026-10")
+        self.assertEqual(len(a["rows"]), 23)
+        bank = next(r for r in a["rows"] if r["code"] == "1000")
+        ov = h.api("GET", f"/api/w/{ws}/overview?month=2026-10")
+        self.assertAlmostEqual(bank["balance"], ov["headline"]["cash"]["value"], places=2)
+        self.assertEqual((bank["role"], bank["kind"], bank["confirmed"]), ("cash", "balance", False))
+        susp = next(r for r in a["rows"] if r["suspense"])
+        self.assertEqual((susp["name"], susp["balance"]), ("1900 Suspense", 4800.0))
+        fees = next(r for r in a["rows"] if r["code"] == "6400")
+        self.assertEqual((fees["kind"], fees["balance"]), ("pl", 19900.0))
+
+    def test_validation(self) -> None:
+        h, ws = self.h, self.ws
+        v = h.api("GET", f"/api/w/{ws}/ledger/validation?month=2026-10")
+        checks = {c["kind"]: c for c in v["checks"]}
+        self.assertEqual(checks["suspense_balances"]["count"], 1)
+        self.assertEqual(checks["suspense_balances"]["samples"][0]["account"], "1900 Suspense")
+        self.assertEqual(checks["unconfirmed_roles"]["count"], 17)             # accounts used in October
+        self.assertEqual(checks["unbalanced_entries"]["count"], 0)
+        self.assertFalse(v["clean"])
+        self.assertEqual(v["issues"], 18)
+        self.assertEqual(v["checks"][0]["level"], "high")
+        whole = h.api("GET", f"/api/w/{ws}/ledger/validation")
+        self.assertEqual({c["kind"]: c["count"] for c in whole["checks"] if c["count"]}, {"suspense_balances": 1, "unconfirmed_roles": 23})
+        # confirming the roles clears that check
+        roles = h.api("GET", f"/api/w/{ws}/analysis/roles")
+        items = [{"key": a["key"], "role": a["role"]} for a in roles["accounts"]]
+        h.api("PUT", f"/api/w/{ws}/analysis/roles", json={"items": items})
+        after = h.api("GET", f"/api/w/{ws}/ledger/validation")
+        self.assertEqual({c["kind"]: c["count"] for c in after["checks"] if c["count"]}, {"suspense_balances": 1})
+        self.assertEqual(after["provenance"]["kind"], "actual")
+
+    def test_oversight(self) -> None:
+        from unittest.mock import patch
+
+        h, ws = self.h, self.ws
+        o = h.api("GET", f"/api/w/{ws}/oversight")
+        self.assertEqual(o["month"], "2026-10")
+        self.assertEqual([r["month"] for r in o["reconciliation"]], ["2026-10", "2026-09", "2026-08", "2026-07", "2026-06", "2026-05"])
+        self.assertTrue(all(r["status"] == "none" for r in o["reconciliation"]))
+        self.assertIsNone(o["unmatched"])
+        self.assertEqual(o["exceptions"]["validation"]["issues"], 18)
+        self.assertGreaterEqual(o["exceptions"]["anomalies"]["count"], 2)
+        self.assertEqual(o["team"][0]["name"], "Root")
+        self.assertIn("dataset.import", {x["action"] for x in o["recent"]})
+        self.assertEqual(o["documents"]["total"], 0)
+        self.assertEqual(o["operations"]["entries_last_month"], 40)
+        self.assertEqual(o["operations"]["months_not_started"], 6)
+        # prepare October's close with the demo bank statement: the desk shows the run, the match rate and the unmatched items
+        with patch("desk_engine.close.service._today", return_value="2026-11-15"):
+            run = h.api("POST", f"/api/w/{ws}/close", json={"month": "2026-10"})
+            stmt = (DEMO / "HarborLine_Bank_Statement_2026-10.csv").read_bytes()
+            h.api("POST", f"/api/w/{ws}/close/{run['id']}/statement", files={"file": ("october.csv", stmt)})
+        o = h.api("GET", f"/api/w/{ws}/oversight")
+        oct_ = o["reconciliation"][0]
+        self.assertEqual((oct_["status"], oct_["statement"], oct_["run_id"]), ("open", True, run["id"]))
+        self.assertGreater(oct_["matched"], 0)
+        self.assertIsNotNone(o["unmatched"])
+        self.assertEqual(o["unmatched"]["month"], "2026-10")
+        self.assertEqual(o["operations"]["months_open"], 1)
+        self.assertIsNotNone(o["operations"]["avg_days_to_prepare"])
+        self.assertTrue(any(x["kind"] in ("accrual", "depreciation", "variance", "bank_fee", "bank_interest", "to_review")
+                            for x in o["open_close_items"]), o["open_close_items"])
+        self.assertIn("close.prepare", {x["action"] for x in o["recent"]})

@@ -22,6 +22,7 @@ from .agent.harness import Agent
 from .agent.tools import ToolContext, registry
 from .analysis import Analysis
 from .analysis.overview import Overview
+from .analysis.operations import Operations
 from .analysis.statements import Statements
 from .channels.service import Channels
 from .close import Close
@@ -94,6 +95,7 @@ class Engine:
         self.analysis = Analysis(self)
         self.overview = Overview(self)
         self.statements = Statements(self)
+        self.operations = Operations(self)
         self.webhooks = Webhooks(self)
         self.close = Close(self)
         self.mcp_server_lifespan: Any = None

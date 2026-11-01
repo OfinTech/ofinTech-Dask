@@ -443,11 +443,31 @@ def run_steps(pg, base, out, xlsx):
     assert pg.evaluate("location.hash").endswith(f"month={month}")
     pg.locator(".crumbs a", has_text="Overview").click()
     pg.wait_for_selector(".health")
+    # the accountant's general ledger and the accounting manager's desk
+    pg.goto(f"{base}/#/ledger/entries?month={month}")
+    pg.wait_for_selector("text=Select an entry to see its lines")
+    pg.get_by_label("Search").fill("rent")
+    pg.get_by_role("button", name="Filter").click()
+    pg.wait_for_selector("table.ledger tbody tr")
+    assert "q=rent" in pg.evaluate("location.hash")
+    pg.locator("table.ledger tbody tr.clickable").first.click()
+    pg.wait_for_selector("h1:has-text('Journal entry')")
+    assert pg.locator(".crumbs a", has_text="General ledger").count() == 1
+    pg.goto(f"{base}/#/ledger/accounts?month={month}")
+    pg.wait_for_selector("text=with a confirmed role")
+    pg.goto(f"{base}/#/ledger/validation?month={month}")
+    pg.wait_for_selector("text=checked the way a reviewer would")
+    pg.wait_for_selector("text=Accounts whose role is still a suggestion")
+    pg.screenshot(path=str(out / "ledger-validation.png"))
+    pg.goto(f"{base}/#/oversight")
+    pg.wait_for_selector("text=Reconciliation and close, last six months")
+    pg.wait_for_selector("text=Team, last 14 days")
+    pg.screenshot(path=str(out / "oversight.png"))
     # the view switch only changes the rail; the executive view shows five sections
     pg.get_by_role("tab", name="Executive").click()
     assert pg.locator(".nav a").count() == 5 + 2, pg.locator(".nav").inner_text()   # plus Connections and Settings
     pg.get_by_role("tab", name="Accounting").click()
-    assert pg.locator(".nav a").count() == 15 + 2
+    assert pg.locator(".nav a").count() == 17 + 2
     pg.get_by_role("tab", name="Finance").click()
     pg.goto(f"{base}/#/analysis/forecasts")
     pg.get_by_role("button", name="New forecast").click()
@@ -524,7 +544,8 @@ def run_steps(pg, base, out, xlsx):
     pg.screenshot(path=str(out / "ar-settings.png"))
     for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
                          ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر"),
-                         ("overview", "على المسار"), ("overview/profit", "الربحية"), ("finance/receivables", "حسب العميل")):
+                         ("overview", "على المسار"), ("overview/profit", "الربحية"), ("finance/receivables", "حسب العميل"),
+                         ("ledger/entries", "قيود اليومية"), ("oversight", "المطابقة والإقفال")):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_selector(f"text={needle}")
         pg.wait_for_timeout(300)
