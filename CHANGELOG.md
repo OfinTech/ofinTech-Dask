@@ -18,6 +18,9 @@ migrations are applied automatically on start-up and are never rewritten once re
   `DESK_EGRESS_ALLOW` hosts are exempt.
 - **Behaviour change:** a stored file without the encryption header is refused unless
   `DESK_STORAGE_ALLOW_PLAINTEXT=true`; `python -m desk_engine storage-encrypt` rewrites such files once.
+- Office files that would inflate beyond 400 MB or 200:1, images outside raster formats or above 60 MP, and OCR
+  runs past 15 minutes are refused or cut short before a parser spends the memory; Caddy caps bodies at 260 MB.
+- The bank-identifier masker no longer masks the engine's own ids (`doc_…`, `ds_…`).
 - Tool arguments are validated against each tool's schema before a handler runs; every tool call has a time limit.
 - `DESK_SMTP_SECURITY` accepts `starttls`, `ssl` or `none` only, and `none` cannot be combined with a login.
 - Audit entries for MCP servers keep the URL without its query string; Telegram transport errors never carry the

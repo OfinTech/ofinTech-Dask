@@ -12,6 +12,7 @@ from datetime import date, datetime
 from typing import Any
 
 from ..errors import Invalid
+from ..files.limits import check_office_zip
 
 MAX_ROWS = 200_000
 MAX_COLS = 200
@@ -155,6 +156,7 @@ def _read_csv(data: bytes) -> list[list[Any]]:
 def _read_xlsx(data: bytes) -> list[Table]:
     from openpyxl import load_workbook
 
+    check_office_zip(data, what="workbook")
     try:
         wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
     except Exception as exc:  # openpyxl raises many types for damaged files

@@ -18,7 +18,7 @@ testing) was followed: every check ran against throw-away engine instances with 
 |---|---|---|---|---|---|
 | P0 | 0 | — | — | — | — |
 | P1 | 3 | 3 | — | — | — |
-| P2 | 9 | 7 | 1 | 1 | — |
+| P2 | 9 | 8 | 1 | — | — |
 | P3 | 6 | 2 | 1 | 2 | 1 |
 
 No actively exploitable, unauthenticated P0 was found. The engine's authorisation layer, parameterised SQL,
@@ -102,15 +102,22 @@ results), checks done once instead of every time, and limits that relied on a he
 - **Tests:** `test_storage.test_files_written_before_encryption_need_an_explicit_migration` (rewritten from the
   test that pinned the old behaviour).
 
-### OB-06 · Parser resource limits — P2, open (partly mitigated)
+### OB-06 · Parser resource limits — P2, fixed
 
 - **CWE-400 / CWE-409** · `knowledge/extract.py`, `knowledge/ocr.py`, `files/editable.py`, `costcentres/budget.py`.
 - No decompression or page/time limit for docx/xlsx/pdf parsing; Pillow opened any format it recognises (EPS →
   Ghostscript if installed); the 60 MP pixel check ran after decoding; OCR worst case is 200 pages × 4 images ×
   120 s. Parsing runs in a thread so the event loop survives, but CPU and memory do not.
-- **Status:** open. Planned (roadmap R7): `Image.open(formats=[...])`, pixel limit from the image header before
-  `load()`, a per-document parse budget, and a zip member size cap for Office files. Tool-level timeouts (OB-08)
-  now bound the agent's own `read_document`/`inspect_file` paths.
+- **Fix (R7):** `files/limits.py` — `check_office_zip` refuses an Office archive whose members declare more than
+  400 MB inflated, more than 20,000 parts, or a ratio above 200:1 (Python's `zipfile` never reads past a declared
+  size, so the declaration is a reliable cap); it is called by every Office reader (knowledge extraction, dataset
+  import, user-file editing, budget and ledger parsers, close statements). `open_image` decodes only PNG, JPEG,
+  TIFF, BMP, GIF and WebP, and refuses an image whose header declares more than 60 MP before any pixel is decoded
+  (Pillow's own 178 MP ceiling is caught too). OCR of one scanned PDF stops after 15 minutes; pages past the budget
+  are indexed empty rather than failing the document. Caddy caps request bodies at 260 MB at the edge.
+- **Residual:** pypdf has no per-page time limit; a pathological PDF can still take long on a single page. The
+  OCR budget and the tool timeouts (OB-08) bound the agent-facing paths.
+- **Tests:** `OB06ParserLimits` (2).
 
 ### OB-07 · Body limits relied on Content-Length — P2, fixed
 

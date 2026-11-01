@@ -461,5 +461,81 @@ class OB19MaskingKeepsEngineIds(unittest.TestCase):
         self.assertEqual(mask("ref XY99abcd"), "ref XY99abcd")   # too short to be an IBAN
 
 
+class OB06ParserLimits(unittest.TestCase):
+    """Files that would inflate without bound, and images in formats a scan never uses, are refused before any
+    parser spends memory on them."""
+
+    @staticmethod
+    def _bomb(member: str, inflated: int) -> bytes:
+        import io
+        import zipfile
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr(member, b"\0" * inflated)        # compresses to almost nothing
+            zf.writestr("[Content_Types].xml", b"<Types/>")
+        return buf.getvalue()
+
+    def test_office_zip_bombs_are_refused_everywhere(self) -> None:
+        from desk_engine import files
+        from desk_engine.errors import Invalid
+        from desk_engine.files import limits
+
+        limits_old = (limits.MAX_OFFICE_UNCOMPRESSED, limits.MAX_OFFICE_RATIO)
+        limits.MAX_OFFICE_UNCOMPRESSED, limits.MAX_OFFICE_RATIO = 8 * 1024 * 1024, 200
+        try:
+            bomb = self._bomb("xl/worksheets/sheet1.xml", 16 * 1024 * 1024)
+            self.assertLess(len(bomb), 64 * 1024)
+            with self.assertRaises(Invalid) as c:
+                limits.check_office_zip(bomb)
+            self.assertEqual(c.exception.code, "document_too_large")
+            # every reader goes through the check
+            from desk_engine.costcentres import budget
+            from desk_engine.data import importer
+            from desk_engine.files import editable
+            from desk_engine.knowledge import extract
+
+            for fn in (lambda: extract.extract(bomb, "a.xlsx"), lambda: extract.extract(bomb, "a.docx"),
+                       lambda: importer.read_workbook(bomb, "a.xlsx"), lambda: budget.parse_xlsx(bomb),
+                       lambda: budget.parse_docx(bomb), lambda: editable.detect_format("a.xlsx", bomb)):
+                with self.assertRaises(Invalid) as c:
+                    fn()
+                self.assertEqual(c.exception.code, "document_too_large")
+        finally:
+            limits.MAX_OFFICE_UNCOMPRESSED, limits.MAX_OFFICE_RATIO = limits_old
+        # an ordinary small archive passes (ratio only matters above 1 MB inflated)
+        limits.check_office_zip(self._bomb("xl/workbook.xml", 100 * 1024))
+
+    def test_images_are_decoded_only_in_raster_formats_and_within_the_pixel_limit(self) -> None:
+        import io
+
+        from PIL import Image
+
+        from desk_engine.files.limits import open_image
+
+        png = io.BytesIO()
+        Image.new("L", (40, 20), 255).save(png, "PNG")
+        with open_image(png.getvalue()) as im:
+            self.assertEqual(im.size, (40, 20))
+        eps = b"%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 10 10\nshowpage\n"
+        with self.assertRaises(ValueError):
+            open_image(eps)
+        # a header that declares a huge image is refused before decoding (no pixel data is ever read)
+        huge = io.BytesIO()
+        Image.new("1", (1, 1)).save(huge, "PNG")
+        data = bytearray(huge.getvalue())
+        data[16:24] = (10000).to_bytes(4, "big") + (10000).to_bytes(4, "big")   # IHDR width/height = 100 MP
+        import struct
+        import zlib
+        data[29:33] = struct.pack(">I", zlib.crc32(bytes(data[12:29])) & 0xFFFFFFFF)
+        with self.assertRaises(ValueError) as c:
+            open_image(bytes(data))
+        self.assertIn("too large", str(c.exception))
+        data[16:24] = (20000).to_bytes(4, "big") + (20000).to_bytes(4, "big")   # 400 MP: past Pillow's own ceiling
+        data[29:33] = struct.pack(">I", zlib.crc32(bytes(data[12:29])) & 0xFFFFFFFF)
+        with self.assertRaises(ValueError):
+            open_image(bytes(data))
+
+
 if __name__ == "__main__":
     unittest.main()
