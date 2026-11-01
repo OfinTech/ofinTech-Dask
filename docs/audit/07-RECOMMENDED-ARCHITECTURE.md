@@ -76,7 +76,7 @@ user. The target makes B2 and B3 **single modules** so that a reviewer can read 
 
 ## 5. Database design
 
-Keep the schema. Changes: FTS rows deleted with their parents; `secure_delete` on desktop; `secrets.workspace_id`
+Keep the schema. Changes: `secure_delete` on desktop; `secrets.workspace_id`
 documented as nullable-for-app-credentials; datasets stay in the main file until the PostgreSQL trigger. See
 document 04 §4 for the migration shape when the trigger fires (access layer already database-agnostic;
 FTS5 and `ds_*` are the two things that need a design).
