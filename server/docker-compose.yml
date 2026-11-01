@@ -14,6 +14,9 @@ services:
       DESK_PUBLIC_URL: https://${DESK_DOMAIN:?set DESK_DOMAIN in .env}
       DESK_MASTER_KEY: ${DESK_MASTER_KEY:?set DESK_MASTER_KEY in .env (python -m desk_engine keygen)}
     volumes: [desk_data:/var/lib/ofintech-desk]
+    tmpfs: [/tmp]                       # OCR and upload spools; nothing in the container is written anywhere else
+    cap_drop: [ALL]                     # the engine needs no Linux capability: it runs as uid 10001 on port 8700
+    security_opt: [no-new-privileges:true]
     expose: ["8700"]
     logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
 

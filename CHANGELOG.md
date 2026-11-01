@@ -3,6 +3,28 @@
 All notable changes are listed here. Versions follow [Semantic Versioning](https://semver.org/); database
 migrations are applied automatically on start-up and are never rewritten once released.
 
+## Unreleased
+
+### Security (enterprise audit, docs/audit/)
+
+- The Zoho sign-in callback accepts only Zoho's own accounts servers and API hosts, matched exactly.
+- The CSRF guard compares the whole request origin with the server's, never a prefix.
+- Every CSV and workbook the engine writes keeps imported text as text (`= + - @`, tab and carriage-return
+  prefixes), including the month-end close journal and pack.
+- Request body limits hold whatever `Content-Length` says, on every public endpoint and the JSON API.
+- An open event stream closes within one keep-alive when the session ends or the member is removed.
+- Team Server: outbound requests are judged against the private network at every connection
+  (`egress.PrivateNetworkGuard`); shared address space (100.64/10) is refused; the S3 endpoint and
+  `DESK_EGRESS_ALLOW` hosts are exempt.
+- **Behaviour change:** a stored file without the encryption header is refused unless
+  `DESK_STORAGE_ALLOW_PLAINTEXT=true`; `python -m desk_engine storage-encrypt` rewrites such files once.
+- Tool arguments are validated against each tool's schema before a handler runs; every tool call has a time limit.
+- `DESK_SMTP_SECURITY` accepts `starttls`, `ssl` or `none` only, and `none` cannot be combined with a login.
+- Audit entries for MCP servers keep the URL without its query string; Telegram transport errors never carry the
+  bot token; formula parsers refuse deep nesting and absurd `ROUND` digits cleanly.
+- CI: read-only workflow token, a `security` job (gitleaks, ruff security rules, pip-audit, npm audit) and a Trivy
+  scan of the Team Server image gate the image and the release; the engine container drops all capabilities.
+
 ## 1.1.0 — 2026-11-01
 
 ### Added
