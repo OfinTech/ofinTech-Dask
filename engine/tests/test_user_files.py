@@ -84,6 +84,14 @@ class UserFiles(unittest.TestCase):
                         "Filled; payroll 53,875 has no source."]
         h.api("POST", f"/api/w/{ws}/threads/{t['id']}/messages", json={"text": "Go ahead"})
         data = h.wait_run(t["id"])
+        # editing a person's own file changes something they keep: it waits for approval (audit OB-08)
+        self.assertEqual(data["run"]["status"], "waiting_approval")
+        self.assertEqual(h.api("GET", f"/api/w/{ws}/files/{fid}")["version"], 1)   # nothing changed yet
+        pending = h.api("GET", f"/api/w/{ws}/approvals")
+        self.assertEqual([a["tool"] for a in pending], ["edit_file"])
+        self.assertEqual(pending[0]["summary"], "Edit file (3 changes)")
+        h.api("POST", f"/api/w/{ws}/approvals/{pending[0]['id']}/decide", json={"approve": True})
+        data = h.wait_run(t["id"])
         tools = [m for m in data["messages"] if m["role"] == "tool"]
         self.assertIn("B4=", tools[-2]["content"].replace(" ", "") + "B4=")  # inspect listed cells
         self.assertIn("D4==B4-C4", tools[-2]["content"].replace(" ", ""))

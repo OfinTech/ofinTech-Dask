@@ -45,6 +45,23 @@ def _attr(obj: Any, *names: str, default: Any = None) -> Any:
     return default
 
 
+def tool_fingerprint(t: dict[str, Any]) -> str:
+    """What an admin approves when setting a tool's policy: its name, description, input schema and read-only flag.
+    A server that changes any of them has changed the tool."""
+    import hashlib
+    import json
+
+    material = json.dumps([t.get("name"), t.get("description"), t.get("input_schema"), bool(t.get("read_only"))],
+                          sort_keys=True, default=str)
+    return hashlib.sha256(material.encode()).hexdigest()[:32]
+
+
+def tool_may_run_unattended(t: dict[str, Any]) -> bool:
+    """``auto`` is honoured only for a tool the server marks read-only and whose fingerprint an admin approved."""
+    return bool(t.get("read_only")) and bool(t.get("approved_fingerprint")) and \
+        t.get("approved_fingerprint") == t.get("fingerprint")
+
+
 def tool_prefix(server_name: str) -> str:
     return "mcp_" + re.sub(r"[^a-z0-9]+", "_", server_name.lower()).strip("_")[:20] + "__"
 
@@ -188,16 +205,22 @@ class MCPManager:
             if isinstance(exc, UpstreamError):
                 raise
             raise UpstreamError(f"Could not list tools: {_describe(exc)}") from exc
+        previous = {t["name"]: t for t in loads(server["tools_cache"], [])}
         tools = []
         for t in _attr(result, "tools", default=[]) or []:
             ann = _attr(t, "annotations")
-            tools.append({
+            entry = {
                 "name": _attr(t, "name"),
                 "description": (_attr(t, "description") or "")[:1000],
                 "input_schema": _attr(t, "input_schema", "inputSchema", default={"type": "object"}) or {"type": "object"},
                 "read_only": bool(_attr(ann, "read_only_hint", "readOnlyHint", default=False)) if ann else False,
                 "destructive": bool(_attr(ann, "destructive_hint", "destructiveHint", default=False)) if ann else False,
-            })
+            }
+            entry["fingerprint"] = tool_fingerprint(entry)
+            # what an admin approved stays recorded; a tool that changed under the same name shows as changed and
+            # runs unattended again only once an admin saves its policy again
+            entry["approved_fingerprint"] = previous.get(entry["name"], {}).get("approved_fingerprint")
+            tools.append(entry)
         self.engine.db.update("mcp_servers", server_id, {"tools_cache": dumps(tools), "last_error": None},
                               workspace_id=ws_id)
         return tools
@@ -234,6 +257,7 @@ class MCPManager:
 
     # -- agent integration -----------------------------------------------------------------------
     async def tools_for(self, ctx: ToolContext) -> list[Tool]:
+        """The tools of every enabled server, with the policy that applies to each."""
         out: list[Tool] = []
         for server in self.engine.db.all("SELECT * FROM mcp_servers WHERE workspace_id = ? AND enabled = 1",
                                          (ctx.ws_id,)):
@@ -243,8 +267,8 @@ class MCPManager:
                 policy = policies.get(t["name"], server["default_policy"])
                 if policy == "off":
                     continue
-                if policy == "auto" and not t.get("read_only"):
-                    policy = "ask"  # only tools the server marks read-only may run unattended
+                if policy == "auto" and not tool_may_run_unattended(t):
+                    policy = "ask"  # only a read-only tool an admin approved in exactly this form runs unattended
                 out.append(self._make_tool(server, prefix, t, policy))
         return out
 

@@ -66,6 +66,11 @@ migrations are applied automatically on start-up and are never rewritten once re
   runs past 15 minutes are refused or cut short before a parser spends the memory; Caddy caps bodies at 260 MB.
 - The bank-identifier masker no longer masks the engine's own ids (`doc_…`, `ds_…`).
 - A custom skill written by an editor stays off until an admin turns it on, and cannot take a built-in's name.
+- **Behaviour change:** importing an e-mail attachment or a Drive file into the workspace and editing a person's own
+  Excel or Word file now wait for approval like other write actions; refreshing accounting datasets and creating a
+  new workbook or report still run without asking.
+- **Behaviour change:** an MCP tool set to run without asking does so only in the form an admin approved; after a
+  refresh shows it changed, or after this upgrade, it asks until an admin saves its policy again.
 - Tool arguments are validated against each tool's schema before a handler runs; every tool call has a time limit.
 - `DESK_SMTP_SECURITY` accepts `starttls`, `ssl` or `none` only, and `none` cannot be combined with a login.
 - Audit entries for MCP servers keep the URL without its query string; Telegram transport errors never carry the

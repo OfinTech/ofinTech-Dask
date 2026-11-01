@@ -15,8 +15,10 @@
 
 **Agent actions.**
 - Tools declare their effect. Read tools run directly. Write tools pause the run and create an approval that shows
-  the exact arguments. Write tools include: sending or drafting e-mail, messaging colleagues, running workflows, and
-  MCP tools set to *ask*.
+  the exact arguments. Write tools include: sending or drafting e-mail, messaging colleagues, running workflows,
+  importing e-mail attachments or Drive files into the workspace, editing a person's own file, and MCP tools set to
+  *ask*. Refreshing datasets from a read-only accounting connection and creating a new evidence-linked workbook or
+  report (a new version the reviewer checks) run without approval.
 - Approving needs the editor role or higher. Decisions are audited.
 - MCP tools may run unattended only when the administrator allows it **and** the server marks the tool read-only.
 - The agent has no shell, file-system or SQL access.

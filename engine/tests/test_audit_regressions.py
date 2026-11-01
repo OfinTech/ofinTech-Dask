@@ -656,5 +656,54 @@ class OB18MCPEndpointRateLimit(unittest.TestCase):
             h.close()
 
 
+class OB10MCPToolReapproval(unittest.TestCase):
+    """A tool an admin allowed to run unattended runs that way only in the exact form approved: when the server
+    changes the tool's description or schema under the same name, it asks again until an admin re-saves it."""
+
+    def test_changed_tool_falls_back_to_asking(self) -> None:
+        import sys
+        from pathlib import Path
+
+        h = Harness()
+        try:
+            ws = h.setup_workspace(with_model=False)
+            server = str(Path(__file__).with_name("mcp_ledger_server.py"))
+            srv = h.api("POST", f"/api/w/{ws}/mcp-servers", json={"name": "Ledger", "transport": "stdio",
+                                                                   "command": sys.executable, "args": [server]})
+            self.assertIsNone(srv["last_error"], srv)
+
+            def tool(name: str) -> dict:
+                listing = h.api("GET", f"/api/w/{ws}/mcp-servers")
+                servers = listing["servers"] if isinstance(listing, dict) else listing
+                row = next(x for x in servers if x["id"] == srv["id"])
+                return next(t for t in row["tools"] if t["name"] == name)
+
+            def effect(name: str) -> str:
+                return next(t for t in h.api("GET", f"/api/w/{ws}/tools") if t["name"] == f"mcp_ledger__{name}")["effect"]
+
+            # before any approval, "auto" on a read-only tool is not enough on its own
+            self.assertEqual(effect("fx_rate"), "write")
+            h.api("PATCH", f"/api/w/{ws}/mcp-servers/{srv['id']}", json={"tool_policy": {"fx_rate": "auto"}})
+            self.assertEqual(effect("fx_rate"), "read")
+            self.assertTrue(tool("fx_rate")["runs_unattended"])
+            self.assertFalse(tool("fx_rate")["changed_since_approval"])
+            # the server changes the tool under the same name; the next refresh sees it
+            h.api("PATCH", f"/api/w/{ws}/mcp-servers/{srv['id']}", json={"env": {"LEDGER_VARIANT": "2"}})
+            h.api("POST", f"/api/w/{ws}/mcp-servers/{srv['id']}/refresh")
+            self.assertTrue(tool("fx_rate")["changed_since_approval"])
+            self.assertFalse(tool("fx_rate")["runs_unattended"])
+            self.assertEqual(effect("fx_rate"), "write")                 # asks again
+            self.assertIn("analytics", tool("fx_rate")["description"])
+            # an admin looks at the new form and approves it again
+            h.api("PATCH", f"/api/w/{ws}/mcp-servers/{srv['id']}", json={"tool_policy": {"fx_rate": "auto"}})
+            self.assertEqual(effect("fx_rate"), "read")
+            self.assertFalse(tool("fx_rate")["changed_since_approval"])
+            # a write tool never runs unattended whatever the policy says
+            h.api("PATCH", f"/api/w/{ws}/mcp-servers/{srv['id']}", json={"tool_policy": {"post_journal": "auto"}})
+            self.assertEqual(effect("post_journal"), "write")
+        finally:
+            h.close()
+
+
 if __name__ == "__main__":
     unittest.main()

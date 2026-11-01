@@ -212,7 +212,7 @@ async def _import_bytes(ctx: ToolContext, content: bytes, filename: str, name: s
                schema({"message_id": {"type": "string"}, "attachment_id": {"type": "string"},
                        "filename": {"type": "string"}, "dataset_name": {"type": "string"}, "sheet": {"type": "string"},
                        "connection_id": CONN}, ["message_id", "attachment_id", "filename"]),
-               category="google", available=_google)
+               category="google", available=_google, effect="write")
 async def _gimport(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     content = await _gclient(ctx, a.get("connection_id")).attachment(a["message_id"], a["attachment_id"])
     return await _import_bytes(ctx, content, a["filename"], a.get("dataset_name"), a.get("sheet"), "gmail",
@@ -232,7 +232,7 @@ async def _dfind(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("drive_import_spreadsheet", "Import a Google Sheet, Excel or CSV file from Google Drive as a dataset.",
                schema({"file_id": {"type": "string"}, "dataset_name": {"type": "string"}, "sheet": {"type": "string"},
-                       "connection_id": CONN}, ["file_id"]), category="google", available=_google)
+                       "connection_id": CONN}, ["file_id"]), category="google", available=_google, effect="write")
 async def _dimport(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     content, filename = await _gclient(ctx, a.get("connection_id")).download_spreadsheet(a["file_id"])
     return await _import_bytes(ctx, content, filename, a.get("dataset_name"), a.get("sheet"), "google_drive",
@@ -247,7 +247,7 @@ async def _dimport(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"message_id": {"type": "string"},
                        "attachment_id": {"type": "string", "description": "omit to save the e-mail body"},
                        "filename": {"type": "string"}, "collection": {"type": "string"}, "connection_id": CONN},
-                      ["message_id"]), category="google", available=_google)
+                      ["message_id"]), category="google", available=_google, effect="write")
 async def _gsave(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     client = _gclient(ctx, a.get("connection_id"))
     if a.get("attachment_id"):
@@ -272,7 +272,7 @@ async def _gsave(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("drive_add_document", "Add a file from Google Drive (PDF, Word, Google Doc, text) to the document "
                "knowledge base.", schema({"file_id": {"type": "string"}, "collection": {"type": "string"},
-                                          "connection_id": CONN}, ["file_id"]), category="google", available=_google)
+                                          "connection_id": CONN}, ["file_id"]), category="google", available=_google, effect="write")
 async def _dadd(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     content, filename = await _gclient(ctx, a.get("connection_id")).download_document(a["file_id"])
     coll = None
