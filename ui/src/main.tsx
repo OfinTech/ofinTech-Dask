@@ -109,6 +109,7 @@ function useSessionTimer(minutes: number, signedIn: boolean, onExpired: () => vo
       const t = Date.now();
       lastRef.current = fromServer(t, s.idle_seconds_left, limit, t);
       try { localStorage.setItem(ACTIVITY_KEY, String(t)); } catch { /* private mode */ }
+      setTimer({ state: "active", secondsLeft: secondsLeft(t, lastRef.current, limit) });   // the warning closes at once
       return true;
     } catch {
       return false;   // the session had already ended; the 401 brings the sign-in screen
@@ -285,7 +286,9 @@ function App(): ReactNode {
 
   const signOut = useCallback(async (reason: "idle" | "user") => {
     if (reason === "idle") setIdleOut(true);
-    try { await post(`/api/auth/logout?reason=${reason}`); } catch { /* the engine has ended it anyway */ }
+    // the page is signed out now, whatever the network does next: nothing protected stays on screen
+    setSession((s) => (s ? { ...s, user: null, workspaces: [] } : s));
+    try { await post(`/api/auth/logout?reason=${reason}`); } catch { /* offline, or the engine has ended it anyway */ }
     try { localStorage.setItem(SIGNED_OUT_KEY, `${reason}:${Date.now()}`); } catch { /* private mode */ }  // other tabs follow
     try { sessionStorage.removeItem("desk-token"); } catch { /* nothing stored */ }
     await reloadSession();

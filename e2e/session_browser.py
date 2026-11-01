@@ -192,9 +192,10 @@ def main() -> int:
                       f"idle_minutes={s['idle_minutes']} warn_seconds={s['warn_seconds']} session_hours={s['session_hours']} reauth_minutes={s['reauth_minutes']}",
                       s["idle_minutes"] == 30 and s["warn_seconds"] == 120 and s["session_hours"] == 12 and s["reauth_minutes"] == 10)
 
-            def open_ledger() -> None:
-                page.goto(f"{server.base}/#/data/{ds}")
-                page.wait_for_selector("text=98,765.43", timeout=15000)
+            def open_ledger(pg: Page = page) -> None:
+                pg.goto(f"{server.base}/#/data/{ds}")
+                pg.reload()                                   # a hash-only navigation does not reload the app's session state
+                pg.wait_for_selector("text=98,765.43", timeout=15000)
 
             # ---- S1 automatic logout -------------------------------------------------------------------------
             open_ledger()
@@ -245,8 +246,7 @@ def main() -> int:
             rtl = page.get_attribute("html", "dir") == "rtl"
             ev.record("S2-ar", "Team Server, Chromium, Arabic", "the Arabic warning in a right-to-left layout",
                       f"arabic={AR_WARNING in text} dir=rtl={rtl}", AR_WARNING in text and rtl, page, "s2-ar")
-            page.keyboard.press("Tab")        # from "Stay signed in" to … the ghost button is before it; Shift+Tab reaches "Log out now"
-            page.keyboard.press("Shift+Tab")
+            page.keyboard.press("Shift+Tab")   # from "Stay signed in" (focused) back to "Log out now"
             focused = page.evaluate("document.activeElement && document.activeElement.className")
             ev.record("S2-tab", "Team Server, Chromium", "both buttons reachable with the keyboard", f"after Shift+Tab focus on '{focused}'", "btn" in (focused or ""))
             page.click("[role=alertdialog] button.primary")
@@ -288,7 +288,8 @@ def main() -> int:
             advance(page, server, email, 27 * MIN)
             # the page's own 20-second notification poll fires during the jump; an SSE stream is opened; a GET refresh
             page.goto(f"{server.base}/#/chat")
-            page.wait_for_timeout(500)
+            page.reload()
+            page.wait_for_selector(".shell", timeout=15000)
             page.clock.fast_forward(60_000)
             page.wait_for_timeout(300)
             for _ in range(3):
@@ -311,10 +312,10 @@ def main() -> int:
             open_ledger()
             tab2 = ctx.new_page()
             tab2.clock.install()
-            tab2.goto(f"{server.base}/#/data/{ds}")
-            tab2.wait_for_selector("text=98,765.43", timeout=15000)
+            open_ledger(tab2)
             # logout in tab 1 (Settings → Sign out) propagates to tab 2 through localStorage
             page.goto(f"{server.base}/#/settings")
+            page.reload()
             page.wait_for_selector("text=Sign out", timeout=15000)
             page.click("button:has-text('Sign out'):not(:has-text('other'))")
             page.wait_for_selector("form input[type=email]", timeout=15000)
@@ -325,8 +326,7 @@ def main() -> int:
             # expiry synchronised: both tabs idle, both reach the login screen; the second cannot revive
             login(page, server.base, email)
             open_ledger()
-            tab2.goto(f"{server.base}/#/data/{ds}")
-            tab2.wait_for_selector("text=98,765.43", timeout=15000)
+            open_ledger(tab2)
             server.age(email, 30 * 60 + 5)
             page.clock.fast_forward(30 * MIN + 5_000)
             tab2.clock.fast_forward(30 * MIN + 5_000)
@@ -375,8 +375,10 @@ def main() -> int:
             p45.click("form button.btn.primary")
             p45.wait_for_timeout(500)
             cfg = api(p45, "GET", "/api/session")["body"]["idle_minutes"]
+            api(p45, "POST", "/api/workspaces", {"name": "Acme 45", "base_currency": "USD"})
             p45.goto(s45.base + "/#/settings")
-            p45.wait_for_timeout(500)
+            p45.reload()
+            p45.wait_for_selector(".shell", timeout=15000)
             advance(p45, s45, email, 42 * MIN)
             p45.wait_for_timeout(300)
             no_warning_yet = p45.query_selector("[role=alertdialog]") is None
@@ -407,6 +409,7 @@ def main() -> int:
                 localStorage.setItem('desk-ws', w.id);
             }""")
             pd.goto(f"{desktop.base}/#/data")
+            pd.reload()
             pd.wait_for_selector("text=Local GL", timeout=15000)
             pd.click("text=Local GL")
             pd.wait_for_selector("text=55,555.55", timeout=15000)
