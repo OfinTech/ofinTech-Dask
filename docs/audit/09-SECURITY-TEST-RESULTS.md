@@ -3,7 +3,7 @@
 Updated with every round. All runs are against throw-away engine instances with mocked LLM, accounting, Google,
 Telegram and S3 endpoints; nothing touched a live system.
 
-## Run of 1 November 2026 (after R8, part 1)
+## Run of 1 November 2026 (after R9, part 1)
 
 Environment: Linux, Python 3.13.18, SQLite 3.x, Tesseract 5 (eng), no LibreOffice. Package registries were not
 reachable, so the installed versions are the preinstalled ones (starlette 1.7.0, pydantic 2.13.5, httpx2 2.13.1,
@@ -11,8 +11,8 @@ cryptography 50.0.1, pypdf 6.17.0; the rest as pinned). CI re-runs the same suit
 
 | Suite | Result |
 |---|---|
-| `python -m unittest discover -s tests -t .` | **220 tests, OK, ~21 s** |
-| `tests/test_audit_regressions.py` (new) | 25 tests, OK; each class was also run against the pre-fix code and fails there |
+| `python -m unittest discover -s tests -t .` | **221 tests, OK, ~21 s** |
+| `tests/test_audit_regressions.py` (new) | 26 tests, OK; each class was also run against the pre-fix code and fails there |
 | `tests/test_ai_security.py` (new, doc 06) | 13 tests, OK |
 | `tests/test_security_boundaries.py` (existing) | 26 tests, OK (payments, sealed workspace/server, masking, socket- and DNS-level blocking) |
 | `tests/test_team_server.py`, `test_site_auth.py`, `test_api_desktop.py` | OK (CSRF, isolation, SSRF at save time, local token and Host guard) |
@@ -21,9 +21,10 @@ cryptography 50.0.1, pypdf 6.17.0; the rest as pinned). CI re-runs the same suit
 | Mermaid diagrams in `docs/audit/01` | 4/4 render with `mmdc` |
 
 Not run here (no registry or Docker access): UI/desktop `tsc --noEmit`, Playwright smoke test, Docker image
-build, Trivy. CI results on `main` (run for 8e1b39c): `security` job green (gitleaks over 54+ commits after
+build, Trivy. CI results on `main` (run for 443eca5): `security` green (gitleaks over the whole history after
 allow-listing six documented fixtures, ruff S rules, pip-audit on the pinned requirements, npm audit), `test`
-green, desktop installers green; the Trivy step runs from fa391df.
+green (engine, UI typecheck and build, browser smoke test, desktop typecheck), `team-server-image` green (Docker
+build + Trivy, CRITICAL/HIGH, fixed only).
 
 ## Controlled probes (reproductions, all local)
 
