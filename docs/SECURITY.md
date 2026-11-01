@@ -71,10 +71,30 @@
   `localStorage`, and shows the sign-in screen with the reason. Open tabs share one activity clock, so working in
   one keeps the others signed in; after a sleep, a reconnection or a long time in the background the page asks
   `GET /api/session/status` how long is really left, and that answer can only shorten what the page believes.
-  `DESK_SESSION_DAYS` is the absolute lifetime beside the idle window (30 days by default; `0` removes it): an
-  active person is signed out when it comes. Both knobs refuse a negative or non-numeric value at start-up.
-  Expired sessions, logouts and failed sign-ins are audit events (`session.expired`, `session.logout`,
-  `user.login.failed`) with the user and the reason, never the password or the token.
+  Beside the idle window every session has an absolute lifetime, counted from sign-in whatever the person does:
+  `DESK_SESSION_HOURS` (12 by default, 1–24 on a server) and, for anyone who is admin or owner of any workspace or
+  the instance administrator, `DESK_ADMIN_SESSION_HOURS` (8 by default) — judged from the current memberships at
+  every request, so a promotion shortens the sitting session. (`DESK_SESSION_DAYS` from earlier releases is still
+  read, as days × 24, with a warning.) All knobs refuse a negative or non-numeric value at start-up.
+- **Step-up for high-risk actions.** Changing a member's role or removing a member, connecting or disconnecting an
+  accounting system, a channel or an OAuth app, adding or changing an MCP server, creating an MCP access key, adding
+  or removing a model provider, closing or deleting a month-end close, deleting a dataset, changing the workspace's
+  egress policy or review settings, deleting a workspace, an administrator's reset link or session termination, and
+  **approving an assistant action that leaves the workspace** all need the person to have entered their password
+  within the last `DESK_REAUTH_MINUTES` (10) on this session — at sign-in or through `POST /api/auth/reauth`, which
+  is rate-limited like a sign-in and audited either way. The page asks for the password in place and sends the
+  request once more; a Google-only account signs in again instead. Step-up is on top of the role checks and the
+  approvals, never instead of them. The desktop app, which has no password, does not ask.
+- **Revocation.** A session ends on logout (that device), on the idle or lifetime limit, when the account is
+  disabled (next request), on a password change or reset (every session of that person), when the person ends
+  another of their own sessions (`GET/DELETE /api/auth/sessions`, `POST /api/auth/sign-out-everywhere`) and when
+  the instance administrator terminates an account's sessions (`POST /api/admin/users/{id}/sign-out`, after
+  confirming their password). Removal from a workspace or a lost role takes effect on the next request without
+  ending the session, and expires that person's pending approvals. Expired, revoked and failed sign-ins are audit
+  events (`session.expired`, `session.revoked`, `session.logout`, `user.login.failed`, `user.reauth.failed`) with
+  the user and the reason, never the password or the token.
+- **Background credentials are not sessions.** MCP access keys, a push connection's ingest key and a workflow's
+  webhook secret each open only their own endpoint and never a session; a session cookie opens none of them.
 - **Desktop.** The desktop app has no accounts: the engine runs for this computer's user under a per-launch token,
   so there is no session to end. After the same inactivity window the page locks instead — every page is unmounted,
   nothing financial stays on screen, and a deliberate click brings the app back — and it locks at once when the

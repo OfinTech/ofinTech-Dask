@@ -70,7 +70,7 @@ class OAuthAppIn(BaseModel):
     scopes: list[str] | None = None
 
 
-@router.put("/api/oauth-apps/{provider}", body=OAuthAppIn)
+@router.put("/api/oauth-apps/{provider}", body=OAuthAppIn, fresh=True)
 async def set_oauth_app(ctx: Ctx) -> dict[str, Any]:
     if not is_instance_admin(ctx):
         raise Forbidden("Only the administrator of this installation can set OAuth apps.")
@@ -97,7 +97,7 @@ class AuthorizeIn(BaseModel):
     return_to: str | None = Field(default=None, max_length=120, pattern=r"^/[A-Za-z0-9_\-/]*$")
 
 
-@router.post("/api/w/{ws}/connections/{provider}/authorize", role="admin", body=AuthorizeIn)
+@router.post("/api/w/{ws}/connections/{provider}/authorize", role="admin", body=AuthorizeIn, fresh=True)
 async def authorize(ctx: Ctx) -> dict[str, Any]:
     provider = ctx.request.path_params["provider"]
     if provider not in PROVIDERS:
@@ -157,7 +157,7 @@ async def patch_connection(ctx: Ctx) -> dict[str, Any]:
     return _out(ctx, _conn(ctx))
 
 
-@router.delete("/api/w/{ws}/connections/{cid}", role="admin")
+@router.delete("/api/w/{ws}/connections/{cid}", role="admin", fresh=True)
 async def delete_connection(ctx: Ctx) -> None:
     conn = _conn(ctx)
     if conn["provider"] == "telegram" and loads(conn["config"], {}).get("mode") == "webhook":
@@ -224,7 +224,7 @@ class OdooIn(BaseModel):
     connection_id: str | None = None
 
 
-@router.post("/api/w/{ws}/connections/odoo", role="admin", body=OdooIn)
+@router.post("/api/w/{ws}/connections/odoo", role="admin", body=OdooIn, fresh=True)
 async def connect_odoo(ctx: Ctx) -> dict[str, Any]:
     from ..connectors.odoo import OdooClient
 
@@ -251,7 +251,7 @@ class CustomIn(BaseModel):
     connection_id: str | None = None
 
 
-@router.post("/api/w/{ws}/connections/custom", role="admin", body=CustomIn)
+@router.post("/api/w/{ws}/connections/custom", role="admin", body=CustomIn, fresh=True)
 async def connect_custom(ctx: Ctx) -> dict[str, Any]:
     b: CustomIn = ctx.body
     if b.mode == "pull":
@@ -287,7 +287,7 @@ def _new_ingest_key(ctx: Ctx, cid: str) -> str:
     return key
 
 
-@router.post("/api/w/{ws}/connections/{cid}/ingest-key", role="admin")
+@router.post("/api/w/{ws}/connections/{cid}/ingest-key", role="admin", fresh=True)
 async def rotate_ingest_key(ctx: Ctx) -> dict[str, Any]:
     conn = _conn(ctx)
     if conn["provider"] != "custom" or loads(conn["config"], {}).get("mode") != "push":
@@ -309,7 +309,7 @@ class TelegramIn(BaseModel):
     bot_token: str = Field(min_length=20, max_length=200)
 
 
-@router.post("/api/w/{ws}/connections/telegram", role="admin", body=TelegramIn)
+@router.post("/api/w/{ws}/connections/telegram", role="admin", body=TelegramIn, fresh=True)
 async def connect_telegram(ctx: Ctx) -> dict[str, Any]:
     result = await ctx.engine.channels.connect_telegram(ctx.ws_id, ctx.user_id, ctx.body.bot_token)
     ctx.audit("connection.connected", result["id"], {"provider": "telegram"})
@@ -325,7 +325,7 @@ class WhatsAppIn(BaseModel):
     template_language: str | None = Field(default=None, max_length=20)
 
 
-@router.post("/api/w/{ws}/connections/whatsapp", role="admin", body=WhatsAppIn)
+@router.post("/api/w/{ws}/connections/whatsapp", role="admin", body=WhatsAppIn, fresh=True)
 async def connect_whatsapp(ctx: Ctx) -> dict[str, Any]:
     b: WhatsAppIn = ctx.body
     result = ctx.engine.channels.connect_whatsapp(

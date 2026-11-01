@@ -6,7 +6,7 @@ try {
   const theme = localStorage.getItem("desk-theme");
   if (theme === "light" || theme === "dark") document.documentElement.setAttribute("data-theme", theme);
 } catch { /* storage unavailable */ }
-import { SIGNED_OUT_EVENT, get, post } from "./lib/api";
+import { ApiError, SIGNED_OUT_EVENT, get, post, setReauthHandler } from "./lib/api";
 import { AppCtx, can, type Session, type Workspace } from "./lib/app";
 import { BrandMark, ErrorBox, Icon, ToastProvider, Wordmark, errorText, go, useRoute } from "./components/ui";
 import { AuthPage, InvitePage, ResetPage } from "./pages/Auth";
@@ -187,6 +187,46 @@ function SessionWarning({ secondsLeft, onStay, onLogout }: { secondsLeft: number
   );
 }
 
+/** Step-up: shown when the engine answers 403 reauth_required to a high-risk action (changing roles, connections,
+ *  MCP servers, closing a month, deleting data, approving an action that leaves the workspace, …). The password goes
+ *  to POST /api/auth/reauth on this session; a Google-only account is sent to sign in again instead. */
+function ReauthDialog({ google, onDone }: { google: boolean; onDone: (ok: boolean) => void }): ReactNode {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function confirm() {
+    setBusy(true); setError(null);
+    try {
+      await post("/api/auth/reauth", { password });
+      onDone(true);
+    } catch (e) {
+      const err = e as ApiError;
+      setError(err.code === "reauth_google" ? tr("This account signs in with Google. Sign in again to continue.") : errorText(e));
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="scrim" role="presentation">
+      <form className="modal" role="dialog" aria-modal="true" aria-labelledby="reauth-title" onSubmit={(e) => { e.preventDefault(); void confirm(); }}>
+        <div className="modal-head"><h2 id="reauth-title">{tr("Confirm it's you")}</h2></div>
+        <div className="modal-body stack">
+          <p>{tr("This action changes something sensitive. Enter your password to continue.")}</p>
+          {google
+            ? <p className="muted">{tr("This account signs in with Google. Sign in again to continue.")}</p>
+            : <label className="stack"><span className="sr">{tr("Password")}</span>
+                <input className="input" type="password" autoComplete="current-password" autoFocus value={password}
+                  onChange={(e) => setPassword(e.target.value)} /></label>}
+          <ErrorBox error={error} />
+        </div>
+        <div className="modal-foot">
+          <button type="button" className="btn ghost" onClick={() => onDone(false)}>{tr("Cancel")}</button>
+          {!google && <button type="submit" className="btn primary" disabled={busy || !password}>{tr("Confirm")}</button>}
+        </div>
+      </form>
+    </div>
+  );
+}
+
 /** The desktop app has no accounts (the engine runs for this computer's user under a per-launch token), so there
  *  is no session to end. After the same inactivity window the screen is locked instead: every page is unmounted,
  *  nothing financial stays on screen, and a deliberate click brings the app back. This protects against someone
@@ -253,6 +293,12 @@ function App(): ReactNode {
   const onExpired = useCallback(() => { void signOut("idle"); }, [signOut]);
   const [timer, stay] = useSessionTimer(session?.idle_minutes ?? 0, Boolean(session?.user), onExpired);
   const [locked, setLocked] = useState(false);
+  const [reauth, setReauth] = useState<{ resolve: (ok: boolean) => void } | null>(null);
+  useEffect(() => {
+    if (!session?.user || session.mode === "desktop") { setReauthHandler(null); return; }
+    setReauthHandler(() => new Promise<boolean>((resolve) => setReauth({ resolve })));
+    return () => setReauthHandler(null);
+  }, [session?.user?.id, session?.mode]);
   const onLock = useCallback(() => setLocked(true), []);
   const [lockTimer] = useSessionTimer(locked ? 0 : (session?.lock_minutes ?? 0), Boolean(session?.user), onLock);
   void lockTimer;
@@ -346,6 +392,8 @@ function App(): ReactNode {
     <AppCtx.Provider value={{ session, ws, reloadSession, counts, refreshCounts }}>
       {timer.state === "warning" && <SessionWarning secondsLeft={timer.secondsLeft}
         onStay={() => { void stay(); }} onLogout={() => { void signOut("user"); }} />}
+      {reauth && <ReauthDialog google={!session.user?.has_password && Boolean(session.features.google_login)}
+        onDone={(ok) => { reauth.resolve(ok); setReauth(null); }} />}
       <div className="shell">
         <header className="mobilebar">
           <button className="btn ghost small" aria-label={tr("Menu")} aria-expanded={menu} onClick={() => setMenu(!menu)}>☰</button>

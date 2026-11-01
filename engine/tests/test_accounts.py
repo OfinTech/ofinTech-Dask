@@ -214,11 +214,11 @@ class Sessions(unittest.TestCase):
         """Pretends the last thing the person did was ``seconds`` ago."""
         self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (seconds,))
 
-    def test_thirty_day_absolute_cap_by_default(self) -> None:
-        """A session ends after 30 days whatever the person does (a separate lifetime beside the idle window);
-        ``DESK_SESSION_DAYS=0`` removes the cap for operators who want only the idle rule."""
-        self.assertEqual(self.h.engine.settings.session_days, 30)
-        self.assertAlmostEqual(self.row()["expires_at"], time.time() + 30 * 86400, delta=60)
+    def test_twelve_hour_absolute_lifetime_by_default(self) -> None:
+        """A session ends after 12 hours whatever the person does (a separate lifetime beside the idle window);
+        8 hours for anyone who is admin or owner somewhere (judged at every request)."""
+        self.assertEqual((self.h.engine.settings.session_hours, self.h.engine.settings.admin_session_hours), (12, 8))
+        self.assertAlmostEqual(self.row()["expires_at"], time.time() + 12 * 3600, delta=60)
 
     def test_activity_keeps_the_session_open(self) -> None:
         """Three times the idle window with no second sign-in, because the person keeps working."""
@@ -289,10 +289,10 @@ class Sessions(unittest.TestCase):
 
 
 class SessionCap(unittest.TestCase):
-    """DESK_SESSION_DAYS is off by default; when it is set it still ends a session the person is using."""
+    """The absolute lifetime ends a session the person is still using."""
 
     def setUp(self) -> None:
-        self.h = Harness(mode="server", session_days=7)
+        self.h = Harness(mode="server", session_hours=7)
         self.c = self.h.client
         self.c.post("/api/auth/signup", json={"email": "owner@acme.test", "name": "Olivia", "password": PW})
 
@@ -314,7 +314,7 @@ class SessionSettings(unittest.TestCase):
 
     def load(self, **env: str) -> Any:
         from desk_engine.config import load_settings
-        clear = {"DESK_SESSION_DAYS", "DESK_SESSION_IDLE_MINUTES", "DESK_MODE"}
+        clear = {"DESK_SESSION_DAYS", "DESK_SESSION_HOURS", "DESK_ADMIN_SESSION_HOURS", "DESK_SESSION_IDLE_MINUTES", "DESK_MODE"}
         with mock.patch.dict(os.environ, dict(env), clear=False):
             for k in clear - set(env):
                 os.environ.pop(k, None)
@@ -325,17 +325,20 @@ class SessionSettings(unittest.TestCase):
                 return load_settings()
 
     def test_defaults(self) -> None:
-        """Read from the environment, not from the dataclass: 30 minutes idle, a 30-day lifetime."""
+        """Read from the environment, not from the dataclass: 30 minutes idle, 12 hours of life, 8 for admins, a
+        10-minute step-up window."""
         s = self.load()
         self.assertEqual(s.session_idle_minutes, 30)
-        self.assertEqual(s.session_days, 30)
+        self.assertEqual((s.session_hours, s.admin_session_hours, s.reauth_minutes), (12, 8, 10))
 
     def test_values_are_read_within_the_allowed_range(self) -> None:
         """An operator may choose 30 to 45 minutes on a server; anything outside is pulled back into the range
         (and never switched off); the desktop app, which has no accounts, keeps whatever it is given."""
         server = {"DESK_MODE": "server", "DESK_PUBLIC_URL": "https://desk.example.com"}
-        s = self.load(DESK_SESSION_IDLE_MINUTES="45", DESK_SESSION_DAYS="7", **server)
-        self.assertEqual((s.session_idle_minutes, s.session_days), (45, 7))
+        s = self.load(DESK_SESSION_IDLE_MINUTES="45", DESK_SESSION_HOURS="8", DESK_ADMIN_SESSION_HOURS="4", **server)
+        self.assertEqual((s.session_idle_minutes, s.session_hours, s.admin_session_hours), (45, 8, 4))
+        self.assertEqual(self.load(DESK_SESSION_HOURS="72", **server).session_hours, 24)       # no multi-day sessions on a server
+        self.assertEqual(self.load(DESK_SESSION_DAYS="1", **server).session_hours, 24)         # the old knob still works, in hours
         self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="15", **server).session_idle_minutes, 30)
         self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="120", **server).session_idle_minutes, 45)
         self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="0", **server).session_idle_minutes, 30)

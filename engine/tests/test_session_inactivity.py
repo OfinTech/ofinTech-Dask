@@ -70,11 +70,11 @@ class Sessions(unittest.TestCase):
     def test_defaults_and_configuration(self) -> None:
         s = self.c.get("/api/session").json()
         self.assertEqual((s["idle_minutes"], s["warn_seconds"], s["lock_minutes"]), (self.idle_minutes, 120, 0))
-        self.assertEqual(self.h.settings.session_days, 30)
+        self.assertEqual(self.h.settings.session_hours, 12)
         st = self.status()
         self.assertLessEqual(st["idle_seconds_left"], self.idle_minutes * MIN)
         self.assertGreater(st["idle_seconds_left"], self.idle_minutes * MIN - 10)
-        self.assertLessEqual(st["lifetime_seconds_left"], 30 * 86400)
+        self.assertLessEqual(st["lifetime_seconds_left"], 8 * 3600)          # the owner of a workspace: 8 hours
 
     def test_an_active_person_stays_signed_in(self) -> None:
         """Three idle windows pass, with a real action every ten minutes: never signed out."""
@@ -208,20 +208,20 @@ class Sessions(unittest.TestCase):
         self.assertEqual(json.loads(self.audit("session.logout")[-1]["detail"])["reason"], "idle")
 
     def test_absolute_lifetime_ends_an_active_session(self) -> None:
-        """Beside the idle window there is an absolute end (30 days by default; 1 day here so the test stays short):
-        a person active the whole time is still signed out when it comes."""
-        h = Harness("server", session_idle_minutes=self.idle_minutes, session_days=1)
+        """Beside the idle window there is an absolute end (12 hours by default, 8 for admins and owners; 1 hour
+        here so the test stays short): a person active the whole time is still signed out when it comes."""
+        h = Harness("server", session_idle_minutes=self.idle_minutes, session_hours=1)
         try:
             c = h.client
             self.assertEqual(c.post("/api/auth/signup", json={"email": "o2@acme.test", "name": "O", "password": PW}).status_code, 200)
             uid = c.get("/api/session").json()["user"]["id"]
             step = (self.idle_minutes - 1) * MIN
             elapsed = 0
-            while elapsed + step < 86400:
+            while elapsed + step < 3600:
                 self.clock.advance(step)
                 elapsed += step
                 self.assertEqual(c.post("/api/workspaces", json={"name": f"W{elapsed}", "base_currency": "USD"}, headers=ORIGIN).status_code, 200)
-            self.clock.advance(86400 - elapsed + 1)                          # day 1 and one second
+            self.clock.advance(3600 - elapsed + 1)                           # one hour and one second
             self.assertIsNone(c.get("/api/session").json()["user"])
             expired = h.engine.db.all("SELECT * FROM audit_log WHERE action = 'session.expired' AND user_id = ?", (uid,))
             self.assertEqual(json.loads(expired[-1]["detail"])["reason"], "lifetime")

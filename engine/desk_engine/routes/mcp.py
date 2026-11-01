@@ -75,7 +75,7 @@ class ServerIn(BaseModel):
     default_policy: Literal["ask", "auto", "off"] = "ask"
 
 
-@router.post("/api/w/{ws}/mcp-servers", role="admin", body=ServerIn)
+@router.post("/api/w/{ws}/mcp-servers", role="admin", body=ServerIn, fresh=True)
 async def add_server(ctx: Ctx) -> dict[str, Any]:
     _not_sealed(ctx)
     b: ServerIn = ctx.body
@@ -115,7 +115,7 @@ class ServerPatch(BaseModel):
     env: dict[str, str] | None = None
 
 
-@router.patch("/api/w/{ws}/mcp-servers/{sid}", role="admin", body=ServerPatch)
+@router.patch("/api/w/{ws}/mcp-servers/{sid}", role="admin", body=ServerPatch, fresh=True)
 async def patch_server(ctx: Ctx) -> dict[str, Any]:
     row = _server(ctx)
     b: ServerPatch = ctx.body
@@ -155,7 +155,7 @@ async def refresh(ctx: Ctx) -> dict[str, Any]:
     return _out(_server(ctx))
 
 
-@router.delete("/api/w/{ws}/mcp-servers/{sid}", role="admin")
+@router.delete("/api/w/{ws}/mcp-servers/{sid}", role="admin", fresh=True)
 async def delete_server(ctx: Ctx) -> None:
     row = _server(ctx)
     await ctx.engine.mcp.stop(row["id"])
@@ -177,7 +177,7 @@ class KeyIn(BaseModel):
     name: str = Field(min_length=1, max_length=60)
 
 
-@router.post("/api/w/{ws}/mcp-keys", role="viewer", body=KeyIn)
+@router.post("/api/w/{ws}/mcp-keys", role="viewer", body=KeyIn, fresh=True)
 async def create_key(ctx: Ctx) -> dict[str, Any]:
     _not_sealed(ctx)
     count = ctx.engine.db.scalar("SELECT COUNT(*) FROM mcp_keys WHERE workspace_id = ? AND user_id = ?",

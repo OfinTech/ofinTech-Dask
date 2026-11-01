@@ -122,13 +122,13 @@ class StatusIn(BaseModel):
     note: str | None = Field(default=None, max_length=1000)
 
 
-@router.post("/api/w/{ws}/close/{rid}/status", role="admin", body=StatusIn)
+@router.post("/api/w/{ws}/close/{rid}/status", role="admin", body=StatusIn, fresh=True)
 async def set_status(ctx: Ctx) -> dict[str, Any]:
     return ctx.engine.close.set_status(ctx.ws_id, ctx.user_id, ctx.request.path_params["rid"], ctx.body.status,
                                        ctx.body.note)
 
 
-@router.delete("/api/w/{ws}/close/{rid}", role="admin")
+@router.delete("/api/w/{ws}/close/{rid}", role="admin", fresh=True)
 async def delete(ctx: Ctx) -> None:
     ctx.engine.close.delete(ctx.ws_id, ctx.user_id, ctx.request.path_params["rid"])
 

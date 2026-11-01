@@ -10,8 +10,10 @@ export type Session = {
   idle_minutes: number;  // sign out after this long with no activity; 0 = never (desktop)
   lock_minutes: number;  // desktop: hide the workspace after this long with no activity; 0 on a server
   warn_seconds: number;  // how long before the sign-out the warning shows
+  session_hours: number; // absolute lifetime of a session on a server (0 on the desktop)
+  reauth_minutes: number; // how recently the password must have been entered for a high-risk action
   features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean; sealed?: boolean };
-  user: { id: string; email: string; name: string; instance_admin: boolean } | null;
+  user: { id: string; email: string; name: string; instance_admin: boolean; has_password?: boolean } | null;
   workspaces: Workspace[];
 };
 
