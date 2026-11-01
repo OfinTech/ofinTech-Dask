@@ -6,8 +6,8 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 dependencies = [
   "starlette==1.10.0", "uvicorn==0.54.0", "pydantic==2.14.1", "httpx2==2.16.0", "mcp==2.3.0",
-  "openpyxl==3.1.5", "Pillow==12.3.0", "cryptography==50.0.2", "python-multipart==0.0.32", "PyYAML==6.0.3",
-  "pypdf==6.21.2", "python-docx==1.2.0", "numpy==2.5.3",
+  "openpyxl==3.1.5", "Pillow==13.0.0", "cryptography==50.0.2", "python-multipart==0.0.32", "PyYAML==6.0.3",
+  "pypdf==6.21.4", "python-docx==1.2.0", "numpy==2.5.3",
 ]
 
 [project.scripts]
