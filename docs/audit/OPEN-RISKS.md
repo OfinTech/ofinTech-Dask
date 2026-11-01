@@ -34,12 +34,33 @@ a decision here (keep, reject, or change the review date).
 | OP-5 | Reviewer-manipulation case for the AI suite; a larger malicious-document corpus | R8 | 2026-12-15 |
 | OP-6 | Independent penetration test of a staged deployment | engage a third party | before the first regulated customer |
 | OP-8 | **Intermittent stall of the engine test suite** (not of the product). Seen once locally and in three CI runs on identical code (68770e0, f2ebc46, c06346c). The CI abort traceback on c06346c shows the event-loop thread *executing* `Knowledge.wait_idle` after twenty minutes — the `while tasks: await gather(tasks)` loop spinning on a finished task whose done-callback had not yet removed it. Fixed by waiting only on pending tasks and dropping finished ones (`Knowledge.wait_idle`, `FileService.wait_idle`); the tests now wait through `Harness.settle()`, which turns any stall into a failure naming the stuck tasks after 60 s. Not reproducible locally (25 runs of the indexing tests, 7 full-suite runs). | watch CI: close after ten consecutive clean `test` jobs; reopen on any `settle()` failure | 2026-11-15 |
-| OP-9 | Pending approvals never expire (AI-05): a late approval runs exactly the frozen arguments it showed, so the exposure is staleness, not substitution | expire agent approvals after 7 days; show the age on the approval card | 2026-12-15 |
-| OP-10 | Read-tool calls are not audit rows (AI-06); they persist as thread messages only | write `tool.run` for editor-gated read tools (`sync_accounting`, the creators, `prepare_month_end_close`) | 2026-12-15 |
+| OP-12 | Three page behaviours of the session policy (cross-tab sign-out through the `storage` event, the desktop suspend/resume IPC, the browser `online` resync) are implemented and reviewed but not driven by an automated browser | add them to the Playwright smoke test (`e2e/ui_smoke.py`) | 2026-12-15 |
+| OP-13 | The audit log lives in the application database; an attacker with the file and the ability to drop triggers can rewrite history | ship entries to an external append-only store through the outgoing webhooks (they already carry every event) for regulated deployments | 2027-02-01 |
 | OP-11 | Python dependencies pinned by version, not hash (SC-02) | `pip-compile --generate-hashes`; `pip install --require-hashes` in CI and the image | 2026-12-15 |
 | OP-7 | Dependabot alert 147 (moderate): `minimatch` 3.x/5.x in the desktop's **development** tree (electron-builder tooling); not shipped in the app and outside the CI gate (`--omit=dev --audit-level=high`) | add an `overrides` entry or bump electron-builder, regenerate the lockfile with the `lockfiles` workflow | 2026-11-15 |
 
 ## Closed since the previous report
+
+**OP-9 — approval expiry and replay protection (CLOSED, `1f1a8de`).** Approvals carry an expiry (4 h outbound /
+24 h internal) and a digest of workspace, requester, tool and canonical arguments; a decision refuses expired or
+decided rows and a requester who lost the role; execution claims the row with one atomic update that re-checks
+everything, so one approval executes once and concurrent claims cannot both win; membership loss, demotion and
+thread stop revoke. Ten mandatory cases in `tests/test_approvals_and_audit.py`, all passing; AI-05 closed with it.
+Evidence: `FINAL-AI-APPROVAL-SECURITY.md`.
+
+**OP-10 — audit logging (CLOSED, `1f1a8de`).** One audit service with event id, correlation id, resource,
+decision, approval reference and result on every entry; sanitised details; immutable rows (triggers); every tool
+call, refusal, 403, cross-tenant attempt, failed sign-in, logout and expired session recorded; admin-only reading.
+Tested for successful, failed, denied, expired and replayed actions and for secrets. AI-06 closed with it.
+Evidence: `FINAL-AUDIT-LOGGING-VERIFICATION.md`.
+
+**Session inactivity (new control, `9e47e90`).** 30-minute server-enforced sign-out (30–45 configurable), warning
+two minutes before, stay-signed-in that cannot revive a dead session, multi-tab sign-out, resync after sleep,
+30-day lifetime, desktop lock. Evidence: `SESSION-SECURITY-VERIFICATION.md`.
+
+**RBAC sweep (`fe24400`)** and the **live two-tenant run (`3d055c1`)**: `FINAL-ACCESS-CONTROL-VERIFICATION.md`,
+`MULTI-TENANT-INTEGRATION-RESULTS.md`.
+
 
 FIN-01 (viewer's assistant could create dashboards, generated files, editable copies, close runs and refresh
 accounting datasets without approval; tools now carry the role of their route, `097f9aa`) — evidence in
