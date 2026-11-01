@@ -20,6 +20,10 @@
   *ask*. Refreshing datasets from a read-only accounting connection and creating a new evidence-linked workbook or
   report (a new version the reviewer checks) run without approval.
 - Approving needs the editor role or higher. Decisions are audited.
+- Tools carry the role their API route needs. A viewer's assistant is not offered — and, if a model names them
+  anyway, is refused — the tools that create or refresh workspace records without an approval: dashboards,
+  generated workbooks and reports, editable copies of documents, month-end close preparation, accounting refreshes
+  and file edits. The role is read from the membership at the time of each call, never from the model.
 - MCP tools may run unattended only when the administrator allows it **and** the server marks the tool read-only.
 - The agent has no shell, file-system or SQL access.
 - Content the agent reads (e-mails, documents, MCP output) cannot approve anything. At worst it can make the agent

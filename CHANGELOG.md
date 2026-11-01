@@ -87,6 +87,9 @@ migrations are applied automatically on start-up and are never rewritten once re
 - The oversight desk and the audit activity it shows need the admin role; the executive overview's forecast and
   dataset lookups are scoped to the workspace.
 - Export cells that begin with an invisible character before a formula prefix are kept as text too.
+- **Behaviour change:** the assistant of a *viewer* no longer creates dashboards, workbooks, reports, editable file
+  copies or month-end close runs, and does not refresh accounting datasets: these tools now need the editor role,
+  like the pages that do the same thing. Editors and above are unaffected.
 
 ## 1.1.0 — 2026-11-01
 

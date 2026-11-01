@@ -105,7 +105,7 @@ async def _create(ctx: ToolContext, a: dict[str, Any], kind: str) -> ToolOutput:
                        "file_id": {"type": "string", "description": "save as a new version of this file"},
                        "note": {"type": "string", "description": "what changed in this version"}},
                       ["title", "sheets"]), category="files",
-               summarize=lambda a: f"Create workbook '{a.get('title')}'")
+               summarize=lambda a: f"Create workbook '{a.get('title')}'", min_role="editor")
 async def _workbook(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     return await _create(ctx, a, "workbook")
 
@@ -118,7 +118,7 @@ async def _workbook(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"title": {"type": "string"}, "subtitle": {"type": "string"}, "sheets": SHEETS,
                        "sections": SECTIONS, "file_id": {"type": "string"}, "note": {"type": "string"}},
                       ["title", "sheets", "sections"]), category="files",
-               summarize=lambda a: f"Create report '{a.get('title')}'")
+               summarize=lambda a: f"Create report '{a.get('title')}'", min_role="editor")
 async def _report(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     return await _create(ctx, a, "report")
 
@@ -185,7 +185,7 @@ def _upload_link(out: dict[str, Any]) -> list[dict[str, Any]]:
                "(the user's own template, a previous report, a reconciliation). The original stays as version 1. "
                "Returns a file_id for inspect_file and edit_file.",
                schema({"document_id": {"type": "string", "description": "id of the attached document"}},
-                      ["document_id"]), category="files", summarize=lambda a: "Open a file for editing")
+                      ["document_id"]), category="files", summarize=lambda a: "Open a file for editing", min_role="editor")
 async def _open(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     doc = ctx.engine.knowledge.get(ctx.ws_id, a["document_id"])
     existing = ctx.engine.db.one("SELECT f.id FROM files f JOIN file_versions v ON v.file_id = f.id AND v.version = 1 "
@@ -227,7 +227,7 @@ async def _inspect(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"file_id": {"type": "string"}, "edits": {"type": "array", "items": EDIT},
                        "note": {"type": "string", "description": "what this version changes"}},
                       ["file_id", "edits"]), category="files", effect="write",
-               summarize=lambda a: f"Edit file ({len(a.get('edits') or [])} changes)")
+               summarize=lambda a: f"Edit file ({len(a.get('edits') or [])} changes)", min_role="editor")
 async def _edit(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     out = await ctx.engine.files.edit_upload(ctx.workspace, ctx.user_id, a["file_id"], a.get("edits") or [],
                                              thread_id=ctx.thread_id, note=a.get("note"))

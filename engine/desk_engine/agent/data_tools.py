@@ -93,7 +93,7 @@ async def _query(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                            "width": {"type": "integer", "minimum": 1, "maximum": 3},
                            "query": QUERY_SCHEMA}, "required": ["title", "type", "query"]}}},
                       ["name"]), category="data",
-               summarize=lambda a: f"Create dashboard '{a.get('name')}'")
+               summarize=lambda a: f"Create dashboard '{a.get('name')}'", min_role="editor")
 async def _create_dashboard(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     widgets: list[Widget] = []
     if a.get("template"):

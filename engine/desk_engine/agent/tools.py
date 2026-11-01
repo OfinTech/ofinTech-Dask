@@ -40,6 +40,18 @@ class ToolContext:
     def ws_id(self) -> str:
         return self.workspace["id"]
 
+    @property
+    def role(self) -> str:
+        """The user's role in the workspace, read from the membership at the time of the call (never from the
+        model or the request body). A user without a membership gets the least: viewer."""
+        row = self.engine.db.one("SELECT role FROM members WHERE workspace_id = ? AND user_id = ?",
+                                 (self.ws_id, self.user_id))
+        return row["role"] if row else "viewer"
+
+    def may(self, required: str) -> bool:
+        from ..web import role_at_least
+        return role_at_least(self.role, required)
+
 
 @dataclass
 class ToolOutput:
@@ -134,6 +146,10 @@ class Tool:
     available: Callable[[ToolContext], bool] | None = None
     policy: str | None = None  # MCP tools: auto | ask | off (overrides effect)
     timeout: float = DEFAULT_TOOL_TIMEOUT
+    # The least role that may call the tool, mirroring the API route that does the same thing: a tool that creates
+    # or refreshes workspace records without an approval (dashboards, generated files, close runs, synced datasets)
+    # is editor-only, exactly as its route is. Checked when tools are offered and again at every call.
+    min_role: str = "viewer"
 
     def spec(self) -> ToolSpec:
         return ToolSpec(self.name, self.description, self.parameters)
@@ -161,6 +177,9 @@ class Tool:
             return ToolOutput(SEALED_MESSAGE)
         if "_invalid_json" in args or not isinstance(args, dict):
             return ToolOutput("The arguments were not valid JSON. Call the tool again with a JSON object.")
+        if self.min_role != "viewer" and not ctx.may(self.min_role):
+            return ToolOutput(f"Refused: {self.name} needs the {self.min_role} role in this workspace; the user is a "
+                              f"{ctx.role}. Tell the user what you would have done and who can do it.")
         problems = validate_args(self.parameters, args)
         if problems:
             return ToolOutput("Error: the arguments do not match the tool's schema. " + " ".join(problems[:6]))
@@ -199,9 +218,10 @@ class ToolRegistry:
     def tool(self, name: str, description: str, parameters: dict[str, Any], *, effect: Effect = "read",
              category: str = "finance", summarize: Callable[[dict[str, Any]], str] | None = None,
              available: Callable[[ToolContext], bool] | None = None,
-             timeout: float = DEFAULT_TOOL_TIMEOUT) -> Callable[[Handler], Handler]:
+             timeout: float = DEFAULT_TOOL_TIMEOUT, min_role: str = "viewer") -> Callable[[Handler], Handler]:
         def deco(fn: Handler) -> Handler:
-            self.add(Tool(name, description, parameters, fn, effect, category, summarize, available, timeout=timeout))
+            self.add(Tool(name, description, parameters, fn, effect, category, summarize, available, timeout=timeout,
+                          min_role=min_role))
             return fn
         return deco
 
@@ -212,6 +232,10 @@ class ToolRegistry:
         from ..egress import is_payment_tool, tool_sends_out, workspace_sealed
 
         tools = {n: t for n, t in self._tools.items() if t.available is None or t.available(ctx)}
+        if any(t.min_role != "viewer" for t in tools.values()):
+            role = ctx.role
+            from ..web import role_at_least
+            tools = {n: t for n, t in tools.items() if role_at_least(role, t.min_role)}
         for provider in self._providers:
             for t in await provider(ctx):
                 if t.policy == "off" or is_payment_tool(t.name, t.description, acts=True):   # never trust a server's read-only claim
