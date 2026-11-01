@@ -21,6 +21,26 @@ log = logging.getLogger("desk.connectors")
 ZOHO_ACCOUNTS = {"us": "https://accounts.zoho.com", "eu": "https://accounts.zoho.eu", "in": "https://accounts.zoho.in",
                  "au": "https://accounts.zoho.com.au", "jp": "https://accounts.zoho.jp", "ca": "https://accounts.zohocloud.ca",
                  "sa": "https://accounts.zoho.sa", "uk": "https://accounts.zoho.uk", "cn": "https://accounts.zoho.com.cn"}
+# The API host Zoho reports for each data centre. Both values arrive from outside (the callback query and the token
+# response), so each is accepted only when it is exactly one of these; nothing is derived from a prefix.
+ZOHO_API_DOMAINS = frozenset({"https://www.zohoapis.com", "https://www.zohoapis.eu", "https://www.zohoapis.in",
+                              "https://www.zohoapis.com.au", "https://www.zohoapis.jp", "https://www.zohoapis.ca",
+                              "https://www.zohoapis.sa", "https://www.zohoapis.uk", "https://www.zohoapis.com.cn"})
+
+
+def zoho_accounts_server(value: str | None, location: str | None) -> str:
+    """The accounts server for a Zoho sign-in, or ``Invalid`` when the callback names one that is not Zoho's."""
+    candidate = (value or ZOHO_ACCOUNTS.get(location or "us", ZOHO_ACCOUNTS["us"])).rstrip("/")
+    if candidate not in ZOHO_ACCOUNTS.values():
+        raise Invalid("Unexpected Zoho accounts server.")
+    return candidate
+
+
+def zoho_api_domain(value: str | None) -> str:
+    candidate = (value or "https://www.zohoapis.com").rstrip("/")
+    if candidate not in ZOHO_API_DOMAINS:
+        raise Invalid("Unexpected Zoho API domain.")
+    return candidate
 
 
 async def _get_json(engine: Engine, url: str, token: str, headers: dict[str, str] | None = None) -> Any:
@@ -56,12 +76,10 @@ async def complete_callback(engine: Engine, params: dict[str, str]) -> dict[str,
         await _label_from_company(engine, ws_id, cid, "QuickBooks")
 
     elif provider == "zoho_books":
-        accounts = params.get("accounts-server") or ZOHO_ACCOUNTS.get(params.get("location", "us"), ZOHO_ACCOUNTS["us"])
-        if not accounts.startswith("https://accounts.zoho") and not accounts.startswith("https://accounts.zohocloud"):
-            raise Invalid("Unexpected Zoho accounts server.")
+        accounts = zoho_accounts_server(params.get("accounts-server"), params.get("location"))
         token_url = f"{accounts}/oauth/v2/token"
         tokens = await exchange_code(engine, provider, code, state["code_verifier"], token_url=token_url)
-        api_domain = tokens.get("api_domain") or "https://www.zohoapis.com"
+        api_domain = zoho_api_domain(tokens.get("api_domain"))
         async with httpx.AsyncClient(timeout=30, transport=engine.http_transport) as client:
             resp = await client.get(f"{api_domain}/books/v3/organizations",
                                     headers={"Authorization": f"Zoho-oauthtoken {tokens['access_token']}"})
