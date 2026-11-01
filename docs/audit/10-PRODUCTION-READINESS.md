@@ -19,7 +19,7 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 | Input limits | ✅ | body limits independent of headers (OB-07); Office zip and image limits before parsing, OCR budget, Caddy edge cap (OB-06) |
 | Export safety | ✅ | all CSV/XLSX writers neutralise formula prefixes (OB-03) |
 | Audit logging | ✅ | `audit_log` for sign-in, approvals, write tools, connections, webhooks, ingest; immutable append (no update path in code) |
-| Vulnerability management | 🟡 | CI gates added (R6); first results pending; lockfiles missing |
+| Vulnerability management | 🟡 | CI gates green on `main` (gitleaks, ruff S, pip-audit, npm audit); Trivy from fa391df; lockfiles missing |
 | Incident response | 🟡 | SECURITY.md reporting process; no runbook for key rotation or session mass-revocation yet |
 
 ## AI and agent
@@ -32,8 +32,8 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 | Tool and run time limits | ✅ | per-tool timeout; `MAX_STEPS = 16` |
 | Deterministic financial calculation | ✅ | formula languages parsed and evaluated in code, no `eval`; Excel rounding; figure check on answers |
 | Source attribution | ✅ | every cell in generated files carries a source; unverified figures listed |
-| Prompt-injection isolation | 🟡 | controls in place (approval, sealing, masking, reviewer isolation); structural delimiting and skill approval pending (OB-09, R8) |
-| AI security test suite (doc 06) | ❌ | planned R8 |
+| Prompt-injection isolation | 🟡 | controls in place and now tested end-to-end (approval, sealing, masking, reviewer isolation, skills gated by admins); structural delimiting of untrusted text still planned (OB-09) |
+| AI security test suite (doc 06) | ✅ | 13 tests over the 15 cases, scripted model, mocked services |
 | MCP trust | 🟡 | `auto` requires admin + server read-only flag; tool-list change re-approval pending (R8) |
 
 ## Data and database
