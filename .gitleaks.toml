@@ -1,0 +1,18 @@
+# gitleaks configuration (CI "security" job). Default rules plus an allow-list for values that are not secrets.
+# Add an entry only with the reason written next to it; the audit roadmap (docs/audit/08) tracks these exceptions.
+
+title = "OfinTech Desk"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Published example credentials and test fixtures"
+regexes = [
+  # AWS's own documentation example key pair, used only to check the SigV4 signer against AWS's published vectors
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
+  # fake tokens that test fixtures hand to mocked services
+  '''[A-Za-z0-9_-]*_test_token_[A-Za-z0-9_-]*''',
+]
+stopwords = ["example", "fake", "test-only"]

@@ -26,8 +26,9 @@ jobs:
         with: { node-version: "24" }
       - name: Secrets in the history or the tree (gitleaks)
         run: |
-          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 detect --source /repo --redact \
-            --report-format sarif --report-path /repo/gitleaks.sarif --exit-code 1
+          # -v lists each finding (rule, file, line, commit) with the value redacted, so the log says what to fix
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.24.3 detect --source /repo --redact -v \
+            --config /repo/.gitleaks.toml --exit-code 1
       - name: Static security analysis of the engine (ruff, Bandit-equivalent rules)
         working-directory: engine
         run: |
