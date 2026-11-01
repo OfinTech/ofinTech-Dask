@@ -148,6 +148,8 @@ class Engine:
                     await self._daily_syncs()
                 if tick % 200 == 100:
                     await self.knowledge.sync_all_drive()
+                if tick % 1200 == 300:   # about every hour: keep the write-ahead log from growing between restarts
+                    self.db.checkpoint()
             except asyncio.CancelledError:
                 raise
             except Exception:  # pragma: no cover - keep the scheduler alive

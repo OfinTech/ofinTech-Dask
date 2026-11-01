@@ -847,6 +847,16 @@ class Database:
         with self.tx() as c:
             return c.execute(sql, params).rowcount
 
+    def checkpoint(self) -> None:
+        """Folds the write-ahead log back into the database file. SQLite does this on its own when the log passes
+        1,000 pages and no reader is in the way; a long-lived server with steady readers may never reach that quiet
+        moment, so the scheduler asks for it once an hour."""
+        with self._write_lock:
+            try:
+                self.conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except sqlite3.Error:  # pragma: no cover - a busy database is checkpointed on the next round
+                pass
+
     def close(self) -> None:
         """Closes every connection opened by any thread (call at shutdown)."""
         with self._write_lock:

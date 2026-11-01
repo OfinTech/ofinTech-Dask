@@ -295,7 +295,23 @@ function connectWindow(): void {
   void win.loadFile(join(__dirname, "..", "static", "connect.html"));
 }
 
-// ---- IPC (the page can only ask for these three things) ----------------------------------------------
+// ---- IPC (the page can only ask for these few things) ------------------------------------------------
+// Every channel checks which frame is asking: the app's own origin, or the two bundled local pages. A frame
+// from anywhere else (a navigation that slipped through, an iframe) gets nothing.
+
+function isSetupPage(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "file:" && /\/static\/(connect|offline)\.html$/.test(u.pathname);
+  } catch {
+    return false;
+  }
+}
+
+function trustedSender(event: { senderFrame?: { url: string } | null }): boolean {
+  const url = event.senderFrame?.url || "";
+  return isAppUrl(url) || isSetupPage(url);
+}
 
 ipcMain.on("desk:bridge", (event) => {
   const url = event.senderFrame?.url || "";
@@ -303,11 +319,12 @@ ipcMain.on("desk:bridge", (event) => {
   event.returnValue = { token: local ? localToken : undefined, version: app.getVersion(), mode: readConfig().mode };
 });
 
-ipcMain.on("desk:open", (_event, url: unknown) => {
-  if (typeof url === "string") openSafe(url);
+ipcMain.on("desk:open", (event, url: unknown) => {
+  if (trustedSender(event) && typeof url === "string") openSafe(url);
 });
 
-ipcMain.handle("desk:set-server", async (_event, url: unknown) => {
+ipcMain.handle("desk:set-server", async (event, url: unknown) => {
+  if (!isSetupPage(event.senderFrame?.url || "")) return { ok: false, error: "Not allowed from this page." };
   if (url === null && EDITION.serverOnly) return { ok: false, error: "This edition works with a Team Server only." };
   if (url === null) {
     writeConfig({ mode: "local" });
@@ -327,7 +344,7 @@ ipcMain.handle("desk:set-server", async (_event, url: unknown) => {
   return { ok: true };
 });
 
-ipcMain.handle("desk:get-config", () => readConfig());
+ipcMain.handle("desk:get-config", (event) => (isSetupPage(event.senderFrame?.url || "") ? readConfig() : null));
 
 ipcMain.on("desk:google-challenge", (event) => {
   const config = readConfig();
@@ -336,9 +353,10 @@ ipcMain.on("desk:google-challenge", (event) => {
   event.returnValue = createHash("sha256").update(handoffVerifier).digest("base64url");
 });
 
-ipcMain.on("desk:connect", () => connectWindow());
+ipcMain.on("desk:connect", (event) => { if (trustedSender(event)) connectWindow(); });
 
-ipcMain.on("desk:retry", () => {
+ipcMain.on("desk:retry", (event) => {
+  if (!isSetupPage(event.senderFrame?.url || "")) return;
   const config = readConfig();
   if (mainWindow && config.serverUrl) void mainWindow.loadURL(config.serverUrl);
 });

@@ -108,19 +108,48 @@ def build_mcp_app(engine: Engine) -> ASGIApp:
     return _AuthWrapper(engine, inner)
 
 
+MCP_RATE_PER_MINUTE = 120        # requests per access key
+MCP_UNAUTH_RATE_PER_MINUTE = 60  # wrong or missing keys per client address, so guessing keys costs the guesser
+
+
 class _AuthWrapper:
     def __init__(self, engine: Engine, app: ASGIApp) -> None:
+        import collections
+
         self.engine = engine
         self.app = app
+        self._hits: dict[str, collections.deque[float]] = collections.defaultdict(collections.deque)
+
+    def _limited(self, key: str, per_minute: int) -> bool:
+        import time
+
+        q, t = self._hits[key], time.monotonic()
+        while q and t - q[0] > 60:
+            q.popleft()
+        if len(q) >= per_minute:
+            return True
+        q.append(t)
+        return False
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
         headers = {k.decode().lower(): v.decode() for k, v in scope.get("headers", [])}
-        if resolve(self.engine, headers.get("authorization", "")) is None:
-            resp = JSONResponse({"error": "unauthorized", "message": "A valid OfinTech Desk MCP access key is required."},
-                                status_code=401, headers={"WWW-Authenticate": "Bearer"})
+        client = (scope.get("client") or ("-",))[0]
+        authorization = headers.get("authorization", "")
+        tctx = resolve(self.engine, authorization)
+        if tctx is None:
+            if self._limited(f"anon:{client}", MCP_UNAUTH_RATE_PER_MINUTE):
+                resp = JSONResponse({"error": "rate_limited", "message": "Too many requests."}, status_code=429)
+            else:
+                resp = JSONResponse({"error": "unauthorized", "message": "A valid OfinTech Desk MCP access key is required."},
+                                    status_code=401, headers={"WWW-Authenticate": "Bearer"})
+            await resp(scope, receive, send)
+            return
+        if self._limited(f"key:{token_hash(authorization[7:].strip())}", MCP_RATE_PER_MINUTE):
+            resp = JSONResponse({"error": "rate_limited", "message": f"At most {MCP_RATE_PER_MINUTE} requests a minute "
+                                 "per access key."}, status_code=429)
             await resp(scope, receive, send)
             return
         await self.app(scope, receive, send)
