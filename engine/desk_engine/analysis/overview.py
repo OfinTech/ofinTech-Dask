@@ -96,7 +96,7 @@ class Overview:
         plan = meta.get("plan")
         if not plan:
             return {}
-        row = self.engine.db.one("SELECT result FROM forecasts WHERE id = ?", (plan["id"],))
+        row = self.engine.db.one("SELECT result FROM forecasts WHERE id = ? AND workspace_id = ?", (plan["id"], ws_id))
         res = loads(row["result"], {}) if row and row["result"] else {}
         months = res.get("months", [])
         out: dict[str, dict[str, float]] = {}
@@ -407,7 +407,8 @@ class Overview:
         audit = self.engine.db.all("SELECT a.action, a.detail, a.created_at, u.name AS user_name FROM audit_log a LEFT JOIN users u "
                                    "ON u.id = a.user_id WHERE a.workspace_id = ? AND a.target = ? ORDER BY a.created_at DESC LIMIT 20",
                                    (ws_id, did))
-        ds = self.engine.db.one("SELECT id, name, source, refreshed_at, row_count FROM datasets WHERE id = ?", (did,))
+        ds = self.engine.db.one("SELECT id, name, source, refreshed_at, row_count FROM datasets WHERE id = ? AND workspace_id = ?",
+                                (did, ws_id))
         return {"entry": entry, "date": min(ln["date"] for ln in lines), "type": lines[0].get("type"),
                 "currency": workspace.get("base_currency"), "provenance": self._provenance(meta),
                 "lines": [{"row": ln.get("row"), "date": ln["date"], "account_code": ln["account_code"], "account": ln["account"],
