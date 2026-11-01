@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-cd engine && python -m unittest discover -s tests -t .     # 269 tests, about 28 seconds (Tesseract, LibreOffice optional)
+cd engine && python -m unittest discover -s tests -t .     # 311 tests, about 50 seconds (Tesseract, LibreOffice optional)
 cd ui && npx tsc --noEmit && npm run i18n:check && npm test && node build.mjs   # incl. session-timer tests
 cd desktop && npm test                                       # typecheck, build, IPC guard tests (node --test)
 python e2e/multi_tenant.py                                   # two organisations on a real server process (HTTP)
@@ -51,7 +51,7 @@ and on macOS 15, Windows 2022 and Ubuntu 22.04 for the installers.
 
 | Check | Result |
 |---|---|
-| Engine tests | 269 passed |
+| Engine tests | 311 passed |
 | UI type check (`tsc --noEmit`) | passed |
 | Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,477 of 1,477 strings |
 | UI build (`node build.mjs`) | passed |
