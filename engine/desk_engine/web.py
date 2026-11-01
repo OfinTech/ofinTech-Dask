@@ -293,6 +293,14 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     return user
 
 
+def session_row(engine: Engine, request: Request) -> dict[str, Any] | None:
+    """The session row behind this request (cookie or bearer), or None in the desktop app."""
+    token = request.cookies.get(SESSION_COOKIE) or request.headers.get("authorization", "")[7:]
+    if not token or token == engine.settings.local_token:
+        return None
+    return engine.db.one("SELECT * FROM sessions WHERE id = ?", (token_hash(token),))
+
+
 def request_origin(request: Request) -> str:
     """``scheme://host[:port]`` of the page that sent the request, from Origin or, failing that, Referer; empty when
     neither is present or parseable."""

@@ -87,6 +87,16 @@ migrations are applied automatically on start-up and are never rewritten once re
 - The oversight desk and the audit activity it shows need the admin role; the executive overview's forecast and
   dataset lookups are scoped to the workspace.
 - Export cells that begin with an invisible character before a formula prefix are kept as text too.
+- **Behaviour change:** sessions on a Team Server end after 30 minutes of inactivity (was 60; configurable 30–45)
+  and after 30 days whatever happens (was never). The page warns two minutes before with *Stay signed in* /
+  *Log out now*, signs every tab out together, and re-checks the session after a sleep or a reconnection. The
+  desktop app locks its screen after the same window and when the computer locks or sleeps.
+- Approvals expire (4 hours for actions that leave the workspace, 24 hours for edits of the person's own files),
+  are bound to the exact arguments shown, are consumed exactly once, and die with the requester's membership or
+  editor role. A pending approval older than that asks again.
+- The audit log carries an event id, a correlation id, the decision, the approval and the outcome on every entry;
+  entries cannot be changed or deleted; every tool call, refusal, 403, cross-tenant attempt, failed sign-in,
+  logout and expired session is recorded.
 - **Behaviour change:** the assistant of a *viewer* no longer creates dashboards, workbooks, reports, editable file
   copies or month-end close runs, and does not refresh accounting datasets: these tools now need the editor role,
   like the pages that do the same thing. Editors and above are unaffected.

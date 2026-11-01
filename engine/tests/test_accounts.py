@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import tempfile
+import time
 import unittest
 from typing import Any
 from unittest import mock
@@ -213,9 +214,11 @@ class Sessions(unittest.TestCase):
         """Pretends the last thing the person did was ``seconds`` ago."""
         self.h.engine.db.execute("UPDATE sessions SET last_seen = last_seen - ?", (seconds,))
 
-    def test_no_absolute_cap_by_default(self) -> None:
-        self.assertEqual(self.h.engine.settings.session_days, 0)
-        self.assertGreater(self.row()["expires_at"], 4e9)  # past any plausible date: only idling ends it
+    def test_thirty_day_absolute_cap_by_default(self) -> None:
+        """A session ends after 30 days whatever the person does (a separate lifetime beside the idle window);
+        ``DESK_SESSION_DAYS=0`` removes the cap for operators who want only the idle rule."""
+        self.assertEqual(self.h.engine.settings.session_days, 30)
+        self.assertAlmostEqual(self.row()["expires_at"], time.time() + 30 * 86400, delta=60)
 
     def test_activity_keeps_the_session_open(self) -> None:
         """Three times the idle window with no second sign-in, because the person keeps working."""
@@ -322,14 +325,21 @@ class SessionSettings(unittest.TestCase):
                 return load_settings()
 
     def test_defaults(self) -> None:
-        """Read from the environment, not from the dataclass: an hour idle, no absolute cap."""
+        """Read from the environment, not from the dataclass: 30 minutes idle, a 30-day lifetime."""
         s = self.load()
-        self.assertEqual(s.session_idle_minutes, 60)
-        self.assertEqual(s.session_days, 0)
+        self.assertEqual(s.session_idle_minutes, 30)
+        self.assertEqual(s.session_days, 30)
 
-    def test_values_are_read(self) -> None:
-        s = self.load(DESK_SESSION_IDLE_MINUTES="15", DESK_SESSION_DAYS="30")
-        self.assertEqual((s.session_idle_minutes, s.session_days), (15, 30))
+    def test_values_are_read_within_the_allowed_range(self) -> None:
+        """An operator may choose 30 to 45 minutes on a server; anything outside is pulled back into the range
+        (and never switched off); the desktop app, which has no accounts, keeps whatever it is given."""
+        server = {"DESK_MODE": "server", "DESK_PUBLIC_URL": "https://desk.example.com"}
+        s = self.load(DESK_SESSION_IDLE_MINUTES="45", DESK_SESSION_DAYS="7", **server)
+        self.assertEqual((s.session_idle_minutes, s.session_days), (45, 7))
+        self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="15", **server).session_idle_minutes, 30)
+        self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="120", **server).session_idle_minutes, 45)
+        self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="0", **server).session_idle_minutes, 30)
+        self.assertEqual(self.load(DESK_SESSION_IDLE_MINUTES="5").session_idle_minutes, 5)   # desktop (the default mode here)
 
     def test_a_negative_limit_is_refused(self) -> None:
         """-1 minutes used to delete every session on its first request, locking everybody out;

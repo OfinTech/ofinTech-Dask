@@ -6,6 +6,8 @@ export type DeskBridge = {
   version?: string;
   openExternal?: (url: string) => void;
   mode?: "local" | "remote";
+  onLock?: (cb: () => void) => void;      // desktop: the computer was locked or put to sleep
+  onResume?: (cb: () => void) => void;    // desktop: the computer woke up
 };
 
 declare global {

@@ -174,8 +174,8 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
 | `DESK_ALLOW_PRIVATE_URLS` | `false` | Allow model or MCP endpoints on private networks (for example a self-hosted vLLM in the same VPC) |
 | `DESK_ALLOW_STDIO_MCP` | `false` | Allow local-command MCP servers on the server (not recommended) |
 | `DESK_MAX_UPLOAD_MB` | `25` | Import size limit |
-| `DESK_SESSION_IDLE_MINUTES` | `60` | Sign out after this long with no activity. `0` turns the check off, which leaves a session with no server-side limit |
-| `DESK_SESSION_DAYS` | `0` | Absolute cap on a session in days, whatever the person does; `0` = none. Set it if a stolen token must expire on its own |
+| `DESK_SESSION_IDLE_MINUTES` | `30` | Sign out after this long with no activity. 30 to 45 on a Team Server; a value outside the range is pulled back into it and the check cannot be switched off |
+| `DESK_SESSION_DAYS` | `30` | Absolute cap on a session in days, whatever the person does; `0` = none |
 | `DESK_WHATSAPP_GRAPH_VERSION` | `v26.0` | Meta Graph API version |
 | `DESK_GOOGLE_ALLOWED_DOMAINS` | — | Comma-separated e-mail domains allowed to use Google sign-in |
 | `DESK_SMTP_HOST`, `DESK_SMTP_PORT`, `DESK_SMTP_SECURITY`, `DESK_SMTP_USER`, `DESK_SMTP_PASSWORD`, `DESK_SMTP_FROM` | — / `587` / `starttls` | Outgoing e-mail for invitations and password resets (`*_FILE` variants read Docker secrets). `DESK_SMTP_SECURITY` is `starttls`, `ssl` or `none`; `none` is for an internal relay without a login and cannot be combined with `DESK_SMTP_USER` |

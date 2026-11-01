@@ -8,7 +8,7 @@
 // app's own origin, new windows and external links opened in the system browser (http/https only),
 // all permission requests denied.
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, safeStorage, shell, type MenuItemConstructorOptions } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, Menu, powerMonitor, safeStorage, shell, type MenuItemConstructorOptions } from "electron";
 import { spawn, type ChildProcess } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, createWriteStream } from "node:fs";
@@ -364,6 +364,13 @@ app.on("web-contents-created", (_e, contents) => {
 });
 
 app.whenReady().then(async () => {
+  // The computer is locked, put to sleep or left: the workspace is hidden at once (the page locks itself after
+  // its inactivity window too; this makes the two moments the same). On resume the page asks the engine or the
+  // server how much of the session is really left instead of trusting a clock that stood still.
+  for (const event of ["lock-screen", "suspend", "shutdown"] as const) {
+    powerMonitor.on(event, () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send("desk:lock", event); });
+  }
+  powerMonitor.on("resume", () => { for (const w of BrowserWindow.getAllWindows()) w.webContents.send("desk:resume"); });
   buildMenu();
   const config = readConfig();
   try {

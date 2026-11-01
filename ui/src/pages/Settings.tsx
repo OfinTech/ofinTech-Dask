@@ -314,7 +314,10 @@ function Account(): ReactNode {
           <ErrorBox error={error} />
           <div className="row"><button className="btn primary" disabled={busy} onClick={async () => { setError(null);
             const r = await run(() => post("/api/auth/password", pw), tr("Password changed")); if (r) setPw({ current: "", new: "" }); }}>{tr("Change password")}</button>
-            <button className="btn" onClick={() => post("/api/auth/logout").then(() => location.reload())}>{tr("Sign out")}</button></div>
+            <button className="btn" onClick={() => post("/api/auth/logout").then(() => {
+              try { localStorage.setItem("desk-signed-out", `user:${Date.now()}`); } catch { /* private mode */ }  // other tabs follow
+              location.reload();
+            })}>{tr("Sign out")}</button></div>
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@ Two modes share one code base:
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import re
 import secrets
@@ -34,6 +35,21 @@ def _bool(name: str, default: bool) -> bool:
     if not raw:
         return default
     return raw.lower() in {"1", "true", "yes", "on"}
+
+
+IDLE_MIN, IDLE_MAX = 30, 45   # the inactivity window an operator may choose on a Team Server, in minutes
+
+
+def _idle_minutes(value: int, mode: str) -> int:
+    """The inactivity window is a security setting with a bounded range: an operator may lengthen it to 45 minutes
+    for a team that needs it, never beyond, and may not shorten it below 30 or switch it off on a server."""
+    if mode == "desktop":
+        return value
+    if value < IDLE_MIN or value > IDLE_MAX:
+        clamped = max(IDLE_MIN, min(IDLE_MAX, value)) if value else IDLE_MIN
+        logging.getLogger("desk").warning("DESK_SESSION_IDLE_MINUTES=%s is outside %s-%s; using %s", value, IDLE_MIN, IDLE_MAX, clamped)
+        return clamped
+    return value
 
 
 def _minutes_or_days(name: str, default: str) -> int:
@@ -63,8 +79,8 @@ class Settings:
     allow_stdio_mcp: bool
     allow_private_network_urls: bool
     ui_dir: Path | None
-    session_days: int = 0          # absolute cap on a session, in days; 0 = none (stay signed in while active)
-    session_idle_minutes: int = 60  # sign out after this long with no activity; 0 = never
+    session_days: int = 30         # absolute cap on a session, in days; 0 = none (stay signed in while active)
+    session_idle_minutes: int = 30  # sign out after this long with no activity (Team Server: 30 to 45; 0 = never)
     max_upload_mb: int = 25
     whatsapp_graph_version: str = "v26.0"
     log_level: str = "info"
@@ -202,8 +218,8 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         allow_stdio_mcp=_bool("DESK_ALLOW_STDIO_MCP", mode == "desktop"),
         allow_private_network_urls=_bool("DESK_ALLOW_PRIVATE_URLS", mode == "desktop"),
         ui_dir=ui_dir,
-        session_days=_minutes_or_days("DESK_SESSION_DAYS", "0"),
-        session_idle_minutes=_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "60"),
+        session_days=_minutes_or_days("DESK_SESSION_DAYS", "30"),
+        session_idle_minutes=_idle_minutes(_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "30"), mode),
         max_upload_mb=int(_env("DESK_MAX_UPLOAD_MB", "25")),
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),
         log_level=_env("DESK_LOG_LEVEL", "info"),

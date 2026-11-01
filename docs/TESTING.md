@@ -2,7 +2,7 @@
 
 ```bash
 cd engine && python -m unittest discover -s tests -t .     # 269 tests, about 28 seconds (Tesseract, LibreOffice optional)
-cd ui && npx tsc --noEmit && npm run i18n:check && node build.mjs
+cd ui && npx tsc --noEmit && npm run i18n:check && npm test && node build.mjs   # incl. session-timer tests
 cd desktop && npm test                                       # typecheck, build, IPC guard tests (node --test)
 python e2e/ui_smoke.py                                       # real UI in Chromium + engine + fake model
 DESK_SMOKE_OUT=/tmp/smoke xvfb-run -a npx electron --no-sandbox desktop   # desktop shell

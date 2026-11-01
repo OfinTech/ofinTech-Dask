@@ -1854,5 +1854,14 @@ const d: Record<string, string> = {
   "{0} workflow runs failed or waiting": "{0} exécutions de workflow échouées ou en attente",
   "{0}: {1} of {2} statement lines matched to the ledger.": "{0} : {1} lignes du relevé sur {2} rapprochées du grand livre.",
   "{0}–{1} of {2}": "{0}–{1} sur {2}",
+  "Still there?": "Toujours là ?",
+  "Your session will expire in 2 minutes due to inactivity.": "Votre session expirera dans 2 minutes pour cause d’inactivité.",
+  "Time left: {0}": "Temps restant : {0}",
+  "Log out now": "Se déconnecter maintenant",
+  "Stay signed in": "Rester connecté",
+  "Locked": "Verrouillé",
+  "Locked after inactivity": "Verrouillé après inactivité",
+  "Nothing happened for a while, so the workspace was hidden.": "Rien ne s’est passé pendant un moment, l’espace de travail a donc été masqué.",
+  "Resume": "Reprendre",
 };
 export default d;
