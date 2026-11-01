@@ -46,7 +46,8 @@ migrations are applied automatically on start-up and are never rewritten once re
   **Inter** (bundled, SIL Open Font License; no font download), Arabic stays in IBM Plex Sans Arabic; financial
   figures use tabular numerals everywhere. Tables lost the green-bar banding for a quiet zebra on the muted surface.
   Dark mode keeps the same palette on navy surfaces. Value provenance badges (actual, forecast, budget, estimate,
-  unverified) are part of the design system.
+  unverified) are part of the design system. The website's product screenshots show the new identity, with the
+  executive overview of the demo company as the opening image.
 
 ### Security (enterprise audit, docs/audit/)
 
