@@ -230,12 +230,34 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     return user
 
 
+def request_origin(request: Request) -> str:
+    """``scheme://host[:port]`` of the page that sent the request, from Origin or, failing that, Referer; empty when
+    neither is present or parseable."""
+    from urllib.parse import urlsplit
+
+    for header in ("origin", "referer"):
+        raw = request.headers.get(header) or ""
+        if not raw or raw == "null":
+            continue
+        parts = urlsplit(raw)
+        if parts.scheme in {"http", "https"} and parts.netloc:
+            return f"{parts.scheme}://{parts.netloc}".lower()
+    return ""
+
+
 def check_origin(engine: Engine, request: Request) -> None:
-    """Cookie-authenticated writes must come from the Team Server's own origin (CSRF guard)."""
-    origin = request.headers.get("origin") or request.headers.get("referer") or ""
-    expected = engine.settings.public_url.rstrip("/")
-    if not origin.startswith(expected):
-        raise Forbidden("Request origin is not allowed.", code="bad_origin")
+    """Cookie-authenticated writes must come from the Team Server's own origin (CSRF guard).
+
+    The comparison is on the whole origin, scheme, host and port, never on a prefix: ``https://desk.example.com``
+    must not accept ``https://desk.example.com.attacker.net``.
+    """
+    from urllib.parse import urlsplit
+
+    public = urlsplit(engine.settings.public_url)
+    expected = f"{public.scheme}://{public.netloc}".lower()
+    if not expected.endswith("://") and request_origin(request) == expected:
+        return
+    raise Forbidden("Request origin is not allowed.", code="bad_origin")
 
 
 def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:

@@ -254,14 +254,18 @@ AUTH_FORM_FIELDS = 8
 
 
 def _allowed_origin(engine: Any, request: Request) -> bool:
-    origin = request.headers.get("origin") or ""
-    if not origin:
-        referer = request.headers.get("referer") or ""
-        origin = referer.split("/", 3)[0] + "//" + referer.split("/", 3)[2] if referer.count("/") >= 2 else ""
-    allowed = {engine.settings.public_url.rstrip("/")}
-    if engine.settings.site_url:
-        allowed.add(engine.settings.site_url.rstrip("/"))
-    return origin.rstrip("/") in allowed
+    """The website or the app itself, compared as whole origins (see ``web.request_origin``)."""
+    from urllib.parse import urlsplit
+
+    from ..web import request_origin
+
+    allowed = set()
+    for url in (engine.settings.public_url, engine.settings.site_url):
+        parts = urlsplit(url or "")
+        if parts.scheme and parts.netloc:
+            allowed.add(f"{parts.scheme}://{parts.netloc}".lower())
+    origin = request_origin(request)
+    return bool(origin) and origin in allowed
 
 
 def _back(engine: Any, code: str) -> Response:
