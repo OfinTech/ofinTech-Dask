@@ -69,6 +69,7 @@ jobs:
           npm ci --no-audit --no-fund
           npx tsc --noEmit
           npm run i18n:check
+          npm test
           node build.mjs
       - name: Browser smoke test
         run: |

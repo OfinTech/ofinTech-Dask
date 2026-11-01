@@ -57,18 +57,29 @@
 - scrypt password hashing (N=2^15) and a minimum password policy.
 - Opaque session tokens, stored hashed. Cookies are HttpOnly, Secure and SameSite=Strict, and cookie-authenticated
   writes must come from the server's own origin.
-- A session ends after `DESK_SESSION_IDLE_MINUTES` (60 by default) with no activity, and the row is deleted rather
-  than merely refused. Activity is a request that changes something, which includes the page's heartbeat
+- **Sessions.** A session ends after `DESK_SESSION_IDLE_MINUTES` of inactivity — 30 by default; an operator may
+  set 30 to 45, and a value outside that range is pulled back into it (never switched off on a server) — and the
+  row is deleted rather than merely refused, so the old cookie or token can do nothing afterwards and a ping
+  cannot revive it. Activity is a request that changes something, which includes the page's heartbeat
   (`POST /api/session/ping`, sent at most once a minute and only after the person has used the page). **Reading
-  never counts**, so the pages that poll while a document is processed, a file review runs or a workflow run is open
-  cannot hold a session open with nobody there; deciding by method keeps that true for polls added later. While
-  somebody is working the session renews with no second sign-in. `DESK_SESSION_DAYS` adds an absolute cap on top of
-  that, and is off by default: a leaked token then lives 60 minutes past the last use rather than the 14 days it
-  used to, but a token an attacker keeps using has no upper bound, so set the cap where that matters. Both knobs
-  refuse a negative or non-numeric value at start-up. `DESK_SESSION_IDLE_MINUTES=0` turns the idle check off and
-  leaves a session with no server-side limit at all. Signing out happens by browser event too: the page watches
-  real pointer, key and scroll activity (not mouse movement, so reading for an hour without touching anything ends
-  the session) and open tabs share one activity clock, so working in one keeps the others signed in.
+  never counts**: the pages that poll, the event stream carrying an assistant's answer, `GET /api/session/status`
+  and a tab refreshing itself cannot hold a session open with nobody there, and nothing the page sends carries a
+  timestamp the engine would believe. Two minutes before the end the page shows *"Your session will expire in
+  2 minutes due to inactivity"* (also in Arabic, Spanish and French) with *Stay signed in* — one authenticated
+  POST that the engine refuses if the session has already ended — and *Log out now*. When the end comes the page
+  signs out through `POST /api/auth/logout?reason=idle`, clears what it kept, tells every other tab through
+  `localStorage`, and shows the sign-in screen with the reason. Open tabs share one activity clock, so working in
+  one keeps the others signed in; after a sleep, a reconnection or a long time in the background the page asks
+  `GET /api/session/status` how long is really left, and that answer can only shorten what the page believes.
+  `DESK_SESSION_DAYS` is the absolute lifetime beside the idle window (30 days by default; `0` removes it): an
+  active person is signed out when it comes. Both knobs refuse a negative or non-numeric value at start-up.
+  Expired sessions, logouts and failed sign-ins are audit events (`session.expired`, `session.logout`,
+  `user.login.failed`) with the user and the reason, never the password or the token.
+- **Desktop.** The desktop app has no accounts: the engine runs for this computer's user under a per-launch token,
+  so there is no session to end. After the same inactivity window the page locks instead — every page is unmounted,
+  nothing financial stays on screen, and a deliberate click brings the app back — and it locks at once when the
+  computer is locked or put to sleep (the shell tells it). This protects an unattended, unlocked computer from a
+  passer-by; it cannot protect against someone who already holds the account (see "Threats considered").
 - Only sessions work this way. The MCP keys, a push connection's ingest key and a workflow's webhook secret are
   not sessions: they do not expire and are revoked by rotating them.
 - Rate limits on sign-up and sign-in. Sign-up is by single-use invitation, except for the first account.

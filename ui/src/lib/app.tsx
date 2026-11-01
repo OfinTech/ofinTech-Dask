@@ -7,7 +7,9 @@ export type Workspace = {
 
 export type Session = {
   version: string; mode: "desktop" | "server"; signup_open: boolean; needs_first_user: boolean; public_url: string;
-  idle_minutes: number;  // sign out after this long with no activity; 0 = never
+  idle_minutes: number;  // sign out after this long with no activity; 0 = never (desktop)
+  lock_minutes: number;  // desktop: hide the workspace after this long with no activity; 0 on a server
+  warn_seconds: number;  // how long before the sign-out the warning shows
   features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean; sealed?: boolean };
   user: { id: string; email: string; name: string; instance_admin: boolean } | null;
   workspaces: Workspace[];

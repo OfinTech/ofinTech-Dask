@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld("desk", {
   openExternal: (url: string) => ipcRenderer.send("desk:open", String(url)),
   // Google sign-in in the system browser, handed back to this app (Team Server only)
   googleChallenge: bridge.mode === "remote" ? () => ipcRenderer.sendSync("desk:google-challenge") as string | null : undefined,
+  // the shell tells the page when the computer is locked or sleeps (lock now) and when it wakes (check the session)
+  onLock: (cb: () => void) => { ipcRenderer.on("desk:lock", () => cb()); },
+  onResume: (cb: () => void) => { ipcRenderer.on("desk:resume", () => cb()); },
 });
 
 // Only used by the "Connect to a Team Server" window (a local file).

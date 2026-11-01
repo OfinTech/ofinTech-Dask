@@ -1,4 +1,4 @@
-import { StrictMode, useCallback, useEffect, useState, type ReactNode } from "react";
+import { StrictMode, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
@@ -31,6 +31,7 @@ import { FinancePage } from "./pages/Finance";
 import { LedgerPage } from "./pages/Ledger";
 import { OversightPage } from "./pages/Oversight";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
+import { ACTIVITY_EVENTS, fromServer, idleState, isUserActivity, mergeActivity, secondsLeft, tickMs, type IdleState } from "./lib/idle";
 
 const NAV: [string, string, string][] = [
   ["overview", N("Overview"), "pulse"], ["finance", N("Statements"), "ledger"], ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"],
@@ -64,10 +65,11 @@ function storedWs(): string | null {
   try { return localStorage.getItem("desk-ws"); } catch { return null; }
 }
 
-const ACTIVITY: readonly string[] = ["pointerdown", "keydown", "wheel", "touchstart", "scroll"];
 // Every tab of the app writes here, so working in one tab counts for all of them. Without it a tab left
 // untouched beside a busy one would reach its own idle limit and sign the person out of both.
 const ACTIVITY_KEY = "desk-last-activity";
+// Written by the tab that signed out (by choice or for idling) so every other tab follows at once.
+const SIGNED_OUT_KEY = "desk-signed-out";
 
 function readSharedActivity(): number {
   try {
@@ -79,42 +81,126 @@ function readSharedActivity(): number {
   }
 }
 
-/** Keeps the session open while the person is doing something, and signs them out when they stop.
- *  `minutes` is the engine's own idle window (0 on the desktop app, which has no accounts). */
-function useIdleSignOut(minutes: number, signedIn: boolean, onIdle: () => void): void {
+type SessionTimer = { state: IdleState; secondsLeft: number };
+type SessionStatus = { idle_seconds_left: number | null };
+
+/** Keeps the session open while the person is doing something, warns two minutes before the engine would end
+ *  it, and signs out when the moment comes (docs/SECURITY.md, "Sessions"). `minutes` is the engine's idle window
+ *  (0 when there is none). Only real input counts as activity; the page's own polling, the event stream, the
+ *  countdown and background refreshes never do. After a sleep, a reconnection or a long time in the background
+ *  the engine is asked how long is really left, and its answer can only shorten what this tab believes. */
+function useSessionTimer(minutes: number, signedIn: boolean, onExpired: () => void): [SessionTimer, () => Promise<boolean>] {
+  const [timer, setTimer] = useState<SessionTimer>({ state: "active", secondsLeft: Infinity });
+  const lastRef = useRef(Date.now());
+  const limit = minutes * 60_000;
+
+  const resync = useCallback(async () => {
+    if (!limit) return;
+    try {
+      const s = await get<SessionStatus>("/api/session/status");   // a GET: never extends the session
+      lastRef.current = fromServer(Date.now(), s.idle_seconds_left, limit, Math.max(lastRef.current, readSharedActivity()));
+    } catch { /* a 401 here has already announced the sign-out; a network error leaves the local estimate */ }
+  }, [limit]);
+
+  const stay = useCallback(async (): Promise<boolean> => {
+    try {
+      // one authenticated POST: the engine refreshes last_seen only if the session is still alive (401 otherwise)
+      const s = await post<SessionStatus>("/api/session/ping");
+      const t = Date.now();
+      lastRef.current = fromServer(t, s.idle_seconds_left, limit, t);
+      try { localStorage.setItem(ACTIVITY_KEY, String(t)); } catch { /* private mode */ }
+      return true;
+    } catch {
+      return false;   // the session had already ended; the 401 brings the sign-in screen
+    }
+  }, [limit]);
+
   useEffect(() => {
-    if (!minutes || !signedIn) return;
-    const limit = minutes * 60_000;
+    if (!limit || !signedIn) return;
     const every = Math.min(60_000, limit / 4);  // a short window needs a faster heartbeat to stay reachable
-    let last = Date.now();
-    let shared = last;   // last activity in any tab, written at most every 5s
-    let pinged = last;
-    const seen = () => {
-      last = Date.now();
-      if (last - shared > 5_000) {
-        shared = last;
-        try { localStorage.setItem(ACTIVITY_KEY, String(last)); } catch { /* private mode */ }
+    let shared = lastRef.current = Date.now();
+    let pinged = lastRef.current;
+    let warned = false;
+    const seen = (e: Event) => {
+      if (!isUserActivity(e.type) || warned) return;   // while the warning shows, only "Stay signed in" counts
+      const t = Date.now();
+      lastRef.current = t;
+      if (t - shared > 5_000) {
+        shared = t;
+        try { localStorage.setItem(ACTIVITY_KEY, String(t)); } catch { /* private mode */ }
       }
     };
-    for (const ev of ACTIVITY) window.addEventListener(ev, seen, { passive: true, capture: true });
+    for (const ev of ACTIVITY_EVENTS) window.addEventListener(ev, seen, { passive: true, capture: true });
+    const wake = () => { if (document.visibilityState !== "hidden") void resync(); };
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", wake);
+    window.addEventListener("focus", wake);
     const t = setInterval(() => {
-      if (Date.now() - Math.max(last, readSharedActivity()) >= limit) {
+      const now = Date.now();
+      const last = mergeActivity(now, lastRef.current, readSharedActivity());
+      const state = idleState(now, last, limit);
+      warned = state === "warning";
+      setTimer({ state, secondsLeft: secondsLeft(now, last, limit) });
+      if (state === "expired") {
         clearInterval(t);  // sign out once, not again on every tick while the two requests are in flight
-        onIdle();
+        onExpired();
         return;
       }
       // Anything done since the last ping is reported, however sparse. Only the tab the person is
       // actually in has activity of its own, so open tabs do not all ping at once.
-      if (last > pinged && Date.now() - pinged >= every) {
-        pinged = Date.now();
+      if (state === "active" && last > pinged && now - pinged >= every) {
+        pinged = now;
         post("/api/session/ping").catch(() => undefined);
       }
-    }, Math.max(1_000, Math.min(15_000, every / 4)));
+    }, tickMs(limit));
     return () => {
       clearInterval(t);
-      for (const ev of ACTIVITY) window.removeEventListener(ev, seen, { capture: true });
+      for (const ev of ACTIVITY_EVENTS) window.removeEventListener(ev, seen, { capture: true });
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("online", wake);
+      window.removeEventListener("focus", wake);
     };
-  }, [minutes, signedIn, onIdle]);
+  }, [limit, signedIn, onExpired, resync]);
+
+  return [timer, stay];
+}
+
+/** Shown two minutes before the engine ends the session. Nothing on this dialog counts as activity except the
+ *  explicit choice to stay, which asks the engine; closing it is not a choice. */
+function SessionWarning({ secondsLeft, onStay, onLogout }: { secondsLeft: number; onStay: () => void; onLogout: () => void }): ReactNode {
+  const m = Math.floor(secondsLeft / 60);
+  const s = secondsLeft % 60;
+  return (
+    <div className="scrim" role="presentation">
+      <div className="modal" role="alertdialog" aria-modal="true" aria-labelledby="session-warning-title">
+        <div className="modal-head"><h2 id="session-warning-title">{tr("Still there?")}</h2></div>
+        <div className="modal-body">
+          <p>{tr("Your session will expire in 2 minutes due to inactivity.")}</p>
+          <p className="muted" aria-live="polite">{tr("Time left: {0}", { 0: `${m}:${String(s).padStart(2, "0")}` })}</p>
+        </div>
+        <div className="modal-foot">
+          <button className="btn ghost" onClick={onLogout}>{tr("Log out now")}</button>
+          <button className="btn primary" autoFocus onClick={onStay}>{tr("Stay signed in")}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** The desktop app has no accounts (the engine runs for this computer's user under a per-launch token), so there
+ *  is no session to end. After the same inactivity window the screen is locked instead: every page is unmounted,
+ *  nothing financial stays on screen, and a deliberate click brings the app back. This protects against someone
+ *  reading the screen of an unattended, unlocked computer; it cannot protect against someone who already holds the
+ *  account (docs/SECURITY.md, "Desktop"). */
+function LockScreen({ onResume }: { onResume: () => void }): ReactNode {
+  return (
+    <div className="page lock" role="dialog" aria-modal="true" aria-label={tr("Locked")}>
+      <BrandMark />
+      <h1>{tr("Locked after inactivity")}</h1>
+      <p className="muted">{tr("Nothing happened for a while, so the workspace was hidden.")}</p>
+      <button className="btn primary" autoFocus onClick={onResume}>{tr("Resume")}</button>
+    </div>
+  );
 }
 
 function App(): ReactNode {
@@ -157,12 +243,23 @@ function App(): ReactNode {
     }
   }, [route.join("/"), session]);
 
-  const onIdle = useCallback(async () => {
-    setIdleOut(true);
-    try { await post("/api/auth/logout"); } catch { /* the engine has ended it anyway */ }
+  const signOut = useCallback(async (reason: "idle" | "user") => {
+    if (reason === "idle") setIdleOut(true);
+    try { await post(`/api/auth/logout?reason=${reason}`); } catch { /* the engine has ended it anyway */ }
+    try { localStorage.setItem(SIGNED_OUT_KEY, `${reason}:${Date.now()}`); } catch { /* private mode */ }  // other tabs follow
+    try { sessionStorage.removeItem("desk-token"); } catch { /* nothing stored */ }
     await reloadSession();
   }, [reloadSession]);
-  useIdleSignOut(session?.idle_minutes ?? 0, Boolean(session?.user), onIdle);
+  const onExpired = useCallback(() => { void signOut("idle"); }, [signOut]);
+  const [timer, stay] = useSessionTimer(session?.idle_minutes ?? 0, Boolean(session?.user), onExpired);
+  const [locked, setLocked] = useState(false);
+  const onLock = useCallback(() => setLocked(true), []);
+  const [lockTimer] = useSessionTimer(locked ? 0 : (session?.lock_minutes ?? 0), Boolean(session?.user), onLock);
+  void lockTimer;
+  useEffect(() => {   // the desktop shell: lock when the computer locks or sleeps; re-check the session on waking
+    window.desk?.onLock?.(() => { if (session?.lock_minutes) setLocked(true); });
+    window.desk?.onResume?.(() => { void reloadSession(); });
+  }, [session?.lock_minutes, reloadSession]);
 
   // the engine refused a request: show the sign-in screen instead of a page that cannot load anything
   const haveUser = Boolean(session?.user);
@@ -172,8 +269,15 @@ function App(): ReactNode {
       if ((e as CustomEvent).detail === "session_idle") setIdleOut(true);
       void reloadSession();
     };
+    // another tab signed out: this one does too, with the same explanation
+    const other = (e: StorageEvent) => {
+      if (e.key !== SIGNED_OUT_KEY || !e.newValue) return;
+      if (e.newValue.startsWith("idle")) setIdleOut(true);
+      void reloadSession();
+    };
     window.addEventListener(SIGNED_OUT_EVENT, refused);
-    return () => window.removeEventListener(SIGNED_OUT_EVENT, refused);
+    window.addEventListener("storage", other);
+    return () => { window.removeEventListener(SIGNED_OUT_EVENT, refused); window.removeEventListener("storage", other); };
   }, [haveUser, reloadSession]);
 
   const ws: Workspace | undefined = session?.workspaces.find((w) => w.id === wsId) || session?.workspaces[0];
@@ -197,6 +301,7 @@ function App(): ReactNode {
   if (route[0] === "invite" && route[1]) return <InvitePage token={route[1]} session={session} onDone={reloadSession} />;
   if (route[0] === "reset" && route[1]) return <ResetPage token={route[1]} onDone={reloadSession} />;
   if (!session.user) return <AuthPage session={session} onDone={reloadSession} signedOutForIdling={idleOut} />;
+  if (locked) return <LockScreen onResume={() => setLocked(false)} />;
   if (!ws) return <Onboarding session={session} onDone={async (id) => { selectWs(id); await reloadSession(); }} />;
 
   function selectWs(id: string) {
@@ -239,6 +344,8 @@ function App(): ReactNode {
 
   return (
     <AppCtx.Provider value={{ session, ws, reloadSession, counts, refreshCounts }}>
+      {timer.state === "warning" && <SessionWarning secondsLeft={timer.secondsLeft}
+        onStay={() => { void stay(); }} onLogout={() => { void signOut("user"); }} />}
       <div className="shell">
         <header className="mobilebar">
           <button className="btn ghost small" aria-label={tr("Menu")} aria-expanded={menu} onClick={() => setMenu(!menu)}>☰</button>

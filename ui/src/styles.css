@@ -795,3 +795,6 @@ details.evidence summary { cursor: pointer; color: var(--blue-ink); }
 .exec-kpi-head a { color: var(--blue); text-decoration: none; }
 .exec-kpi-head a:hover { text-decoration: underline; }
 .ledger td.nowrap, .ledger th.nowrap { white-space: nowrap; }
+
+/* the desktop lock screen: nothing of the workspace is rendered behind it */
+.page.lock { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }

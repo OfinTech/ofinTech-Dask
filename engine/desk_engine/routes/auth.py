@@ -63,6 +63,8 @@ async def session(ctx: Ctx) -> dict[str, Any]:
             "public_url": engine.settings.public_url,
             "site_url": engine.settings.site_url,
             "idle_minutes": 0 if engine.settings.is_desktop else engine.settings.session_idle_minutes,
+            "lock_minutes": engine.settings.session_idle_minutes if engine.settings.is_desktop else 0,
+            "warn_seconds": 120,
             "features": {"stdio_mcp": engine.settings.allow_stdio_mcp, "sealed": engine.settings.sealed,
                          "whatsapp": engine.settings.public_url.startswith("https://"),
                          "team": not engine.settings.is_desktop,
@@ -182,16 +184,37 @@ async def login(ctx: Ctx) -> Any:
     return _start_session(ctx, uid)
 
 
+def _session_state(ctx: Ctx) -> dict[str, Any]:
+    """How long this session has left: until the idle sign-out and until its absolute end. The page shows the warning
+    and the countdown from these numbers, never from its own clock alone."""
+    from ..web import NO_EXPIRY, SESSION_COOKIE, session_row
+
+    row = session_row(ctx.engine, ctx.request)
+    idle = ctx.engine.settings.session_idle_minutes * 60
+    if row is None or ctx.engine.settings.is_desktop:
+        return {"ok": True, "idle_minutes": 0, "idle_seconds_left": None, "lifetime_seconds_left": None, "warn_seconds": 120}
+    return {"ok": True, "idle_minutes": ctx.engine.settings.session_idle_minutes,
+            "idle_seconds_left": max(0, int(row["last_seen"] + idle - now())) if idle else None,
+            "lifetime_seconds_left": None if row["expires_at"] >= NO_EXPIRY else max(0, int(row["expires_at"] - now())),
+            "warn_seconds": 120}
+
+
 @router.post("/api/session/ping")
 async def session_ping(ctx: Ctx) -> dict[str, Any]:
-    """Sent by the page after the person has actually done something, to keep the session open.
-
-    Reaching here has already refreshed the session (``web.authenticate``); there is nothing else to do.
-    The limit is well above the page's own rate, which is one ping per minute per person at most.
-    """
+    """Sent by the page after the person has actually done something (and by "Stay signed in"), to keep the session
+    open. Reaching here has already refreshed the session (``web.authenticate``: a POST counts as activity, a page's
+    polling GETs never do); a session that has already ended is refused with 401 before this runs, so an expired
+    session cannot be revived by pinging. The limit is well above the page's own rate (one ping per minute)."""
     assert ctx.user is not None
     _rate_limit(ctx, f"ping:{ctx.user['id']}", limit=120, window=300)
-    return {"ok": True}
+    return _session_state(ctx)
+
+
+@router.get("/api/session/status")
+async def session_status(ctx: Ctx) -> dict[str, Any]:
+    """The session's remaining time without extending it: a GET is not activity. Used after a tab wakes up, comes
+    back online or becomes visible, and to keep several tabs' countdowns in step."""
+    return _session_state(ctx)
 
 
 @router.post("/api/auth/logout")
