@@ -43,8 +43,8 @@ jobs:
           pip-audit -r requirements.txt --strict --progress-spinner off
       - name: Known vulnerabilities in runtime npm dependencies
         run: |
-          (cd ui && npm install --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
-          (cd desktop && npm install --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
+          (cd ui && npm ci --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
+          (cd desktop && npm ci --no-audit --no-fund && npm audit --omit=dev --audit-level=high)
 
   test:
     runs-on: ubuntu-24.04
@@ -65,7 +65,7 @@ jobs:
       - name: UI typecheck, translations and build
         working-directory: ui
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npx tsc --noEmit
           npm run i18n:check
           node build.mjs
@@ -83,7 +83,7 @@ jobs:
       - name: Desktop typecheck and security tests
         working-directory: desktop
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npx tsc --noEmit -p tsconfig.json
           npm test
 
@@ -120,7 +120,7 @@ jobs:
       - name: Build UI
         working-directory: ui
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           node build.mjs
       - name: Package desktop app
         working-directory: desktop
@@ -150,7 +150,7 @@ jobs:
           # says credentials alone are enough. Passing it exactly when the credentials exist is right under
           # either, and asks for a build that fails rather than one that quietly ships un-notarised.
           if [ -n "${APPLE_ID:-}" ]; then args+=(-c.mac.notarize=true); fi
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           set +e
           npm run dist -- "${args[@]}" 2>&1 | tee package.log
           code=${PIPESTATUS[0]}
