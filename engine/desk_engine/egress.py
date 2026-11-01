@@ -100,6 +100,10 @@ _LOCAL_NAMES = ("localhost", "host.docker.internal")
 _LOCAL_SUFFIXES = (".local", ".internal", ".lan", ".localdomain", ".home.arpa")
 
 
+# 100.64.0.0/10 is shared address space (carrier-grade NAT, overlay networks such as Tailscale, and some cloud
+# metadata services); Python counts it as neither private nor reserved, so it is named here.
+_CGNAT = ipaddress.ip_network("100.64.0.0/10")
+
 _EXTERNAL_V6 = [ipaddress.ip_network(n) for n in ("2002::/16", "64:ff9b::/96", "64:ff9b:1::/48", "2001::/32")]
 
 
@@ -126,7 +130,7 @@ def _ip_internal(addr: str) -> bool:
             return _ip_internal(str(ip.ipv4_mapped))
         if any(ip in n for n in _EXTERNAL_V6):   # 6to4, NAT64 and Teredo carry traffic to public IPv4 hosts
             return False
-    return ip.is_private or ip.is_loopback or ip.is_link_local
+    return ip.is_private or ip.is_loopback or ip.is_link_local or ip in _CGNAT
 
 
 def host_internal(host: str | None, allow: frozenset[str] = frozenset(), *, resolve: bool = False) -> bool:
@@ -168,6 +172,59 @@ def check_model_endpoint(engine: Engine, workspace: dict[str, Any] | str, base_u
 
 class EgressBlocked(httpx.ConnectError):
     pass
+
+
+class PrivateNetworkGuard(httpx.AsyncBaseTransport):
+    """On a Team Server that does not allow private-network URLs, refuses every request whose host is, or resolves
+    to, an address on the private network, at the moment the request is made.
+
+    ``security.check_outbound_url`` makes the same judgement when a URL is saved, but a name can change what it
+    resolves to between then and the connection (DNS rebinding), a redirect can point somewhere else, and some
+    URLs are only ever checked once. Judging the host again here, for every request including redirects, closes that
+    window. Hosts the operator lists in DESK_EGRESS_ALLOW, and the configured S3 endpoint, are exempt because they are
+    the operator's own infrastructure. A name that does not resolve is let through: nothing can be reached at it,
+    and the connection fails on its own with the ordinary error.
+    """
+
+    CACHE_SECONDS = 60
+
+    def __init__(self, inner: httpx.AsyncBaseTransport | None, allow: frozenset[str] = frozenset()) -> None:
+        self.inner = inner or httpx.AsyncHTTPTransport()
+        self.allow = frozenset(h.lower() for h in allow)
+        self.blocked: list[str] = []
+        self._cache: dict[str, tuple[float, bool]] = {}
+
+    def _exempt(self, host: str) -> bool:
+        return host in self.allow or any(host.endswith("." + a) for a in self.allow)
+
+    async def _internal(self, host: str) -> bool:
+        import asyncio
+        import time
+
+        if _ip(host) is not None:
+            return _ip_internal(host)
+        hit = self._cache.get(host)
+        if hit and hit[0] > time.monotonic():
+            return hit[1]
+        try:
+            infos = await asyncio.to_thread(socket.getaddrinfo, host, None, proto=socket.IPPROTO_TCP)
+        except OSError:
+            return False
+        internal = any(_ip_internal(i[4][0]) for i in infos)
+        self._cache[host] = (time.monotonic() + self.CACHE_SECONDS, internal)
+        return internal
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        host = (request.url.host or "").strip("[]").lower().rstrip(".")
+        local_name = host in _LOCAL_NAMES or host.endswith(_LOCAL_SUFFIXES) or ("." not in host and ":" not in host)
+        if not self._exempt(host) and (local_name or await self._internal(host)):
+            self.blocked.append(host)
+            raise EgressBlocked(f"Blocked: the Team Server does not connect to private or local network addresses ({host}).",
+                                request=request)
+        return await self.inner.handle_async_request(request)
+
+    async def aclose(self) -> None:
+        await self.inner.aclose()
 
 
 class SealedTransport(httpx.AsyncBaseTransport):

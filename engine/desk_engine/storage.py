@@ -323,9 +323,10 @@ class S3Storage:
 class EncryptedStorage:
     """AES-256-GCM per object; the storage key is the associated data."""
 
-    def __init__(self, inner: Storage, master_key: bytes) -> None:
+    def __init__(self, inner: Storage, master_key: bytes, *, allow_plaintext: bool = False) -> None:
         self.inner = inner
         self.kind = inner.kind
+        self.allow_plaintext = allow_plaintext
         key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b"ofintech-desk storage v1").derive(master_key)
         self._aead = AESGCM(key)
 
@@ -337,7 +338,13 @@ class EncryptedStorage:
     async def get(self, key: str) -> bytes:
         blob = await self.inner.get(key)
         if not blob.startswith(MAGIC):
-            return blob  # written before encryption was turned on
+            # An object without the magic was written before encryption was on. Reading it as it is would mean
+            # trusting whatever is in the store unauthenticated, so that is allowed only while an operator migrates
+            # (DESK_STORAGE_ALLOW_PLAINTEXT=true); `python -m desk_engine storage-encrypt` rewrites such objects.
+            if self.allow_plaintext:
+                return blob
+            raise AppError("A stored file is not encrypted. Run `python -m desk_engine storage-encrypt` once, or set "
+                           "DESK_STORAGE_ALLOW_PLAINTEXT=true while you migrate.", code="storage_plaintext", status=500)
         try:
             return self._aead.decrypt(blob[len(MAGIC):len(MAGIC) + 12], blob[len(MAGIC) + 12:], key.encode())
         except Exception as exc:
@@ -356,6 +363,17 @@ class EncryptedStorage:
     def describe(self) -> dict[str, Any]:
         return self.inner.describe() | {"encrypted": True}
 
+    async def encrypt_in_place(self, prefixes: tuple[str, ...] = ("documents", "files", "uploads")) -> int:
+        """Rewrites every object that is still stored in clear. Returns how many were rewritten."""
+        done = 0
+        for prefix in prefixes:
+            for item in await self.inner.list(prefix):
+                blob = await self.inner.get(item.key)
+                if not blob.startswith(MAGIC):
+                    await self.put(item.key, blob)
+                    done += 1
+        return done
+
 
 def build_storage(settings: Any, transport: Any = None) -> Storage:
     s = settings.storage
@@ -368,5 +386,5 @@ def build_storage(settings: Any, transport: Any = None) -> Storage:
     else:
         inner = LocalStorage(settings.files_dir)
     if s.get("encrypt", True):
-        return EncryptedStorage(inner, settings.master_key)
+        return EncryptedStorage(inner, settings.master_key, allow_plaintext=bool(s.get("allow_plaintext", False)))
     return inner

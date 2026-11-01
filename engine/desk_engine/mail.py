@@ -8,10 +8,13 @@ import logging
 import os
 import smtplib
 import ssl
+from collections import deque
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 from pathlib import Path
 from typing import Any
+
+from .errors import ConfigError
 
 log = logging.getLogger("desk.mail")
 
@@ -21,8 +24,13 @@ class Mailer:
                  security: str = "starttls") -> None:
         self.host, self.port, self.user, self.password = host, port, user, password
         self.sender = sender or (f"OfinTech Desk <{user}>" if "@" in user else "")
+        if security not in {"starttls", "ssl", "none"}:
+            raise ConfigError("DESK_SMTP_SECURITY must be 'starttls', 'ssl' or 'none' (an internal relay with no login).")
+        if security == "none" and user:
+            raise ConfigError("DESK_SMTP_SECURITY=none sends in clear, so it cannot be used with DESK_SMTP_USER: the "
+                              "password would travel unencrypted. Use 'starttls' or 'ssl'.")
         self.security = security
-        self.sent: list[EmailMessage] = []  # kept for tests and the audit trail of this process
+        self.sent: deque[EmailMessage] = deque(maxlen=200)  # the last messages, for tests and this process's trail
 
     @classmethod
     def from_env(cls) -> Mailer:

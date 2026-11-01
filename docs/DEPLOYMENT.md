@@ -167,13 +167,14 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
 | `DESK_SESSION_DAYS` | `0` | Absolute cap on a session in days, whatever the person does; `0` = none. Set it if a stolen token must expire on its own |
 | `DESK_WHATSAPP_GRAPH_VERSION` | `v26.0` | Meta Graph API version |
 | `DESK_GOOGLE_ALLOWED_DOMAINS` | — | Comma-separated e-mail domains allowed to use Google sign-in |
-| `DESK_SMTP_HOST`, `DESK_SMTP_PORT`, `DESK_SMTP_SECURITY`, `DESK_SMTP_USER`, `DESK_SMTP_PASSWORD`, `DESK_SMTP_FROM` | — / `587` / `starttls` | Outgoing e-mail for invitations and password resets (`*_FILE` variants read Docker secrets) |
+| `DESK_SMTP_HOST`, `DESK_SMTP_PORT`, `DESK_SMTP_SECURITY`, `DESK_SMTP_USER`, `DESK_SMTP_PASSWORD`, `DESK_SMTP_FROM` | — / `587` / `starttls` | Outgoing e-mail for invitations and password resets (`*_FILE` variants read Docker secrets). `DESK_SMTP_SECURITY` is `starttls`, `ssl` or `none`; `none` is for an internal relay without a login and cannot be combined with `DESK_SMTP_USER` |
 | `DESK_OCR` | on when Tesseract is installed | `off` disables OCR of scans and images |
 | `DESK_OCR_LANGS` | `eng+ara+spa+fra` | Tesseract languages to use (those installed) |
 | `DESK_TOOL_SELECTION` | `on` | `off` sends every tool definition with every request (see COSTS.md) |
 | `DESK_LOG_LEVEL` | `INFO` | Engine log level |
 | `DESK_STORAGE` | `local` | `local` (data volume) or `s3` |
 | `DESK_STORAGE_ENCRYPTION` | `true` | Encrypt files in the engine before storing them |
+| `DESK_STORAGE_ALLOW_PLAINTEXT` | `false` | Read files that were stored before encryption was on. Set it only while you run `python -m desk_engine storage-encrypt` once (it rewrites such files encrypted), then remove it: a file the engine cannot authenticate is otherwise refused |
 | `DESK_S3_ENDPOINT` | AWS in the region | e.g. `http://minio:9000`, `https://<account>.r2.cloudflarestorage.com` |
 | `DESK_S3_REGION` | `us-east-1` | Signing region |
 | `DESK_S3_BUCKET`, `DESK_S3_PREFIX` | — | Bucket and optional key prefix |

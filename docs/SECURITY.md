@@ -117,8 +117,14 @@
 - Connector addresses follow the outbound-request rules below.
 
 **Outbound requests.**
-- On the Team Server, user-supplied URLs (custom model endpoints, MCP servers) must be HTTPS and must not resolve to
-  private, loopback, link-local or reserved addresses. URLs with embedded credentials are refused.
+- On the Team Server, user-supplied URLs (custom model endpoints, MCP servers, connectors, webhooks) must be HTTPS and
+  must not resolve to private, loopback, link-local, shared (100.64/10) or reserved addresses. URLs with embedded
+  credentials are refused.
+- The same judgement is repeated when each request is made (`egress.PrivateNetworkGuard` wraps the engine's HTTP
+  transport in server mode), so a name that later resolves to an internal address, or a redirect to one, is refused at
+  the connection. The configured S3 endpoint and hosts listed in `DESK_EGRESS_ALLOW` are exempt, because they are the
+  operator's own services. On a sealed server the guard is replaced by the sealed transport, which allows only the
+  private network.
 
 **Webhooks.**
 - Telegram: a secret token header. WhatsApp: an HMAC-SHA256 signature with the app secret.

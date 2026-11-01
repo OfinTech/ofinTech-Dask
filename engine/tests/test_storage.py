@@ -93,12 +93,25 @@ class Backends(unittest.TestCase):
         self.assertTrue(asyncio.run(create.check())["created_bucket"])
         self.assertIn("new-bucket", s3.buckets)
 
-    def test_local_reads_files_written_before_encryption(self) -> None:
+    def test_files_written_before_encryption_need_an_explicit_migration(self) -> None:
+        """A file stored in clear is read only while DESK_STORAGE_ALLOW_PLAINTEXT is set, and `storage-encrypt`
+        rewrites it so the flag can go (audit OB-05)."""
+        from desk_engine.errors import AppError
+
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / "documents" / "ws_1").mkdir(parents=True)
             (Path(tmp) / "documents" / "ws_1" / "doc_old").write_bytes(b"plain old file")
-            store = EncryptedStorage(LocalStorage(Path(tmp)), secrets.token_bytes(32))
-            self.assertEqual(asyncio.run(store.get("documents/ws_1/doc_old")), b"plain old file")
+            key = secrets.token_bytes(32)
+            strict = EncryptedStorage(LocalStorage(Path(tmp)), key)
+            with self.assertRaises(AppError) as caught:
+                asyncio.run(strict.get("documents/ws_1/doc_old"))
+            self.assertEqual(caught.exception.code, "storage_plaintext")
+            lenient = EncryptedStorage(LocalStorage(Path(tmp)), key, allow_plaintext=True)
+            self.assertEqual(asyncio.run(lenient.get("documents/ws_1/doc_old")), b"plain old file")
+            self.assertEqual(asyncio.run(lenient.encrypt_in_place()), 1)
+            self.assertTrue((Path(tmp) / "documents" / "ws_1" / "doc_old").read_bytes().startswith(MAGIC))
+            self.assertEqual(asyncio.run(strict.get("documents/ws_1/doc_old")), b"plain old file")
+            self.assertEqual(asyncio.run(lenient.encrypt_in_place()), 0)
 
 
 class EngineOnS3(unittest.TestCase):

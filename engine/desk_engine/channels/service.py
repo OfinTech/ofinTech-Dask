@@ -56,8 +56,12 @@ class Telegram:
         self.base = f"https://api.telegram.org/bot{token}"
 
     async def call(self, method: str, payload: dict[str, Any] | None = None, timeout: float = 30) -> Any:
-        async with httpx.AsyncClient(timeout=timeout + 10, transport=self.engine.http_transport) as client:
-            resp = await client.post(f"{self.base}/{method}", json=payload or {})
+        try:
+            async with httpx.AsyncClient(timeout=timeout + 10, transport=self.engine.http_transport) as client:
+                resp = await client.post(f"{self.base}/{method}", json=payload or {})
+        except httpx.HTTPError as exc:
+            # the request URL carries the bot token, so the transport's own message is never passed on
+            raise UpstreamError(f"Telegram {method} failed: {type(exc).__name__}", code="telegram_error") from None
         data = resp.json() if resp.headers.get("content-type", "").startswith("application/json") else {}
         if resp.status_code >= 400 or not data.get("ok"):
             raise UpstreamError(f"Telegram {method} failed: {data.get('description') or resp.status_code}",
