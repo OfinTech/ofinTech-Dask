@@ -15,10 +15,12 @@ The server's tools appear to the assistant as `mcp_<server>__<tool>`. Each tool 
 | Policy | Behaviour |
 |---|---|
 | Ask for approval (default) | Every call waits in the approvals inbox with its exact arguments |
-| Run without asking | Allowed only for tools the server marks `readOnlyHint` |
+| Run without asking | Allowed only for tools the server marks `readOnlyHint`, and only in the form an admin approved: saving the policy records the tool's name, description, input schema and read-only flag. If a refresh shows the tool changed under the same name, it asks again (the card says *changed since approval*) until an admin saves the policy again |
 | Don't use | Hidden from the assistant |
 
 Each server has one persistent session, which closes after 10 idle minutes. **Refresh** reloads the tool list.
+After upgrading to this version, tools that were already set to *run without asking* ask once more until an
+admin re-saves their policy.
 
 ## Using this workspace from other apps (server)
 

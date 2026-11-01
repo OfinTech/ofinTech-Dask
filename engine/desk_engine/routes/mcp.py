@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from ..db import dumps, loads, new_id, now
 from ..errors import Conflict, Forbidden, Invalid, NotFound
-from ..mcp_client import command_preview, tool_prefix, validate_server_input
+from ..mcp_client import tool_fingerprint, tool_may_run_unattended, command_preview, tool_prefix, validate_server_input
 from ..security import new_token, token_hash
 from ..web import Ctx, Router
 
@@ -32,6 +32,9 @@ def _out(row: dict[str, Any]) -> dict[str, Any]:
     out["args"] = loads(row["args"], [])
     out["tool_policy"] = loads(row["tool_policy"], {})
     out["tools"] = loads(row["tools_cache"], [])
+    for t in out["tools"]:   # the Connections page shows which tools changed since an admin approved them
+        t["changed_since_approval"] = bool(t.get("approved_fingerprint")) and t.get("approved_fingerprint") != t.get("fingerprint")
+        t["runs_unattended"] = out["tool_policy"].get(t["name"], row["default_policy"]) == "auto" and tool_may_run_unattended(t)
     out["has_secret"] = bool(row["secret_id"])
     out["tool_prefix"] = tool_prefix(row["name"])
     if row["transport"] == "stdio":
@@ -123,6 +126,14 @@ async def patch_server(ctx: Ctx) -> dict[str, Any]:
         values["default_policy"] = b.default_policy
     if b.tool_policy is not None:
         values["tool_policy"] = dumps(b.tool_policy)
+        # an admin who sets "auto" approves the tool as it is now; the cache remembers which form was approved
+        tools = loads(row["tools_cache"], [])
+        for t in tools:
+            if b.tool_policy.get(t["name"]) == "auto":
+                t["approved_fingerprint"] = t.get("fingerprint") or tool_fingerprint(t)
+            elif t["name"] in b.tool_policy:
+                t["approved_fingerprint"] = None
+        values["tools_cache"] = dumps(tools)
     if b.headers is not None or b.env is not None:
         current = ctx.engine.secrets.get(row["secret_id"], workspace_id=ctx.ws_id) if row["secret_id"] else {}
         values["secret_id"] = ctx.engine.secrets.put("mcp", {"headers": b.headers if b.headers is not None else current.get("headers", {}),

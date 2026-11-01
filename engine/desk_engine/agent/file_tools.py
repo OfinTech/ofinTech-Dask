@@ -226,7 +226,7 @@ async def _inspect(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "matched to its source and unmatched ones are highlighted. Prefer formulas for totals and variances.",
                schema({"file_id": {"type": "string"}, "edits": {"type": "array", "items": EDIT},
                        "note": {"type": "string", "description": "what this version changes"}},
-                      ["file_id", "edits"]), category="files",
+                      ["file_id", "edits"]), category="files", effect="write",
                summarize=lambda a: f"Edit file ({len(a.get('edits') or [])} changes)")
 async def _edit(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     out = await ctx.engine.files.edit_upload(ctx.workspace, ctx.user_id, a["file_id"], a.get("edits") or [],
