@@ -23,7 +23,9 @@ tags: [policy]
 
 **Managing skills (Skills page).**
 - Turn built-in skills on or off per workspace (admins).
-- Write a new skill with a live preview, or duplicate a built-in one to make your own version.
+- Write a new skill with a live preview, or duplicate a built-in one to make your own version. A skill's text
+  becomes part of the assistant's instructions, so a skill written or imported by an editor stays off until an
+  admin turns it on; a skill made by an admin is on at once. A custom skill cannot take a built-in's name.
 - Import a `SKILL.md` or a `.zip` containing one `SKILL.md` plus reference files (`.md`, `.txt`, `.csv`, `.json`; at
   most 20 files and 1 MB). Scripts and binaries in an archive are ignored and reported. **Nothing in a skill is ever
   executed.**

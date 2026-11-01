@@ -46,9 +46,17 @@ def _parse(b: SkillIn) -> dict[str, Any]:
 
 @router.post("/api/w/{ws}/skills", role="editor", body=SkillIn)
 async def create_skill(ctx: Ctx) -> dict[str, Any]:
-    skill = save_custom(ctx.engine, ctx.ws_id, _parse(ctx.body), ctx.body.files, user_id=ctx.user_id)
-    ctx.audit("skill.create", skill["name"])
+    skill = save_custom(ctx.engine, ctx.ws_id, _parse(ctx.body), ctx.body.files, user_id=ctx.user_id,
+                        enable=_may_enable(ctx))
+    ctx.audit("skill.create", skill["name"], {"enabled": skill["enabled"]})
     return skill
+
+
+def _may_enable(ctx: Ctx) -> bool:
+    """A skill written by an editor waits for an admin before it reaches the assistant's instructions."""
+    from ..web import role_at_least
+
+    return bool(ctx.role) and role_at_least(ctx.role, "admin")
 
 
 @router.put("/api/w/{ws}/skills/{sid}", role="editor", body=SkillIn)
@@ -105,7 +113,7 @@ async def import_skill(ctx: Ctx) -> dict[str, Any]:
         skill, files = parse_skill_md(data.decode("utf-8", errors="replace")), {}
     else:
         raise Invalid("Import a SKILL.md file or a .zip archive that contains one.")
-    saved = save_custom(ctx.engine, ctx.ws_id, skill, files, user_id=ctx.user_id)
+    saved = save_custom(ctx.engine, ctx.ws_id, skill, files, user_id=ctx.user_id, enable=_may_enable(ctx))
     ctx.audit("skill.import", saved["name"], {"ignored": ignored})
     return {"skill": saved, "ignored_files": ignored,
             "note": "Scripts and binary files are not imported: skills here are instructions only." if ignored else None}

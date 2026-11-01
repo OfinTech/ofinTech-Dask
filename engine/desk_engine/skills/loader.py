@@ -140,10 +140,12 @@ def list_skills(engine: Engine, ws_id: str) -> list[dict[str, Any]]:
 
 
 def enabled_index(engine: Engine, ws_id: str) -> list[dict[str, Any]]:
+    # a custom skill can no longer take a built-in's name (save_custom refuses it); rows that did so before that
+    # rule do not shadow the built-in either
     seen: dict[str, dict[str, Any]] = {}
     for s in list_skills(engine, ws_id):
-        if s["enabled"]:
-            seen[s["name"]] = s  # a custom skill with a built-in's name overrides it
+        if s["enabled"] and s["name"] not in seen:
+            seen[s["name"]] = s
     return list(seen.values())
 
 
@@ -160,10 +162,16 @@ def get_skill(engine: Engine, ws_id: str, name: str) -> dict[str, Any]:
 
 
 def save_custom(engine: Engine, ws_id: str, skill: dict[str, Any], files: dict[str, str] | None, *,
-                user_id: str, skill_id: str | None = None) -> dict[str, Any]:
+                user_id: str, skill_id: str | None = None, enable: bool = True) -> dict[str, Any]:
+    """Saves a custom skill. A skill's text goes into the assistant's instructions, so a new one is switched on
+    only when ``enable`` is true (the caller passes whether the author is an admin); otherwise an admin turns it on
+    from the Skills page. A built-in's name cannot be taken, so no custom text can stand in for a built-in."""
     size = len(skill["body"]) + sum(len(v) for v in (files or {}).values())
     if size > MAX_SKILL_BYTES:
         raise Invalid("Skill is larger than 1 MB.", code="bad_skill")
+    if skill["name"] in builtin_skills():
+        raise Conflict(f"'{skill['name']}' is a built-in skill. Choose another name for your own version.",
+                       code="builtin_name")
     values = {"name": skill["name"], "description": skill["description"], "body": skill["body"],
               "tags": dumps(skill.get("tags", [])), "version": skill.get("version", "1.0.0"),
               "files": dumps(files or {}), "updated_at": now()}
@@ -177,7 +185,8 @@ def save_custom(engine: Engine, ws_id: str, skill: dict[str, Any], files: dict[s
         if clash:
             raise Conflict(f"A skill called '{skill['name']}' already exists. Edit it or choose another name.")
         skill_id = new_id("sk_")
-        engine.db.insert("skills", {"id": skill_id, "workspace_id": ws_id, "created_by": user_id, "enabled": 1, **values})
+        engine.db.insert("skills", {"id": skill_id, "workspace_id": ws_id, "created_by": user_id,
+                                    "enabled": int(bool(enable)), **values})
     return get_skill(engine, ws_id, skill["name"])
 
 
