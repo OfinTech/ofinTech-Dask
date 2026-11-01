@@ -85,9 +85,10 @@ class Evidence:
 
 def signup(page: Page, base: str, email: str, name: str) -> None:
     page.goto(base + "/#/")
-    page.wait_for_selector("text=Sign in", timeout=30_000)
-    if page.locator("text=Create an account").count():
-        page.click("text=Create an account")
+    page.wait_for_selector("input[type=email]", timeout=30_000)       # the sign-in / first-account form
+    if page.locator("button:has-text('Create an account')").count():   # not the first account: switch to sign-up
+        page.click("button:has-text('Create an account')")
+    page.wait_for_selector("input[autocomplete=name]", timeout=10_000)
     page.fill("input[autocomplete=name]", name)
     page.fill("input[type=email]", email)
     page.fill("input[type=password]", PW)
