@@ -133,6 +133,7 @@ function useSessionTimer(minutes: number, signedIn: boolean, onExpired: () => vo
     };
     for (const ev of ACTIVITY_EVENTS) window.addEventListener(ev, seen, { passive: true, capture: true });
     const wake = () => { if (document.visibilityState !== "hidden") void resync(); };
+    void resync();   // a freshly loaded page knows nothing of the session's age: ask before trusting its own clock
     document.addEventListener("visibilitychange", wake);
     window.addEventListener("online", wake);
     window.addEventListener("focus", wake);
