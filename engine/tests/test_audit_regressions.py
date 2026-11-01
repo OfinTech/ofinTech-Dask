@@ -576,5 +576,31 @@ class OB09SkillsNeedAnAdmin(unittest.TestCase):
             h.close()
 
 
+class OB18MCPEndpointRateLimit(unittest.TestCase):
+    """The MCP endpoint refuses a flood: per key once signed in, per client address while guessing keys."""
+
+    def test_limits_apply(self) -> None:
+        import desk_engine.mcp_server as srv
+
+        h = Harness()
+        try:
+            ws = h.setup_workspace(with_model=False)
+            key = h.api("POST", f"/api/w/{ws}/mcp-keys", json={"name": "k"})["key"]
+            old = (srv.MCP_RATE_PER_MINUTE, srv.MCP_UNAUTH_RATE_PER_MINUTE)
+            srv.MCP_RATE_PER_MINUTE, srv.MCP_UNAUTH_RATE_PER_MINUTE = 3, 2
+            try:
+                codes = [h.client.post("/mcp", json={"jsonrpc": "2.0", "id": i, "method": "ping"},
+                                       headers={"authorization": f"Bearer {key}", "accept": "application/json, text/event-stream"}).status_code
+                         for i in range(5)]
+                self.assertEqual(codes[3:], [429, 429])
+                self.assertTrue(all(c != 429 for c in codes[:3]))
+                anon = [h.client.post("/mcp", json={}, headers={"authorization": "Bearer odk_guess"}).status_code for _ in range(4)]
+                self.assertEqual(anon, [401, 401, 429, 429])
+            finally:
+                srv.MCP_RATE_PER_MINUTE, srv.MCP_UNAUTH_RATE_PER_MINUTE = old
+        finally:
+            h.close()
+
+
 if __name__ == "__main__":
     unittest.main()
