@@ -80,11 +80,12 @@ jobs:
           name: ui-smoke-screenshots
           path: e2e-output/
           if-no-files-found: ignore
-      - name: Desktop typecheck
+      - name: Desktop typecheck and security tests
         working-directory: desktop
         run: |
           npm install --no-audit --no-fund
           npx tsc --noEmit -p tsconfig.json
+          npm test
 
   desktop:
     needs: test
