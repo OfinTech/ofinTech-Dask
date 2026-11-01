@@ -29,6 +29,7 @@ named; it is not closed. Findings that are closed with evidence are in `SECURITY
 | OP-4 | Key rotation command for the master key | document 07 M6 | 2027-02-01 |
 | OP-5 | Reviewer-manipulation case for the AI suite; a larger malicious-document corpus | R8 | 2026-12-15 |
 | OP-6 | Independent penetration test of a staged deployment | engage a third party | before the first regulated customer |
+| OP-7 | Dependabot alert 147 (moderate): `minimatch` 3.x/5.x in the desktop's **development** tree (electron-builder tooling); not shipped in the app and outside the CI gate (`--omit=dev --audit-level=high`) | add an `overrides` entry or bump electron-builder, regenerate the lockfile with the `lockfiles` workflow | 2026-11-15 |
 
 ## Closed since the previous report
 
