@@ -735,6 +735,26 @@ MIGRATIONS: list[str] = [
     """
     ALTER TABLE workspaces ADD COLUMN egress_policy TEXT NOT NULL DEFAULT 'open';
     """,
+    # 19 — security hardening: approvals carry an expiry and a digest of what was approved and are consumed once;
+    #      audit entries carry an event id, a correlation id, the decision, the approval and the outcome, and can
+    #      neither be changed nor deleted through the database connection the engine uses
+    """
+    ALTER TABLE approvals ADD COLUMN expires_at REAL;
+    ALTER TABLE approvals ADD COLUMN args_digest TEXT;
+    ALTER TABLE approvals ADD COLUMN executed_at REAL;
+    ALTER TABLE approvals ADD COLUMN executed_by TEXT;
+    ALTER TABLE audit_log ADD COLUMN event_id TEXT;
+    ALTER TABLE audit_log ADD COLUMN request_id TEXT;
+    ALTER TABLE audit_log ADD COLUMN resource_type TEXT;
+    ALTER TABLE audit_log ADD COLUMN decision TEXT;
+    ALTER TABLE audit_log ADD COLUMN approval_id TEXT;
+    ALTER TABLE audit_log ADD COLUMN result TEXT;
+    CREATE INDEX ix_audit_event ON audit_log(event_id);
+    CREATE TRIGGER audit_log_no_update BEFORE UPDATE ON audit_log
+    BEGIN SELECT RAISE(ABORT, 'audit entries are immutable'); END;
+    CREATE TRIGGER audit_log_no_delete BEFORE DELETE ON audit_log
+    BEGIN SELECT RAISE(ABORT, 'audit entries are immutable'); END;
+    """,
 ]
 
 

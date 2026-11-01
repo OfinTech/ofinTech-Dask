@@ -152,6 +152,8 @@ def login_user(engine: Any, *, email: str, password: str, client_host: str) -> s
     _rate_limit(engine, f"login-ip:{client_host}", limit=30)
     user = engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (email.lower(),))
     if not verify_password(password, user["password_hash"] if user else None) or user is None:
+        engine.audit(None, user["id"] if user else None, "user.login.failed", None, {"reason": "bad_credentials"},
+                     resource_type="session", decision="denied", result="refused")
         raise Unauthorized("E-mail or password is wrong.", code="bad_credentials")
     if user["disabled"]:
         raise Forbidden("This account is disabled.", code="disabled")
@@ -197,6 +199,9 @@ async def logout(ctx: Ctx) -> Any:
     token = ctx.request.cookies.get(SESSION_COOKIE) or ctx.request.headers.get("authorization", "")[7:]
     if token:
         ctx.engine.db.execute("DELETE FROM sessions WHERE id = ?", (token_hash(token),))
+    ctx.engine.audit(None, ctx.user["id"] if ctx.user else None, "session.logout", None,
+                     {"reason": ctx.request.query_params.get("reason", "user")[:20]},
+                     resource_type="session", decision="allowed", result="signed_out")
     resp = JSONResponse({"ok": True})
     resp.delete_cookie(SESSION_COOKIE, path="/")
     return resp

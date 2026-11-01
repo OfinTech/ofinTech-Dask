@@ -189,22 +189,8 @@ class Agent:
 
     async def decide(self, workspace: dict[str, Any], approval_id: str, user_id: str, role: str,
                      approve: bool, note: str | None = None) -> dict[str, Any]:
-        from ..web import role_at_least
-
-        appr = self.engine.db.one("SELECT * FROM approvals WHERE id = ? AND workspace_id = ?",
-                                  (approval_id, workspace["id"]))
-        if appr is None:
-            raise NotFound("Approval not found.")
-        if appr["status"] != "pending":
-            raise Conflict("This request was already decided.")
-        if not role_at_least(role, "editor"):
-            raise Forbidden("Approving actions needs the editor role or higher.")
-        status = "approved" if approve else "rejected"
-        self.engine.db.execute(
-            "UPDATE approvals SET status = ?, decided_by = ?, decided_at = ?, result = ? WHERE id = ? AND status = 'pending'",
-            (status, user_id, now(), dumps({"note": note}) if note else None, approval_id))
-        self.engine.audit(workspace["id"], user_id, f"approval.{status}", approval_id,
-                          {"tool": appr["tool"], "source": appr["source"]})
+        """A person decides (see ``desk_engine.approvals``); a run waiting on it resumes once nothing is pending."""
+        appr = self.engine.approvals.decide(workspace, approval_id, user_id, role, approve, note)
         if appr["source"] == "agent":
             run = self.engine.db.one("SELECT * FROM agent_runs WHERE id = ?", (appr["source_id"],))
             if run:
@@ -222,11 +208,7 @@ class Agent:
         return self.approval_out(approval_id)
 
     def approval_out(self, approval_id: str) -> dict[str, Any]:
-        a = self.engine.db.one("SELECT * FROM approvals WHERE id = ?", (approval_id,))
-        assert a is not None
-        a["arguments"] = loads(a["arguments"], {})
-        a["result"] = loads(a["result"], None)
-        return a
+        return self.engine.approvals.out(approval_id)
 
     def _message_out(self, msg_id: str) -> dict[str, Any]:
         m = self.engine.db.one("SELECT * FROM messages WHERE id = ?", (msg_id,))
@@ -360,6 +342,8 @@ class Agent:
             for call in result.tool_calls:
                 tool = tools.get(call.name)
                 if tool is None:
+                    engine.audit(ctx.ws_id, ctx.user_id, "tool.denied", call.name[:120], {"reason": "unknown_or_not_offered"},
+                                 resource_type="tool", decision="denied", result="refused", request_id=ctx.run_id)
                     self._tool_message(ctx, call, ToolOutput(f"Unknown tool '{call.name}'."), "error")
                     continue
                 if tool.needs_approval():
@@ -402,17 +386,30 @@ class Agent:
             return
         for item in pending:
             call = ToolCall(item["call"]["id"], item["call"]["name"], item["call"]["arguments"])
-            appr = self.engine.db.one("SELECT status, decided_by FROM approvals WHERE id = ?", (item["approval_id"],))
+            appr = self.engine.db.one("SELECT status FROM approvals WHERE id = ?", (item["approval_id"],))
             status = appr["status"] if appr else "rejected"
             if status == "approved":
                 tool = tools.get(call.name)
                 if tool is None:
                     self._tool_message(ctx, call, ToolOutput("The tool is no longer available."), "error")
                     continue
+                # the approval is taken atomically for this execution: once, unexpired, for this workspace, tool,
+                # requester and exactly these arguments, by a requester who still holds the role
+                refused = self.engine.approvals.claim(approval_id=item["approval_id"], workspace_id=ctx.ws_id,
+                                                      tool=call.name, requested_by=ctx.user_id,
+                                                      arguments=call.arguments, executor=ctx.user_id)
+                if refused:
+                    self._tool_message(ctx, call, ToolOutput(f"Refused: the approval for this action is {refused} "
+                                                             "and cannot be used. Ask the user again if needed."),
+                                       "rejected", approval_id=item["approval_id"])
+                    continue
                 approver_ctx = ToolContext(ctx.engine, ctx.workspace, ctx.user_id, ctx.thread_id, ctx.run_id, ctx.source)
                 output = await self._execute(approver_ctx, tool, call, approval_id=item["approval_id"])
-                self.engine.db.execute("UPDATE approvals SET result = ? WHERE id = ?",
-                                       (dumps({"text": output.text[:2000]}), item["approval_id"]))
+                self.engine.approvals.finish(item["approval_id"], ok=not output.text.startswith("Error:"), text=output.text)
+            elif status == "expired":
+                self._tool_message(ctx, call, ToolOutput("The approval for this action expired before anyone decided. "
+                                                         "Ask the user again if it is still wanted."), "rejected",
+                                   approval_id=item["approval_id"])
             else:
                 self._tool_message(ctx, call, ToolOutput("The user rejected this action. Do not retry it unless "
                                                          "they ask; offer an alternative."), "rejected",
@@ -421,11 +418,10 @@ class Agent:
         self.engine.db.execute("UPDATE agent_runs SET state = ? WHERE id = ?", (dumps(state), run["id"]))
 
     def _request_approval(self, ctx: ToolContext, tool: Tool, call: ToolCall) -> str:
-        approval_id = new_id("ap_")
-        self.engine.db.insert("approvals", {
-            "id": approval_id, "workspace_id": ctx.ws_id, "source": "agent", "source_id": ctx.run_id,
-            "tool": call.name, "arguments": dumps(call.arguments), "summary": tool.describe_call(call.arguments),
-            "status": "pending", "requested_by": ctx.user_id, "created_at": now()})
+        approval_id = self.engine.approvals.request(workspace_id=ctx.ws_id, source="agent", source_id=ctx.run_id or "",
+                                                    tool=call.name, arguments=call.arguments,
+                                                    summary=tool.describe_call(call.arguments), requested_by=ctx.user_id,
+                                                    request_id=ctx.run_id)
         self.engine.events.publish(ctx.thread_id or "", {"type": "approval", "approval": self.approval_out(approval_id)})
         self.engine.notify_role(ctx.ws_id, "editor", "approval", f"Approval needed: {tool.describe_call(call.arguments)}",
                                 f"/inbox?approval={approval_id}", exclude=None)
@@ -435,10 +431,13 @@ class Agent:
         self.engine.events.publish(ctx.thread_id or "", {"type": "tool_start", "call": {"id": call.id, "name": call.name,
                                                                                         "arguments": call.arguments}})
         output = await tool.run(ctx, call.arguments)
-        status = "error" if output.text.startswith("Error:") else "ok"
-        if tool.effect == "write" or tool.policy is not None:
-            self.engine.audit(ctx.ws_id, ctx.user_id, "tool.run", call.name,
-                              {"approval_id": approval_id, "status": status, "source": ctx.source})
+        refused = output.text.startswith("Refused:")
+        status = "error" if output.text.startswith("Error:") else ("refused" if refused else "ok")
+        self.engine.audit(ctx.ws_id, ctx.user_id, "tool.denied" if refused else "tool.run", call.name,
+                          {"source": ctx.source, "effect": "write" if tool.needs_approval() else "read",
+                           "min_role": tool.min_role, "error": output.text[:200] if status != "ok" else None},
+                          resource_type="tool", decision="denied" if refused else ("approved" if approval_id else "allowed"),
+                          approval_id=approval_id, result=status, request_id=ctx.run_id)
         self._tool_message(ctx, call, output, status, approval_id=approval_id)
         return output
 

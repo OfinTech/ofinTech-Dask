@@ -257,8 +257,11 @@ class Workflows:
         return run_id
 
     def _may_act(self, ws_id: str, user_id: str) -> bool:
-        return self.engine.db.one("SELECT 1 FROM members m JOIN users u ON u.id = m.user_id WHERE m.workspace_id = ? "
-                                  "AND m.user_id = ? AND u.disabled = 0", (ws_id, user_id)) is not None
+        """The creator is still an active member with at least the editor role (the role workflows need to be
+        created); checked before every step, so a demotion or removal stops a run in flight."""
+        row = self.engine.db.one("SELECT m.role FROM members m JOIN users u ON u.id = m.user_id WHERE m.workspace_id = ? "
+                                 "AND m.user_id = ? AND u.disabled = 0", (ws_id, user_id))
+        return row is not None and row["role"] != "viewer"
 
     def _spawn(self, run_id: str) -> None:
         self.tasks[run_id] = asyncio.get_running_loop().create_task(self._advance_safely(run_id))
@@ -347,12 +350,10 @@ class Workflows:
                                         parent={"type": "workflow_run", "id": run_id, "step": index}, source="workflow")
                 return
             if step.type == "approval":
-                approval_id = new_id("ap_")
-                engine.db.insert("approvals", {"id": approval_id, "workspace_id": workspace["id"], "source": "workflow",
-                                               "source_id": run_id, "tool": "workflow.approval",
-                                               "arguments": dumps({"step": index}),
-                                               "summary": f"{wf['name']}: {render(step.message, context)}"[:4000],
-                                               "status": "pending", "requested_by": owner, "created_at": now()})
+                approval_id = engine.approvals.request(workspace_id=workspace["id"], source="workflow", source_id=run_id,
+                                                       tool="workflow.approval", arguments={"step": index},
+                                                       summary=f"{wf['name']}: {render(step.message, context)}",
+                                                       requested_by=owner, request_id=run_id)
                 engine.db.execute("UPDATE workflow_runs SET status = 'waiting_approval', step_index = ? WHERE id = ?",
                                   (index, run_id))
                 engine.notify_role(workspace["id"], "editor", "approval", f"Approval needed: {wf['name']} – {step.name}",
@@ -367,11 +368,9 @@ class Workflows:
                     raise Invalid(f"Tool '{step.tool}' is not available (is the connection still set up?).")
                 args = render(step.arguments, context)
                 if tool.needs_approval():
-                    approval_id = new_id("ap_")
-                    engine.db.insert("approvals", {"id": approval_id, "workspace_id": workspace["id"],
-                                                   "source": "workflow", "source_id": run_id, "tool": step.tool,
-                                                   "arguments": dumps(args), "summary": tool.describe_call(args),
-                                                   "status": "pending", "requested_by": owner, "created_at": now()})
+                    approval_id = engine.approvals.request(workspace_id=workspace["id"], source="workflow", source_id=run_id,
+                                                           tool=step.tool, arguments=args, summary=tool.describe_call(args),
+                                                           requested_by=owner, request_id=run_id)
                     context.setdefault("pending_args", {})[str(index)] = args
                     engine.db.execute("UPDATE workflow_runs SET status = 'waiting_approval', step_index = ?, "
                                       "context = ? WHERE id = ?", (index, dumps(context), run_id))
@@ -560,12 +559,29 @@ class Workflows:
             if tool is None:
                 self._finish(run, "failed", f"Tool {approval['tool']} is no longer available.")
                 return
-            out = await tool.run(ctx, loads(approval["arguments"], {}))
+            args = loads(approval["arguments"], {})
+            refused = self.engine.approvals.claim(approval_id=approval["id"], workspace_id=run["workspace_id"],
+                                                  tool=approval["tool"], requested_by=wf["created_by"], arguments=args,
+                                                  executor=approval.get("decided_by"))
+            if refused:
+                self._finish(run, "failed", f"The approval for {approval['tool']} is {refused} and cannot be used.")
+                return
+            out = await tool.run(ctx, args)
+            self.engine.approvals.finish(approval["id"], ok=not out.text.startswith("Error:"), text=out.text)
             self.engine.audit(run["workspace_id"], approval.get("decided_by"), "tool.run", approval["tool"],
-                              {"approval_id": approval["id"], "source": "workflow"})
+                              {"source": "workflow", "effect": "write"}, resource_type="tool", decision="approved",
+                              approval_id=approval["id"], result="error" if out.text.startswith("Error:") else "ok",
+                              request_id=run["id"])
             context["steps"][step.id] = {"output": out.text, "data": out.data}
             self._log(run, step.id, out.text[:500], "ok")
         else:
+            refused = self.engine.approvals.claim(approval_id=approval["id"], workspace_id=run["workspace_id"],
+                                                  tool="workflow.approval", requested_by=wf["created_by"],
+                                                  arguments={"step": index}, executor=approval.get("decided_by"))
+            if refused:
+                self._finish(run, "failed", f"The approval for this step is {refused} and cannot be used.")
+                return
+            self.engine.approvals.finish(approval["id"], ok=True, text="approved")
             self._log(run, step.id, "Approved.", "ok")
         self.engine.db.execute("UPDATE workflow_runs SET status = 'running', step_index = ?, context = ? WHERE id = ?",
                                (index + 1, dumps(context), run["id"]))

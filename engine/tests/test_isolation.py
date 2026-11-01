@@ -223,9 +223,13 @@ class ApprovalRace(unittest.TestCase):
 
             results = h.client.portal.call(race)
             self.assertEqual(sorted(results), ["approved", "conflict"] if "conflict" in results else sorted(results))
-            self.assertEqual(results.count("approved") + results.count("rejected"), 1, results)
+            # one decision wins (the winner's returned status may already be 'executing'/'executed' once the run
+            # resumed and consumed it); the other is refused as already decided
+            self.assertEqual(sum(r in ("approved", "rejected", "executing", "executed") for r in results), 1, results)
+            self.assertIn("approval_decided", results)
             final = h.api("GET", f"/api/w/{ws}/approvals", params={"status": "all"})
-            self.assertEqual(h.engine.db.scalar("SELECT status FROM approvals WHERE id = ?", (appr["id"],)), "approved")
+            self.assertIn(h.engine.db.scalar("SELECT status FROM approvals WHERE id = ?", (appr["id"],)),
+                          ("approved", "executing", "executed"))
         finally:
             h.close()
 
