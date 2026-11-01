@@ -44,8 +44,21 @@ class _GoogleHarness(Harness):
     def upload(self, name: str, data: bytes) -> str:
         r = self.api("POST", f"/api/w/{self.ws}/documents", files=[("files", (name, data))])
         assert r["failed"] == [], r
-        self.client.portal.call(self.engine.knowledge.wait_idle)   # indexed before the agent is asked about it
-        return r["added"][0]["id"]
+        return self.indexed(r["added"][0]["id"])
+
+    def indexed(self, doc_id: str) -> str:
+        """The document id once it is indexed (the agent's document tools exist only then)."""
+        import time
+
+        self.client.portal.call(self.engine.knowledge.wait_idle)
+        for _ in range(400):
+            doc = self.api("GET", f"/api/w/{self.ws}/documents/{doc_id}")["document"]
+            if doc["status"] == "indexed":
+                return doc_id
+            if doc["status"] == "failed":
+                raise AssertionError(f"document failed to index: {doc.get('error')}")
+            time.sleep(0.05)
+        raise AssertionError(f"document still {doc['status']} after 20 s")
 
     def turn(self, text: str) -> dict:
         t = self.api("POST", f"/api/w/{self.ws}/threads", json={})
@@ -225,7 +238,8 @@ class TenantIsolationThroughTheAgent(unittest.TestCase):
         try:
             a = h.setup_workspace(with_model=False)
             doc = h.api("POST", f"/api/w/{a}/documents", files=[("files", ("secret.md", b"# Board pay\nCEO 1,200,000"))])["added"][0]["id"]
-            h.client.portal.call(h.engine.knowledge.wait_idle)
+            h.ws = a
+            _GoogleHarness.indexed(h, doc)
             ds = h.api("POST", f"/api/w/{a}/imports", files={"file": ("x.csv", b"a,b\n1,2\n")})
             commit = h.api("POST", f"/api/w/{a}/imports/{ds['upload_id']}/commit", json={"name": "Pay", "sheet": None,
                                                                                       "header_row": 1}, expect=None)
