@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-cd engine && python -m unittest discover -s tests -t .     # 203 tests, about 20 seconds (Tesseract, LibreOffice optional)
+cd engine && python -m unittest discover -s tests -t .     # 221 tests, about 21 seconds (Tesseract, LibreOffice optional)
 cd ui && npx tsc --noEmit && npm run i18n:check && node build.mjs
 cd desktop && npx tsc --noEmit -p tsconfig.json
 python e2e/ui_smoke.py                                       # real UI in Chromium + engine + fake model
@@ -49,7 +49,7 @@ and on macOS 15, Windows 2022 and Ubuntu 22.04 for the installers.
 
 | Check | Result |
 |---|---|
-| Engine tests | 203 passed |
+| Engine tests | 221 passed |
 | UI type check (`tsc --noEmit`) | passed |
 | Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,477 of 1,477 strings |
 | UI build (`node build.mjs`) | passed |
