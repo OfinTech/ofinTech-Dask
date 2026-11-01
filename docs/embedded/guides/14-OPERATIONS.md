@@ -12,8 +12,8 @@
 * **Respond**: suspend (`PATCH status=suspended`), rotate the key, revoke sessions individually, or delete the
   integration. All take effect at once for new requests; open streams end at the next event or keep-alive.
 * **Limits**: `PATCH …/integrations/{id} {"limits": {...}}`; see guide 10.
-* **Database**: migration 21 adds `embedded_integrations`, `embedded_sessions`, `embedded_threads`,
-  `embedded_usage`. Backups include them (the backup tool's schema version check is 21).
+* **Database**: migration 22 adds `embedded_integrations`, `embedded_sessions`, `embedded_threads`,
+  `embedded_usage`. Backups include them (the backup tool's schema version check is 22).
 * **Capacity**: the engine is a single process (accepted risk AR-1). Per-integration limits are the protection for
   other tenants; there is no metrics endpoint yet (OP-2). Keep `runs_per_minute` conservative for new partners.
 * **Not provided**: billing, a UI page for integrations (API only in this release), multi-replica operation,

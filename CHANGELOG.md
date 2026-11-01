@@ -7,6 +7,19 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Owner Control Center** (`#/owner`, docs/owner/): platform administration for the people who run an installation,
+  separate from workspace roles and from customer data. Users (directory, suspension, forced reset, restrictions,
+  sessions, MFA reset), workspaces (state, members, usage, time-limited audited support access), plans and feature
+  entitlements enforced on the server (hosted edition only: `DESK_HOSTED`), Stripe billing (Checkout, Customer
+  Portal, signed idempotent webhooks, reconciliation, invoices, MRR/ARR), coupons mirrored to Stripe, Contact Sales
+  leads, privacy-preserving website and product analytics with CSV exports, announcements and owner alerts,
+  SMTP settings with bilingual templates and a durable queue, a Security Center (MFA policy, lockout, session limits,
+  dual approval, delegated administrators, audit), integrations (Google sign-in policy, analytics, storage) and
+  platform settings with feature flags. Platform roles are provisioned by `DESK_PLATFORM_OWNERS` or
+  `python -m desk_engine owner grant`, never from the public form. Migration 21 (additive).
+- **Two-factor authentication** (TOTP) for Team Server accounts, with an owner policy (`none | admins | all`).
+- **Pricing page** (`#/pricing`), Settings → Plan, platform notifications and preferences under Settings → Account,
+  e-mail verification links, a consent-gated analytics snippet for the public website.
 - **Embedded Agent Gateway + AG-UI adapter** (docs/embedded/): partner applications can run Desk's financial agent
   inside their own UI over the AG-UI protocol. A workspace admin registers an *integration* (allowed origins,
   capabilities, limits); Desk creates a dedicated **viewer** service user for it and an integration key for the
@@ -16,7 +29,7 @@ migrations are applied automatically on start-up and are never rewritten once re
   events over SSE (`POST /api/embedded/agents/{agent_id}/run`), and map Desk approvals to AG-UI interrupts that can
   only be decided inside Desk by an editor. Generative UI through a validated, versioned component registry (ten
   financial components, ar/en, RTL) — the model never produces UI. Usage metering per integration and an
-  entitlement hook (no billing). Migration 21. React SDK `@ofintech/embedded-agent` (`sdk/embedded-agent`) and a
+  entitlement hook (no billing). Migration 22. React SDK `@ofintech/embedded-agent` (`sdk/embedded-agent`) and a
   CopilotKit example (`examples/copilotkit-embedded`). 53 engine tests (`tests/test_embedded_*.py`), 12 SDK tests,
   browser verification `e2e/embedded_browser.py`. Threat model with 20 threats in
   `docs/embedded/SECURITY-THREAT-MODEL.md`. Not a production-readiness claim.

@@ -14,7 +14,7 @@ summarised again in the final report.
 
 | Step | Files | Notes |
 |---|---|---|
-| Migration 21 | `db.py` | Four tables (`ARCHITECTURE.md` §2.4). Additive only. |
+| Migration 22 | `db.py` | Four tables (`ARCHITECTURE.md` §2.4). Additive only. |
 | Tool scope | `embedded/scope.py`, `agent/harness.py` | `state["tool_scope"]` is applied right after `tools.for_context()`; absent → unchanged behaviour for the Desk UI, workflows, channels and MCP. |
 | Integration registration | `embedded/model.py`, `embedded/routes.py` (admin part) | Admin + fresh session; creates the viewer service user; key shown once; rotate/suspend/delete; sealed workspaces refused. |
 | Sessions | `embedded/model.py`, `embedded/routes.py` | `POST /api/embedded/sessions` with the integration key; 15-minute tokens. |
@@ -64,6 +64,6 @@ packaging step greps for key patterns before zipping).
 
 ## Verification record
 
-Engine: 370 passed, 0 failed (`python -m pytest engine/tests`; 54 new tests). SDK: 12 passed (`node --test`). Browser:
+Engine: 407 passed, 0 failed (after merging main 4fc2240) (`python -m pytest engine/tests`; 54 new tests). SDK: 12 passed (`node --test`). Browser:
 9 of 9 checks passed (`e2e/embedded_browser.py`; evidence in `docs/audit/evidence/embedded/`). `tsc --noEmit` for the
 SDK was not run in the build environment (no `@types/react` offline). Details and limitations: `FINAL-REPORT.md`.

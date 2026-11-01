@@ -1,7 +1,7 @@
 # Testing
 
 ```bash
-cd engine && python -m unittest discover -s tests -t .     # 316 tests, about 50 seconds (Tesseract, LibreOffice optional)
+cd engine && python -m unittest discover -s tests -t .     # 353 tests, about 70 seconds (Tesseract, LibreOffice optional)
 cd ui && npx tsc --noEmit && npm run i18n:check && npm test && node build.mjs   # incl. session-timer tests
 cd desktop && npm test                                       # typecheck, build, IPC guard tests (node --test)
 python e2e/multi_tenant.py                                   # two organisations on a real server process (HTTP)
@@ -52,7 +52,7 @@ and on macOS 15, Windows 2022 and Ubuntu 22.04 for the installers.
 
 | Check | Result |
 |---|---|
-| Engine tests | 316 passed |
+| Engine tests | 353 passed |
 | UI type check (`tsc --noEmit`) | passed |
 | Translation check (`npm run i18n:check`) | Arabic, Spanish, French: 1,477 of 1,477 strings |
 | UI build (`node build.mjs`) | passed |
@@ -95,3 +95,18 @@ bundle would not be caught by these checks.
 - Live calls to model providers, QuickBooks, Zoho Books, Xero, Google, Telegram and WhatsApp: they need your
   credentials. Test with a QuickBooks sandbox company, a Xero demo company, a Zoho Books trial, a Google test
   project and a Telegram test bot before release.
+
+## Owner Control Center tests
+
+`tests/test_owner_access.py` (16), `tests/test_owner_billing.py` (12) and `tests/test_owner_comms.py` (9) run a hosted Team
+Server (`DESK_HOSTED`, `DESK_PLATFORM_OWNERS`) with a fake mailer and a mock Stripe (`tests/stripe_mock.py`) reached through
+the real `StripeClient`. They cover owner authorization and role spoofing, delegated permissions, step-up and dual approval,
+write-only secrets, the content boundary and support access, suspension/forced reset/restrictions/maintenance, workspace
+states, TOTP enrolment and policy (with RFC 6238 vectors), plan limits (including six concurrent creations), downgrade to
+read-only, storage and member quotas, feature entitlements and flags, the self-hosted edition's absence of limits, plan
+builder validation, Stripe checkout → webhook provisioning, signature/duplicate/replay/out-of-order handling, failed
+payments and grace, reconciliation, dead-letter retries, trials, coupons (validation rules, redemption, immutability,
+Stripe sync), e-mail settings/templates/queue/retries/suppression, announcements (targeting, preferences, idempotent
+delivery, scheduling), owner alerts, Contact Sales leads, analytics collection (consent, bots, no personal data), KPIs,
+series, exports and retention, and the Google sign-in policy. `e2e/owner_browser.py` drives the dashboard in Chromium
+against a real hosted engine (CI).

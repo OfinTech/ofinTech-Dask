@@ -23,6 +23,10 @@ router = Router()
 def _rate_limit(ctx: Any, key: str, limit: int = 8, window: float = 300) -> None:
     """``ctx`` is a request context or the engine itself (for the form endpoints)."""
     engine = ctx if hasattr(ctx, "db") else ctx.engine
+    if key.startswith("login:"):   # the account lockout policy set by the platform owner (Security Center)
+        from ..platform.settings import get_setting
+        limit = int(get_setting(engine, "security.lockout_threshold") or limit)
+        window = int(get_setting(engine, "security.lockout_minutes") or 5) * 60
     attempts: dict[str, deque[float]] = engine.__dict__.setdefault("_auth_attempts", defaultdict(deque))
     q = attempts[key]
     t = time.monotonic()
@@ -72,9 +76,22 @@ async def session(ctx: Ctx) -> dict[str, Any]:
                          "team": not engine.settings.is_desktop,
                          "google_login": google_login_available(engine),
                          "email": engine.mailer.configured}}
+    from ..platform import mfa
+    from ..platform.owner import permissions_for, platform_role
+    from ..platform.plans import entitlements_for
+    from ..platform.settings import public_view
+
+    base["platform"] = public_view(engine)
+    base["hosted"] = engine.settings.hosted
+    base["features"]["billing"] = bool(base["platform"].get("features.flags", {}).get("billing", True)) and engine.settings.hosted
     if user is None:
         return {**base, "user": None, "workspaces": []}
-    return {**base, "user": public_user(user) | {"instance_admin": instance_admin(engine) == user["id"]},
+    role = platform_role(engine, user["id"])
+    return {**base, "user": public_user(user) | {"instance_admin": instance_admin(engine) == user["id"],
+                                                 "platform_role": role, "permissions": permissions_for(role),
+                                                 "must_enroll_mfa": mfa.must_enroll(engine, user),
+                                                 "must_reset_password": bool(user.get("must_reset_password"))},
+            "entitlements": entitlements_for(engine, user["id"]) if not engine.settings.is_desktop else None,
             "workspaces": workspaces_for(engine, user["id"])}
 
 
@@ -131,21 +148,74 @@ def signup_user(engine: Any, *, email: str, name: str, password: str, invite_tok
             raise Invalid("This invitation is not valid or has expired.", code="bad_invite")
         if invite["email"].lower() != email.lower():
             raise Invalid("Sign up with the e-mail address the invitation was sent to.", code="invite_email")
-    elif not (first or engine.settings.open_signup):
+    elif not (first or registration_open(engine)):
         raise Forbidden("Sign-up is by invitation. Ask a workspace administrator to invite you.", code="invitation_only")
+    if not invite and not first:
+        check_registration_domain(engine, email)
     check_password_policy(password)
     if engine.db.one("SELECT 1 FROM users WHERE email = ?", (email.lower(),)):
         raise Conflict("An account with this e-mail already exists. Sign in instead.", code="exists")
     uid = new_id("u_")
     engine.db.insert("users", {"id": uid, "email": email.lower(), "name": name.strip(),
-                               "password_hash": hash_password(password), "created_at": now()})
+                               "password_hash": hash_password(password), "created_at": now(),
+                               "signup_method": "invite" if invite else "password",
+                               "email_verified_at": now() if invite else None})
     if first:
         with engine.db.tx() as c:
             c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('instance_admin', ?)", (dumps(uid),))
     if invite:
         _accept(engine, invite, uid)
     engine.audit(invite["workspace_id"] if invite else None, uid, "user.signup", uid, {"first": first})
+    after_signup(engine, uid, method="invite" if invite else "password", client_host=client_host)
     return uid
+
+
+def registration_open(engine: Any) -> bool:
+    """The owner's switch wins over DESK_OPEN_SIGNUP when set."""
+    from ..platform.settings import get_setting
+
+    flag = get_setting(engine, "registration.enabled")
+    return engine.settings.open_signup if flag is None else bool(flag)
+
+
+def check_registration_domain(engine: Any, email: str) -> None:
+    from ..platform.settings import get_setting
+
+    allowed = get_setting(engine, "registration.allowed_domains") or []
+    if allowed and email.rsplit("@", 1)[-1].lower() not in allowed:
+        raise Forbidden("Sign-up on this server is limited to the organisation's e-mail domains.", code="domain_not_allowed")
+
+
+def after_signup(engine: Any, uid: str, *, method: str, client_host: str) -> None:
+    """Platform-level consequences of a new account: owner provisioning, alerts, welcome and verification e-mail."""
+    from ..platform.email import enqueue
+    from ..platform.notifications import owner_alert
+    from ..platform.owner import on_signup
+
+    user = engine.db.one("SELECT * FROM users WHERE id = ?", (uid,))
+    if user is None:
+        return
+    on_signup(engine, uid, user["email"])
+    owner_alert(engine, "new_registration", f"New account: {user['email']} ({method})", category="account", link="#/owner/users")
+    recent = engine.db.scalar("SELECT COUNT(*) FROM audit_log WHERE action = 'user.signup' AND created_at > ?", (now() - 600,)) or 0
+    if recent >= 10:
+        owner_alert(engine, "suspicious_registration", f"{recent} sign-ups in the last 10 minutes", category="security", link="#/owner/security")
+    lang = user.get("language") or "en"
+    enqueue(engine, to=user["email"], template_key="welcome", lang=lang, vars={"name": user["name"]}, category="account",
+            dedupe_key=f"welcome:{uid}")
+    if not user.get("email_verified_at"):
+        send_verification(engine, user)
+
+
+def send_verification(engine: Any, user: dict[str, Any]) -> None:
+    from ..platform.email import enqueue
+
+    token = new_token(32)
+    engine.db.insert("email_verifications", {"token_hash": token_hash(token), "user_id": user["id"], "created_at": now(),
+                                             "expires_at": now() + 86400})
+    enqueue(engine, to=user["email"], template_key="email_verification", lang=user.get("language") or "en",
+            vars={"name": user["name"], "link": f"{engine.settings.public_url.rstrip('/')}/#/verify-email/{token}"},
+            category="account")
 
 
 def login_user(engine: Any, *, email: str, password: str, client_host: str) -> str:
@@ -158,11 +228,31 @@ def login_user(engine: Any, *, email: str, password: str, client_host: str) -> s
     if not verify_password(password, user["password_hash"] if user else None) or user is None:
         engine.audit(None, user["id"] if user else None, "user.login.failed", None, {"reason": "bad_credentials"},
                      resource_type="session", decision="denied", result="refused")
+        if user is not None:
+            failed_login_alerts(engine, user)
         raise Unauthorized("E-mail or password is wrong.", code="bad_credentials")
     if user["disabled"]:
-        raise Forbidden("This account is disabled.", code="disabled")
+        raise Forbidden("This account is disabled." + (f" Reason: {user['suspended_reason']}" if user.get("suspended_reason") else ""),
+                        code="disabled")
     engine.audit(None, user["id"], "user.login", user["id"])
+    engine.db.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (now(), user["id"]))
     return user["id"]
+
+
+def failed_login_alerts(engine: Any, user: dict[str, Any]) -> None:
+    """Repeated failures on one account: the owner is alerted at the policy's threshold and the person warned once."""
+    from ..platform.notifications import alert_rules, owner_alert, push
+    from ..platform.settings import get_setting
+
+    rule = alert_rules(engine).get("repeated_failed_logins") or {}
+    threshold = int(rule.get("threshold") or get_setting(engine, "security.alert_failed_logins") or 10)
+    recent = engine.db.scalar("SELECT COUNT(*) FROM audit_log WHERE action = 'user.login.failed' AND user_id = ? AND created_at > ?",
+                              (user["id"], now() - 3600)) or 0
+    if recent == threshold:
+        owner_alert(engine, "repeated_failed_logins", f"{recent} failed sign-in attempts on {user['email']} in the last hour",
+                    category="security", link="#/owner/security")
+        push(engine, user["id"], category="security", title=f"{recent} failed sign-in attempts on your account",
+             email_template="suspicious_login", email_vars={"count": recent}, dedupe=f"failed-logins:{user['id']}:{int(now() // 3600)}")
 
 
 @router.post("/api/auth/signup", auth=False, body=SignupIn)
@@ -180,10 +270,94 @@ class LoginIn(BaseModel):
 
 @router.post("/api/auth/login", auth=False, body=LoginIn)
 async def login(ctx: Ctx) -> Any:
+    from ..platform import mfa
+
     body: LoginIn = ctx.body
     uid = login_user(ctx.engine, email=body.email, password=body.password,
                      client_host=ctx.request.client.host if ctx.request.client else "-")
+    user = ctx.engine.db.one("SELECT * FROM users WHERE id = ?", (uid,))
+    if user and user.get("mfa_enabled_at"):
+        # the password alone opens no session: a short-lived challenge is answered with the authenticator code
+        return {"mfa_required": True, "challenge": mfa.new_challenge(ctx.engine, uid)}
     return _start_session(ctx, uid)
+
+
+class MfaVerifyIn(BaseModel):
+    challenge: str = Field(min_length=20, max_length=200)
+    code: str = Field(min_length=6, max_length=8)
+
+
+@router.post("/api/auth/mfa/verify", auth=False, body=MfaVerifyIn)
+async def mfa_verify(ctx: Ctx) -> Any:
+    from ..platform import mfa
+
+    _rate_limit(ctx, f"mfa-ip:{ctx.request.client.host if ctx.request.client else '-'}", limit=30)
+    uid = mfa.redeem_challenge(ctx.engine, ctx.body.challenge, ctx.body.code)
+    ctx.engine.audit(None, uid, "user.login.mfa", uid, None, resource_type="session", decision="allowed", result="ok")
+    resp = _start_session(ctx, uid)
+    row = ctx.engine.db.one("SELECT id FROM sessions WHERE user_id = ? ORDER BY created_at DESC LIMIT 1", (uid,))
+    if row:
+        ctx.engine.db.execute("UPDATE sessions SET mfa_at = ? WHERE id = ?", (now(), row["id"]))
+    return resp
+
+
+@router.post("/api/auth/mfa/begin")
+async def mfa_begin(ctx: Ctx) -> dict[str, Any]:
+    from ..platform import mfa
+
+    return mfa.begin_enrollment(ctx.engine, ctx.user)
+
+
+class MfaCodeIn(BaseModel):
+    code: str = Field(min_length=6, max_length=8)
+
+
+@router.post("/api/auth/mfa/confirm", body=MfaCodeIn)
+async def mfa_confirm(ctx: Ctx) -> dict[str, Any]:
+    from ..platform import mfa
+
+    _rate_limit(ctx, f"mfa-confirm:{ctx.user_id}", limit=10)
+    mfa.confirm_enrollment(ctx.engine, ctx.user, ctx.body.code)
+    return {"ok": True}
+
+
+@router.post("/api/auth/mfa/disable", body=MfaCodeIn)
+async def mfa_disable(ctx: Ctx) -> dict[str, Any]:
+    from ..platform import mfa
+
+    _rate_limit(ctx, f"mfa-confirm:{ctx.user_id}", limit=10)
+    if mfa.must_enroll(ctx.engine, {**ctx.user, "mfa_enabled_at": None}):
+        raise Forbidden("Two-factor authentication is required for your account by policy.", code="mfa_required")
+    mfa.disable(ctx.engine, ctx.user, code=ctx.body.code, by=ctx.user_id)
+    return {"ok": True}
+
+
+@router.get("/api/auth/verify-email/{token}", auth=False)
+async def verify_email(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.notifications import owner_alert
+
+    row = ctx.engine.db.one("SELECT * FROM email_verifications WHERE token_hash = ? AND used_at IS NULL AND expires_at > ?",
+                            (token_hash(ctx.request.path_params["token"]), now()))
+    if row is None:
+        raise Invalid("This verification link is not valid or has expired.", code="bad_verification")
+    with ctx.engine.db.tx() as c:
+        c.execute("UPDATE email_verifications SET used_at = ? WHERE token_hash = ?", (now(), row["token_hash"]))
+        c.execute("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?", (now(), row["user_id"]))
+    ctx.engine.audit(None, row["user_id"], "user.email_verified", row["user_id"], None, resource_type="user", decision="allowed", result="ok")
+    user = ctx.engine.db.one("SELECT email FROM users WHERE id = ?", (row["user_id"],))
+    owner_alert(ctx.engine, "email_verified", f"{user['email'] if user else row['user_id']} verified their e-mail", category="account")
+    return {"ok": True}
+
+
+@router.post("/api/auth/verify-email/resend")
+async def verify_email_resend(ctx: Ctx) -> dict[str, Any]:
+    if ctx.user.get("email_verified_at"):
+        return {"ok": True, "already": True}
+    _rate_limit(ctx, f"verify:{ctx.user_id}", limit=3, window=900)
+    send_verification(ctx.engine, ctx.user)
+    from ..platform.email import mailer
+
+    return {"ok": True, "email_configured": mailer(ctx.engine).configured}
 
 
 def _session_state(ctx: Ctx) -> dict[str, Any]:
@@ -328,8 +502,9 @@ async def change_password(ctx: Ctx) -> Any:
     if not verify_password(ctx.body.current, ctx.user["password_hash"]):
         raise Invalid("Current password is wrong.", code="bad_credentials")
     check_password_policy(ctx.body.new)
-    ctx.engine.db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(ctx.body.new), ctx.user_id))
+    ctx.engine.db.execute("UPDATE users SET password_hash = ?, must_reset_password = 0 WHERE id = ?", (hash_password(ctx.body.new), ctx.user_id))
     ctx.engine.db.execute("DELETE FROM sessions WHERE user_id = ?", (ctx.user_id,))
+    ctx.engine.audit(None, ctx.user_id, "user.password_changed", ctx.user_id, None, resource_type="user", decision="allowed", result="ok")
     return _start_session(ctx, ctx.user_id)
 
 
@@ -396,16 +571,25 @@ async def forgot(ctx: Ctx) -> dict[str, Any]:
         raise Forbidden("The desktop app has no passwords.")
     _rate_limit(ctx, f"forgot:{ctx.body.email.lower()}", limit=3, window=900)
     _rate_limit(ctx, f"forgot-ip:{ctx.request.client.host if ctx.request.client else '-'}", limit=20, window=900)
+    from ..platform.email import enqueue, mailer
+
+    m = mailer(engine)
+    configured = m.configured
     user = engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0 AND disabled = 0", (ctx.body.email,))
-    if user and engine.mailer.configured:
+    if user and configured:
         token = new_token(32)
         engine.db.insert("password_resets", {"token_hash": token_hash(token), "user_id": user["id"], "created_at": now(),
                                              "expires_at": now() + 3600})
-        subject, text = reset_text(f"{engine.settings.public_url.rstrip('/')}/#/reset/{token}")
-        await engine.mailer.send(user["email"], subject, text)
+        link = f"{engine.settings.public_url.rstrip('/')}/#/reset/{token}"
+        if m is engine.mailer:   # the environment's SMTP: sent at once, as before
+            subject, text = reset_text(link)
+            await m.send(user["email"], subject, text)
+        else:                    # the owner's provider: through the queue, with the editable template
+            enqueue(engine, to=user["email"], template_key="password_reset", lang=user.get("language") or "en",
+                    vars={"name": user["name"], "link": link}, category="security")
         engine.audit(None, user["id"], "user.password_reset_requested", user["id"])
-    return {"ok": True, "email_configured": engine.mailer.configured,
-            "message": "If an account exists for this e-mail, a reset link is on its way." if engine.mailer.configured
+    return {"ok": True, "email_configured": configured,
+            "message": "If an account exists for this e-mail, a reset link is on its way." if configured
             else "E-mail is not set up on this server. Ask the administrator to reset your password."}
 
 
@@ -424,7 +608,7 @@ async def reset(ctx: Ctx) -> Any:
     check_password_policy(ctx.body.password)
     with ctx.engine.db.tx() as c:
         c.execute("UPDATE password_resets SET used_at = ? WHERE token_hash = ?", (now(), row["token_hash"]))
-        c.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(ctx.body.password), row["user_id"]))
+        c.execute("UPDATE users SET password_hash = ?, must_reset_password = 0 WHERE id = ?", (hash_password(ctx.body.password), row["user_id"]))
         c.execute("DELETE FROM sessions WHERE user_id = ?", (row["user_id"],))
     ctx.engine.audit(None, row["user_id"], "user.password_reset", row["user_id"])
     return _start_session(ctx, row["user_id"])
@@ -456,7 +640,10 @@ def google_login_available(engine: Any) -> bool:
         return False
     from ..connectors.oauth import app_credentials
     from ..errors import AppError
+    from ..platform.settings import get_setting
 
+    if not get_setting(engine, "google.enabled") or "google" not in (get_setting(engine, "security.oauth_providers") or []):
+        return False
     try:
         app_credentials(engine, "google")
         return True
@@ -500,10 +687,13 @@ async def google_start(ctx: Ctx) -> dict[str, Any]:
     return {"url": google_start_url(ctx.engine, invite_token=invite, desktop_challenge=desktop)}
 
 
-def _allowed_domain(email: str) -> bool:
+def _allowed_domain(engine: Any, email: str) -> bool:
     import os
 
+    from ..platform.settings import get_setting
+
     allowed = [d.strip().lower() for d in os.environ.get("DESK_GOOGLE_ALLOWED_DOMAINS", "").split(",") if d.strip()]
+    allowed += list(get_setting(engine, "google.allowed_domains") or [])
     return not allowed or email.rsplit("@", 1)[-1].lower() in allowed
 
 
@@ -529,10 +719,22 @@ async def google_callback(engine: Any, request: Any, params: dict[str, str]) -> 
     email, sub = str(info.get("email") or "").lower(), str(info.get("sub") or "")
     if not email or not sub or info.get("email_verified") not in (True, "true"):
         return None, "Your Google account has no verified e-mail address."
-    if not _allowed_domain(email):
+    if not _allowed_domain(engine, email):
         return None, "Google sign-in on this server is limited to the organisation's e-mail domains."
-    user = engine.db.one("SELECT * FROM users WHERE google_sub = ?", (sub,)) or \
-        engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (email,))
+    from ..platform.settings import get_setting
+
+    user = engine.db.one("SELECT * FROM users WHERE google_sub = ?", (sub,))
+    linked_by_email = False
+    if user is None:
+        by_email = engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (email,))
+        if by_email is not None:
+            # account linking: only a *verified* Google address may claim an existing account, and only when the policy
+            # allows it; otherwise the person signs in with their password and links from Settings
+            if get_setting(engine, "google.link_existing") != "verified_email":
+                engine.audit(None, by_email["id"], "user.login.failed", None, {"reason": "google_link_refused"},
+                             resource_type="session", decision="denied", result="refused")
+                return None, "An account with this e-mail exists. Sign in with your password first."
+            user, linked_by_email = by_email, True
     invite = None
     if state["invite_token"]:
         invite = engine.db.one("SELECT * FROM invites WHERE token_hash = ? AND accepted_at IS NULL AND expires_at > ?",
@@ -543,21 +745,35 @@ async def google_callback(engine: Any, request: Any, params: dict[str, str]) -> 
                             (email, now()))
     if user is None:
         first = engine.db.scalar("SELECT COUNT(*) FROM users WHERE is_local = 0") == 0
-        if not (first or pending or engine.settings.open_signup):
+        policy = get_setting(engine, "google.registration")
+        open_google = {"follow": registration_open(engine), "open": True, "invite_only": False, "disabled": False}[policy]
+        if policy == "disabled" and not first:
+            return None, "New accounts cannot be created with Google on this server."
+        if not (first or pending or open_google):
             return None, "There is no account for this Google address. Ask a workspace administrator to invite you."
+        if not first and not pending:
+            try:
+                check_registration_domain(engine, email)
+            except Forbidden as exc:
+                return None, exc.message
         uid = new_id("u_")
         engine.db.insert("users", {"id": uid, "email": email, "name": str(info.get("name") or email.split("@")[0])[:120],
-                                   "password_hash": None, "google_sub": sub, "created_at": now()})
+                                   "password_hash": None, "google_sub": sub, "created_at": now(), "signup_method": "google",
+                                   "email_verified_at": now()})
         if first:
             with engine.db.tx() as c:
                 c.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('instance_admin', ?)", (dumps(uid),))
         engine.audit(None, uid, "user.signup", uid, {"method": "google", "first": first})
+        after_signup(engine, uid, method="google", client_host=request.client.host if request.client else "-")
         user = engine.db.one("SELECT * FROM users WHERE id = ?", (uid,))
     else:
         if user["disabled"]:
             return None, "This account is disabled."
         if not user.get("google_sub"):
-            engine.db.execute("UPDATE users SET google_sub = ? WHERE id = ?", (sub, user["id"]))
+            engine.db.execute("UPDATE users SET google_sub = ?, email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?",
+                              (sub, now(), user["id"]))
+            engine.audit(None, user["id"], "user.google_linked", user["id"], {"by_verified_email": linked_by_email},
+                         resource_type="user", decision="allowed", result="ok")
     for inv in pending:
         _accept(engine, inv, user["id"])
     if state.get("desktop_challenge"):  # signed in in the system browser for the desktop app: hand it over
@@ -566,12 +782,16 @@ async def google_callback(engine: Any, request: Any, params: dict[str, str]) -> 
                                               "challenge": state["desktop_challenge"], "created_at": now()})
         engine.audit(None, user["id"], "user.login.desktop_handoff", user["id"], {"method": "google"})
         return None, "handoff:" + code
+    if user.get("mfa_enabled_at"):
+        from ..platform import mfa
+        return None, "mfa:" + mfa.new_challenge(engine, user["id"])
     token = new_token(32)
     ts = now()
     forget_dead_sessions(engine, user["id"])
     engine.db.insert("sessions", {"id": token_hash(token), "user_id": user["id"], "created_at": ts,
-                                  "expires_at": session_expiry(engine), "last_seen": ts,
+                                  "expires_at": session_expiry(engine), "last_seen": ts, "reauth_at": ts,
                                   "user_agent": request.headers.get("user-agent", "")[:200]})
+    engine.db.execute("UPDATE users SET last_login_at = ? WHERE id = ?", (ts, user["id"]))
     engine.audit(None, user["id"], "user.login", user["id"], {"method": "google"})
     return token, "Signed in."
 

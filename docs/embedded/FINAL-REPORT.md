@@ -9,7 +9,7 @@ file is being written, so it is not pasted here to avoid a wrong value).
 | Area | Deliverable |
 |---|---|
 | Design | `docs/embedded/ARCHITECTURE.md` (repository audit with findings, trust model, data model), `AG-UI-PROTOCOL-MAPPING.md` (event names verified against the AG-UI specification on 2026-11-01), `SECURITY-THREAT-MODEL.md` (20 threats, each with scenario, entry point, impact, mitigation, test, residual risk), `IMPLEMENTATION-PLAN.md` |
-| Engine | `engine/desk_engine/embedded/` — `model.py` (integrations, sessions, threads), `auth.py` (token resolution, origin allow-list, rate limits, audited refusals), `scope.py` (per-run read-only tool scope), `agents.py` (three read-only agents), `agui.py` (AG-UI adapter), `gateway.py` (run orchestration, re-attach, cancel, resume), `metering.py` (usage + entitlement hook), `components.py` (server-side component registry), `routes.py` (public + admin API). Migration 21. 1 930 lines. |
+| Engine | `engine/desk_engine/embedded/` — `model.py` (integrations, sessions, threads), `auth.py` (token resolution, origin allow-list, rate limits, audited refusals), `scope.py` (per-run read-only tool scope), `agents.py` (three read-only agents), `agui.py` (AG-UI adapter), `gateway.py` (run orchestration, re-attach, cancel, resume), `metering.py` (usage + entitlement hook), `components.py` (server-side component registry), `routes.py` (public + admin API). Migration 22. 1 930 lines. |
 | Changes to existing code | 24 changed lines in 5 files: `agent/harness.py` (`state_extra`, apply `tool_scope`), `app.py` (construct `engine.embedded`), `routes/__init__.py` (mount), `routes/workspaces.py` (service user stays viewer), `tests/test_backup.py` (schema version 20 → 21, the same one-line bump every migration makes). No existing test was weakened or removed; no golden fixture regenerated. |
 | SDK | `sdk/embedded-agent/` — `@ofintech/embedded-agent` (TypeScript, React 19 peer, esbuild): `OfinTechAgentProvider`, `OfinTechFinancialCopilot`, `useOfinTechAgent`, `AgUiClient`, registry with 10 components and v1 schemas, ar/en, RTL. 1 083 lines. |
 | Example | `examples/copilotkit-embedded/` — partner backend that mints sessions, SDK panel and CopilotKit `HttpAgent` side by side. |
@@ -20,7 +20,7 @@ file is being written, so it is not pasted here to avoid a wrong value).
 
 | Suite | Result | Command |
 |---|---|---|
-| Full engine suite (existing + new) | **370 passed, 0 failed** (baseline before the change: 316 + 1 skipped; new: 54) | `python -m pytest engine/tests` |
+| Full engine suite (existing + new) | **407 passed, 0 failed** after merging `main` `4fc2240` (Owner Control Center); 54 new | `python -m pytest engine/tests` |
 | `test_embedded_auth.py` | 17 passed | token lifecycle, origins, rate limits, registration, sealed workspaces, audit |
 | `test_embedded_tenant.py` | 6 passed | two synthetic organisations, ignored client fields, per-subject threads, private in Desk |
 | `test_embedded_approvals.py` | 8 passed | interrupt outcome, service user cannot decide, unknown/expired ids, payload validation, cancel, Desk editor decides + re-attach, argument change detected |

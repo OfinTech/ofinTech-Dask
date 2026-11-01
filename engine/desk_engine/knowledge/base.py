@@ -203,6 +203,9 @@ class Knowledge:
             raise Invalid(f"Documents up to {MAX_FILE_MB} MB can be added.", code="document_too_large")
         if not data:
             raise Invalid("The file is empty.")
+        from ..platform.storage import check_quota
+
+        check_quota(self.engine, ws_id, len(data))   # hosted edition: the owning account's storage quota
         self.collection(ws_id, collection_id)
         digest = hashlib.sha256(data).hexdigest()
         dup = self.engine.db.one("SELECT id, name FROM documents WHERE workspace_id = ? AND sha256 = ?", (ws_id, digest))

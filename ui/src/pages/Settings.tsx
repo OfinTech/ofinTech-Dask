@@ -5,23 +5,26 @@ import { CURRENCIES, MONTHS, fmtDateTime, fmtNumber, fmtRelative } from "../lib/
 import { Confirm, ErrorBox, Field, Icon, LanguagePicker, Loading, Modal, PageHead, go, useAction, useLoad, useToast } from "../components/ui";
 import { openExternal } from "../lib/api";
 import { N, tr } from "../lib/i18n";
+import { PlanTab } from "./Pricing";
+import { MfaSection, NotificationsSection } from "./AccountSecurity";
 
 const TABS: [string, string, string][] = [
   ["workspace", N("Workspace"), "viewer"], ["models", N("Models"), "viewer"], ["files", N("Files and review"), "viewer"], ["members", N("Members"), "viewer"],
   ["mcp-access", N("MCP access"), "viewer"], ["audit", N("Audit log"), "admin"], ["usage", N("Usage"), "admin"], ["account", N("Account"), "viewer"],
+  ["plan", N("Plan"), "viewer"],
 ];
 
 export function SettingsPage({ tab = "workspace" }: { tab?: string }): ReactNode {
-  const { ws } = useApp();
+  const { ws, session } = useApp();
   return (
     <div className="page">
       <PageHead title={tr("Settings")} />
       <div className="seg" role="tablist" style={{ marginBottom: 20 }}>
-        {TABS.filter(([, , role]) => can(ws, role as any)).map(([key, label]) => (
+        {TABS.filter(([key, , role]) => can(ws, role as any) && (key !== "plan" || session.mode === "server")).map(([key, label]) => (
           <button key={key} role="tab" aria-pressed={tab === key} onClick={() => go(`settings/${key}`)}>{tr(label)}</button>))}
       </div>
       {tab === "files" ? <FilesSettings /> : tab === "models" ? <Models /> : tab === "members" ? <Members /> : tab === "mcp-access" ? <McpAccess />
-        : tab === "audit" ? <Audit /> : tab === "usage" ? <Usage /> : tab === "account" ? <Account /> : <WorkspaceSettings />}
+        : tab === "audit" ? <Audit /> : tab === "usage" ? <Usage /> : tab === "account" ? <Account /> : tab === "plan" ? <PlanTab /> : <WorkspaceSettings />}
     </div>
   );
 }
@@ -306,6 +309,8 @@ function Account(): ReactNode {
         <p className="small muted" style={{ margin: 0 }}>{tr("The app uses this language, and the assistant answers in it unless you write in another one.")}</p>
         <LanguagePicker />
       </div>
+      {session.mode === "server" && <MfaSection />}
+      {session.mode === "server" && <NotificationsSection />}
       {session.mode === "server" && (
         <div className="panel panel-pad stack">
           <h3>{tr("Password")}</h3>

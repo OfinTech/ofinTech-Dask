@@ -12,9 +12,13 @@ export type Session = {
   warn_seconds: number;  // how long before the sign-out the warning shows
   session_hours: number; // absolute lifetime of a session on a server (0 on the desktop)
   reauth_minutes: number; // how recently the password must have been entered for a high-risk action
-  features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean; sealed?: boolean };
-  user: { id: string; email: string; name: string; instance_admin: boolean; has_password?: boolean } | null;
+  features: { stdio_mcp: boolean; whatsapp: boolean; team: boolean; google_login?: boolean; email?: boolean; sealed?: boolean; billing?: boolean };
+  user: { id: string; email: string; name: string; instance_admin: boolean; has_password?: boolean; mfa_enabled?: boolean; email_verified?: boolean;
+    platform_role?: "owner" | "admin" | null; permissions?: string[]; must_enroll_mfa?: boolean; must_reset_password?: boolean } | null;
   workspaces: Workspace[];
+  hosted?: boolean;                               // the hosted SaaS edition: plans and billing apply
+  platform?: Record<string, any>;                 // public platform settings (branding, maintenance, feature flags)
+  entitlements?: { plan_code: string | null; max_workspaces: number; storage_quota_mb: number; max_members: number; features: Record<string, any> } | null;
 };
 
 export type AppState = {

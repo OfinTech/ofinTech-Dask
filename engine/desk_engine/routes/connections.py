@@ -99,6 +99,9 @@ class AuthorizeIn(BaseModel):
 
 @router.post("/api/w/{ws}/connections/{provider}/authorize", role="admin", body=AuthorizeIn, fresh=True)
 async def authorize(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "erp_connections")
     provider = ctx.request.path_params["provider"]
     if provider not in PROVIDERS:
         raise NotFound("Unknown connector.")
@@ -226,6 +229,9 @@ class OdooIn(BaseModel):
 
 @router.post("/api/w/{ws}/connections/odoo", role="admin", body=OdooIn, fresh=True)
 async def connect_odoo(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "erp_connections")
     from ..connectors.odoo import OdooClient
 
     b: OdooIn = ctx.body
@@ -253,6 +259,9 @@ class CustomIn(BaseModel):
 
 @router.post("/api/w/{ws}/connections/custom", role="admin", body=CustomIn, fresh=True)
 async def connect_custom(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "erp_connections")
     b: CustomIn = ctx.body
     if b.mode == "pull":
         from ..connectors.open_api import PullClient

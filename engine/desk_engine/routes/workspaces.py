@@ -59,12 +59,20 @@ async def meta(ctx: Ctx) -> dict[str, Any]:
 
 @router.post("/api/workspaces", body=WorkspaceIn)
 async def create_workspace(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.notifications import owner_alert
+    from ..platform.plans import check_workspace_limit
+
     b: WorkspaceIn = ctx.body
+    if (loads(ctx.user.get("restrictions"), {}) or {}).get("no_new_workspaces"):
+        raise Forbidden("Your account cannot create workspaces at the moment.", code="account_restricted")
     count = ctx.engine.db.scalar("SELECT COUNT(*) FROM members WHERE user_id = ? AND role = 'owner'", (ctx.user_id,))
     if count >= 50:
         raise Invalid("You own the maximum number of workspaces.")
     ws_id = new_id("ws_")
     with ctx.engine.db.tx() as c:
+        # the plan's limit is checked inside the writing transaction: BEGIN IMMEDIATE serialises writers, so two
+        # simultaneous requests cannot both see "one below the limit" and both succeed
+        check_workspace_limit(c, ctx.engine, ctx.user_id)
         c.execute("INSERT INTO workspaces (id, name, base_currency, country, fiscal_year_start_month, "
                   "accounting_framework, timezone, created_at) VALUES (?,?,?,?,?,?,?,?)",
                   (ws_id, b.name.strip(), b.base_currency, b.country, b.fiscal_year_start_month,
@@ -72,6 +80,9 @@ async def create_workspace(ctx: Ctx) -> dict[str, Any]:
         c.execute("INSERT INTO members (workspace_id, user_id, role, created_at) VALUES (?,?,?,?)",
                   (ws_id, ctx.user_id, "owner", now()))
     ctx.engine.audit(ws_id, ctx.user_id, "workspace.create", ws_id)
+    if count == 0 and not ctx.engine.settings.is_desktop:
+        owner_alert(ctx.engine, "first_workspace", f"{ctx.user['email']} created their first workspace: {b.name.strip()[:60]}",
+                    category="workspace", link="#/owner/workspaces")
     return ctx.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws_id,)) | {"role": "owner"}
 
 
@@ -193,11 +204,14 @@ async def invite(ctx: Ctx) -> dict[str, Any]:
         raise Forbidden("Invitations need the Team Server. The desktop app is for one person.", code="needs_team_server")
     from ..mail import added_text, invite_text
 
+    from ..platform.plans import check_member_limit
+
     b: InviteIn = ctx.body
     existing = ctx.engine.db.one("SELECT 1 FROM members m JOIN users u ON u.id = m.user_id WHERE m.workspace_id = ? "
                                  "AND u.email = ?", (ctx.ws_id, b.email))
     if existing:
         raise Conflict("This person is already a member.")
+    check_member_limit(ctx.engine, ctx.ws_id)
     inviter = ctx.user["name"]  # type: ignore[index]
     wsname = ctx.workspace["name"]  # type: ignore[index]
     account = ctx.engine.db.one("SELECT id, email FROM users WHERE email = ? AND is_local = 0 AND disabled = 0", (b.email,))

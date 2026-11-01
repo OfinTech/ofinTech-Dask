@@ -125,6 +125,10 @@ class MessageIn(BaseModel):
 
 @router.post("/api/w/{ws}/threads/{tid}/messages", role="viewer", body=MessageIn)
 async def send_message(ctx: Ctx) -> dict[str, Any]:
+    from ..platform.plans import check_ai_allowance, require_feature
+
+    require_feature(ctx.engine, ctx.ws_id, "ask_finance")
+    check_ai_allowance(ctx.engine, ctx.ws_id)
     t = thread_for(ctx, ctx.request.path_params["tid"])
     if t["visibility"] == "workspace" and t["created_by"] != ctx.user_id and ctx.role == "viewer":
         raise Forbidden("Viewers can only write in their own conversations.")

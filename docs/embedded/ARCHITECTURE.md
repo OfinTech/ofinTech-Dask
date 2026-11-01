@@ -3,7 +3,7 @@
 Status: MVP design and implementation on branch `feature/embedded-agent-gateway`.
 Baseline audited: `origin/main` at commit `eada27077f436685f1df4878b5ec2165d2669c93` (2026-11-01, "Enterprise
 gate reports: OP-12 browser verification, session security policy, owner risk acceptance register, release gate").
-Engine version at baseline: 1.1.0; last database migration at baseline: 20.
+Engine version at baseline: 1.1.0; last database migration at baseline: 20 (21 added on main by the Owner Control Center during this work).
 
 This document records what was found in the repository before any code was written, the design that follows from
 it, and the parts of the existing security architecture that the gateway reuses unchanged.
@@ -96,7 +96,7 @@ it, and the parts of the existing security architecture that the gateway reuses 
 | `routes.py` | Public endpoints (`/api/embedded/...`, own authentication) and admin endpoints (`/api/w/{ws}/embedded/...`, standard `Router`). |
 | `components.py` | The generative-UI component registry: versioned JSON schemas for the ten components, validation of tool blocks into component payloads, ar/en labels. |
 
-Changes to existing files are limited to: `db.py` (migration 21), `agent/harness.py` (apply `state["tool_scope"]`
+Changes to existing files are limited to: `db.py` (migration 22), `agent/harness.py` (apply `state["tool_scope"]`
 and accept `source="embedded"`), `routes/__init__.py` (mount the new routers), `app.py` (construct
 `engine.embedded`), docs and OpenAPI.
 
@@ -117,7 +117,7 @@ and accept `source="embedded"`), `routes/__init__.py` (mount the new routers), `
    `POST /threads/{tid}/stop` does.
 7. Write one `embedded_usage` row (status, tokens, tool calls, duration) and audit `embedded.run.finish`.
 
-### 2.4 Data model (migration 21)
+### 2.4 Data model (migration 22)
 
 ```
 embedded_integrations(id, workspace_id, name, status, service_user_id, key_hash UNIQUE, key_prefix,
