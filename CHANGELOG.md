@@ -17,6 +17,12 @@ migrations are applied automatically on start-up and are never rewritten once re
 - **Drill-down** from any executive figure: profit and loss → the accounts behind a line → the ledger lines of one
   account in the month → one journal entry with its source dataset and audit trail. The reporting month travels in
   the address, breadcrumbs lead back, and the viewer role is checked at every level (`/api/w/{ws}/overview…`).
+- **Statements, for the CFO** (docs/OVERVIEW.md): monthly profit and loss, balance sheet and cash-flow statement from
+  the ledger (the plan in grey when one is approved); budget against actual by line with favourable or adverse
+  variances and the accounts that drove the overruns; receivables and payables by customer or supplier, aged 0–30,
+  31–60, 61–90 and 90+ days with settlements applied oldest first and a check against the ledger balance; anomalies
+  (unusual amounts, missing regular postings, first postings, possible duplicates) above a materiality threshold.
+  Every table opens into the same drill-down as the overview (`/api/w/{ws}/overview/statements|budget|parties|anomalies`).
 - **Three views of one application:** Executive, Finance and Accounting change what the navigation rail shows; the
   default follows the member's role (viewer, admin, editor) and the person can switch. Permissions are enforced by
   the server whatever the view.

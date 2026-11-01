@@ -294,19 +294,19 @@ function Executive({ month }: { month: string | null }): ReactNode {
       {/* 3. trend, 4. cash */}
       <div className="exec-cols">
         <section className="panel panel-pad" aria-label={tr("Performance trend")}>
-          <h2 className="h3">{tr("Last twelve months")}</h2>
+          <div className="spread"><h2 className="h3">{tr("Last twelve months")}</h2><a className="small" href={`#/${withMonth("finance/statements", m)}`}>{tr("Statements")}</a></div>
           <Chart categories={trend.categories} series={trend.series} kind="bar" format="money" currency={cur} />
         </section>
         <section className="panel panel-pad" aria-label={tr("Cash and liquidity")}>
-          <h2 className="h3">{tr("Cash and liquidity")}</h2>
+          <div className="spread"><h2 className="h3">{tr("Cash and liquidity")}</h2><a className="small" href={`#/${withMonth("finance/statements/cf", m)}`}>{tr("Cash flow")}</a></div>
           <Chart categories={cashTrend.categories} series={cashTrend.series} kind="area" format="money" currency={cur} />
           <ul className="exec-kpis">
             <li className="exec-kpi"><div className="exec-kpi-head"><span>{tr(MEASURE.ocf)}</span><b className="num">{fmtMoney(head.ocf.value, cur)}</b></div>
               <div className="exec-kpi-foot muted xs">{tr(EXPLAIN.ocf)}</div></li>
             {kpiLine("days_cash")}
-            <li className="exec-kpi"><div className="exec-kpi-head"><span>{tr(MEASURE.receivables)}</span><b className="num">{fmtMoney(head.receivables.value, cur)}</b></div>
+            <li className="exec-kpi"><div className="exec-kpi-head"><a href={`#/${withMonth("finance/receivables", m)}`}>{tr(MEASURE.receivables)}</a><b className="num">{fmtMoney(head.receivables.value, cur)}</b></div>
               <div className="exec-kpi-foot muted xs">{tr(EXPLAIN.receivables)}</div></li>
-            <li className="exec-kpi"><div className="exec-kpi-head"><span>{tr(MEASURE.payables)}</span><b className="num">{fmtMoney(head.payables.value, cur)}</b></div>
+            <li className="exec-kpi"><div className="exec-kpi-head"><a href={`#/${withMonth("finance/payables", m)}`}>{tr(MEASURE.payables)}</a><b className="num">{fmtMoney(head.payables.value, cur)}</b></div>
               <div className="exec-kpi-foot muted xs">{tr(EXPLAIN.payables)}</div></li>
             {kpiLine("dso")}
           </ul>
@@ -316,7 +316,7 @@ function Executive({ month }: { month: string | null }): ReactNode {
       <div className="exec-cols three">
         {/* 5. risks */}
         <section className="panel panel-pad" aria-label={tr("Risks")}>
-          <h2 className="h3">{tr("Risks that need attention")}</h2>
+          <div className="spread"><h2 className="h3">{tr("Risks that need attention")}</h2><a className="small" href={`#/${withMonth("finance/anomalies", m)}`}>{tr("Anomalies")}</a></div>
           {o.risks.length === 0 ? <p className="muted small">{tr("Nothing is off track this month.")}</p> : (
             <ul className="exec-list">
               {o.risks.map((r: any, i: number) => (

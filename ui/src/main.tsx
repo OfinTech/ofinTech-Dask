@@ -27,11 +27,12 @@ import { InboxPage } from "./pages/Inbox";
 import { ConnectionsPage } from "./pages/Connections";
 import { SettingsPage } from "./pages/Settings";
 import { OverviewPage } from "./pages/Overview";
+import { FinancePage } from "./pages/Finance";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
 
 const NAV: [string, string, string][] = [
-  ["overview", N("Overview"), "pulse"], ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"], ["dashboards", N("Dashboards"), "dash"],
-  ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["close", N("Month-end close"), "close"],
+  ["overview", N("Overview"), "pulse"], ["finance", N("Statements"), "ledger"], ["search", N("Search"), "search"], ["chat", N("Assistant"), "chat"],
+  ["dashboards", N("Dashboards"), "dash"], ["analysis", N("Financial analysis"), "trend"], ["costcentres", N("Cost centres"), "centre"], ["close", N("Month-end close"), "close"],
   ["data", N("Data"), "data"], ["files", N("Files"), "sheet"], ["documents", N("Documents"), "docs"],
   ["workflows", N("Workflows"), "flow"], ["memory", N("Memory"), "memory"], ["skills", N("Skills"), "skill"], ["inbox", N("Inbox"), "inbox"],
 ];
@@ -44,7 +45,7 @@ const VIEWS: [View, string, string][] = [["executive", N("Executive"), N("Execut
   ["finance", N("Finance"), N("Finance analysis")], ["accounting", N("Accounting"), N("Accounting operations")]];
 const VIEW_NAV: Record<View, string[]> = {
   executive: ["overview", "chat", "dashboards", "inbox", "search"],
-  finance: ["overview", "analysis", "costcentres", "dashboards", "chat", "search", "close", "data", "files", "documents", "inbox"],
+  finance: ["overview", "finance", "analysis", "costcentres", "dashboards", "chat", "search", "close", "data", "files", "documents", "inbox"],
   accounting: NAV.map(([k]) => k),
 };
 function defaultView(role: Workspace["role"]): View {
@@ -211,6 +212,7 @@ function App(): ReactNode {
   let page: ReactNode;
   switch (section) {
     case "overview": page = <OverviewPage view={route[1]} arg={route[2]} />; break;
+    case "finance": page = <FinancePage tab={route[1]} sub={route[2]} />; break;
     case "dashboards": page = <DashboardsPage id={route[1]} />; break;
     case "data": page = <DataPage id={route[1]} />; break;
     case "documents": page = <DocumentsPage id={route[1]} />; break;

@@ -424,11 +424,30 @@ def run_steps(pg, base, out, xlsx):
     pg.locator(".crumbs a", has_text="Overview").click()
     pg.wait_for_selector(".health")
     assert pg.evaluate("location.hash").endswith(f"month={month}")
+    # the CFO's pages: statements, receivables with ageing, anomalies; each opens the drill-down with the month kept
+    pg.goto(f"{base}/#/finance/statements?month={month}")
+    pg.wait_for_selector("table.pl >> text=Net profit")
+    pg.get_by_role("button", name="Balance sheet").click()
+    pg.wait_for_selector("table.pl >> text=Total assets")
+    pg.get_by_role("button", name="Cash flow").click()
+    pg.wait_for_selector("table.pl >> text=Closing cash")
+    pg.screenshot(path=str(out / "finance-cash-flow.png"))
+    pg.get_by_role("tab", name="Receivables").click()
+    pg.wait_for_selector("text=aged from the invoice date")
+    pg.wait_for_selector("table.ledger >> text=Total")
+    pg.screenshot(path=str(out / "finance-receivables.png"))
+    pg.get_by_role("tab", name="Budget vs actual").click()
+    pg.wait_for_selector("text=There is no plan yet")
+    pg.get_by_role("tab", name="Anomalies").click()
+    pg.wait_for_selector("text=break the pattern")
+    assert pg.evaluate("location.hash").endswith(f"month={month}")
+    pg.locator(".crumbs a", has_text="Overview").click()
+    pg.wait_for_selector(".health")
     # the view switch only changes the rail; the executive view shows five sections
     pg.get_by_role("tab", name="Executive").click()
     assert pg.locator(".nav a").count() == 5 + 2, pg.locator(".nav").inner_text()   # plus Connections and Settings
     pg.get_by_role("tab", name="Accounting").click()
-    assert pg.locator(".nav a").count() == 14 + 2
+    assert pg.locator(".nav a").count() == 15 + 2
     pg.get_by_role("tab", name="Finance").click()
     pg.goto(f"{base}/#/analysis/forecasts")
     pg.get_by_role("button", name="New forecast").click()
@@ -505,7 +524,7 @@ def run_steps(pg, base, out, xlsx):
     pg.screenshot(path=str(out / "ar-settings.png"))
     for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
                          ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر"),
-                         ("overview", "على المسار"), ("overview/profit", "الربحية")):
+                         ("overview", "على المسار"), ("overview/profit", "الربحية"), ("finance/receivables", "حسب العميل")):
         pg.goto(f"{base}/#/{path}")
         pg.wait_for_selector(f"text={needle}")
         pg.wait_for_timeout(300)
