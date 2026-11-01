@@ -16,7 +16,7 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 | Secret management | ✅ | master key from OS store / env / Docker secret; never in DB; audit URLs stripped (OB-10) |
 | Outbound network policy | ✅ | save-time check + `PrivateNetworkGuard` at every request (OB-04); sealed mode |
 | CSRF / origin | ✅ | SameSite=Strict + exact origin (OB-02) |
-| Input limits | 🟡 | body limits independent of headers (OB-07); parser resource limits pending (OB-06, R7) |
+| Input limits | ✅ | body limits independent of headers (OB-07); Office zip and image limits before parsing, OCR budget, Caddy edge cap (OB-06) |
 | Export safety | ✅ | all CSV/XLSX writers neutralise formula prefixes (OB-03) |
 | Audit logging | ✅ | `audit_log` for sign-in, approvals, write tools, connections, webhooks, ingest; immutable append (no update path in code) |
 | Vulnerability management | 🟡 | CI gates added (R6); first results pending; lockfiles missing |
@@ -75,7 +75,6 @@ Risk, Moderate Risk, Low Risk, Production Ready) and is given only with evidence
 ## Rating
 
 **Moderate Risk** (1 November 2026, after R5/R6). All P1 findings are fixed with tests; no P0 was found. The
-product is not yet *Production Ready* on this scale because: parser resource limits (OB-06) and the AI security
-suite are outstanding, CI gates have not produced a first result, backups are plaintext, and performance has not
+product is not yet *Production Ready* on this scale because: the AI security suite is outstanding, CI gates have not produced a first result, backups are plaintext, and performance has not
 been measured. Each of these has an owner and a round in the roadmap. The rating is a judgement from the evidence
 above, not a numerical score.

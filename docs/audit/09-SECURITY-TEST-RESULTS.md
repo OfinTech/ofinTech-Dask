@@ -3,7 +3,7 @@
 Updated with every round. All runs are against throw-away engine instances with mocked LLM, accounting, Google,
 Telegram and S3 endpoints; nothing touched a live system.
 
-## Run of 1 November 2026 (after R5)
+## Run of 1 November 2026 (after R7)
 
 Environment: Linux, Python 3.13.18, SQLite 3.x, Tesseract 5 (eng), no LibreOffice. Package registries were not
 reachable, so the installed versions are the preinstalled ones (starlette 1.7.0, pydantic 2.13.5, httpx2 2.13.1,
@@ -11,8 +11,8 @@ cryptography 50.0.1, pypdf 6.17.0; the rest as pinned). CI re-runs the same suit
 
 | Suite | Result |
 |---|---|
-| `python -m unittest discover -s tests -t .` | **203 tests, OK, ~20 s** |
-| `tests/test_audit_regressions.py` (new) | 21 tests, OK; each class was also run against the pre-fix code and fails there |
+| `python -m unittest discover -s tests -t .` | **206 tests, OK, ~20 s** |
+| `tests/test_audit_regressions.py` (new) | 24 tests, OK; each class was also run against the pre-fix code and fails there |
 | `tests/test_security_boundaries.py` (existing) | 26 tests, OK (payments, sealed workspace/server, masking, socket- and DNS-level blocking) |
 | `tests/test_team_server.py`, `test_site_auth.py`, `test_api_desktop.py` | OK (CSRF, isolation, SSRF at save time, local token and Host guard) |
 | `ruff check --select S --ignore S101,S110,S314,S603,S608 desk_engine` | 0 findings |
@@ -34,6 +34,7 @@ R6; the first run's output belongs in this table.
 | OB-05 | plaintext object under `documents/` | served as genuine | `storage_plaintext` error until migrated |
 | OB-07 | chunked POST to `/api/ingest/...` over the limit | read in full, then 413 | 413 after the limit bytes |
 | OB-08 | tool call with `{"n": "21"}` for an integer parameter; handler sleeping 5 s with a 0.2 s limit | handler got a string; waited | schema error; stopped with an error |
+| OB-06 | 16 MB-inflating, 60 KB workbook; EPS bytes; PNG header declaring 100 MP | parsed / decoded | `document_too_large` / refused before decoding |
 | OB-11 | member removed while an event stream is open, then an event published | event delivered | stream closed, nothing delivered |
 
 ## What the test suite now covers that it did not
@@ -44,7 +45,7 @@ R6; the first run's output belongs in this table.
 
 ## Gaps still to cover (see roadmap R7–R8)
 
-- Malicious document corpus (zip bombs, EPS-as-PNG, 3,000-page PDFs) against the parsers with a time budget.
+- A larger malicious document corpus (3,000-page PDFs, pathological single pages) under a time budget; zip bombs and EPS-as-PNG are covered.
 - The 15-case AI security suite of document 06 (direct/indirect injection, memory poisoning, MCP manipulation,
   fabricated figures, cross-tenant leakage through the agent).
 - Performance: concurrent chat turns, a 400k-line ledger import, SQLite contention on the event loop.

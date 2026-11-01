@@ -22,6 +22,7 @@ import zipfile
 from typing import TYPE_CHECKING, Any
 
 from ..errors import Invalid
+from .limits import check_office_zip
 
 if TYPE_CHECKING:
     from .evidence import Evidence
@@ -46,6 +47,7 @@ def detect_format(name: str, data: bytes) -> str:
         raise Invalid("Save the document as .docx and try again.", code="file_format")
     if not data.startswith(b"PK"):
         raise Invalid("This file is not a readable .xlsx or .docx (it may be password-protected).", code="file_format")
+    check_office_zip(data)
     try:
         names = set(zipfile.ZipFile(io.BytesIO(data)).namelist())
     except zipfile.BadZipFile as exc:

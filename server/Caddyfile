@@ -4,6 +4,11 @@
 
 {$DESK_DOMAIN} {
 	encode zstd gzip
+	# The engine checks every body against its own limits; this stops anything larger at the edge. 260 MB covers
+	# the largest the engine accepts (20 chat attachments of up to 210 MB total on one upload, 100 MB ingest).
+	request_body {
+		max_size 260MB
+	}
 	reverse_proxy engine:8700 {
 		flush_interval -1
 	}

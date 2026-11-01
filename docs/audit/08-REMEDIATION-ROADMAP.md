@@ -14,12 +14,12 @@ suite and the change is on `main`.
 | R4 | OB-04 (P2), OB-05 (P1), OB-10 (part), OB-13, OB-14 (P3) | 87e0196 | 7 (+1 rewritten) | done |
 | R5 | OB-08 (P2, two of three parts) | 78644c1 | 2 | done; one owner decision open |
 | R6 | OB-17 (P2), OB-18 (part), audit documents | this commit | — (CI-side) | done; CI run pending |
-| R7 | OB-06 parser limits, Caddy body limit, upload hard cap | — | — | next |
+| R7 | OB-06 parser limits, Caddy body limit, OB-19 masker false positive | d5b6ba0, this commit | 3 | done |
 | R8 | OB-09 prompt-injection hardening, OB-08 effects, OB-10 tool-list change, `/mcp` rate limit, AI security test suite (doc 06) | — | — | planned |
 | R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups, IP pinning | — | — | planned |
 | R10 | Threat model (03), API review (05), DB review (04), target architecture (07), readiness (10) | — | — | in progress |
 
-Engine suite after R5: **203 tests, all passing** (182 before the audit; 21 added, 1 rewritten).
+Engine suite after R7: **206 tests, all passing** (182 before the audit; 24 added, 1 rewritten).
 
 ## Implementation record
 
@@ -81,6 +81,16 @@ Each entry: reason, components, compatibility, verification.
 - **Verification:** workflow and compose files parse; ruff's S rules pass locally with the listed exceptions; the
   Docker build and the scanners run in CI (no registry access in the audit environment).
 
+### R7 — d5b6ba0, this commit · Parser resource limits, masker false positive
+- **Why:** zip bombs and oversized images reached the parsers (OB-06); the IBAN masker ate engine ids that
+  happened to look like IBANs (OB-19, seen as a flaky CI failure in `test_chat_attachments`).
+- **Components:** new `files/limits.py`; `knowledge/extract.py` (zip check, OCR budget), `knowledge/ocr.py`,
+  `files/editable.py`, `data/importer.py`, `costcentres/budget.py`, `egress.py` (masker), `server/Caddyfile`.
+- **Compatibility:** genuine files are unaffected (limits are far above any real workbook or document); a scanned
+  PDF that takes more than 15 minutes of OCR is indexed partially instead of failing.
+- **Verification:** `OB06ParserLimits` (2), `OB19MaskingKeepsEngineIds`; full suite 206 OK; `test_data`'s
+  garbage-file contract kept (non-zip data is left to each parser's own error).
+
 ## Accepted security exceptions
 
 | Exception | Owner | Justification | Expires |
@@ -89,7 +99,7 @@ Each entry: reason, components, compatibility, verification.
 | ruff `S608` (string-built SQL) at 36 sites | repository owner | every site interpolates engine identifiers (`ds_<id>`, `c0..cN`, table names from fixed maps) or `?` placeholders; reviewed in document 02 | 2027-05-01 (re-review on new sites) |
 | ruff `S110` (try/except/pass) ×5, `S603` (subprocess) ×2, `S314` (stdlib XML on S3 responses) ×2 | repository owner | best-effort cleanup paths; Tesseract runs without a shell and with a timeout; S3 XML comes from the operator's own store | 2027-05-01 |
 | `auto` policy for MCP tools trusts the server's `readOnlyHint` once an admin chose `auto` | repository owner | explicit admin opt-in per tool; documented in MCP.md | until R8 |
-| Multipart uploads rely on Starlette's disk spool and a post-read size check | audit | spool goes to disk, not memory; Caddy body limit to be added in R7 | R7 |
+| Multipart uploads rely on Starlette's disk spool and a post-read size check | audit | spool goes to disk, not memory; Caddy now caps bodies at 260 MB at the edge | 2027-05-01 (review) |
 
 ## Decisions needed from the owner
 

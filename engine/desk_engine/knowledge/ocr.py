@@ -56,15 +56,13 @@ def available() -> bool:
 
 def image_text(data: bytes) -> str:
     """Text of one image (PNG, JPEG, TIFF…). Images are normalised with Pillow first, which also refuses non-images."""
-    from PIL import Image
+    from ..files.limits import open_image
 
     exe = tesseract()
     if not exe:
         return ""
-    with Image.open(io.BytesIO(data)) as im:
+    with open_image(data) as im:   # known raster formats only; the pixel count is checked before decoding
         im.load()
-        if im.width * im.height > 60_000_000:
-            raise ValueError("image too large")
         frame = im.convert("L")
         if max(frame.size) < 1200:  # small scans read better when enlarged
             scale = 1200 / max(frame.size)

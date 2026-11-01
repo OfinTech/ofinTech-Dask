@@ -14,6 +14,7 @@ import re
 from typing import Any
 
 from ..errors import Invalid
+from ..files.limits import check_office_zip
 from .rules import norm
 
 BUDGET_WORDS = ["budget", "approved budget", "الموازنة", "موازنة", "الميزانية", "ميزانية", "المعتمد", "presupuesto",
@@ -161,6 +162,7 @@ def parse_xlsx(data: bytes, sheet: str | None = None) -> dict[str, Any]:
     from openpyxl import load_workbook
     from openpyxl.utils import get_column_letter
 
+    check_office_zip(data, what="workbook")
     try:
         wb = load_workbook(io.BytesIO(data), data_only=True)
         wbf = load_workbook(io.BytesIO(data), data_only=False)
@@ -204,6 +206,7 @@ def parse_xlsx(data: bytes, sheet: str | None = None) -> dict[str, Any]:
 def parse_docx(data: bytes) -> dict[str, Any]:
     from docx import Document
 
+    check_office_zip(data, what="document")
     try:
         doc = Document(io.BytesIO(data))
     except Exception as exc:  # noqa: BLE001

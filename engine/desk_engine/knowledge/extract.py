@@ -12,8 +12,10 @@ import re
 from dataclasses import dataclass
 
 from ..errors import Invalid
+from ..files.limits import check_office_zip
 
 MAX_PAGES = 3000
+OCR_BUDGET_SECONDS = 15 * 60   # OCR of one scanned PDF stops after this long; pages past it are left empty
 MAX_CHARS = 5_000_000
 
 MIME = {
@@ -149,8 +151,14 @@ def _pdf(data: bytes) -> list[Section]:
         if not ocr.available():
             raise Invalid("This PDF has no text layer (it is probably a scan) and OCR is not installed here. Install "
                           "Tesseract, connect PipesHub, or upload a searchable PDF.", code="needs_ocr")
+        import time
+
         ocr_sections = []
+        deadline = time.monotonic() + OCR_BUDGET_SECONDS
         for i, images in enumerate(ocr.pdf_page_images(data), start=1):
+            if time.monotonic() > deadline:
+                ocr_sections.append(Section("", page=i, heading="OCR"))   # the rest is skipped; the file is still indexed
+                continue
             text = "\n".join(ocr.image_text(img) for img in images[:4])
             ocr_sections.append(Section(text, page=i, heading="OCR"))
         if not any(s.text.strip() for s in ocr_sections):
@@ -164,6 +172,7 @@ def _docx(data: bytes) -> list[Section]:
     from docx.table import Table
     from docx.text.paragraph import Paragraph
 
+    check_office_zip(data, what="document")
     try:
         doc = docx.Document(io.BytesIO(data))
     except Exception as exc:
@@ -207,6 +216,7 @@ def _docx(data: bytes) -> list[Section]:
 def _xlsx(data: bytes) -> list[Section]:
     from openpyxl import load_workbook
 
+    check_office_zip(data, what="workbook")
     try:
         wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
     except Exception as exc:
