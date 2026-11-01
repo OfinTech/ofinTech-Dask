@@ -16,8 +16,8 @@ suite and the change is on `main`.
 | R6 | OB-17 (P2), OB-18 (part), audit documents | this commit | — (CI-side) | done; CI run pending |
 | R7 | OB-06 parser limits, Caddy body limit, OB-19 masker false positive | d5b6ba0, this commit | 3 | done |
 | R8 | OB-09 skills gate (done), AI security suite + doc 06 (done), dependency bumps (done); OB-08 effects, OB-10 tool-list change, `/mcp` rate limit, structural delimiting | e705701, 8e1b39c, fa391df | 14 | partly done |
-| R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups, IP pinning | — | — | planned |
-| R10 | Threat model (03), API review (05), DB review (04), target architecture (07), readiness (10) | — | — | in progress |
+| R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups (DB-01), DB-02/03/06, IP pinning, `/metrics`, performance measurements | — | — | planned (see 07 §9 M4–M7) |
+| R10 | Threat model (03), DB review (04), API review (05), AI testing (06), target architecture (07), readiness (10) | this commit | — | done; readiness is a living document |
 
 Engine suite after R8 (part 1): **220 tests, all passing** (182 before the audit; 38 added, 1 rewritten). CI: the `security` job is green on `main` (gitleaks, ruff S, pip-audit, npm audit); the Trivy image scan runs from fa391df on.
 
