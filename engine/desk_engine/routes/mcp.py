@@ -77,9 +77,6 @@ class ServerIn(BaseModel):
 
 @router.post("/api/w/{ws}/mcp-servers", role="admin", body=ServerIn, fresh=True)
 async def add_server(ctx: Ctx) -> dict[str, Any]:
-    from ..platform.plans import require_feature
-
-    require_feature(ctx.engine, ctx.ws_id, "api_access")
     _not_sealed(ctx)
     b: ServerIn = ctx.body
     validate_server_input(ctx.engine, b.transport, b.command, b.args, b.url)
@@ -182,9 +179,6 @@ class KeyIn(BaseModel):
 
 @router.post("/api/w/{ws}/mcp-keys", role="viewer", body=KeyIn, fresh=True)
 async def create_key(ctx: Ctx) -> dict[str, Any]:
-    from ..platform.plans import require_feature
-
-    require_feature(ctx.engine, ctx.ws_id, "api_access")
     _not_sealed(ctx)
     count = ctx.engine.db.scalar("SELECT COUNT(*) FROM mcp_keys WHERE workspace_id = ? AND user_id = ?",
                                  (ctx.ws_id, ctx.user_id))

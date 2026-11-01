@@ -107,13 +107,6 @@ is `http://localhost:47821/oauth/callback` (desktop) or `https://<domain>/oauth/
 sign-in reuses the Google app and the same address. Step-by-step instructions, scopes and each provider's review
 requirements are in [docs/CONNECTORS.md](docs/CONNECTORS.md).
 
-## Owner Control Center (hosted edition)
-
-Operators get a protected administrative area at `#/owner`: users, workspaces, plans and entitlements, Stripe billing,
-coupons, sales leads, analytics, notifications, e-mail, a Security Center, integrations, storage, audit logs and platform
-settings — separate from workspace roles and never a window into customer data. The self-hosted edition stays free and
-unlimited; plan limits and billing apply only when `DESK_HOSTED=true`. See `docs/owner/`.
-
 ## Security in brief
 
 - Credentials (API keys, OAuth tokens, bot tokens, webhook secrets) are encrypted with AES-256-GCM or stored only as

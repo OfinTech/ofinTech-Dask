@@ -83,11 +83,9 @@ export function ResetPage({ token, onDone }: { token: string; onDone: () => Prom
   );
 }
 
-export function AuthPage({ session, onDone, signedOutForIdling, mfaChallenge }:
-    { session: Session; onDone: () => Promise<void>; signedOutForIdling?: boolean; mfaChallenge?: string | null }): ReactNode {
-  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "mfa">(mfaChallenge ? "mfa" : session.needs_first_user ? "signup" : "login");
-  const [challenge, setChallenge] = useState<string | null>(mfaChallenge || null);
-  const [code, setCode] = useState("");
+export function AuthPage({ session, onDone, signedOutForIdling }:
+    { session: Session; onDone: () => Promise<void>; signedOutForIdling?: boolean }): ReactNode {
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">(session.needs_first_user ? "signup" : "login");
   const [notice, setNotice] = useState<string | null>(
     signedOutForIdling ? tr("You were signed out because nothing happened for a while.") : null);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -104,18 +102,7 @@ export function AuthPage({ session, onDone, signedOutForIdling, mfaChallenge }:
         setNotice(r.message);
         return;
       }
-      if (mode === "mfa") {
-        await post("/api/auth/mfa/verify", { challenge, code });
-        history.replaceState(null, "", location.pathname + location.search + "#/");
-        await onDone();
-        return;
-      }
-      const r: any = await post(mode === "login" ? "/api/auth/login" : "/api/auth/signup", form);
-      if (r?.mfa_required) {   // the password alone opens no session: the authenticator code comes next
-        setChallenge(r.challenge);
-        setMode("mfa");
-        return;
-      }
+      await post(mode === "login" ? "/api/auth/login" : "/api/auth/signup", form);
       await onDone();
     } catch (err) {
       setError(errorText(err));
@@ -130,16 +117,7 @@ export function AuthPage({ session, onDone, signedOutForIdling, mfaChallenge }:
       <section className="auth-form">
         <form onSubmit={submit} className="stack" style={{ maxWidth: 360 }}>
           <h2>{session.needs_first_user ? tr("Create the administrator account") : mode === "login" ? tr("Sign in")
-            : mode === "forgot" ? tr("Reset your password") : mode === "mfa" ? tr("Enter your authentication code") : tr("Create your account")}</h2>
-          {mode === "mfa" && <>
-            <p className="muted">{tr("Open your authenticator app and enter the current 6-digit code.")}</p>
-            <Field label={tr("Code from the app")}><input className="input" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={8} required value={code}
-              onChange={(e) => setCode(e.target.value)} /></Field>
-            <ErrorBox error={error} />
-            <button className="btn primary" disabled={busy || code.length < 6}>{tr("Verify")}</button>
-            <button type="button" className="btn ghost small" onClick={() => { setMode("login"); setChallenge(null); setError(null); }}>{tr("Back to sign in")}</button>
-          </>}
-          {mode !== "mfa" && <>
+            : mode === "forgot" ? tr("Reset your password") : tr("Create your account")}</h2>
           {session.needs_first_user && <p className="muted">{tr("This is a new Team Server. The first account administers it.")}</p>}
           {session.features.google_login && mode !== "forgot" && <>
             <GoogleButton />
@@ -168,7 +146,6 @@ export function AuthPage({ session, onDone, signedOutForIdling, mfaChallenge }:
           {!session.signup_open && mode === "login" && (
             <p className="small muted">{tr("New here? Ask a workspace administrator for an invitation link.")}</p>
           )}
-          </>}
         </form>
       </section>
     </div>

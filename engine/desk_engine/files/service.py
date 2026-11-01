@@ -101,10 +101,8 @@ class Files:
     async def import_upload(self, workspace: dict[str, Any], user_id: str, name: str, data: bytes, *,
                             thread_id: str | None = None, document_id: str | None = None) -> dict[str, Any]:
         """Keep an uploaded .xlsx/.docx as version 1 of an editable file (the original, untouched)."""
-        from ..platform.storage import check_quota
         from .editable import at_risk, detect_format, outline_docx, outline_xlsx
 
-        check_quota(self.engine, workspace["id"], len(data))
         fmt = detect_format(name, data)
         outline = await asyncio.to_thread(outline_xlsx if fmt == "xlsx" else outline_docx, data)
         ws_id, ts, fid = workspace["id"], now(), new_id("f_")

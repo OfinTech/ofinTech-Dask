@@ -24,12 +24,5 @@ regexes = [
   '''change-me''',
   # canary values the leakage tests plant to prove they never reach logs or responses
   '''[A-Za-z0-9-]*NEVER-IN-LOGS[A-Za-z0-9-]*''',
-  # the Stripe sandbox of the Owner Control Center tests: a mock API key and webhook secret (tests/stripe_mock.py) and
-  # the values the browser test types to prove they are never shown again (e2e/owner_browser.py); Stripe test-mode
-  # shapes, not real keys, never used against Stripe
-  '''sk_test_51MockStripeKeyForTests000000000000''',
-  '''whsec_test_0123456789abcdef0123456789abcdef''',
-  '''sk_test_51Browser000000000000000ABCD''',
-  '''whsec_browser0000000000000000WXYZ''',
 ]
 stopwords = ["example", "fake", "test-only"]

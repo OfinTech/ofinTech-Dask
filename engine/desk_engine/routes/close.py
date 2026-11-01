@@ -29,9 +29,6 @@ class PrepareIn(BaseModel):
 
 @router.post("/api/w/{ws}/close", role="editor", body=PrepareIn)
 async def prepare(ctx: Ctx) -> dict[str, Any]:
-    from ..platform.plans import require_feature
-
-    require_feature(ctx.engine, ctx.ws_id, "autonomous_reconciliation")
     b: PrepareIn = ctx.body
     return await asyncio.to_thread(ctx.engine.close.prepare, ctx.ws_id, ctx.user_id, month=b.month,
                                    dataset_id=b.dataset_id, materiality=b.materiality)

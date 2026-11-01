@@ -320,41 +320,9 @@ def authenticate(engine: Engine, request: Request) -> dict[str, Any]:
     user = engine.db.one("SELECT * FROM users WHERE id = ? AND disabled = 0", (session["user_id"],))
     if user is None:
         raise Unauthorized("Your account is disabled.")
-    account_gates(engine, user, request)
     if is_activity(request) and now() - session["last_seen"] > activity_write_seconds(idle_limit):
         engine.db.execute("UPDATE sessions SET last_seen = ? WHERE id = ?", (now(), session["id"]))
     return user
-
-
-ALWAYS_OPEN = ("/api/session", "/api/auth/logout", "/api/auth/mfa", "/api/me", "/api/auth/reauth", "/api/auth/password",
-               "/api/session/ping", "/api/session/status", "/api/me/notifications")
-
-
-def account_gates(engine: Engine, user: dict[str, Any], request: Request) -> None:
-    """Platform-level conditions on an authenticated account, judged on every request (never only at sign-in):
-
-    * maintenance mode — everyone but platform administrators is refused (503 ``maintenance``);
-    * a required two-factor enrolment — refused until done (403 ``mfa_enrollment_required``);
-    * a forced password change — refused until done (403 ``password_reset_required``);
-    * an account-level ``read_only`` restriction — writes refused (403 ``account_read_only``).
-    The handful of routes that let the person comply (session, enrolment, password, sign-out) stay open."""
-    from .db import loads
-    from .platform import mfa
-    from .platform.owner import platform_role
-    from .platform.settings import get_setting
-
-    path = request.url.path
-    if path.startswith(ALWAYS_OPEN):
-        return
-    if get_setting(engine, "platform.maintenance_mode") and not platform_role(engine, user["id"]) and not path.startswith("/api/owner"):
-        raise AppError(get_setting(engine, "platform.maintenance_message") or "The service is under maintenance. Try again shortly.",
-                       code="maintenance", status=503)
-    if user.get("must_reset_password") and not path.startswith("/api/auth/forgot"):
-        raise Forbidden("Choose a new password to continue.", code="password_reset_required")
-    mfa.gate(engine, user, path)
-    restrictions = loads(user.get("restrictions"), {}) or {}
-    if restrictions.get("read_only") and request.method not in {"GET", "HEAD", "OPTIONS"} and not path.startswith("/api/auth"):
-        raise Forbidden("This account is limited to reading.", code="account_read_only")
 
 
 def session_row(engine: Engine, request: Request) -> dict[str, Any] | None:
@@ -404,21 +372,6 @@ def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:
     )
     if row is None:
         if _ID_SHAPE.match(ws_id) and ctx.engine.db.one("SELECT 1 FROM workspaces WHERE id = ?", (ws_id,)):
-            grant = _support_grant(ctx, ws_id)
-            if grant is not None:
-                # a platform administrator under a live, audited support grant: the viewer role, reads only
-                if ctx.request.method not in {"GET", "HEAD", "OPTIONS"}:
-                    ctx.engine.audit(ws_id, ctx.user["id"], "access.denied", f"{ctx.request.method} {ctx.request.url.path}"[:200],
-                                     {"reason": "support_read_only", "grant": grant["id"]}, resource_type="workspace",
-                                     decision="denied", result="refused")
-                    raise Forbidden("Support access is read-only.", code="support_read_only")
-                ws = ctx.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws_id,))
-                ctx.engine.audit(ws_id, ctx.user["id"], "support.access.used", f"{ctx.request.method} {ctx.request.url.path}"[:200],
-                                 {"grant": grant["id"]}, resource_type="workspace", decision="allowed", result="ok")
-                ctx.role = "viewer"
-                ctx.workspace = ws
-                ctx.require(role)
-                return
             # a real workspace the caller is not a member of: a cross-tenant attempt, recorded against that tenant
             ctx.engine.audit(ws_id, ctx.user["id"], "access.denied", f"{ctx.request.method} {ctx.request.url.path}"[:200],
                              {"reason": "not_a_member"}, resource_type="workspace", decision="denied", result="refused")
@@ -426,20 +379,8 @@ def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:
     ctx.role = row.pop("member_role")
     ctx.workspace = row
     ctx.require(role)
-    from .platform.support import enforce as enforce_state
-    enforce_state(ctx.engine, ws_id, ctx.request.method)
-
-
-def _support_grant(ctx: Ctx, ws_id: str) -> dict[str, Any] | None:
-    from .platform.owner import has_permission
-    from .platform.support import active_support
-
-    if ctx.engine.settings.is_desktop or not has_permission(ctx.engine, ctx.user["id"], "support.access"):
-        return None
-    return active_support(ctx.engine, ctx.user["id"], ws_id)
 
 
 def public_user(user: dict[str, Any]) -> dict[str, Any]:
     return {"id": user["id"], "email": user["email"], "name": user["name"], "language": user.get("language"),
-            "has_password": bool(user.get("password_hash")), "mfa_enabled": bool(user.get("mfa_enabled_at")),
-            "email_verified": bool(user.get("email_verified_at"))}
+            "has_password": bool(user.get("password_hash"))}

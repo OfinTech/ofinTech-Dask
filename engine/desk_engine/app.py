@@ -125,13 +125,6 @@ class Engine:
         # runs that were mid-flight when the engine stopped
         self.db.execute("UPDATE agent_runs SET status = 'error', error = 'Interrupted by a restart.' "
                         "WHERE status = 'running'")
-        # the Owner Control Center: default plans, provisioned owners, session limits narrowed from the dashboard
-        from .platform import owner as platform_owner, plans as platform_plans
-        from .platform.settings import apply_session_overrides
-
-        platform_plans.seed(self)
-        platform_owner.apply_bootstrap(self)
-        apply_session_overrides(self)
 
     async def start_background(self) -> None:
         info = await self.storage.check()
@@ -165,32 +158,12 @@ class Engine:
                     await self.knowledge.sync_all_drive()
                 if tick % 1200 == 300:   # about every hour: keep the write-ahead log from growing between restarts
                     self.db.checkpoint()
-                await self._platform_tick(tick)
             except asyncio.CancelledError:
                 raise
             except Exception:  # pragma: no cover - keep the scheduler alive
                 log.exception("scheduler tick failed")
             tick += 1
             await asyncio.sleep(3)
-
-    async def _platform_tick(self, tick: int) -> None:
-        """The Owner Control Center's background work: the e-mail queue, scheduled announcements, subscription
-        lifecycle, Stripe event retries, sales follow-ups, analytics retention."""
-        if self.settings.is_desktop:
-            return
-        from .platform import analytics, billing, email, notifications, plans, sales
-
-        if tick % 2 == 0:
-            await email.deliver_pending(self)
-        if tick % 10 == 5:
-            notifications.tick(self)
-        if tick % 100 == 50:
-            plans.tick(self)
-            billing.retry_failed(self)
-        if tick % 200 == 150:
-            sales.remind_followups(self)
-        if tick % 1200 == 900:
-            analytics.purge(self)
 
     async def _daily_syncs(self) -> None:
         from .connectors.accounting import ACCOUNTING_PROVIDERS, is_push, sync_connection
@@ -221,9 +194,6 @@ class Engine:
             self.webhooks.emit(workspace_id, user_id, action, target, clean)
         except Exception:  # pragma: no cover - a webhook must never break the action that was audited
             log.exception("outgoing webhook could not be queued")
-        if not self.settings.is_desktop:
-            from .platform.analytics import on_audit
-            on_audit(self, action, user_id, workspace_id)   # product analytics: the event name, account, workspace and time only
         return event_id
 
     def record_usage(self, ws_id: str, provider_id: str, model: str, usage: Usage, source: str) -> None:

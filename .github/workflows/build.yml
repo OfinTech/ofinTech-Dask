@@ -84,8 +84,6 @@ jobs:
           python e2e/ui_smoke.py e2e-output
       - name: Session policy in a real browser (OP-12)
         run: python e2e/session_browser.py e2e-output
-      - name: Owner Control Center in a real browser
-        run: python e2e/owner_browser.py e2e-output
       - uses: actions/upload-artifact@v7
         if: always()
         with:

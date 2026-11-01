@@ -100,8 +100,6 @@ async def _google_login(request: Request, engine: Any, params: dict[str, str]) -
 padding:0 1rem;color:#1d2433}}a{{color:#1e4fa3}}</style></head><body><h1>You are signed in</h1>
 <p>Return to the OfinTech Desk app. If it did not open, <a href="{link}">open OfinTech Desk</a>.</p>
 <p>You can close this tab.</p></body></html>""", headers={"cache-control": "no-store"})
-    if token is None and message.startswith("mfa:"):
-        return RedirectResponse(f"/#/login?mfa={message[4:]}", status_code=303, headers={"cache-control": "no-store"})
     if token is None:
         return page("Sign-in not completed", message, 400)
     resp = RedirectResponse("/#/", status_code=303)
