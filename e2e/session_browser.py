@@ -456,6 +456,10 @@ def main() -> int:
     for r in ev.rows:
         if r["result"] == "FAIL":
             print("FAIL", r["id"], r["actual"])
+    if summary["failed"]:
+        print("--- log tail ---")
+        for line in ev.log[-40:]:
+            print(line)
     return 1 if summary["failed"] else 0
 
 
