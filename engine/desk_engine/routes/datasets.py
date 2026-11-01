@@ -77,7 +77,11 @@ async def export_csv(ctx: Ctx) -> Response:
 
 @router.post("/api/w/{ws}/query", role="viewer", body=QuerySpec)
 async def query(ctx: Ctx) -> dict[str, Any]:
-    return run_query(ctx.engine, ctx.workspace, ctx.body)
+    import asyncio
+
+    # aggregation over a large ledger can take a while; it runs on its own connection in a thread so the event loop
+    # (and every other request and event stream) keeps going
+    return await asyncio.to_thread(run_query, ctx.engine, ctx.workspace, ctx.body)
 
 
 # --- import -------------------------------------------------------------------------------------------
@@ -133,14 +137,19 @@ async def _load(ctx: Ctx, upload_id: str, b: ShapeIn) -> tuple[importer.Table, s
         meta = json.loads(await ctx.engine.storage.get(f"uploads/{ctx.ws_id}/{upload_id}.json"))
     except NotFound as exc:
         raise NotFound("The uploaded file has expired. Upload it again.") from exc
-    tables = importer.read_workbook(data, meta["filename"])
-    table = next((t for t in tables if t.name == b.sheet), None) if b.sheet else tables[0]
-    if table is None:
-        raise NotFound("Sheet not found.")
-    shaped = importer.shape(table, header_row=b.header_row, decimal_comma=b.decimal_comma, date_order=b.date_order)
-    if b.unpivot:
-        shaped = importer.unpivot(shaped, b.unpivot.id_columns, b.unpivot.value_name, b.unpivot.variable_name)
-    return shaped, meta["filename"]
+    import asyncio
+
+    def parse() -> importer.Table:   # parsing and reshaping a 200,000-row file is CPU work: off the event loop
+        tables = importer.read_workbook(data, meta["filename"])
+        table = next((t for t in tables if t.name == b.sheet), None) if b.sheet else tables[0]
+        if table is None:
+            raise NotFound("Sheet not found.")
+        shaped = importer.shape(table, header_row=b.header_row, decimal_comma=b.decimal_comma, date_order=b.date_order)
+        if b.unpivot:
+            shaped = importer.unpivot(shaped, b.unpivot.id_columns, b.unpivot.value_name, b.unpivot.variable_name)
+        return shaped
+
+    return await asyncio.to_thread(parse), meta["filename"]
 
 
 @router.post("/api/w/{ws}/imports/{upload_id}/preview", role="editor", body=ShapeIn)
@@ -156,9 +165,12 @@ async def commit(ctx: Ctx) -> dict[str, Any]:
     if not shaped.rows:
         raise Invalid("There are no data rows to import with these settings.")
     name = (ctx.body.name or f"{filename.rsplit('.', 1)[0]} · {shaped.name}").strip()
-    ds = store.create_dataset(ctx.engine, ctx.ws_id, name=name, source="excel" if not filename.lower().endswith(".csv")
-                              else "csv", columns=[c.to_dict() for c in shaped.columns], rows=shaped.rows,
-                              source_ref={"filename": filename, "sheet": shaped.name}, created_by=ctx.user_id)
+    import asyncio
+
+    ds = await asyncio.to_thread(store.create_dataset, ctx.engine, ctx.ws_id, name=name,
+                                 source="excel" if not filename.lower().endswith(".csv") else "csv",
+                                 columns=[c.to_dict() for c in shaped.columns], rows=shaped.rows,
+                                 source_ref={"filename": filename, "sheet": shaped.name}, created_by=ctx.user_id)
     await ctx.engine.storage.delete(f"uploads/{ctx.ws_id}/{upload_id}")
     await ctx.engine.storage.delete(f"uploads/{ctx.ws_id}/{upload_id}.json")
     ctx.audit("dataset.import", ds["id"], {"filename": filename, "rows": ds["row_count"]})

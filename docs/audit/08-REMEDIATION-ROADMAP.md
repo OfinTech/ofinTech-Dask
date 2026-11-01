@@ -19,7 +19,7 @@ suite and the change is on `main`.
 | R9 | OB-12 IPC symmetry, OB-16 viewer upload switch, lockfiles, SHA-pinned actions, encrypted backups (DB-01), DB-02/03/06, IP pinning, `/metrics`, performance measurements | — | — | planned (see 07 §9 M4–M7) |
 | R10 | Threat model (03), DB review (04), API review (05), AI testing (06), target architecture (07), readiness (10) | this commit | — | done; readiness is a living document |
 
-Engine suite after R8 (part 1): **220 tests, all passing** (182 before the audit; 38 added, 1 rewritten). CI: the `security` job is green on `main` (gitleaks, ruff S, pip-audit, npm audit); the Trivy image scan runs from fa391df on.
+Engine suite after R9 (part 1): **221 tests, all passing** (182 before the audit; 39 added, 1 rewritten). CI on `main` (run for 443eca5): `security`, `test` and `team-server-image` (Trivy) green.
 
 ## Implementation record
 
@@ -98,6 +98,13 @@ Each entry: reason, components, compatibility, verification.
 - **Compatibility:** an editor's new skill now starts off (admins turn it on); a custom skill cannot take a
   built-in's name (the UI already names copies `<name>-custom`).
 - **Verification:** `OB09SkillsNeedAnAdmin`; 13 AI security tests; full suite 220 OK; CI security job green.
+
+### R9 (part 1) — 76496d2, this commit · MCP rate limit, WAL checkpoint, IPC senders, heavy work off the loop
+- **Components:** `mcp_server.py` (`_AuthWrapper` limiter), `db.py` (`checkpoint`), `app.py` (scheduler),
+  `desktop/src/main.ts` (`trustedSender`, `isSetupPage`), `routes/datasets.py`, `agent/data_tools.py`.
+- **Compatibility:** none visible; MCP clients above 120 requests a minute get 429.
+- **Verification:** `OB18MCPEndpointRateLimit`; full suite 221 OK; desktop typecheck in CI; benchmark in document 10
+  (200k rows: 2.7 s commit, queries ≤ 110 ms, `/health` < 1 ms afterwards).
 
 ## Accepted security exceptions
 
