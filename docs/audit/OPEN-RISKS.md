@@ -6,6 +6,10 @@ named; it is not closed. Findings that are closed with evidence are in `SECURITY
 
 ## Accepted risks
 
+Owner sign-off: **pending**. The review dates and mitigations were set by the audit; the repository holds no written
+acceptance by the owner yet. Each row stands as "accepted by the audit on the owner's behalf" until the owner records
+a decision here (keep, reject, or change the review date).
+
 | ID | Risk | Owner | Business impact | Mitigation in place | Review |
 |---|---|---|---|---|---|
 | AR-1 | **Single-process engine.** One engine container per deployment; a restart drops open streams and marks running agent runs as interrupted; no horizontal scaling. | repository owner | availability only; no data loss (runs and approvals are persisted and resume; workflow runs in `running` resume, agent runs are marked and can be re-asked) | Docker restart policy; health check; documented trigger for the PostgreSQL/Redis design (document 07 §9 M8) | 2027-02-01 or on the first customer needing > 1 replica |
@@ -30,9 +34,16 @@ named; it is not closed. Findings that are closed with evidence are in `SECURITY
 | OP-5 | Reviewer-manipulation case for the AI suite; a larger malicious-document corpus | R8 | 2026-12-15 |
 | OP-6 | Independent penetration test of a staged deployment | engage a third party | before the first regulated customer |
 | OP-8 | **Intermittent stall of the engine test suite** (not of the product). Seen once locally and in three CI runs on identical code (68770e0, f2ebc46, c06346c). The CI abort traceback on c06346c shows the event-loop thread *executing* `Knowledge.wait_idle` after twenty minutes — the `while tasks: await gather(tasks)` loop spinning on a finished task whose done-callback had not yet removed it. Fixed by waiting only on pending tasks and dropping finished ones (`Knowledge.wait_idle`, `FileService.wait_idle`); the tests now wait through `Harness.settle()`, which turns any stall into a failure naming the stuck tasks after 60 s. Not reproducible locally (25 runs of the indexing tests, 7 full-suite runs). | watch CI: close after ten consecutive clean `test` jobs; reopen on any `settle()` failure | 2026-11-15 |
+| OP-9 | Pending approvals never expire (AI-05): a late approval runs exactly the frozen arguments it showed, so the exposure is staleness, not substitution | expire agent approvals after 7 days; show the age on the approval card | 2026-12-15 |
+| OP-10 | Read-tool calls are not audit rows (AI-06); they persist as thread messages only | write `tool.run` for editor-gated read tools (`sync_accounting`, the creators, `prepare_month_end_close`) | 2026-12-15 |
+| OP-11 | Python dependencies pinned by version, not hash (SC-02) | `pip-compile --generate-hashes`; `pip install --require-hashes` in CI and the image | 2026-12-15 |
 | OP-7 | Dependabot alert 147 (moderate): `minimatch` 3.x/5.x in the desktop's **development** tree (electron-builder tooling); not shipped in the app and outside the CI gate (`--omit=dev --audit-level=high`) | add an `overrides` entry or bump electron-builder, regenerate the lockfile with the `lockfiles` workflow | 2026-11-15 |
 
 ## Closed since the previous report
+
+FIN-01 (viewer's assistant could create dashboards, generated files, editable copies, close runs and refresh
+accounting datasets without approval; tools now carry the role of their route, `097f9aa`) — evidence in
+`FINAL-AI-AGENT-SECURITY-ASSURANCE.md`.
 
 OB-08 (effects decided and implemented), OB-10 (MCP tool re-approval), OB-12 (automated desktop tests), DB-01
 (encrypted backups), lockfiles (OB-17), NEW-01/02 (oversight role, scoped lookups in the pages added on 1 Nov),
