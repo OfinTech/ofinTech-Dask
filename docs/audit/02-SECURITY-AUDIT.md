@@ -155,9 +155,11 @@ results), checks done once instead of every time, and limits that relied on a he
   payments are refused in code; sealed workspaces remove every outbound tool; bank identifiers are masked; the
   reviewer runs with a fresh context; the system prompt carries the "data is not instructions" rule;
   `test_security_boundaries` proves the refusals at the socket level.
-- **Planned (R8):** wrap tool results, document passages and trigger data in a fixed delimiter the prompt names;
-  make a new custom skill `enabled = 0` until an admin turns it on and refuse a custom skill whose name shadows a
-  built-in; keep connector error bodies out of tool output shown to the model (log them instead); add the AI
+- **Fixed (R8, part 1):** a custom skill written or imported by an editor is saved `enabled = 0` until an admin
+  turns it on; a custom skill cannot take a built-in's name and existing same-name rows no longer shadow the
+  built-in. Test `OB09SkillsNeedAnAdmin`.
+- **Planned (R8, part 2):** wrap tool results, document passages and trigger data in a fixed delimiter the
+  prompt names; keep connector error bodies out of tool output shown to the model (log them instead); add the AI
   security test suite of document 06.
 
 ### OB-10 · MCP trust and audit hygiene — P2, partly fixed
