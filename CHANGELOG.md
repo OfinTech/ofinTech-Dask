@@ -75,6 +75,9 @@ migrations are applied automatically on start-up and are never rewritten once re
 - `DESK_SMTP_SECURITY` accepts `starttls`, `ssl` or `none` only, and `none` cannot be combined with a login.
 - Audit entries for MCP servers keep the URL without its query string; Telegram transport errors never carry the
   bot token; formula parsers refuse deep nesting and absurd `ROUND` digits cleanly.
+- `python -m desk_engine backup` writes an AES-256-GCM `.desk-backup` under a separate backup key
+  (`DESK_BACKUP_KEY_FILE`); `restore` authenticates and integrity-checks a backup before writing it; `backup-check`
+  is a restore rehearsal. `backup.sh` uses them. `backup --plain` keeps the old unencrypted copy for one-off use.
 - CI: read-only workflow token, a `security` job (gitleaks, ruff security rules, pip-audit, npm audit) and a Trivy
   scan of the Team Server image gate the image and the release; the engine container drops all capabilities.
 

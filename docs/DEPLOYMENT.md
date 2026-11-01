@@ -120,12 +120,22 @@ database, and keep the master key separately.
 ## Backups
 
 ```bash
-./backup.sh            # consistent online copy -> backups/<timestamp>.sqlite3 + checksum
+python -m desk_engine keygen > backup.key     # once, on the machine that keeps the backups; chmod 600
+./backup.sh                                   # encrypted online copy -> backups/<timestamp>.desk-backup + checksum
+python -m desk_engine backup-check backups/<timestamp>.desk-backup --key-file backup.key   # restore rehearsal
 ```
 
-Copy backups off the server, encrypted. Store `DESK_MASTER_KEY` separately: without it, the stored credentials in a
-backup cannot be decrypted. Datasets, conversations and dashboards can still be read. To restore, stop the engine,
-put the file in the `desk_data` volume as `desk.sqlite3`, and start it again with the same master key.
+Backups are sealed with AES-256-GCM under a **backup key** that is separate from `DESK_MASTER_KEY`
+(`DESK_BACKUP_KEY_FILE` in `.env`, a Docker secret or a root-only file). Three things to keep apart: the backup
+files, the backup key (reads ledgers, documents' text and conversations), and the master key (reads the stored
+credentials and the encrypted files in storage). Anyone holding only the files holds ciphertext; a file that was
+altered will not open.
+
+Restore rehearsal: `backup-check` opens a backup, runs SQLite's integrity check and prints the schema version and
+row counts; do this on a schedule from the backup store, not from the server. To restore, stop the engine, run
+`python -m desk_engine restore <file> --key-file backup.key --to /var/lib/ofintech-desk/desk.sqlite3 --overwrite`
+and start the engine with the same master key the backup was taken under. `backup --plain` still writes an
+unencrypted copy for a one-off migration; do not schedule it.
 
 ## Upgrades
 
@@ -146,7 +156,8 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
       chosen under Settings → Models.
 - [ ] OAuth apps registered for the systems you use; tested against a sandbox company first.
 - [ ] File storage decided (data volume or S3/MinIO with engine-side encryption on).
-- [ ] `backup.sh` scheduled (cron) and a restore tested on another machine; bucket versioning on if you use S3.
+- [ ] `backup.key` generated and stored apart from the server and from `DESK_MASTER_KEY`; `backup.sh` scheduled (cron);
+      `backup-check` scheduled from the backup store and a full restore tested on another machine; bucket versioning on if you use S3.
 - [ ] Monitoring: the container health check (`/health`), disk space of the `desk_data` volume, and the audit log
       (Settings → Audit log) reviewed by an administrator.
 - [ ] Firewall: only ports 80 and 443 open; the MinIO console stays on `127.0.0.1`.
@@ -174,6 +185,7 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
 | `DESK_LOG_LEVEL` | `INFO` | Engine log level |
 | `DESK_STORAGE` | `local` | `local` (data volume) or `s3` |
 | `DESK_STORAGE_ENCRYPTION` | `true` | Encrypt files in the engine before storing them |
+| `DESK_BACKUP_KEY_FILE` | — | File holding the backup key for `backup`, `restore` and `backup-check` (see Backups) |
 | `DESK_STORAGE_ALLOW_PLAINTEXT` | `false` | Read files that were stored before encryption was on. Set it only while you run `python -m desk_engine storage-encrypt` once (it rewrites such files encrypted), then remove it: a file the engine cannot authenticate is otherwise refused |
 | `DESK_S3_ENDPOINT` | AWS in the region | e.g. `http://minio:9000`, `https://<account>.r2.cloudflarestorage.com` |
 | `DESK_S3_REGION` | `us-east-1` | Signing region |

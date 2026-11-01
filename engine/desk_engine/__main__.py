@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import base64
 import logging
+import os
 import secrets
 import socket
 import sys
@@ -80,27 +81,64 @@ async def migrate_local_files(settings: object) -> int:
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="desk_engine", description="OfinTech Desk engine")
     parser.add_argument("command", nargs="?", default="serve",
-                        choices=["serve", "keygen", "check", "backup", "storage-migrate", "storage-encrypt"])
-    parser.add_argument("target", nargs="?", help="backup: destination file")
+                        choices=["serve", "keygen", "check", "backup", "restore", "backup-check", "storage-migrate",
+                                 "storage-encrypt"])
+    parser.add_argument("target", nargs="?", help="backup: destination file; restore/backup-check: the backup file")
+    parser.add_argument("--key-file", help="backup, restore, backup-check: file holding the backup key (base64, 32 bytes); "
+                                           "or set DESK_BACKUP_KEY_FILE")
+    parser.add_argument("--to", help="restore: where to write the database (default: the configured database path)")
+    parser.add_argument("--overwrite", action="store_true", help="restore: replace an existing database file")
+    parser.add_argument("--plain", action="store_true", help="backup: write an unencrypted .sqlite3 copy (not recommended)")
     args = parser.parse_args(argv)
     if args.command == "keygen":
         print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
         return
-    if args.command == "backup":
-        import sqlite3
+    if args.command in {"backup", "restore", "backup-check"}:
+        from pathlib import Path
 
+        from . import backup as bk
         from .config import load_settings
 
         s = load_settings()
         if not args.target:
-            raise SystemExit("usage: desk_engine backup <destination.sqlite3>")
-        src = sqlite3.connect(s.db_path)
-        dst = sqlite3.connect(args.target)
-        with dst:
-            src.backup(dst)  # consistent online copy while the engine runs
-        dst.close()
-        src.close()
-        print(f"backup written to {args.target} (encrypted secrets need the same DESK_MASTER_KEY to be read)")
+            raise SystemExit(f"usage: desk_engine {args.command} <file> --key-file <backup.key>")
+        try:
+            if args.command == "backup" and args.plain:
+                import sqlite3
+
+                src = sqlite3.connect(s.db_path)
+                dst = sqlite3.connect(args.target)
+                with dst:
+                    src.backup(dst)  # consistent online copy while the engine runs
+                dst.close()
+                src.close()
+                print(f"unencrypted backup written to {args.target}: anyone with the file reads every ledger and "
+                      "conversation; prefer an encrypted backup with --key-file")
+                return
+            key_path = args.key_file or os.environ.get("DESK_BACKUP_KEY_FILE", "")
+            if not key_path:
+                raise bk.BackupError("A backup key is required: --key-file <path> or DESK_BACKUP_KEY_FILE. Make one with "
+                                     "`python -m desk_engine keygen` and keep it apart from the server and from DESK_MASTER_KEY.")
+            key = bk.read_key_file(key_path)
+            if args.command == "backup":
+                target = Path(args.target)
+                if not target.name.endswith(bk.SUFFIX):
+                    target = target.with_name(target.name + bk.SUFFIX)
+                info = bk.write_backup(s.db_path, target, key)
+                print(f"encrypted backup written to {target} ({info['bytes']:,} bytes; schema {info['schema_version']}, "
+                      f"{info.get('workspaces', 0)} workspaces, {info.get('datasets', 0)} datasets). Keep the backup key "
+                      "apart from the file; DESK_MASTER_KEY is still needed to read stored credentials after a restore.")
+            elif args.command == "backup-check":
+                info = bk.inspect_backup(Path(args.target), key)
+                print(f"backup opens and passes the integrity check: schema {info['schema_version']}, " +
+                      ", ".join(f"{k} {v}" for k, v in info.items() if k != "schema_version"))
+            else:
+                target = Path(args.to) if args.to else s.db_path
+                info = bk.restore_backup(Path(args.target), target, key, overwrite=args.overwrite)
+                print(f"restored to {target}: schema {info['schema_version']}, {info.get('workspaces', 0)} workspaces. "
+                      "Start the engine with the same DESK_MASTER_KEY the backup was taken under.")
+        except bk.BackupError as exc:
+            raise SystemExit(str(exc)) from None
         return
     if args.command == "storage-migrate":
         from .config import load_settings
