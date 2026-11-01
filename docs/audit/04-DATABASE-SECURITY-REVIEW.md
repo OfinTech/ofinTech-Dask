@@ -34,7 +34,7 @@ tables, backups, and whether SQLite remains the right choice for each deployment
 | DB-03 | P3 | No periodic `wal_checkpoint`; with long-lived connections the WAL can grow between automatic checkpoints under write load. | open — add `PRAGMA wal_checkpoint(TRUNCATE)` to the scheduler every few hours (R9) |
 | DB-04 | P3 | Dataset tables live in the application database; a 400k-line import inflates the same file that holds sessions and secrets and is copied by every backup. | accepted for 1.x; see §4 |
 | DB-05 | P3 | `secrets.workspace_id` is nullable (app-level OAuth credentials) and has no FK; `SecretStore.get` compares it, so isolation holds, but the schema does not say so. | accepted; documented here |
-| DB-06 | P3 | No data-retention policy or secure deletion: deleting a document removes the row and the object but leaves FTS tokens until the index is rebuilt; deleted chat remains in `messages_fts` until vacuum. | open (R9: delete FTS rows in the same transaction, `PRAGMA secure_delete` on the desktop database) |
+| DB-06 | P3 | No data-retention policy or secure deletion. FTS indexes are kept in step by triggers (`doc_chunks_ad`, `messages_fts_ad`, `memories_ad`), so deleted rows leave the index at once; freed pages, however, keep their bytes in the file until overwritten or vacuumed. | open (R9: `PRAGMA secure_delete` on the desktop database, a retention setting per workspace) |
 | DB-07 | info | `users.email` is `COLLATE NOCASE UNIQUE`; sign-in lower-cases; Google sign-in links by `google_sub` first. Sound. | — |
 | DB-08 | info | Temporary files: dataset upload spool is stored in encrypted storage under `uploads/{ws}/{id}` with a 1-hour expiry evaluated on the next upload; OCR uses `TemporaryDirectory` on a tmpfs after R6. Sound. | — |
 
@@ -96,5 +96,5 @@ the UI shows the user their own data), and it is documented in `docs/DATA_BOUNDA
 1. DB-01: encrypted backups (owner decision on key management).
 2. DB-02: `to_thread` for dataset query and import commit; measure with the 400k-line fixture (R9 performance).
 3. DB-03: scheduled WAL checkpoint.
-4. DB-06: delete FTS rows with their documents and messages; `secure_delete` on the desktop database.
+4. DB-06: `secure_delete` on the desktop database; a retention setting per workspace.
 5. Document the PostgreSQL trigger conditions in 07 and keep the access layer free of SQLite-only SQL.
