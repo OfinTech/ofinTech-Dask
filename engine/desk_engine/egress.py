@@ -250,7 +250,9 @@ class SealedTransport(httpx.AsyncBaseTransport):
 
 # ---- bank identifiers the model never needs in full ----------------------------------------------------------------
 _SEP = r"[ \u00a0\-.]?"
-_IBAN = re.compile(rf"(?<![A-Za-z0-9])([A-Za-z]{{2}}\d{{2}})((?:{_SEP}[A-Za-z0-9]{{4}}){{2,7}}(?:{_SEP}\d{{1,4}})?)", re.I)
+# An IBAN is never part of a longer identifier: the engine's own ids (doc_…, ds_…, run_…) are random hex after an
+# underscore and must not be masked, or the model could not refer to them.
+_IBAN = re.compile(rf"(?<![A-Za-z0-9_])([A-Za-z]{{2}}\d{{2}})((?:{_SEP}[A-Za-z0-9]{{4}}){{2,7}}(?:{_SEP}\d{{1,4}})?)", re.I)
 _CARD = re.compile(r"(?<![\d.,])[2-6]\d{3}(?:[ \u00a0\-.]?\d){9,15}(?![\d]|[.,]\d\d?(?!\d))")
 
 

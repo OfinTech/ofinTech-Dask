@@ -446,5 +446,20 @@ class OB08AgentIsolation(unittest.TestCase):
             h.close()
 
 
+class OB19MaskingKeepsEngineIds(unittest.TestCase):
+    """The bank-identifier masker must not eat the engine's own ids (seen as a CI failure: a document id that happened
+    to look like an IBAN was masked, so the model could not refer to the attached file)."""
+
+    def test_ids_survive_and_ibans_are_still_masked(self) -> None:
+        from desk_engine.egress import mask_bank_identifiers as mask
+
+        for ident in ("doc_ee966b3bb71e4f929f4a", "ds_ab12cd34ef56ab78cd90", "run_de44500105175407324931"):
+            self.assertEqual(mask(f"see {ident}; readable"), f"see {ident}; readable")
+            self.assertEqual(mask(f"(document id {ident})"), f"(document id {ident})")
+        self.assertEqual(mask("IBAN DE44 5001 0517 5407 3249 31 please"), "IBAN DE44 **** 4931 please")
+        self.assertEqual(mask("to SA0380000000608010167519"), "to SA03 **** 7519")
+        self.assertEqual(mask("ref XY99abcd"), "ref XY99abcd")   # too short to be an IBAN
+
+
 if __name__ == "__main__":
     unittest.main()
