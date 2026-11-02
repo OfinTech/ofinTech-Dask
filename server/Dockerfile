@@ -8,7 +8,7 @@ RUN npm ci --no-audit --no-fund
 COPY ui/ ./
 RUN node build.mjs
 
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 # Tesseract OCR (Apache-2.0) for scanned PDFs and images, with English, Arabic, Spanish and French
 RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-ara \
