@@ -7,6 +7,19 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A real-data benchmark kit** (`tools/benchmark/`): the model's 97.3 was scored on examples from the same
+  generator it was trained on, which measures fit to that generator rather than ability on a Saudi bank statement —
+  and two skills fell inside that same run (safety 92.2 → 89.1, ranking the largest overdue customer 91.2 → 83.8).
+  This kit replaces that figure with one worth quoting. `ofinbench` de-identifies a statement or a close with keyed
+  pseudonyms that stay stable across documents, then proves its own output clean by comparing it against the
+  original and deleting any file that still carries a value from it; refuses a corpus root inside a git work tree,
+  so client data cannot be committed by accident; validates each case the way a reviewer checks a working paper
+  (the statement must foot, the trial balance must balance, the reported figures must follow from the roles);
+  generates the questions in Arabic and English against one expected answer; and scores any model through a
+  callable the caller names, so nothing here binds to a vendor. Grading is exact to the halala with a
+  rounded-to-the-riyal allowance, reads Arabic-Indic digits and every common separator, accepts either correct form
+  of the remaining-budget answer, and returns `review` rather than a pass where a refusal is unclear. Not wired
+  into the product: `make bench-test` runs its 103 tests, and PDFs are never rewritten in place.
 - **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
   and the three limits that make the answer worth having — type and motion on the brand field, no screen
   recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about

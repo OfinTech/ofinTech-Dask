@@ -1,0 +1,14 @@
+# Nothing from a client belongs in this repository. The tools refuse a corpus root inside a git work tree, so this
+# file is the second line rather than the first -- it catches a file copied here by hand.
+*.key
+keys/
+cases/
+runs/
+items/
+originals/
+*.csv
+*.tsv
+*.xlsx
+*.xlsm
+*.pdf
+!templates/*

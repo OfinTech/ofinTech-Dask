@@ -1,7 +1,10 @@
-.PHONY: test ui engine desktop smoke server
+.PHONY: test ui engine desktop smoke server bench-test
 
 test:            ## engine unit and integration tests
 	cd engine && python -m unittest discover -s tests -t .
+
+bench-test:      ## tests for the real-data benchmark kit (tools/benchmark)
+	cd tools/benchmark && python -m unittest discover -s tests -t . -q
 
 ui:              ## build the UI into ui/dist
 	cd ui && node build.mjs

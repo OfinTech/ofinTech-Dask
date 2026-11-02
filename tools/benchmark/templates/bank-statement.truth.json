@@ -1,0 +1,27 @@
+{
+  "case_id": "bs-000-example",
+  "kind": "bank-statement",
+  "meta": {
+    "bank": "Bank A",
+    "language": "ar",
+    "source_format": "pdf-text",
+    "quality": "clean",
+    "notes": "Replace every figure with the de-identified statement's own. Keep this file beside source/.",
+    "consent": "UNRECORDED",
+    "deidentified": false
+  },
+  "account": { "iban": "SA0000000000000000000000", "number": "000000000000", "currency": "SAR", "holder": "Client A" },
+  "period": { "start": "2026-03-01", "end": "2026-03-31" },
+  "balances": { "opening": 125000.00, "closing": 196085.25 },
+  "totals": { "credits": 156250.50, "debits": 85165.25, "transaction_count": 8, "fees": 1185.00 },
+  "lines": [
+    { "date": "2026-03-02", "description": "تحويل وارد - دفعة عميل", "credit": 48500.00, "debit": 0, "balance": 173500.00, "counterparty": "Oasis Trading Co.", "category": "customer-receipt" },
+    { "date": "2026-03-05", "description": "تحويل صادر - مورد", "credit": 0, "debit": 12300.00, "balance": 161200.00, "counterparty": "Palmgate Logistics LLC", "category": "supplier-payment" },
+    { "date": "2026-03-08", "description": "رسوم تحويل", "credit": 0, "debit": 35.00, "balance": 161165.00, "counterparty": null, "category": "fee" },
+    { "date": "2026-03-12", "description": "تحويل وارد - دفعة عميل", "credit": 92750.50, "debit": 0, "balance": 253915.50, "counterparty": "Meridian Supplies Co.", "category": "customer-receipt" },
+    { "date": "2026-03-18", "description": "رواتب مارس", "credit": 0, "debit": 64200.00, "balance": 189715.50, "counterparty": null, "category": "payroll" },
+    { "date": "2026-03-22", "description": "فاتورة كهرباء ومياه", "credit": 0, "debit": 7480.25, "balance": 182235.25, "counterparty": null, "category": "utilities" },
+    { "date": "2026-03-26", "description": "استرداد مبلغ", "credit": 15000.00, "debit": 0, "balance": 197235.25, "counterparty": "Highline Contracting Est.", "category": "refund" },
+    { "date": "2026-03-30", "description": "رسوم خدمات بنكية", "credit": 0, "debit": 1150.00, "balance": 196085.25, "counterparty": null, "category": "fee" }
+  ]
+}

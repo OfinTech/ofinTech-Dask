@@ -44,6 +44,7 @@ cd engine && python -m unittest discover -s tests -t .      # engine tests
 cd ui && npx tsc --noEmit && npm run i18n:check             # UI types and translations
 cd desktop && npx tsc --noEmit -p tsconfig.json             # desktop shell
 python e2e/ui_smoke.py                                      # browser smoke test (after building the UI)
+make bench-test                                             # the real-data benchmark kit, if you touched it
 ```
 
 - Add tests for new behaviour; tests use mocked HTTP (`tests/helpers.py`), never live services.

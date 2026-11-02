@@ -1,0 +1,54 @@
+{
+  "case_id": "mc-000-example",
+  "kind": "monthly-close",
+  "meta": {
+    "entity": "Client A",
+    "language": "mixed",
+    "source_format": "xlsx",
+    "quality": "clean",
+    "notes": "The role on every trial-balance row is the accountant's judgement and is what the scorer trusts.",
+    "consent": "UNRECORDED",
+    "deidentified": false
+  },
+  "currency": "SAR",
+  "period": { "start": "2026-03-01", "end": "2026-03-31" },
+  "trial_balance": [
+    { "account": "1010", "name": "النقد في البنك / Cash at bank", "debit": 196085.25, "credit": 0, "role": "cash" },
+    { "account": "1210", "name": "ذمم مدينة / Trade receivables", "debit": 620400.00, "credit": 0, "role": "ar" },
+    { "account": "2010", "name": "ذمم دائنة / Trade payables", "debit": 0, "credit": 148900.00, "role": "ap" },
+    { "account": "3010", "name": "رأس المال / Capital", "debit": 0, "credit": 400000.00, "role": "equity" },
+    { "account": "3020", "name": "أرباح مبقاة / Retained earnings", "debit": 0, "credit": 124450.50, "role": "equity" },
+    { "account": "4100", "name": "المبيعات / Sales", "debit": 0, "credit": 520000.00, "role": "revenue" },
+    { "account": "5100", "name": "تكلفة المبيعات / Cost of sales", "debit": 286000.00, "credit": 0, "role": "cogs" },
+    { "account": "6100", "name": "الرواتب / Salaries", "debit": 64200.00, "credit": 0, "role": "opex" },
+    { "account": "6200", "name": "الإيجار / Rent", "debit": 18000.00, "credit": 0, "role": "opex" },
+    { "account": "6300", "name": "كهرباء ومياه / Utilities", "debit": 7480.25, "credit": 0, "role": "opex" },
+    { "account": "6400", "name": "مصاريف بنكية / Bank charges", "debit": 1185.00, "credit": 0, "role": "opex" }
+  ],
+  "reported": {
+    "revenue": 520000.00, "cogs": 286000.00, "gross_profit": 234000.00,
+    "opex": 90865.25, "net_profit": 143134.75, "cash": 196085.25
+  },
+  "budget": [
+    { "account": "4100", "amount": 500000.00 },
+    { "account": "5100", "amount": 275000.00 },
+    { "account": "6100", "amount": 65000.00 },
+    { "account": "6200", "amount": 18000.00 },
+    { "account": "6300", "amount": 6500.00 },
+    { "account": "6400", "amount": 1000.00 }
+  ],
+  "receivables": [
+    { "customer": "Highline Contracting Est.", "invoice": "INV-2891", "due": "2026-01-15", "amount": 96500.00 },
+    { "customer": "Oasis Trading Co.", "invoice": "INV-2954", "due": "2026-02-10", "amount": 182400.00 },
+    { "customer": "Palmgate Logistics LLC", "invoice": "INV-3012", "due": "2026-02-28", "amount": 143750.00 },
+    { "customer": "Meridian Supplies Co.", "invoice": "INV-3105", "due": "2026-03-20", "amount": 88900.00 },
+    { "customer": "Northwind Industries", "invoice": "INV-3140", "due": "2026-03-25", "amount": 108850.00 }
+  ],
+  "checklist": [
+    { "item": "استحقاق إيجار مارس", "status": "done", "amount": 18000.00 },
+    { "item": "تسوية الحساب البنكي", "status": "done", "amount": null },
+    { "item": "استحقاق فاتورة الكهرباء", "status": "done", "amount": 7480.25 },
+    { "item": "قيد الإهلاك", "status": "open", "amount": null },
+    { "item": "مصادقة الأطراف ذات العلاقة", "status": "open", "amount": null }
+  ]
+}
