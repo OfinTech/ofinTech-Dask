@@ -119,8 +119,7 @@ class Evidence:
                             if it.get("document_id") else it.get("link"))
                     title = f"{it.get('name')}" + (f", page {it['page']}" if it.get("page") else "")
                     items.append(Item(f"doc:{it.get('document_id') or it.get('link')}:{it.get('page')}", "passage", title,
-                                      "PipesHub" if it.get("source") == "pipeshub" else "Documents", r["created_at"], link,
-                                      _lines(body), 2))
+                                      "Documents", r["created_at"], link, _lines(body), 2))
                 continue
             fmt = {k: (v if not isinstance(v, (dict, list)) else "…") for k, v in args.items()}
             fmt.setdefault("report", "Report")

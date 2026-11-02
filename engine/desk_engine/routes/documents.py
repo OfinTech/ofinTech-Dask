@@ -1,4 +1,4 @@
-"""Document knowledge base: collections, upload (also chat attachments), search, download, settings, PipesHub."""
+"""Document knowledge base: collections, upload (also chat attachments), search, download, settings."""
 
 from __future__ import annotations
 
@@ -10,8 +10,6 @@ from starlette.responses import Response
 from ..db import dumps, new_id, now
 from ..errors import Conflict, Invalid, NotFound
 from ..knowledge.embed import Embedder
-from ..knowledge.pipeshub import SCOPES, PipesHub
-from ..security import check_outbound_url
 from ..web import Ctx, Router
 
 router = Router()
@@ -29,7 +27,6 @@ async def collections(ctx: Ctx) -> list[dict[str, Any]]:
 class CollectionIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     description: str = Field(default="", max_length=500)
-    sync_pipeshub: bool = False
 
 
 @router.post("/api/w/{ws}/collections", role="editor", body=CollectionIn)
@@ -40,7 +37,7 @@ async def add_collection(ctx: Ctx) -> dict[str, Any]:
         raise Conflict("A collection with this name exists.")
     cid = new_id("col_")
     ctx.engine.db.insert("doc_collections", {"id": cid, "workspace_id": ctx.ws_id, "name": b.name.strip(),
-                                             "description": b.description, "sync_pipeshub": int(b.sync_pipeshub),
+                                             "description": b.description,
                                              "created_by": ctx.user_id, "created_at": now()})
     ctx.audit("collection.create", cid)
     return ctx.engine.db.one("SELECT * FROM doc_collections WHERE id = ?", (cid,))
@@ -50,13 +47,9 @@ async def add_collection(ctx: Ctx) -> dict[str, Any]:
 async def edit_collection(ctx: Ctx) -> dict[str, Any]:
     cid = ctx.request.path_params["cid"]
     b: CollectionIn = ctx.body
-    if not ctx.engine.db.update("doc_collections", cid, {"name": b.name.strip(), "description": b.description,
-                                                         "sync_pipeshub": int(b.sync_pipeshub)}, workspace_id=ctx.ws_id):
+    if not ctx.engine.db.update("doc_collections", cid, {"name": b.name.strip(), "description": b.description},
+                                workspace_id=ctx.ws_id):
         raise NotFound("Collection not found.")
-    if b.sync_pipeshub:  # send existing documents
-        for d in ctx.engine.db.all("SELECT id FROM documents WHERE collection_id = ? AND status = 'indexed' AND "
-                                   "(pipeshub_status IS NULL OR pipeshub_status != 'sent')", (cid,)):
-            ctx.engine.knowledge._spawn(ctx.engine.knowledge.push_to_pipeshub(ctx.ws_id, d["id"]))
     return ctx.engine.db.one("SELECT * FROM doc_collections WHERE id = ?", (cid,))
 
 
@@ -137,7 +130,6 @@ async def edit_document(ctx: Ctx) -> dict[str, Any]:
     if ctx.body.name:
         values["name"] = ctx.body.name.strip()
     ctx.engine.db.update("documents", did, values, workspace_id=ctx.ws_id)
-    ctx.engine.knowledge._spawn(ctx.engine.knowledge.push_to_pipeshub(ctx.ws_id, did))
     return ctx.engine.knowledge.get(ctx.ws_id, did)
 
 
@@ -177,26 +169,16 @@ async def search(ctx: Ctx) -> list[dict[str, Any]]:
     return await ctx.engine.knowledge.search(ctx.workspace, b.query, top_k=b.top_k, collection_id=b.collection_id)
 
 
-# --- settings: embeddings and PipesHub ------------------------------------------------------------------------
+# --- settings: embeddings ------------------------------------------------------------------------
 
 
 @router.get("/api/w/{ws}/knowledge/settings", role="viewer")
 async def settings(ctx: Ctx) -> dict[str, Any]:
-    ph = ctx.engine.db.one("SELECT id, label, status, config, last_error FROM connections WHERE workspace_id = ? AND "
-                           "provider = 'pipeshub'", (ctx.ws_id,))
     stats = ctx.engine.db.one("SELECT COUNT(*) AS documents, COALESCE(SUM(chunks), 0) AS chunks, "
                               "COALESCE(SUM(embedded), 0) AS embedded FROM documents WHERE workspace_id = ? AND "
                               "status = 'indexed'", (ctx.ws_id,))
-    if ph:
-        from ..db import loads
-
-        cfg = loads(ph.pop("config"), {})
-        ph.update({k: cfg.get(k) for k in ("base_url", "kb_id", "kb_name", "send")})
-        ph["include_other_sources"] = bool(cfg.get("include_other_sources"))
-        ph["sent"] = ctx.engine.db.scalar("SELECT COUNT(*) FROM documents WHERE workspace_id = ? AND "
-                                          "pipeshub_status = 'sent'", (ctx.ws_id,))
     return {"embedding_provider_id": ctx.workspace.get("embedding_provider_id"),
-            "embedding_model": ctx.workspace.get("embedding_model"), "pipeshub": ph, "stats": stats,
+            "embedding_model": ctx.workspace.get("embedding_model"), "stats": stats,
             "mode": "hybrid" if ctx.workspace.get("embedding_model") else "keyword"}
 
 
@@ -221,70 +203,6 @@ async def set_embeddings(ctx: Ctx) -> dict[str, Any]:
         ctx.workspace.update(ws)
         queued = ctx.engine.knowledge.reembed_all(ctx.ws_id)
     return {"model": b.model, "dimensions": dims, "documents_queued": queued}
-
-
-class PipesHubIn(BaseModel):
-    base_url: str = Field(min_length=8, max_length=500, description="e.g. https://pipeshub.example.com")
-    token: str | None = Field(default=None, min_length=8, max_length=4000, description="personal access token phpat_…")
-    kb_id: str | None = Field(default=None, max_length=80, description="existing knowledge base; empty = create one")
-    send: Literal["all", "collections"] = "all"
-    include_other_sources: bool = False
-
-
-@router.post("/api/w/{ws}/connections/pipeshub", role="admin", body=PipesHubIn)
-async def connect_pipeshub(ctx: Ctx) -> dict[str, Any]:
-    from ..db import loads
-
-    b: PipesHubIn = ctx.body
-    url = b.base_url.strip().rstrip("/").removesuffix("/api/v1")
-    check_outbound_url(url, allow_private=ctx.engine.settings.allow_private_network_urls,
-                       allow_http=ctx.engine.settings.allow_private_network_urls)
-    existing = ctx.engine.db.one("SELECT * FROM connections WHERE workspace_id = ? AND provider = 'pipeshub'", (ctx.ws_id,))
-    token = (b.token or "").strip()
-    if not token:
-        if not existing:
-            raise Invalid("Enter a PipesHub personal access token.")
-        token = ctx.engine.secrets.get(existing["secret_id"], workspace_id=ctx.ws_id)["token"]
-    old = loads(existing["config"], {}) if existing else {}
-    client = PipesHub(ctx.engine, base_url=url, token=token, ws_id=ctx.ws_id)
-    await client.check()  # address and token
-    kb_id = (b.kb_id or "").strip() or (old.get("kb_id") if old.get("base_url") == url else None)
-    if kb_id:
-        kb_name = await client.kb_name(kb_id)
-    else:
-        kb_name = f"OfinTech Desk · {ctx.workspace['name']}"[:255]  # type: ignore[index]
-        kb_id = await client.create_kb(kb_name)
-    cid = existing["id"] if existing else new_id("cn_")
-    sid = ctx.engine.secrets.put("connection", {"token": token}, workspace_id=ctx.ws_id, secret_id=f"sec_{cid}")
-    config = {"base_url": url, "kb_id": kb_id, "kb_name": kb_name, "send": b.send,
-              "include_other_sources": b.include_other_sources}
-    row = {"id": cid, "workspace_id": ctx.ws_id, "provider": "pipeshub", "label": f"PipesHub: {url.split('//')[-1][:60]}",
-           "status": "connected", "config": dumps(config), "secret_id": sid, "created_by": ctx.user_id,
-           "created_at": now(), "last_error": None}
-    if existing:
-        ctx.engine.db.update("connections", cid, {k: row[k] for k in ("label", "status", "config", "secret_id",
-                                                                      "last_error")}, workspace_id=ctx.ws_id)
-    else:
-        ctx.engine.db.insert("connections", row)
-    if existing and old.get("kb_id") != kb_id:  # another knowledge base: send everything again
-        ctx.engine.db.execute("UPDATE documents SET pipeshub_status = NULL, pipeshub_record_id = NULL "
-                              "WHERE workspace_id = ?", (ctx.ws_id,))
-    queued = 0
-    for d in ctx.engine.db.all("SELECT id FROM documents WHERE workspace_id = ? AND status IN ('indexed','failed') AND "
-                               "(pipeshub_status IS NULL OR pipeshub_status != 'sent')", (ctx.ws_id,)):
-        ctx.engine.knowledge._spawn(_send_existing(ctx.engine, ctx.ws_id, d["id"]))
-        queued += 1
-    ctx.audit("connection.connected", cid, {"provider": "pipeshub", "kb_id": kb_id, "send": b.send,
-                                            "include_other_sources": b.include_other_sources})
-    return {"id": cid, "kb_id": kb_id, "kb_name": kb_name, "documents_queued": queued, "scopes": SCOPES}
-
-
-async def _send_existing(engine: Any, ws_id: str, doc_id: str) -> None:
-    doc = engine.knowledge.get(ws_id, doc_id)
-    if doc["status"] == "failed":  # e.g. a scanned PDF: PipesHub may read it with OCR
-        await engine.knowledge.process(ws_id, doc_id)
-    else:
-        await engine.knowledge.push_to_pipeshub(ws_id, doc_id)
 
 
 # --- collections that follow a Google Drive folder --------------------------------------------------------

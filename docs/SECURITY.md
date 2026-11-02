@@ -127,9 +127,7 @@
 **Documents.**
 - Original files are stored with owner-only permissions and are downloaded as attachments, never rendered by the
   app. Searches and passages are filtered by workspace.
-- Each workspace has its own PipesHub knowledge base, and every search is filtered to it. Results whose record belongs
-  to another workspace are dropped as a second check. Content from PipesHub's other sources is opt-in and admin-only.
-- The PipesHub token is stored encrypted, like other credentials. Use a token with only the five scopes listed in
+- Connector tokens are stored encrypted, like other credentials. Use a token with only the scopes listed in
   docs/KNOWLEDGE.md and a bounded expiry.
 - Chat attachments go through the same checks as uploads: allowed types, size limit, encrypted storage, and
   workspace checks on the document ids sent with a message.

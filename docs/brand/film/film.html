@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OfinTech — 90s</title>
+<style>
+@font-face { font-family: "Inter"; src: url("../../../site/assets/fonts/InterVariable.woff2") format("woff2-variations"); font-weight: 100 900; }
+@font-face { font-family: "Plex"; src: url("../../../site/assets/fonts/IBMPlexSansArabic-Regular.woff") format("woff"); font-weight: 400; }
+@font-face { font-family: "Plex"; src: url("../../../site/assets/fonts/IBMPlexSansArabic-SemiBold.woff") format("woff"); font-weight: 600; }
+
+:root {
+  --navy: #14243A; --navy-deep: #0C1726; --blue: #2563EB; --blue-2: #3B82F6;
+  --white: #FFFFFF; --mute: #8FA3BC; --green: #16A34A; --red: #F87171; --rule: rgba(255,255,255,.14);
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--navy-deep); }
+body { font-family: "Inter", sans-serif; color: var(--white); -webkit-font-smoothing: antialiased; }
+
+#stage { position: relative; width: 1920px; height: 1080px; background: var(--navy); overflow: hidden; }
+/* the brand mark is a frame holding a counter-square; the field echoes that geometry, far back */
+#stage::after { content: ""; position: absolute; width: 1180px; height: 1180px; right: -300px; top: -260px;
+  border: 1px solid rgba(255,255,255,.045); border-radius: 240px; transform: rotate(12deg); }
+#stage::before { content: ""; position: absolute; width: 640px; height: 640px; right: -40px; top: 40px;
+  border: 1px solid rgba(255,255,255,.04); border-radius: 132px; transform: rotate(12deg); }
+
+.scene { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
+.c { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; width: 1480px; }
+
+.fig { font-variant-numeric: tabular-nums; font-weight: 650; letter-spacing: -0.03em; }
+.huge { font-size: 132px; }
+.big { font-size: 60px; }
+.kicker { font-size: 30px; color: var(--mute); font-weight: 420; letter-spacing: .01em; }
+.head { font-size: 76px; font-weight: 640; letter-spacing: -0.025em; line-height: 1.12; }
+.head.sm { font-size: 60px; }
+.sub { font-size: 30px; color: var(--mute); font-weight: 420; margin-top: 26px; }
+
+/* ---- ledger wall ---- */
+#wall { position: absolute; inset: 0; }
+#wallRows { position: absolute; left: 50%; width: 1180px; margin-left: -590px; }
+.row { display: flex; justify-content: space-between; align-items: baseline; gap: 40px; padding: 16px 28px;
+  border-bottom: 1px solid var(--rule); font-size: 27px; }
+.row .acct { color: var(--mute); font-family: "Plex", "Inter", sans-serif; }
+.row .amt { font-variant-numeric: tabular-nums; font-weight: 560; color: #CBD8E8; }
+.row.hit { background: rgba(37,99,235,.16); border-bottom-color: rgba(59,130,246,.5); border-radius: 8px; }
+.row.hit .acct, .row.hit .amt { color: #fff; }
+.wallFade { position: absolute; left: 0; right: 0; height: 320px; pointer-events: none; }
+.wallFade.t { top: 0; background: linear-gradient(var(--navy), rgba(20,36,58,0)); }
+.wallFade.b { bottom: 0; background: linear-gradient(rgba(20,36,58,0), var(--navy)); }
+
+/* ---- brand ---- */
+.markWrap { display: flex; align-items: center; justify-content: center; }
+#mark { width: 150px; height: 150px; flex: none; }
+#wmWrap { overflow: hidden; width: 0; display: flex; align-items: center; }
+#wordmark { height: 58px; margin-left: 36px; max-width: none; }
+
+/* ---- question ---- */
+.ask { font-family: "Plex", "Inter", sans-serif; font-size: 50px; font-weight: 400; line-height: 1.35; color: #E6EDF6; }
+.cursor { display: inline-block; width: 3px; height: 50px; background: var(--blue-2); vertical-align: -8px; margin-left: 8px; }
+
+/* ---- answer card ---- */
+#card { position: absolute; left: 50%; top: 50%; width: 1080px; margin-left: -540px; background: #fff; color: #172033;
+  border-radius: 16px; padding: 46px 52px 40px; box-shadow: 0 40px 120px rgba(0,0,0,.42); }
+#card .asked { font-size: 25px; color: #64748B; padding-bottom: 26px; border-bottom: 1px solid #E2E8F0; }
+#card .line { display: flex; justify-content: space-between; align-items: baseline; gap: 36px; padding: 24px 0;
+  border-bottom: 1px solid #E2E8F0; }
+#card .what { font-size: 27px; color: #64748B; }
+#card .val { font-variant-numeric: tabular-nums; font-weight: 650; letter-spacing: -0.02em; font-size: 48px; direction: ltr; }
+#card .val.s { font-size: 36px; }
+#card .val.neg { color: #B91C1C; }
+#card .src { display: flex; align-items: center; gap: 18px; padding-top: 26px; font-size: 23px; color: #64748B; }
+#card .tick { color: #16A34A; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; }
+
+/* ---- limits ---- */
+.limits { width: 1180px; }
+.limit { display: flex; align-items: baseline; gap: 26px; padding: 32px 0; border-bottom: 1px solid var(--rule);
+  font-size: 50px; font-weight: 560; letter-spacing: -0.02em; text-align: left; }
+.limit i { width: 10px; height: 10px; border-radius: 2px; background: var(--blue-2); flex: none; transform: translateY(-12px); }
+
+.url { font-size: 38px; color: var(--mute); letter-spacing: .04em; margin-top: 34px; }
+#flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1. the hook -->
+  <div class="scene" id="s1"><div class="c">
+    <div class="fig huge" id="s1fig">0.00</div>
+    <div class="kicker" id="s1k" style="margin-top:34px">Where did this number come from?</div>
+  </div></div>
+
+  <!-- 2 + 3. the ledger wall, then one row -->
+  <div class="scene" id="s2">
+    <div id="wall"><div id="wallRows"></div></div>
+    <div class="wallFade t"></div><div class="wallFade b"></div>
+    <div class="c" id="s2cap" style="top:auto;bottom:86px;transform:translateX(-50%)">
+      <div class="kicker" id="s2capText">Somewhere among 124 entries.</div>
+    </div>
+  </div>
+  <div class="scene" id="s3"><div class="c">
+    <div class="head" id="s3h">The answer is in there.<br><span style="color:var(--mute);font-weight:420">Your afternoon isn't.</span></div>
+  </div></div>
+
+  <!-- 4. brand -->
+  <div class="scene" id="s4"><div class="c">
+    <div class="markWrap">
+      <svg id="mark" viewBox="0 0 512 512" fill="none">
+        <rect id="mTile" x="8" y="8" width="496" height="496" rx="108" stroke="#fff" stroke-width="14"
+              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
+        <path id="mGlyph" fill-rule="evenodd" transform="translate(97.66 94.21) scale(4.0508)" stroke="#3B82F6" stroke-width="3.2"
+              pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"
+              d="M2.06 3.50 L2.06 62.38 L3.00 67.38 L6.75 72.75 L11.00 75.75 L15.38 76.94 L74.62 76.94 L76.12 76.38 L76.12 17.00 L75.38 12.62 L71.25 6.75 L66.88 4.00 L63.38 2.94 L3.25 2.94 Z M18.44 19.00 L59.00 19.00 L60.00 19.62 L60.00 60.25 L59.38 60.94 L19.38 60.94 L18.44 60.38 Z"/>
+        <path id="mFill" fill="#fff" opacity="0" fill-rule="evenodd" transform="translate(97.66 94.21) scale(4.0508)"
+              d="M2.06 3.50 L2.06 62.38 L3.00 67.38 L6.75 72.75 L11.00 75.75 L15.38 76.94 L74.62 76.94 L76.12 76.38 L76.12 17.00 L75.38 12.62 L71.25 6.75 L66.88 4.00 L63.38 2.94 L3.25 2.94 Z M18.44 19.00 L59.00 19.00 L60.00 19.62 L60.00 60.25 L59.38 60.94 L19.38 60.94 L18.44 60.38 Z"/>
+      </svg>
+      <span id="wmWrap"><img id="wordmark" src="../ofintech-wordmark-light.svg" alt=""></span>
+    </div>
+  </div></div>
+
+  <!-- 5. the question -->
+  <div class="scene" id="s5"><div class="c">
+    <div class="kicker" id="s5k" style="margin-bottom:38px">You ask it the way you'd ask your controller</div>
+    <div class="ask" id="s5q">“What was net profit in September,<br>and why is it below budget?”<span class="cursor" id="s5c"></span></div>
+  </div></div>
+
+  <!-- 6. the answer -->
+  <div class="scene" id="s6">
+    <div id="card">
+      <div class="asked" id="c0">“What was net profit in September, and why is it below budget?”</div>
+      <div class="line" id="c1"><span class="what">Net profit · September 2026</span><span class="val" id="v1">0.00</span></div>
+      <div class="line" id="c2"><span class="what">Against budget</span><span class="val s neg" id="v2">0.00</span></div>
+      <div class="line" id="c3"><span class="what">Driven by fuel, up 38% on August</span><span class="val s" id="v3">0.00</span></div>
+      <div class="src" id="c4">
+        <span class="tick"><svg width="22" height="22" viewBox="0 0 16 16"><path fill="currentColor" d="M6.2 11.6 2.8 8.2l1.1-1.1 2.3 2.3 5.9-5.9 1.1 1.1z"/></svg>Every figure sourced</span>
+        <span>General ledger 2026-09 · 124 entries · trial balance ties</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. the claim -->
+  <div class="scene" id="s7"><div class="c">
+    <div class="head" id="s7h">Every figure carries<br>its source.</div>
+  </div></div>
+
+  <!-- 8. the limits -->
+  <div class="scene" id="s8"><div class="c">
+    <div class="kicker" id="s8k" style="text-align:left;margin-bottom:10px">And the limits are built in, not configured</div>
+    <div class="limits">
+      <div class="limit" id="l1"><i></i><span>It never moves money.</span></div>
+      <div class="limit" id="l2"><i></i><span>Nothing leaves without your approval.</span></div>
+      <div class="limit" id="l3"><i></i><span>Your books stay on your server.</span></div>
+    </div>
+  </div></div>
+
+  <!-- 9 + 10. sign-off -->
+  <div class="scene" id="s9"><div class="c">
+    <div class="markWrap" style="margin-bottom:56px">
+      <svg width="112" height="112" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#fff"/>
+        <path fill="#14243A" fill-rule="evenodd" transform="translate(97.66 94.21) scale(4.0508)"
+          d="M2.06 3.50 L2.06 62.38 L3.00 67.38 L6.75 72.75 L11.00 75.75 L15.38 76.94 L74.62 76.94 L76.12 76.38 L76.12 17.00 L75.38 12.62 L71.25 6.75 L66.88 4.00 L63.38 2.94 L3.25 2.94 Z M18.44 19.00 L59.00 19.00 L60.00 19.62 L60.00 60.25 L59.38 60.94 L19.38 60.94 L18.44 60.38 Z"/></svg>
+      <img src="../ofintech-wordmark-light.svg" style="height:58px" alt="">
+    </div>
+    <div class="head sm" id="s9h">The figure you sign your name under.<br><span style="color:var(--mute);font-weight:420">And where it came from.</span></div>
+    <div class="url" id="s9u">ofintech.ai</div>
+  </div></div>
+
+  <div id="flash"></div>
+  <div id="black"></div>
+</div>
+
+<script>
+/* One timeline, one function. seek(t) paints the frame at t seconds; nothing is time-dependent otherwise, so every
+   render is identical. Scene boundaries overlap by a few tenths so one movement hands over to the next. */
+const DUR = 90;
+const $ = (id) => document.getElementById(id);
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const inv = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const money = (n) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/* a scene's opacity: up over `fi`, hold, down over `fo` */
+function band(t, a, b, fi = .5, fo = .5) {
+  if (t < a - fi || t > b + fo) return 0;
+  if (t < a) return easeOut(inv(t, a - fi, a));
+  if (t > b) return 1 - easeOut(inv(t, b, b + fo));
+  return 1;
+}
+function set(el, o, y = 0, s = 1) {
+  el.style.opacity = o;
+  el.style.transform = `translate(-50%, -50%) translateY(${y}px) scale(${s})`;
+}
+
+/* ---- the ledger wall is built once ---- */
+const ACCOUNTS = [
+  ["Freight revenue", 1842300.00], ["Cost of sales", -612480.25], ["Fuel", 184900.00], ["Salaries and wages", -498120.00],
+  ["Rent", -96000.00], ["Vehicle maintenance", -73480.60], ["Insurance", -41200.00], ["Telecommunications", -8940.15],
+  ["Bank charges", -3120.80], ["Depreciation", -128400.00], ["Administrative expenses", -64210.45], ["Commissions", -39800.00],
+  ["VAT receivable", 71240.90], ["Allowance for doubtful debts", -22500.00], ["Deferred revenue", 148000.00],
+  ["Customs and clearance", -57300.30], ["Warehousing", -88120.00], ["Port fees", -46980.00], ["Insurance claims", 12400.00],
+  ["Interest expense", -18750.00], ["Trade receivables", 897250.40], ["Trade payables", -186593.10], ["Cash at bank", 5625524.18],
+  ["Spare parts", -34210.00], ["Training", -9800.00], ["Legal and professional", -27600.00], ["Utilities", -19430.75],
+  ["Office supplies", -4120.00], ["Travel", -31880.50], ["Marketing", -52000.00],
+];
+const HIT = 2;  /* the row the search lands on: Fuel */
+const ROW_H = 76;
+(function buildWall() {
+  const host = $("wallRows");
+  for (let i = 0; i < 46; i++) {
+    const a = ACCOUNTS[i % ACCOUNTS.length];
+    const d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML = `<span class="acct">${a[0]}</span><span class="amt">${money(a[1])}</span>`;
+    host.appendChild(d);
+  }
+})();
+const ROWS = [...document.querySelectorAll(".row")];
+
+function seek(t) {
+  /* 1 — the hook: one figure, then the question under it */
+  const o1 = band(t, 0.6, 6.4, .7, .6);
+  $("s1").style.opacity = o1;
+  if (o1) {
+    const p = easeOut(inv(t, 0.8, 3.0));
+    $("s1fig").textContent = money(4312780.50 * p);
+    $("s1fig").style.letterSpacing = `${-0.03 + (1 - p) * 0.06}em`;
+    $("s1k").style.opacity = easeOut(inv(t, 3.5, 4.4));
+    set($("s1").querySelector(".c"), 1, (1 - easeOut(inv(t, 0.8, 3.0))) * 14);
+  }
+
+  /* 2 — the wall of entries rushing past, then slowing */
+  const o2 = band(t, 7.2, 14.6, .55, .5);
+  $("s2").style.opacity = o2;
+  if (o2) {
+    const run = inv(t, 7.0, 13.4);
+    const travel = easeInOut(run) * (ROWS.length - 13) * ROW_H;
+    $("wallRows").style.top = `${160 - travel}px`;
+    const blur = (1 - easeInOut(run)) * 5.5;
+    $("wall").style.filter = `blur(${blur}px)`;
+    ROWS.forEach((r, i) => r.classList.toggle("hit", false));
+    $("s2capText").style.opacity = easeOut(inv(t, 8.6, 9.6));
+  }
+
+  /* 3 — the line that lands */
+  const o3 = band(t, 15.4, 22.2, .6, .6);
+  $("s3").style.opacity = o3;
+  if (o3) set($("s3").querySelector(".c"), 1, (1 - easeOut(inv(t, 15.4, 17.0))) * 22);
+
+  /* 4 — the mark draws itself */
+  const o4 = band(t, 23.4, 29.4, .5, .55);
+  $("s4").style.opacity = o4;
+  if (o4) {
+    $("mTile").style.strokeDashoffset = 100 - easeInOut(inv(t, 23.6, 25.4)) * 100;
+    $("mGlyph").style.strokeDashoffset = 100 - easeInOut(inv(t, 25.0, 26.5)) * 100;
+    $("mFill").style.opacity = easeOut(inv(t, 26.3, 27.1));          // the drawn outline becomes the solid mark
+    $("mGlyph").style.opacity = 1 - easeOut(inv(t, 26.3, 27.1));
+    const w = easeOut(inv(t, 26.9, 28.3));                            // the wordmark opens, the lockup stays centred
+    $("wmWrap").style.width = `${w * 479}px`;   // 58px tall wordmark (605x79 viewBox) + its 36px gap
+    $("wordmark").style.opacity = w;
+  }
+
+  /* 5 — the question */
+  const o5 = band(t, 30.6, 41.4, .6, .5);
+  $("s5").style.opacity = o5;
+  if (o5) {
+    $("s5k").style.opacity = easeOut(inv(t, 30.8, 31.8));
+    const q = easeOut(inv(t, 32.2, 33.6));
+    $("s5q").style.opacity = q;
+    $("s5q").style.transform = `translateY(${(1 - q) * 18}px)`;
+    $("s5c").style.opacity = t > 33.4 && Math.floor((t - 33.4) * 1.7) % 2 === 0 ? 1 : 0;
+  }
+
+  /* 6 — the card builds, line by line, then the source */
+  const o6 = band(t, 42.6, 58.4, .6, .6);
+  $("s6").style.opacity = o6;
+  if (o6) {
+    const rise = easeOut(inv(t, 42.6, 44.2));
+    $("card").style.transform = `translate(0, -50%) translateY(${(1 - rise) * 40}px)`;
+    $("c0").style.opacity = easeOut(inv(t, 43.0, 44.0));
+    const lines = [[44.6, 46.4, 4312780.50, "v1", "c1"], [47.4, 49.0, -412219.50, "v2", "c2"], [50.0, 51.6, 184900.00, "v3", "c3"]];
+    for (const [a, b, target, vid, cid] of lines) {
+      const show = easeOut(inv(t, a, a + .7));
+      $(cid).style.opacity = show;
+      $(cid).style.transform = `translateY(${(1 - show) * 12}px)`;
+      const p = easeOut(inv(t, a + .2, b));
+      $(vid).textContent = (target < 0 ? "−" : target === 184900 ? "+" : "") + money(Math.abs(target) * p);
+    }
+    const src = easeOut(inv(t, 52.6, 53.8));
+    $("c4").style.opacity = src;
+    $("c4").style.transform = `translateY(${(1 - src) * 10}px)`;
+  }
+
+  /* 7 — the claim */
+  const o7 = band(t, 59.4, 64.6, .6, .55);
+  $("s7").style.opacity = o7;
+  if (o7) set($("s7").querySelector(".c"), 1, (1 - easeOut(inv(t, 59.4, 61.0))) * 20);
+
+  /* 8 — the three limits, one at a time */
+  const o8 = band(t, 65.6, 79.4, .6, .6);
+  $("s8").style.opacity = o8;
+  if (o8) {
+    $("s8k").style.opacity = easeOut(inv(t, 65.8, 66.8));
+    [["l1", 67.6], ["l2", 71.0], ["l3", 74.4]].forEach(([id, at]) => {
+      const p = easeOut(inv(t, at, at + 1.0));
+      $(id).style.opacity = p;
+      $(id).style.transform = `translateX(${(1 - p) * -26}px)`;
+    });
+  }
+
+  /* 9 — sign-off */
+  const o9 = band(t, 80.4, 88.6, .7, .0);
+  $("s9").style.opacity = o9;
+  if (o9) {
+    set($("s9").querySelector(".c"), 1, (1 - easeOut(inv(t, 80.4, 82.2))) * 16);
+    $("s9u").style.opacity = easeOut(inv(t, 83.0, 84.2));
+  }
+
+  /* the only two full-frame moves: a soft lift into the brand, and the close */
+  $("flash").style.opacity = band(t, 23.1, 23.1, .35, .5) * 0.10;
+  $("black").style.opacity = easeOut(inv(t, 88.4, DUR));
+}
+window.seek = seek;
+seek(0);
+document.fonts.ready.then(() => { window.__ready = true; });
+</script>
+</body>
+</html>

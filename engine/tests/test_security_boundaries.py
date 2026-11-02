@@ -188,17 +188,10 @@ class SealedWorkspace(unittest.TestCase):
         with self.assertRaises(Forbidden):
             run(self.h.engine.channels.connect_telegram(self.ws, "u", "123456:" + "A" * 35))
 
-    def test_google_and_pipeshub_are_off_whatever_calls_them(self) -> None:
+    def test_google_is_off_whatever_calls_it(self) -> None:
         from desk_engine.connectors.google import GoogleClient
-        from desk_engine.knowledge.pipeshub import PipesHub
         with self.assertRaises(Forbidden):   # the one door for Gmail tools, workflow e-mail, e-mail triggers and Drive
             GoogleClient(self.h.engine, {"id": "c", "workspace_id": self.ws, "provider": "google", "secret_id": None})
-        outside = {"id": "p", "workspace_id": self.ws, "secret_id": None, "config": json.dumps({"base_url": "https://pipeshub.example.com"})}
-        inside = outside | {"config": json.dumps({"base_url": "http://pipeshub:3000"})}
-        self.h.engine.secrets.get = lambda *a, **k: {}   # no stored token needed for this check
-        with self.assertRaises(Forbidden):
-            PipesHub(self.h.engine, outside)
-        PipesHub(self.h.engine, inside)
 
     def test_chat_apps_send_nothing_and_say_so(self) -> None:
         # a Telegram link made while the workspace was open: sealing it stops the messages, and nothing is counted as sent
@@ -227,11 +220,6 @@ class SealedWorkspace(unittest.TestCase):
         tctx = ms.resolve(self.h.engine, "Bearer " + key)
         self.assertIsNotNone(tctx)
         self.assertTrue(workspace_sealed(self.h.engine, tctx.workspace))
-
-    def test_pipeshub_connect_route_is_checked(self) -> None:
-        self.h.api("POST", f"/api/w/{self.ws}/connections/pipeshub", expect=403,
-                   json={"base_url": "https://pipeshub.example.com", "token": "t" * 20})
-        self.assertEqual(self.outside_requests(), [])
 
     def test_sealing_applies_to_a_run_already_in_progress(self) -> None:
         stale = {"id": self.ws, "egress_policy": "open"}   # the copy a run took before the workspace was sealed

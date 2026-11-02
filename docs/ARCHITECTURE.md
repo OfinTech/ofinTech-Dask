@@ -19,7 +19,7 @@
    memory.py     proposals, approval, secret detection, retrieval (pinned + FTS5), use counts
    llm/          OpenAI-compatible and Anthropic streaming clients (prompt caching); provider catalogue
    knowledge/    document RAG: extraction, OCR (Tesseract), chunking, FTS5 + embeddings, hybrid search,
-                 PipesHub backend, chat attachments, Google Drive folders; search.py (workspace search
+                 chat attachments, Google Drive folders; search.py (workspace search
                  and cited answers)
    files/        evidence-linked workbooks and reports: spec → model (values, live formulas, sources) →
                  Excel / Word writers; automatic checks and the independent reviewer; versions;

@@ -204,13 +204,13 @@ export function PageHead({ title, sub, actions }: { title: string; sub?: ReactNo
 }
 
 /** Status words shown by StatusTag (listed so they are translated). */
-export const STATUS_WORDS = [N("done"), N("indexed"), N("via PipesHub"), N("processing"), N("connected"), N("approved"), N("ok"),
+export const STATUS_WORDS = [N("done"), N("indexed"), N("processing"), N("connected"), N("approved"), N("ok"),
   N("running"), N("waiting"), N("waiting approval"), N("pending"), N("stopped"), N("failed"), N("error"), N("rejected"),
-  N("expired"), N("remote"), N("needs ocr"), N("disconnected"), N("none"), N("ready")];
+  N("expired"), N("needs ocr"), N("disconnected"), N("none"), N("ready")];
 
 export function StatusTag({ status }: { status: string }): ReactNode {
   const cls: Record<string, string> = {
-    done: "green", indexed: "green", "via PipesHub": "blue", processing: "blue", connected: "green", approved: "green", ok: "green", running: "blue", waiting: "blue",
+    done: "green", indexed: "green", processing: "blue", connected: "green", approved: "green", ok: "green", running: "blue", waiting: "blue",
     waiting_approval: "amber", pending: "amber", stopped: "", failed: "red", error: "red", rejected: "red", expired: "",
   };
   return <span className={`tag ${cls[status] ?? ""}`}>{tr(status.replace(/_/g, " "))}</span>;

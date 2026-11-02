@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تسجيل الدخول — OfinTech Desk</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/ofintech-icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="auth-page">
+
+  <aside class="auth-aside">
+    <a class="brand" href="index.html"><img src="assets/ofintech-wordmark-light.svg" alt="OfinTech" style="height:22px"></a>
+    <div>
+      <h2 data-en="The figure you sign your name under. And where it came from.">الرقم الذي توقّع تحته. ومن أين جاء.</h2>
+      <p data-en="Your ledgers, your questions, your answers — with the account, the period and the entries behind every figure.">
+        دفاترك، وأسئلتك، وإجاباتك — ومعها الحساب والفترة والقيود خلف كل رقم.
+      </p>
+    </div>
+    <p style="color:color-mix(in srgb,#fff 50%,#14243A);font-size:14px" data-en="© 2026 OfinTech">© ٢٠٢٦ أوفِن‌تِك</p>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <a class="brand" href="index.html" style="margin-bottom:28px">
+        <img class="mark" src="assets/ofintech-icon.svg" alt="">
+        <img src="assets/ofintech-wordmark-dark.svg" alt="OfinTech" style="height:20px">
+      </a>
+      <h1 data-en="Sign in">تسجيل الدخول</h1>
+      <p class="sub" data-en="Use the e-mail your workspace administrator invited.">استخدم البريد الذي دعاك به مسؤول مساحة العمل.</p>
+
+      <div id="alert" class="alert"></div>
+
+      <form class="form" method="post" data-engine-path="/auth/form/sign-in">
+        <div class="field">
+          <label for="email" data-en="Work e-mail">البريد الإلكتروني للعمل</label>
+          <input id="email" name="email" type="email" autocomplete="username" required maxlength="254"
+                 placeholder="cfo@company.sa" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="password" data-en="Password">كلمة المرور</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required
+                 minlength="8" maxlength="300">
+        </div>
+        <button class="btn primary block lg" type="submit" data-en="Sign in">تسجيل الدخول</button>
+      </form>
+
+      <div class="or" data-en="or">أو</div>
+      <a class="btn block" data-engine-path="/auth/form/google" href="#" data-en="Continue with Google">المتابعة بحساب Google</a>
+
+      <p class="auth-foot">
+        <span data-en="No account yet?">لا تملك حساباً؟</span>
+        <a href="sign-up.html" data-en="Create one">أنشئ حساباً</a>
+        &nbsp;·&nbsp;
+        <a href="#" data-lang-toggle>English</a>
+      </p>
+    </div>
+  </main>
+
+</div>
+<script src="site.js"></script>
+</body>
+</html>
