@@ -76,7 +76,8 @@ body { font-family: "Inter", sans-serif; color: var(--white); -webkit-font-smoot
   font-size: 50px; font-weight: 560; letter-spacing: -0.02em; text-align: left; }
 .limit i { width: 10px; height: 10px; border-radius: 2px; background: var(--blue-2); flex: none; transform: translateY(-12px); }
 
-.url { font-size: 38px; color: var(--mute); letter-spacing: .04em; margin-top: 34px; }
+.descriptor { font-size: 29px; color: var(--mute); margin-top: -26px; margin-bottom: 54px; }
+.url { font-size: 34px; color: rgba(143,163,188,.72); letter-spacing: .05em; margin-top: 36px; }
 #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
 #black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
 </style>
@@ -161,7 +162,8 @@ body { font-family: "Inter", sans-serif; color: var(--white); -webkit-font-smoot
           d="M2.06 3.50 L2.06 62.38 L3.00 67.38 L6.75 72.75 L11.00 75.75 L15.38 76.94 L74.62 76.94 L76.12 76.38 L76.12 17.00 L75.38 12.62 L71.25 6.75 L66.88 4.00 L63.38 2.94 L3.25 2.94 Z M18.44 19.00 L59.00 19.00 L60.00 19.62 L60.00 60.25 L59.38 60.94 L19.38 60.94 L18.44 60.38 Z"/></svg>
       <img src="../ofintech-wordmark-light.svg" style="height:58px" alt="">
     </div>
-    <div class="head sm" id="s9h">The figure you sign your name under.<br><span style="color:var(--mute);font-weight:420">And where it came from.</span></div>
+    <div class="descriptor" id="s9d">Financial intelligence, sourced.</div>
+    <div class="head sm" id="s9h" style="opacity:0">The figure you sign your name under.<br><span style="color:var(--mute);font-weight:420">And where it came from.</span></div>
     <div class="url" id="s9u">ofintech.ai</div>
   </div></div>
 
@@ -314,7 +316,9 @@ function seek(t) {
   $("s9").style.opacity = o9;
   if (o9) {
     set($("s9").querySelector(".c"), 1, (1 - easeOut(inv(t, 80.4, 82.2))) * 16);
-    $("s9u").style.opacity = easeOut(inv(t, 83.0, 84.2));
+    $("s9h").style.opacity = easeOut(inv(t, 83.2, 84.4));
+    $("s9d").style.opacity = easeOut(inv(t, 81.8, 83.0));
+    $("s9u").style.opacity = easeOut(inv(t, 84.0, 85.2));
   }
 
   /* the only two full-frame moves: a soft lift into the brand, and the close */

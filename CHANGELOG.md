@@ -7,6 +7,11 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A brand line** (`docs/brand/README.md`): *ذكاء مالي، ولكل رقم مصدره.* / *Financial intelligence, sourced.*
+  A descriptor rather than a slogan — it goes with the wordmark (the site's footer, the sign-in and sign-up
+  panels, the film's sign-off), never on its own and never as a headline. The brand note also records why a
+  benefit line is not used: a growth or outcome promise is one the product cannot keep, and the page's
+  credibility is spent entirely on claims it can.
 - **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
   and the three limits that make the answer worth having — type and motion on the brand field, no screen
   recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about
