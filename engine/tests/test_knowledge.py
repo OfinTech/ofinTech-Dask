@@ -219,58 +219,6 @@ class KnowledgeApi(unittest.TestCase):
         self.assertEqual(doc["status"], "failed")
         self.assertIn("OCR", doc["error"])
 
-    def test_pipeshub_backend(self) -> None:
-        h, ws = self.h, self.ws
-        ph = MockPipesHub()
-        for m in ("GET", "POST", "DELETE"):
-            h.router.add(m, ph.base, ph)
-        h.api("POST", f"/api/w/{ws}/connections/pipeshub", json={"base_url": ph.base, "token": "phpat_wrong_token"},
-              expect=502)
-        # documents added before the connection are sent when it is made
-        self.upload({"policy.docx": POLICY})
-        r = h.api("POST", f"/api/w/{ws}/connections/pipeshub", json={"base_url": ph.base + "/api/v1", "token": ph.token})
-        self.assertEqual(r["kb_name"], "OfinTech Desk · Acme Ltd")
-        self.assertEqual(ph.kbs[r["kb_id"]], "OfinTech Desk · Acme Ltd")
-        h.settle()
-        # a scanned PDF cannot be read here, but PipesHub parses it with OCR
-        self.upload({"scan.pdf": make_pdf(["", ""])})
-        docs = {d["name"]: d for d in h.api("GET", f"/api/w/{ws}/documents")}
-        self.assertEqual(docs["policy.docx"]["pipeshub_status"], "sent")
-        self.assertEqual(docs["scan.pdf"]["status"], "remote")
-        self.assertIn("OCR", docs["scan.pdf"]["error"])
-        up = ph.uploads[-1]
-        self.assertTrue(up["name"].startswith("scan (") and up["name"].endswith(").pdf"))  # unique name per document
-        self.assertTrue(up["data"].startswith(b"%PDF"))  # the original file, not extracted text
-        self.assertEqual(json.loads(up["meta"])[0]["file_path"], up["name"])
-        self.assertEqual(up["kb"], r["kb_id"])
-        scan_record = next(k for k, v in ph.records.items() if v["name"] == up["name"])
-        ph.chunks = [  # what PipesHub retrieves: this workspace's scan, another workspace's file, a Confluence page
-            {"id": "a:1", "text": "Invoice 4471 from Gulf Freight, total due 18,400.00, payable by 30 November.",
-             "score": 0.9, "record": {"recordId": scan_record, "name": "scan", "connector": "KB"},
-             "citation": {"url": "https://ph.test/r/x", "pageNum": 2}},
-            {"id": "b:1", "text": "secret of another workspace", "score": 0.8,
-             "record": {"recordId": "rec_other_ws", "name": "other"}, "citation": {}},
-            {"id": "c:1", "text": "Freight policy page in Confluence", "score": 0.7,
-             "record": {"recordId": "rec_confluence", "name": "Freight policy", "connector": "CONFLUENCE"},
-             "citation": {"url": "https://acme.atlassian.net/wiki/x"}}]
-        h.engine.db.execute("UPDATE documents SET pipeshub_record_id = 'rec_other_ws' WHERE id = ?",
-                            (docs["policy.docx"]["id"],))
-        other = h.api("POST", "/api/workspaces", json={"name": "Other Co"})["id"]
-        h.engine.db.execute("UPDATE documents SET workspace_id = ? WHERE id = ?", (other, docs["policy.docx"]["id"]))
-        hits = h.api("POST", f"/api/w/{ws}/documents/search", json={"query": "Gulf Freight invoice: 50% due?"})
-        self.assertEqual([x["source"] for x in hits], ["pipeshub"])
-        self.assertEqual(hits[0]["document_id"], docs["scan.pdf"]["id"])  # links to the document here
-        self.assertEqual(hits[0]["page"], 2)
-        self.assertEqual(ph.retrieves[-1]["filters"], {"kb": [r["kb_id"]]})
-        self.assertNotIn("50%", ph.retrieves[-1]["query"])  # PipesHub refuses printf-like text
-        # other PipesHub sources only when the admin allows them
-        h.api("POST", f"/api/w/{ws}/connections/pipeshub", json={"base_url": ph.base, "include_other_sources": True})
-        hits = h.api("POST", f"/api/w/{ws}/documents/search", json={"query": "freight"})
-        self.assertEqual({x["name"] for x in hits}, {"scan.pdf", "Freight policy (Confluence)"})
-        self.assertNotIn("filters", ph.retrieves[-1])
-        self.assertEqual(len(ph.kbs), 1)  # the same knowledge base is kept
-        h.api("DELETE", f"/api/w/{ws}/documents/{docs['scan.pdf']['id']}", expect=None)
-        self.assertNotIn(scan_record, ph.records)
 
     def test_chat_attachments(self) -> None:
         h, ws = self.h, self.ws
@@ -295,7 +243,7 @@ class KnowledgeApi(unittest.TestCase):
         sent = h.llm.calls[0]["messages"][-1]["content"]
         self.assertIn("[Attached files]", sent)
         self.assertIn(f"document id {ids[0]}; readable", sent)
-        self.assertIn("could not be read", sent)  # the scan, with no PipesHub connected
+        self.assertIn("could not be read", sent)  # the scan: no text layer and no OCR here
         tool = next(m for m in data["messages"] if m["role"] == "tool")
         self.assertIn("180 per night", tool["content"])
         # attachments are checked against the workspace
@@ -304,63 +252,3 @@ class KnowledgeApi(unittest.TestCase):
         h.api("POST", f"/api/w/{other}/threads/{t2['id']}/messages", json={"text": "x", "attachments": [ids[0]]},
               expect=404)
         h.api("POST", f"/api/w/{ws}/threads/{t['id']}/messages", json={"text": " "}, expect=422)
-
-
-class MockPipesHub:
-    """PipesHub's documented API: knowledge bases, streaming upload, retrieve and record deletion."""
-
-    def __init__(self) -> None:
-        self.base = "https://ph.test"
-        self.token = "phpat_test_token_123456"
-        self.kbs: dict[str, str] = {}
-        self.records: dict[str, dict] = {}
-        self.uploads: list[dict] = []
-        self.retrieves: list[dict] = []
-        self.chunks: list[dict] = []
-
-    def __call__(self, req: httpx.Request) -> httpx.Response:
-        if req.headers.get("authorization") != f"Bearer {self.token}":
-            return httpx.Response(401, json={"error": {"code": "UNAUTHORIZED", "message": "Invalid token"}})
-        path = req.url.path
-        if req.method == "GET" and path == "/api/v1/knowledgeBase":
-            return httpx.Response(200, json={"knowledgeBases": [], "pagination": {}})
-        if req.method == "POST" and path == "/api/v1/knowledgeBase":
-            kb = f"kb-{len(self.kbs) + 1}"
-            self.kbs[kb] = json.loads(req.content)["kbName"]
-            return httpx.Response(200, json={"id": kb, "name": self.kbs[kb], "userRole": "OWNER"})
-        if req.method == "GET" and path.startswith("/api/v1/knowledgeBase/kb-"):
-            kb = path.rsplit("/", 1)[1]
-            return httpx.Response(200, json={"id": kb, "name": self.kbs[kb]}) if kb in self.kbs else \
-                httpx.Response(404, json={"error": {"message": "not found"}})
-        if req.method == "POST" and path.endswith("/upload"):
-            kb = path.split("/")[4]
-            body = req.content
-            boundary = req.headers["content-type"].split("boundary=")[1].encode()
-            parts = [p for p in body.split(b"--" + boundary) if b"Content-Disposition" in p]
-            fields = {}
-            for p in parts:
-                head, _, data = p.partition(b"\r\n\r\n")
-                name = head.split(b'name="')[1].split(b'"')[0].decode()
-                fields[name] = (head, data[:-2])
-            fname = fields["files"][0].split(b'filename="')[1].split(b'"')[0].decode()
-            self.uploads.append({"kb": kb, "name": fname, "data": fields["files"][1],
-                                 "meta": fields["files_metadata"][1].decode()})
-            rid = f"rec-{len(self.records) + 1}"
-            self.records[rid] = {"name": fname, "kb": kb}
-            stream = (": keepalive\n\n"
-                      f"event: file:succeeded\ndata: {json.dumps(json.dumps({'recordId': rid, 'fileName': fname}))}\n\n"
-                      f"event: done\ndata: {json.dumps(json.dumps({'summary': {'total': 1, 'succeeded': 1}}))}\n\n")
-            return httpx.Response(200, content=stream.encode(), headers={"content-type": "text/event-stream"})
-        if req.method == "POST" and path == "/api/v1/retrieve":
-            body = json.loads(req.content)
-            self.retrieves.append(body)
-            return httpx.Response(200, json={"requestId": "r1", "chunks": self.chunks[: body.get("limit", 8)],
-                                             "incomplete": False})
-        if req.method == "DELETE" and path.startswith("/api/v1/knowledgeBase/record/"):
-            self.records.pop(path.rsplit("/", 1)[1], None)
-            return httpx.Response(200, json={"message": "deleted"})
-        return httpx.Response(404, json={"error": {"message": f"no route {req.method} {path}"}})
-
-
-if __name__ == "__main__":
-    unittest.main()

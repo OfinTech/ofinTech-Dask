@@ -84,7 +84,6 @@ export function SearchPage(): ReactNode {
               <li key={`${r.id}-${i}`}>
                 <button className="result" onClick={() => r.external && r.link ? window.open(r.link) : r.link && go(r.link)}>
                   <span className="result-title">{r.title}{r.page ? `, page ${r.page}` : ""}
-                    {r.source === "pipeshub" && <span className="tag" style={{ marginInlineStart: 6 }}>{tr("PipesHub")}</span>}
                     {r.at && <span className="xs muted"> · {fmtRelative(r.at)}</span>}</span>
                   <span className="result-snippet"><Highlight text={String(r.snippet || "").slice(0, 400)} /></span>
                 </button>

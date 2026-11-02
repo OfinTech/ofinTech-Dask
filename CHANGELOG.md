@@ -5,6 +5,25 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Removed
+
+- **PipesHub.** The optional external search engine is gone: keyword search (SQLite FTS5, BM25), semantic search
+  through the workspace's own embedding model, reciprocal-rank fusion and OCR with Tesseract are all built in, so it
+  added an outbound path, a stored credential and a live integration to prove, for a capability the product already
+  had. Migration 22 drops `documents.pipeshub_status`, `documents.pipeshub_record_id` and
+  `doc_collections.sync_pipeshub`, and removes any PipesHub connection and its secret. Documents left in the
+  `remote` status (readable only there) become `failed` with a message asking for a searchable copy. The
+  **Connections → Knowledge** section and the PipesHub card are gone from the app.
+
+### Fixed
+
+- **Money figures no longer leave the box that holds them.** A figure in the millions or billions painted over the
+  KPI cell border into the card beside it, and was clipped inside dashboard widgets and the ledger totals. Each of
+  those cells is now its own query container and the figure's type size follows the cell's width, with a floor; the
+  dashboard grid, which was three fixed columns at every screen width, and the ledger totals now reflow instead of
+  squeezing. `e2e/figures_fit.py` renders the three patterns at eight widths in English and Arabic (RTL) and fails
+  if any figure is wider than its box; it runs in CI.
+
 ### Added
 
 - **Embedded Agent Gateway + AG-UI adapter** (docs/embedded/): partner applications can run Desk's financial agent

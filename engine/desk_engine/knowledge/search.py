@@ -1,8 +1,8 @@
 """Workspace search: one query over documents, past conversations, saved memory, generated files and datasets,
-with an optional short answer that cites what it used (the same idea as PipesHub's enterprise search, built in).
+with an optional short answer that cites what it used.
 
 Every source applies its own permission rules: documents and memory are filtered by workspace (and personal memory by
-user), conversations exclude other people's private threads, and PipesHub results are filtered as in base.py."""
+user), and conversations exclude other people's private threads."""
 
 from __future__ import annotations
 

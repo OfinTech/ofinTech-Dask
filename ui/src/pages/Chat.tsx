@@ -252,7 +252,7 @@ function Conversation({ threadId, onChanged, onDelete }: { threadId: string; onC
           <input ref={fileInput} type="file" multiple className="hidden" aria-label={tr("Attach files")}
             accept=".pdf,.docx,.xlsx,.xlsm,.csv,.txt,.md,.html,.htm,.eml,.json,.png,.jpg,.jpeg,.tif,.tiff"
             onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
-          <button type="button" className="btn ghost attach-btn" aria-label={tr("Attach files")} title={tr("Attach files (PDF, Word, Excel, CSV, text, e-mail; scans and images need PipesHub)")} disabled={status === "waiting_approval" || files.length >= 10}
+          <button type="button" className="btn ghost attach-btn" aria-label={tr("Attach files")} title={tr("Attach files (PDF, Word, Excel, CSV, text, e-mail, scans and images)")} disabled={status === "waiting_approval" || files.length >= 10}
             onClick={() => fileInput.current?.click()}><Icon name="clip" /></button>
           <label className="sr" htmlFor="composer">{tr("Message")}</label>
           <textarea id="composer" className="textarea" rows={2} value={text} placeholder={status === "waiting_approval"
@@ -286,7 +286,6 @@ function MessageView({ m }: { m: Message }): ReactNode {
         {attached.length > 0 && (
           <ul className="attach-list sent">{attached.map((a) => (
             <li key={a.id}><a className="attach-chip" href={`#/documents/${a.id}`}><Icon name="clip" size={14} /><span>{a.name}</span>
-              {a.status === "remote" && <span className="xs muted">{tr("via PipesHub")}</span>}
               {a.status === "failed" && <span className="xs neg">{tr("not readable")}</span>}</a></li>))}</ul>
         )}
         {shown && <div className="bubble">{shown}</div>}

@@ -55,7 +55,7 @@ def mime_for(filename: str) -> str:
     ext = extension(filename)
     if ext not in MIME:
         raise Invalid("Supported documents: PDF, Word (.docx), Excel (.xlsx), CSV, text, Markdown, HTML, e-mail "
-                      "(.eml), JSON, and images (PNG, JPEG, TIFF; read through PipesHub). Save older formats "
+                      "(.eml), JSON, and images (PNG, JPEG, TIFF; read with OCR). Save older formats "
                       "(.doc, .xls) in the newer format first.",
                       code="unsupported_document")
     return MIME[ext]
@@ -83,8 +83,8 @@ def extract(data: bytes, filename: str) -> list[Section]:
         from . import ocr
 
         if not ocr.available():
-            raise Invalid("Images have no text layer and OCR is not installed here. Install Tesseract, or connect PipesHub "
-                          "(Connections → Knowledge) to read them.", code="needs_ocr")
+            raise Invalid("Images have no text layer and OCR is not installed here. Install Tesseract to read them.",
+                          code="needs_ocr")
         try:
             text = ocr.image_text(data)
         except Exception as exc:
@@ -150,7 +150,7 @@ def _pdf(data: bytes) -> list[Section]:
 
         if not ocr.available():
             raise Invalid("This PDF has no text layer (it is probably a scan) and OCR is not installed here. Install "
-                          "Tesseract, connect PipesHub, or upload a searchable PDF.", code="needs_ocr")
+                          "Tesseract, or upload a searchable PDF.", code="needs_ocr")
         import time
 
         ocr_sections = []
