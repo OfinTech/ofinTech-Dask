@@ -1,5 +1,5 @@
-# On a server of its own: Caddy obtains the HTTPS certificate and forwards to the landing container.
-#   LANDING_DOMAIN=ofintech.ai ACME_EMAIL=it@ofintech.ai \
+# On a server of its own: Caddy obtains the HTTPS certificate and forwards to the site container.
+#   SITE_DOMAIN=ofintech.ai ACME_EMAIL=it@ofintech.ai \
 #   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
 services:
   caddy:
@@ -7,13 +7,13 @@ services:
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     environment:
-      LANDING_DOMAIN: ${LANDING_DOMAIN:?set LANDING_DOMAIN, e.g. ofintech.ai}
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN, e.g. ofintech.ai}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [landing]
+    depends_on: [site]
 
 volumes:
   caddy_data:

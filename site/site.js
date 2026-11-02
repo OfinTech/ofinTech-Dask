@@ -88,8 +88,28 @@
     void onSignUp;
   }
 
+  /* ---- links written down before the site had pages ------------------------------------------------- */
+  // The site used to be one page, where signing in and creating an account were sections of it. Those addresses
+  // are in people's e-mails and bookmarks, and a server cannot redirect a fragment because the fragment never
+  // reaches it -- so the page itself has to send them on.
+  var MOVED = { "#signin": "sign-in.html", "#signup": "sign-up.html", "#features": "#how" };
+
+  function followMovedSection() {
+    var target = MOVED[window.location.hash];
+    if (!target) return false;
+    var home = /(^|\/)(index\.html)?$/.test(window.location.pathname);
+    if (!home) return false;
+    if (target.charAt(0) === "#") {
+      window.location.replace(target);
+      return false;
+    }
+    window.location.replace(target);
+    return true;
+  }
+
   /* ---- start ---------------------------------------------------------------------------------------- */
   document.addEventListener("DOMContentLoaded", function () {
+    if (followMovedSection()) return;
     // forms post to the engine; the action is set here so the address lives in one place
     document.querySelectorAll("form[data-engine-path]").forEach(function (f) {
       f.action = ENGINE + f.getAttribute("data-engine-path");
