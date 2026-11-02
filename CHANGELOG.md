@@ -7,6 +7,44 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
+  and the three limits that make the answer worth having — type and motion on the brand field, no screen
+  recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about
+  −21 LUFS, and a voiceover script timed to the picture for whoever records one. `film.html` is the whole film as
+  one timeline (`seek(t)` paints the frame at `t` and nothing else depends on time, so renders are identical);
+  `frames.py` pipes frames into ffmpeg a chunk at a time; `music.py` writes the bed.
+- **The public website** (`site/`): four static pages written for a finance lead rather than an engineer — what the
+  assistant answers, the four steps to using it, **what it will not do** (no payments, nothing outbound without a
+  named approval, sealed mode, an audit log the application cannot rewrite), and how to get it. Everything
+  technical moved to a single `docs.html`. Sign-in and sign-up pages post to the engine's existing
+  `/auth/form/sign-in`, `/auth/form/sign-up` and `/auth/form/google`, and the script turns the error codes the
+  engine redirects with (`#signup-exists`, `#signin-rate`, …) into a message on the page that error belongs to.
+  Arabic is the source of truth with English in `data-en` attributes, one file per page, `html[lang]` and
+  `html[dir]` switched together. No build step, no framework, no third-party request; the brand's own fonts and
+  palette. `e2e/site_check.py` drives four pages × two languages × five widths in CI and fails on any sideways
+  overflow, an unswitched string, a form that posts anywhere but the engine, or a console error.
+
+### Removed
+
+- **PipesHub.** The optional external search engine is gone: keyword search (SQLite FTS5, BM25), semantic search
+  through the workspace's own embedding model, reciprocal-rank fusion and OCR with Tesseract are all built in, so it
+  added an outbound path, a stored credential and a live integration to prove, for a capability the product already
+  had. Migration 22 drops `documents.pipeshub_status`, `documents.pipeshub_record_id` and
+  `doc_collections.sync_pipeshub`, and removes any PipesHub connection and its secret. Documents left in the
+  `remote` status (readable only there) become `failed` with a message asking for a searchable copy. The
+  **Connections → Knowledge** section and the PipesHub card are gone from the app.
+
+### Fixed
+
+- **Money figures no longer leave the box that holds them.** A figure in the millions or billions painted over the
+  KPI cell border into the card beside it, and was clipped inside dashboard widgets and the ledger totals. Each of
+  those cells is now its own query container and the figure's type size follows the cell's width, with a floor; the
+  dashboard grid, which was three fixed columns at every screen width, and the ledger totals now reflow instead of
+  squeezing. `e2e/figures_fit.py` renders the three patterns at eight widths in English and Arabic (RTL) and fails
+  if any figure is wider than its box; it runs in CI.
+
+### Added
+
 - **Embedded Agent Gateway + AG-UI adapter** (docs/embedded/): partner applications can run Desk's financial agent
   inside their own UI over the AG-UI protocol. A workspace admin registers an *integration* (allowed origins,
   capabilities, limits); Desk creates a dedicated **viewer** service user for it and an integration key for the

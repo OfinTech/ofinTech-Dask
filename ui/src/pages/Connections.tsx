@@ -91,13 +91,6 @@ export function ConnectionsPage(): ReactNode {
           <WhatsAppCard conns={conns.filter((c) => c.provider === "whatsapp")} admin={admin} onChange={data.reload} />
         </div>
       </div>
-      <div className="section">
-        <h2>{tr("Knowledge")}</h2>
-        <p className="muted small" style={{ maxWidth: "75ch" }}>{tr("Documents are searched by the built-in knowledge base (see Documents). Connect PipesHub to add OCR for scanned PDFs and images, its knowledge-graph retrieval and its connectors: files added here (including chat attachments) are uploaded to this workspace's PipesHub knowledge base and searched there too.")}</p>
-        <div className="grid2" style={{ marginTop: 12 }}>
-          <PipesHubCard conn={conns.find((c) => c.provider === "pipeshub")} admin={admin} onChange={data.reload} />
-        </div>
-      </div>
       <div className="section"><Webhooks /></div>
       <div className="section"><McpServers /></div>
       {oauthOpen && <OAuthApps onClose={() => { setOauthOpen(false); data.reload(); }} />}
@@ -586,51 +579,6 @@ function OAuthApps({ onClose }: { onClose: () => void }): ReactNode {
         );
       })}
     </Modal>
-  );
-}
-
-function PipesHubCard({ conn, admin, onChange }: { conn: any; admin: boolean; onChange: () => void }): ReactNode {
-  const { ws } = useApp();
-  const toast = useToast();
-  const [f, setF] = useState({ base_url: conn?.config?.base_url || "", token: "", kb_id: conn?.config?.kb_id || "",
-    send: conn?.config?.send || "all", include_other_sources: !!conn?.config?.include_other_sources });
-  const { busy, run } = useAction();
-  return (
-    <div className="panel panel-pad stack">
-      <div className="spread"><h3>{tr("PipesHub")}</h3>{conn && <StatusTag status={conn.status} />}</div>
-      {conn?.config?.kb_name && <p className="xs muted" style={{ margin: 0 }}>{tr("Knowledge base:")}{" "}{conn.config.kb_name}</p>}
-      {conn?.last_error && <div className="notice error xs">{conn.last_error}</div>}
-      {admin ? (
-        <form className="stack" onSubmit={async (e) => {
-          e.preventDefault();
-          const r: any = await run(() => post(wsPath(ws, "/connections/pipeshub"), { ...f, token: f.token || null, kb_id: f.kb_id || null }));
-          if (r) {
-            toast(`Connected to “${r.kb_name}”. ${r.documents_queued} documents are being sent.`);
-            setF({ ...f, token: "", kb_id: r.kb_id });
-            onChange();
-          }
-        }}>
-          <Field label={tr("PipesHub address")} hint={tr("e.g. https://pipeshub.example.com")}><input className="input" value={f.base_url}
-            onChange={(e) => setF({ ...f, base_url: e.target.value })} /></Field>
-          <Field label={conn ? tr("Personal access token (leave empty to keep)") : tr("Personal access token")}
-            hint={tr("In PipesHub: Workspace settings → Developer settings → Personal access tokens. Scopes: kb:read, kb:write, kb:upload, kb:delete, semantic:write.")}>
-            <input className="input" type="password" autoComplete="off" placeholder={tr("phpat_…")} value={f.token}
-              onChange={(e) => setF({ ...f, token: e.target.value })} /></Field>
-          <Field label={tr("Knowledge base id (optional)")} hint={tr("Empty: a knowledge base is created for this workspace.")}>
-            <input className="input" value={f.kb_id} onChange={(e) => setF({ ...f, kb_id: e.target.value })} /></Field>
-          <div className="seg" role="radiogroup" aria-label={tr("Which documents to send")}>
-            <button type="button" aria-pressed={f.send === "all"} onClick={() => setF({ ...f, send: "all" })}>{tr("Send every document")}</button>
-            <button type="button" aria-pressed={f.send === "collections"} onClick={() => setF({ ...f, send: "collections" })}>{tr("Only chosen collections")}</button>
-          </div>
-          <label className="check small"><input type="checkbox" checked={f.include_other_sources}
-            onChange={(e) => setF({ ...f, include_other_sources: e.target.checked })} />
-            <span>{tr("Also search everything else the token's user can read in PipesHub (SharePoint, Confluence, Drive…). Everyone in this workspace will be able to query it.")}</span></label>
-          <div><button className="btn primary small" disabled={busy || !f.base_url || (!conn && !f.token)}>{conn ? tr("Update") : tr("Connect PipesHub")}</button>
-            {conn && <button type="button" className="btn small danger" style={{ marginInlineStart: 8 }}
-              onClick={() => run(() => del(wsPath(ws, `/connections/${conn.id}`))).then(onChange)}>{tr("Disconnect")}</button>}</div>
-        </form>
-      ) : <p className="small muted">{conn ? conn.label : tr("Not connected.")}</p>}
-    </div>
   );
 }
 
