@@ -82,6 +82,8 @@ jobs:
           pip install playwright==1.63.0
           python -m playwright install --with-deps chromium
           python e2e/ui_smoke.py e2e-output
+      - name: A UI change reaches a browser that already loaded the app
+        run: python e2e/bundle_cache.py
       - name: Money figures stay inside their cells
         run: python e2e/figures_fit.py e2e-output
       - name: The public website (overflow, both languages, forms, error codes)

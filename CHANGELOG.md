@@ -36,6 +36,16 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **A UI change now reaches a browser that already loaded the app.** The build wrote the bundle at a fixed name,
+  `assets/app.css` and `assets/app.js`, while the engine served everything under `/assets/` with
+  `cache-control: public, max-age=31536000, immutable`. A browser holding an immutable response does not revalidate
+  it, so every browser that had ever opened Desk kept the stylesheet and script it first downloaded — for a year,
+  past any `git pull`, image rebuild or restart. The interface fixes in this release were invisible to returning
+  users for that reason. The build now writes the content hash into the bundle name and rewrites `index.html` to
+  point at it, and the engine sends `immutable` only for a name that carries a hash; `index.html` itself stays
+  `no-cache`, so it is re-fetched and hands the browser the new URLs, which also clears the stale copies already
+  cached. Builds made with `--watch` keep plain names and are served `no-cache`. `e2e/bundle_cache.py` fails the
+  build if the bundle `index.html` points at could be pinned at an unchanging URL, and it fails on the old build.
 - **Money figures no longer leave the box that holds them.** A figure in the millions or billions painted over the
   KPI cell border into the card beside it, and was clipped inside dashboard widgets and the ledger totals. Each of
   those cells is now its own query container and the figure's type size follows the cell's width, with a floor; the

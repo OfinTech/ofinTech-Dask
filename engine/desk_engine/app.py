@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import getpass
 import logging
+import re
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -306,6 +307,18 @@ def create_app(settings: Settings, *, engine: Engine | None = None) -> Starlette
     return app
 
 
+# esbuild writes the content hash into the file name (app-7KQ2W4XJ.js), and that is the only thing that makes a
+# year-long `immutable` safe: when the contents change the URL changes with them. A fixed name such as app.css must
+# never be sent with it. Doing so pins the bundle in every browser that has ever loaded the app, and `immutable`
+# means the browser does not even revalidate -- so no redeploy, image rebuild or restart can reach it. A build made
+# in watch mode keeps plain names on purpose, and falls through to `no-cache` here.
+_HASHED_ASSET = re.compile(r"assets/[^/]*-[0-9A-Z]{8,}\.[0-9a-zA-Z]+$")
+
+
+def _is_hashed_asset(rel: str) -> bool:
+    return bool(_HASHED_ASSET.match(rel))
+
+
 def _ui_handler(ui_dir: Path) -> Any:
     root = ui_dir.resolve()
 
@@ -315,7 +328,7 @@ def _ui_handler(ui_dir: Path) -> Any:
             return JSONResponse({"error": "not_found", "message": "Unknown API path."}, status_code=404)
         candidate = (root / rel).resolve()
         if rel and candidate.is_file() and root in candidate.parents:
-            cache = "public, max-age=31536000, immutable" if "/assets/" in f"/{rel}" else "no-cache"
+            cache = "public, max-age=31536000, immutable" if _is_hashed_asset(rel) else "no-cache"
             return FileResponse(candidate, headers={"cache-control": cache})
         return FileResponse(root / "index.html", headers={"cache-control": "no-cache"})
 
