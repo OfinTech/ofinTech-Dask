@@ -9,7 +9,7 @@ The **Search** page (Ctrl/Cmd + K from anywhere) runs one query over:
 
 | Source | What is searched | Permissions |
 |---|---|---|
-| Documents | passages (keyword + semantic, plus PipesHub when connected), including scans read with OCR | the workspace |
+| Documents | passages (keyword + semantic), including scans read with OCR | the workspace |
 | Conversations | every user and assistant message (SQLite FTS5) | shared conversations, and your own private ones |
 | Memory | saved memories | workspace memories, and your personal ones |
 | Files | names and row labels of workbooks, reports and your own files | the workspace |
@@ -28,8 +28,7 @@ upload / chat attachment / Gmail attachment / Google Drive (single files or a fo
    → passages of about 1,600 characters with a small overlap, keeping page numbers and headings
    → full-text index (SQLite FTS5, BM25, English stemming)        always on, local
    → embeddings via your model provider (optional)                 semantic search
-   → PipesHub (optional): the original file is uploaded         OCR, knowledge graph, connectors
-search_documents: keyword ranking + semantic ranking (+ PipesHub) merged with reciprocal rank fusion
+search_documents: keyword ranking + semantic ranking merged with reciprocal rank fusion
 ```
 
 - **Keyword search** works with no set-up and keeps everything on the device or server.
@@ -46,8 +45,8 @@ search_documents: keyword ranking + semantic ranking (+ PipesHub) merged with re
   It needs the Google connection with Drive access.
 - **OCR.** PNG, JPEG and TIFF images and PDFs without a text layer are read with Tesseract, page by page,
   when it is installed (it is in the Team Server image). `DESK_OCR=off` turns it off; `DESK_OCR_LANGS` picks the
-  languages (default `eng+ara+spa+fra`, whichever are installed). Without Tesseract these files are read by PipesHub
-  when it is connected, or refused with a clear message.
+  languages (default `eng+ara+spa+fra`, whichever are installed). Without Tesseract these files are refused with a
+  clear message.
 - **Citations.** Search results come back numbered. The answer cites them, and the app shows the sources under the
   answer; clicking one opens the document at that page. The figure check also counts numbers taken from passages
   as verified.
@@ -65,42 +64,6 @@ Attach files with the paperclip in the chat box, by dragging them onto it, or by
   with `search_documents` and `document_ids`, and cites passages as usual. In the app the files appear as chips on
   your message; each chip opens the document.
 
-## PipesHub
-
-[PipesHub](https://github.com/pipeshub-ai/pipeshub-ai) is an open-source enterprise search and knowledge platform
-under Apache-2.0. You run it yourself, or use PipesHub Cloud. It replaces Onyx as the optional external engine. Connect it
-under **Connections → Knowledge** with:
-
-- **Address:** for example `https://pipeshub.example.com`.
-- **Personal access token:** create one in *Workspace settings → Developer settings → Personal access tokens*,
-  with the scopes `kb:read`, `kb:write`, `kb:upload`, `kb:delete` and `semantic:write`. PipesHub's default scope set
-  does not include `kb:delete`; without it, documents deleted here stay in PipesHub.
-- **Knowledge base id (optional):** leave it empty and OfinTech Desk creates a knowledge base called *OfinTech
-  Desk · \<workspace\>*.
-
-| Feature | How |
-|---|---|
-| Upload | The original file is uploaded with `POST /api/v1/knowledgeBase/{kbId}/upload`, and PipesHub parses it itself. Every document is sent, or only those in chosen collections. Chat attachments are always sent. Documents that were already here are sent when you connect. The record id is kept. |
-| Scans and images | Read by the built-in OCR when Tesseract is installed. Otherwise, with PipesHub connected, they are uploaded, PipesHub reads them with OCR, and they show as *via PipesHub*. |
-| Search | Every `search_documents` call also calls `POST /api/v1/retrieve`, filtered to the workspace's knowledge base (`filters.kb`). Results are merged with the built-in ranking. A result that is one of this workspace's documents opens the document here, at the page PipesHub cites. |
-| Workspace isolation | Each workspace has its own knowledge base. Results from records that belong to another workspace are dropped, even if PipesHub returned them. |
-| Other PipesHub sources | Optional and off by default. When it is on, the search also covers everything the token's user can read in PipesHub, through its connectors (SharePoint, Confluence, Google Drive and others), and every member of the workspace can query it. |
-| Deletion | Deleting a document here deletes its PipesHub record with `DELETE /api/v1/knowledgeBase/record/{id}`. |
-
-Queries are cleaned before they are sent, because PipesHub refuses text that looks like markup or printf patterns
-(`50% discount` is sent as `50 percent discount`).
-
-PipesHub is optional. The built-in knowledge base gives keyword and semantic search on its own. PipesHub adds:
-
-- OCR;
-- parsing of complex layouts with Docling;
-- knowledge-graph retrieval;
-- its connectors;
-- scale for large collections.
-
-To deploy PipesHub, follow its own `deployment/docker-compose` guide. It needs MongoDB, Redis, Qdrant, Neo4j or
-ArangoDB, and optionally Kafka. Run it next to the Team Server, not inside the desktop app.
-
 ## Limits
 
 - Files up to 50 MB and 3,000 pages, with at most 20 files per upload.
@@ -109,4 +72,4 @@ ArangoDB, and optionally Kafka. Run it next to the Team Server, not inside the d
 - Original files are kept under the engine's data folder with owner-only permissions, so they can be downloaded and
   re-indexed. Deleting a workspace deletes its files.
 - Semantic search uses an exact (brute-force) similarity search over the workspace's passages. That is fine for tens
-  of thousands of passages. For very large collections, use PipesHub.
+  of thousands of passages; a much larger collection would need an index the engine does not have yet.

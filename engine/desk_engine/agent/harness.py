@@ -126,8 +126,6 @@ def attachment_note(docs: list[dict[str, Any]]) -> str:
     for d in docs:
         if d["status"] == "indexed":
             what = (f"{d['pages']} pages, " if d.get("pages") else "") + "readable"
-        elif d["status"] == "remote":
-            what = "scanned or not readable here; searchable through PipesHub (OCR)"
         elif d["status"] == "processing":
             what = "still being processed"
         else:
@@ -374,17 +372,13 @@ class Agent:
 
     def _knowledge_note(self, ws_id: str) -> str | None:
         n = self.engine.db.scalar("SELECT COUNT(*) FROM documents WHERE workspace_id = ? AND status = 'indexed'", (ws_id,))
-        pipeshub = self.engine.db.one("SELECT 1 FROM connections WHERE workspace_id = ? AND provider = 'pipeshub' AND "
-                                  "status = 'connected'", (ws_id,))
-        if not n and not pipeshub:
+        if not n:
             return None
         colls = [r["name"] for r in self.engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? "
                                                        "ORDER BY name", (ws_id,))]
         note = f"Knowledge base: {n} indexed documents"
         if colls:
             note += " in collections: " + ", ".join(colls[:30])
-        if pipeshub:
-            note += "; PipesHub is connected and searched too"
         return note + ". Use search_documents for anything written in them."
 
     async def _resolve_pending(self, ctx: ToolContext, run: dict[str, Any], state: dict[str, Any],

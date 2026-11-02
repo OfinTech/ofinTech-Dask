@@ -322,13 +322,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .table-title { font-weight: 620; font-size: var(--t-sm); padding: 8px 10px 0; }
 
 /* ---- KPI and charts -------------------------------------------------------------------------------- */
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0; border: 1px solid var(--rule);
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 0; border: 1px solid var(--rule);
   border-radius: 6px; background: var(--panel); }
-.kpi { padding: 12px 16px; border-inline-start: 1px solid var(--rule); }
+.kpi { padding: 12px 16px; border-inline-start: 1px solid var(--rule); min-width: 0; container-type: inline-size; }
 .kpi:first-child { border-inline-start: 0; }
-.kpi .label { color: var(--ink-2); font-size: var(--t-sm); }
-.kpi .value { font-family: var(--font-figures); font-size: var(--t-2xl); font-weight: 650; font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em; line-height: 1.2; }
+.kpi .label { color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; }
+/* A money figure must never wrap mid-number nor spill into the cell beside it, so the type size follows the width
+   of its own cell (container query) down to a floor that still reads at a glance. */
+.kpi .value { font-family: var(--font-figures); font-size: clamp(var(--t-sm), 8.8cqi, var(--t-2xl)); font-weight: 650;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.2; white-space: nowrap; min-width: 0; }
 .chart { width: 100%; height: auto; display: block; }
 .chart text { fill: var(--ink-3); font-size: 11px; }
 .chart .axis { stroke: var(--rule-strong); }
@@ -337,13 +339,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-inline-end: 5px; vertical-align: -1px; }
 
 /* ---- dashboards ------------------------------------------------------------------------------------ */
-.dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); }
-.widget { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 14px 16px; min-width: 0; }
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: var(--s4); }
+.widget { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius-lg); padding: 14px 16px; min-width: 0;
+  container-type: inline-size; }
 .widget.w2 { grid-column: span 2; }
 .widget.w3 { grid-column: span 3; }
+@media (max-width: 900px) { .widget.w2, .widget.w3 { grid-column: auto; } }
 .widget h3 { font-size: var(--t-md); margin-bottom: 8px; }
-.widget .big { font-family: var(--font-figures); font-size: var(--t-3xl); font-weight: 650; font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em; }
+.widget .big { font-family: var(--font-figures); font-size: clamp(var(--t-md), 8.8cqi, var(--t-3xl)); font-weight: 650;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.02em; white-space: nowrap; min-width: 0; }
 
 /* ---- chat --------------------------------------------------------------------------------------------- */
 .chat { display: grid; grid-template-columns: 260px 1fr; height: 100vh; }
@@ -509,10 +513,17 @@ button.fig:hover { background: var(--blue-wash); }
   overflow-wrap: anywhere; }
 .source-card { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; }
 .tally { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; border: 1px solid var(--rule); border-radius: 6px; }
-.tally div { padding: 8px 10px; border-inline-start: 1px solid var(--rule); }
+.tally div { padding: 8px 10px; border-inline-start: 1px solid var(--rule); min-width: 0; container-type: inline-size; }
 .tally div:first-child { border-inline-start: 0; }
+/* three totals side by side need about 150px each; below that they stack rather than shrink the figures away */
+@media (max-width: 560px) {
+  .tally { grid-template-columns: 1fr; }
+  .tally div { border-inline-start: 0; border-top: 1px solid var(--rule); }
+  .tally div:first-child { border-top: 0; }
+}
 .tally dt { font-size: var(--t-xs); color: var(--ink-2); }
-.tally dd { margin: 2px 0 0; font-family: var(--font-figures); font-size: var(--t-xl); font-weight: 650; font-variant-numeric: tabular-nums; }
+.tally dd { margin: 2px 0 0; font-family: var(--font-figures); font-size: clamp(var(--t-xs), 8.8cqi, var(--t-xl)); font-weight: 650;
+  font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 0; }
 .findings { list-style: none; margin: 0; padding: 0; }
 .finding { padding: 10px 0; border-top: 1px solid var(--rule); }
 .finding:first-child { border-top: 0; }

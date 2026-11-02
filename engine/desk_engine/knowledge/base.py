@@ -1,5 +1,5 @@
 """Knowledge base: documents → text → chunks → full-text index (SQLite FTS5, BM25) and optional
-embeddings → hybrid retrieval (reciprocal rank fusion), optionally merged with PipesHub results.
+embeddings → hybrid retrieval (reciprocal rank fusion).
 
 Every query is filtered by workspace; files are stored under the engine's data folder."""
 
@@ -17,7 +17,6 @@ from ..db import dumps, loads, new_id, now
 from ..errors import AppError, Conflict, Invalid, NotFound
 from .embed import workspace_embedder
 from .extract import Section, extract, mime_for
-from .pipeshub import pipeshub_for, upload_name
 
 if TYPE_CHECKING:
     from ..app import Engine
@@ -180,7 +179,7 @@ class Knowledge:
         cid = new_id("col_")
         self.engine.db.insert("doc_collections", {"id": cid, "workspace_id": ws_id, "name": "Chat attachments",
                                                   "description": "Files attached in conversations with the assistant.",
-                                                  "sync_pipeshub": 1, "created_by": user_id, "created_at": now()})
+                                                  "created_by": user_id, "created_at": now()})
         return cid
 
     async def wait_ready(self, ws_id: str, doc_ids: list[str], timeout: float = 90) -> list[dict[str, Any]]:
@@ -189,8 +188,7 @@ class Knowledge:
         end = loop.time() + timeout
         while True:
             docs = [self.get(ws_id, d) for d in doc_ids]
-            pending = [d for d in docs if d["status"] == "processing"
-                       or (d["status"] == "failed" and self.should_send(ws_id, d) and d.get("pipeshub_status") is None)]
+            pending = [d for d in docs if d["status"] == "processing"]
             if not pending or loop.time() > end:
                 return docs
             await asyncio.sleep(0.2)
@@ -230,7 +228,7 @@ class Knowledge:
         return row
 
     def list(self, ws_id: str, collection_id: str | None = None) -> list[dict[str, Any]]:
-        sql = ("SELECT d.id, d.name, d.mime, d.size, d.status, d.error, d.pages, d.chunks, d.embedded, d.pipeshub_status, "
+        sql = ("SELECT d.id, d.name, d.mime, d.size, d.status, d.error, d.pages, d.chunks, d.embedded, "
                "d.source, d.collection_id, c.name AS collection_name, d.created_at, d.updated_at, u.name AS created_by_name "
                "FROM documents d LEFT JOIN doc_collections c ON c.id = d.collection_id LEFT JOIN users u ON u.id = "
                "d.created_by WHERE d.workspace_id = ?")
@@ -261,11 +259,6 @@ class Knowledge:
         except AppError as exc:
             db.execute("UPDATE documents SET status = 'failed', error = ?, updated_at = ? WHERE id = ?",
                        (exc.message, now(), doc_id))
-            # PipesHub parses files itself (with OCR), so a scanned PDF can still become searchable there
-            if await self.push_to_pipeshub(ws_id, doc_id, local_failed=True):
-                db.execute("UPDATE documents SET status = 'remote', error = ?, updated_at = ? WHERE id = ?",
-                           (f"Not readable here ({exc.message.rstrip('.')}); PipesHub indexes it with OCR.", now(),
-                            doc_id))
             return
         except Exception as exc:  # pragma: no cover - logged
             log.exception("processing %s failed", doc_id)
@@ -273,7 +266,6 @@ class Knowledge:
                        (f"Could not process the file ({type(exc).__name__}).", now(), doc_id))
             return
         await self.embed_document(ws_id, doc_id)
-        await self.push_to_pipeshub(ws_id, doc_id)
 
     async def embed_document(self, ws_id: str, doc_id: str) -> None:
         workspace = self.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws_id,))
@@ -299,45 +291,8 @@ class Knowledge:
                           [(v.astype(np.float32).tobytes(), embedder.model, r["id"]) for r, v in zip(rows, vectors, strict=True)])
             c.execute("UPDATE documents SET embedded = 1, error = NULL, updated_at = ? WHERE id = ?", (now(), doc_id))
 
-    def should_send(self, ws_id: str, doc: dict[str, Any]) -> bool:
-        ph = self.engine.db.one("SELECT config FROM connections WHERE workspace_id = ? AND provider = 'pipeshub' AND "
-                                "status = 'connected'", (ws_id,))
-        if ph is None:
-            return False
-        if loads(ph["config"], {}).get("send", "all") == "all":
-            return True
-        coll = self.collection(ws_id, doc["collection_id"]) if doc.get("collection_id") else None
-        return bool(coll and coll["sync_pipeshub"])
-
-    async def push_to_pipeshub(self, ws_id: str, doc_id: str, *, local_failed: bool = False) -> bool:
-        """Uploads the original file to the workspace's PipesHub knowledge base. True when PipesHub has it."""
-        doc = self.get(ws_id, doc_id)
-        if doc.get("pipeshub_status") == "sent":
-            return True
-        ph = pipeshub_for(self.engine, ws_id)
-        if ph is None or not self.should_send(ws_id, doc) or (doc["status"] != "indexed" and not local_failed):
-            return False
-        try:
-            data = await self.read_file(ws_id, doc_id)
-            record_id = await ph.upload(upload_name(doc["name"], doc_id), data, doc["mime"],
-                                        last_modified_ms=int(doc["created_at"] * 1000))
-            self.engine.db.execute("UPDATE documents SET pipeshub_status = 'sent', pipeshub_record_id = ? WHERE id = ?",
-                                   (record_id, doc_id))
-            return True
-        except AppError as exc:
-            self.engine.db.execute("UPDATE documents SET pipeshub_status = ? WHERE id = ?",
-                                   (f"failed: {exc.message}"[:300], doc_id))
-            return False
-
     async def delete(self, ws_id: str, doc_id: str, user_id: str | None) -> None:
         doc = self.get(ws_id, doc_id)
-        if doc.get("pipeshub_record_id"):
-            ph = pipeshub_for(self.engine, ws_id)
-            if ph:
-                try:
-                    await ph.delete(doc["pipeshub_record_id"])
-                except AppError as exc:
-                    log.warning("PipesHub delete failed: %s", exc.message)
         self.engine.db.execute("DELETE FROM documents WHERE id = ? AND workspace_id = ?", (doc_id, ws_id))
         await self.engine.storage.delete(self.storage_key(ws_id, doc_id))
         self.engine.audit(ws_id, user_id, "document.delete", doc_id, {"name": doc["name"]})
@@ -434,39 +389,8 @@ class Knowledge:
         top = np.argsort(-scores)[:limit]
         return [ids[i] for i in top if scores[i] > 0.15]
 
-    def _pipeshub_hits(self, ws_id: str, chunks: list[dict[str, Any]], existing: list[dict[str, Any]],
-                       collection_id: str | None, doc_ids: list[str] | None, *, include_other: bool) -> list[dict[str, Any]]:
-        """Maps PipesHub chunks to hits. A record uploaded from this workspace becomes a link to the document here;
-        records of other workspaces are never shown; other PipesHub sources only when the admin allowed them."""
-        ids = [c["record_id"] for c in chunks if c.get("record_id")]
-        owners: dict[str, dict[str, Any]] = {}
-        if ids:
-            marks = ", ".join("?" for _ in ids)
-            for r in self.engine.db.all(f"SELECT id, workspace_id, name, collection_id, pipeshub_record_id FROM documents "
-                                        f"WHERE pipeshub_record_id IN ({marks})", ids):
-                owners[r["pipeshub_record_id"]] = r
-        out: list[dict[str, Any]] = []
-        for i, c in enumerate(chunks):
-            doc = owners.get(c.get("record_id") or "")
-            if doc is not None and doc["workspace_id"] != ws_id:
-                continue
-            if doc is None and (not include_other or collection_id or doc_ids):
-                continue
-            if doc is not None and ((collection_id and doc["collection_id"] != collection_id)
-                                    or (doc_ids and doc["id"] not in doc_ids)):
-                continue
-            if doc is not None and any(x["document_id"] == doc["id"] and x["page"] == c.get("page") for x in existing + out):
-                continue
-            out.append({"source": "pipeshub", "chunk_id": None, "document_id": doc["id"] if doc else None,
-                        "name": doc["name"] if doc else (c["name"] + (f" ({c['connector'].title()})" if c.get("connector")
-                                                                      else "")),
-                        "page": c.get("page"), "heading": None, "text": c["text"],
-                        "link": None if doc else c.get("url"), "score": round(1.0 / (RRF_K + i + 1), 5),
-                        "match": "pipeshub"})
-        return out
-
     async def search(self, workspace: dict[str, Any], query: str, *, top_k: int = 6, collection_id: str | None = None,
-                     doc_ids: list[str] | None = None, use_pipeshub: bool = True) -> list[dict[str, Any]]:
+                     doc_ids: list[str] | None = None) -> list[dict[str, Any]]:
         ws_id = workspace["id"]
         keyword = self._keyword(ws_id, query, collection_id, doc_ids, 50)
         semantic = await self._semantic(workspace, query, 50)
@@ -495,13 +419,5 @@ class Knowledge:
                                  "page": r["page"], "heading": r["heading"], "text": r["text"],
                                  "score": round(fused[cid], 5), "match": ("keyword+semantic" if cid in keyword and cid in semantic
                                                                           else "keyword" if cid in keyword else "semantic")})
-        if use_pipeshub:
-            ph = pipeshub_for(self.engine, ws_id)
-            if ph is not None:
-                try:
-                    hits.extend(self._pipeshub_hits(ws_id, await ph.retrieve(query, top_k * 2), hits, collection_id,
-                                                    doc_ids, include_other=bool(ph.config.get("include_other_sources"))))
-                except AppError as exc:
-                    log.warning("PipesHub search failed: %s", exc.message)
         hits.sort(key=lambda h: -h["score"])
         return hits[:top_k]

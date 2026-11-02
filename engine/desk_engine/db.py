@@ -818,6 +818,18 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ix_embedded_usage_integration ON embedded_usage(integration_id, created_at);
     """,
+    # 22 — PipesHub is gone: search, OCR and the knowledge base are built in, so the columns that tracked what had
+    #      been uploaded to an external engine are dropped, with the connections that pointed at one
+    """
+    DROP INDEX IF EXISTS ix_documents_pipeshub;
+    ALTER TABLE documents DROP COLUMN pipeshub_status;
+    ALTER TABLE documents DROP COLUMN pipeshub_record_id;
+    ALTER TABLE doc_collections DROP COLUMN sync_pipeshub;
+    UPDATE documents SET status = 'failed', error = 'Not readable here; add a searchable copy.'
+     WHERE status = 'remote';
+    DELETE FROM secrets WHERE id IN (SELECT secret_id FROM connections WHERE provider = 'pipeshub');
+    DELETE FROM connections WHERE provider = 'pipeshub';
+    """,
 ]
 
 

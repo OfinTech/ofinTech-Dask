@@ -82,14 +82,14 @@ export function DocumentsPage({ id }: { id?: string }): ReactNode {
             <li><button aria-pressed={coll === ""} onClick={() => setColl("")}><span>{tr("All documents")}</span></button></li>
             {(colls.data || []).map((c) => (
               <li key={c.id}><button aria-pressed={coll === c.id} onClick={() => setColl(c.id)}>
-                <span>{c.name}{c.sync_pipeshub && kb.data?.pipeshub?.send === "collections" ? " ↗" : ""}</span><span className="xs muted">{c.documents}</span></button></li>
+                <span>{c.name}</span><span className="xs muted">{c.documents}</span></button></li>
             ))}
           </ul>
           {editor && <button className="btn ghost small" style={{ marginTop: 6 }} onClick={() => setNewColl(true)}>
             <Icon name="plus" size={14} />{tr("New collection")}</button>}
           {coll && <DriveFollow coll={(colls.data || []).find((c) => c.id === coll)} editor={editor}
             onChange={() => { colls.reload(); docs.reload(); }} />}
-          <p className="xs muted" style={{ marginTop: 16 }}>{mode}.{kb.data?.pipeshub ? tr(" PipesHub is searched too.") : ""}
+          <p className="xs muted" style={{ marginTop: 16 }}>{mode}.
             {kb.data ? ` ${fmtNumber(kb.data.stats.documents, 0)} documents, ${fmtNumber(kb.data.stats.chunks, 0)} passages.` : ""}</p>
         </aside>
         <div className="stack">
@@ -116,7 +116,7 @@ export function DocumentsPage({ id }: { id?: string }): ReactNode {
             </div>
           )}
           {editor && <div className={`dropzone ${over ? "over" : ""}`}>{tr("Drop PDF, Word, Excel, CSV, text, HTML, e-mail or image files here")}
-            {coll ? tr(" to add them to this collection") : ""}{tr(". Scanned PDFs and images are read through PipesHub (OCR).")}</div>}
+            {coll ? tr(" to add them to this collection") : ""}{tr(". Scanned PDFs and images are read with OCR.")}</div>}
           <ErrorBox error={docs.error} />
           {docs.loading && !docs.data ? <Loading /> : (docs.data || []).length === 0 ? (
             <div className="panel"><Empty title={tr("No documents yet")}>{tr("Add your expense policy, contracts, board minutes or audit letters. Ask the assistant to save e-mail attachments or Google Drive files here too.")}</Empty></div>
@@ -129,9 +129,8 @@ export function DocumentsPage({ id }: { id?: string }): ReactNode {
                     <td><a href={`#/documents/${d.id}`}>{d.name}</a><div className="xs muted">{size(d.size)}{d.source !== "upload" ? `, from ${d.source.replace("_", " ")}` : ""}</div></td>
                     <td className="small">{d.collection_name || "—"}</td>
                     <td className="num">{d.pages || "—"}</td>
-                    <td><StatusTag status={d.status === "remote" ? "via PipesHub" : d.status} />
+                    <td><StatusTag status={d.status} />
                       {d.status === "indexed" && <span className="xs muted"> {d.embedded ? tr("semantic") : tr("keyword")}</span>}
-                      {d.pipeshub_status && <div className={"xs " + (d.pipeshub_status === "sent" ? "muted" : "neg")}>{tr("PipesHub:")}{" "}{d.pipeshub_status}</div>}
                       {d.error && <div className="xs neg">{d.error}</div>}</td>
                     <td className="small">{fmtRelative(d.created_at)}{d.created_by_name ? `, ${d.created_by_name}` : ""}</td>
                   </tr>))}</tbody>
@@ -141,15 +140,15 @@ export function DocumentsPage({ id }: { id?: string }): ReactNode {
         </div>
       </div>
       {id && <DocumentView id={id} collections={colls.data || []} onClose={() => go("documents")} onChanged={() => { docs.reload(); colls.reload(); }} />}
-      {newColl && <CollectionForm onClose={() => setNewColl(false)} onSaved={() => { setNewColl(false); colls.reload(); }} pipeshub={kb.data?.pipeshub?.send === "collections"} />}
+      {newColl && <CollectionForm onClose={() => setNewColl(false)} onSaved={() => { setNewColl(false); colls.reload(); }} />}
       {settings && <SearchSettings onClose={() => { setSettings(false); kb.reload(); }} />}
     </div>
   );
 }
 
-function CollectionForm({ onClose, onSaved, pipeshub }: { onClose: () => void; onSaved: () => void; pipeshub: boolean }): ReactNode {
+function CollectionForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }): ReactNode {
   const { ws } = useApp();
-  const [f, setF] = useState({ name: "", description: "", sync_pipeshub: false });
+  const [f, setF] = useState({ name: "", description: "" });
   const { busy, run } = useAction();
   return (
     <Modal title={tr("New collection")} onClose={onClose} footer={<>
@@ -160,8 +159,6 @@ function CollectionForm({ onClose, onSaved, pipeshub }: { onClose: () => void; o
       <div className="stack">
         <Field label={tr("Name")}><input className="input" value={f.name} placeholder={tr("e.g. Contracts")} onChange={(e) => setF({ ...f, name: e.target.value })} /></Field>
         <Field label={tr("Description (optional)")}><input className="input" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></Field>
-        {pipeshub && <label className="check"><input type="checkbox" checked={f.sync_pipeshub} onChange={(e) => setF({ ...f, sync_pipeshub: e.target.checked })} />
-          <span>{tr("Also send these documents to PipesHub (this workspace's knowledge base)")}</span></label>}
       </div>
     </Modal>
   );
@@ -207,7 +204,7 @@ function DocumentView({ id, collections, onClose, onChanged }: { id: string; col
           <Comments targetType="document" targetId={id} />
         </div>
       )}
-      {confirm && <Confirm text={tr("Delete {0}? It is removed from search{1}.", { 0: doc?.name, 1: doc?.pipeshub_status === "sent" ? " and from PipesHub" : "" })}
+      {confirm && <Confirm text={tr("Delete {0}? It is removed from search.", { 0: doc?.name })}
         onClose={() => setConfirm(false)} onYes={async () => { await run(() => del(wsPath(ws, `/documents/${id}`))); onChanged(); onClose(); }} />}
     </Modal>
   );
@@ -242,9 +239,7 @@ function SearchSettings({ onClose }: { onClose: () => void }): ReactNode {
             const r: any = await run(() => put(wsPath(ws, "/knowledge/embeddings"), { provider_id: pid || null, model: model || null }), tr("Saved"));
             if (r) kb.reload();
           }}>{tr("Save")}</button>{kb.data.embedding_model && <span className="small muted">{tr("Changing the model re-embeds every document.")}</span>}</div>}
-          <div className="small muted">{fmtNumber(kb.data.stats.documents, 0)}{" "}{tr("documents,")}{" "}{fmtNumber(kb.data.stats.embedded, 0)}{" "}{tr("with embeddings.")}
-            {kb.data.pipeshub ? tr(" PipesHub: {0}, knowledge base “{1}”, {2} documents sent.", { 0: kb.data.pipeshub.status, 1: kb.data.pipeshub.kb_name, 2: kb.data.pipeshub.sent })
-              : tr(" Connect PipesHub under Connections → Knowledge to add OCR for scans and images.")}</div>
+          <div className="small muted">{fmtNumber(kb.data.stats.documents, 0)}{" "}{tr("documents,")}{" "}{fmtNumber(kb.data.stats.embedded, 0)}{" "}{tr("with embeddings.")}</div>
         </div>
       )}
     </Modal>

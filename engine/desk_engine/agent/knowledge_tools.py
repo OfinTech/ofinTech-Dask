@@ -8,11 +8,8 @@ from .tools import ToolContext, ToolOutput, registry, schema
 
 
 def _has_docs(ctx: ToolContext) -> bool:
-    if ctx.engine.db.one("SELECT 1 FROM documents WHERE workspace_id = ? AND status IN ('indexed', 'remote') LIMIT 1",
-                         (ctx.ws_id,)):
-        return True
-    return ctx.engine.db.one("SELECT 1 FROM connections WHERE workspace_id = ? AND provider = 'pipeshub' AND "
-                             "status = 'connected' LIMIT 1", (ctx.ws_id,)) is not None
+    return ctx.engine.db.one("SELECT 1 FROM documents WHERE workspace_id = ? AND status = 'indexed' LIMIT 1",
+                             (ctx.ws_id,)) is not None
 
 
 def _collection_id(ctx: ToolContext, name: str | None) -> str | None:
@@ -24,7 +21,7 @@ def _collection_id(ctx: ToolContext, name: str | None) -> str | None:
 
 
 @registry.tool("search_documents", "Search the workspace's documents (policies, contracts, reports, statements, "
-               "e-mails saved to the knowledge base, files attached in chat, and PipesHub if connected). Returns numbered passages; cite them in "
+               "e-mails saved to the knowledge base and files attached in chat). Returns numbered passages; cite them in "
                "the answer as [1], [2] with the document name and page.",
                schema({"query": {"type": "string", "description": "what to look for, in natural language"},
                        "collection": {"type": "string", "description": "optional collection name"},
@@ -44,7 +41,7 @@ async def _search(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         return ToolOutput("No passages matched. Try other words, or check that the document was added under Documents.")
     lines, items = [], []
     for n, h in enumerate(hits, start=1):
-        where = f"{h['name']}" + (f", page {h['page']}" if h["page"] else "") + (" (PipesHub)" if h["source"] == "pipeshub" else "")
+        where = f"{h['name']}" + (f", page {h['page']}" if h["page"] else "")
         lines.append(f"[{n}] {where}\n{h['text'][:1800]}")
         items.append({"n": n, "document_id": h["document_id"], "name": h["name"], "page": h["page"],
                       "snippet": h["text"][:280], "source": h["source"], "link": h.get("link")})
@@ -68,9 +65,6 @@ async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                        "page_to": {"type": "integer"}}, ["document_id"]), category="knowledge", available=_has_docs)
 async def _read(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     doc = ctx.engine.knowledge.get(ctx.ws_id, a["document_id"])
-    if doc["status"] == "remote":
-        return ToolOutput(f"“{doc['name']}” could not be read here (for example a scanned PDF); PipesHub indexed it with "
-                          f"OCR. Use search_documents with document_ids [\"{doc['id']}\"] to find passages in it.")
     if doc["status"] == "processing":
         return ToolOutput(f"“{doc['name']}” is still being processed; try again in a moment.")
     if doc["status"] == "failed":

@@ -58,7 +58,6 @@ export function Blocks({ blocks, currency }: { blocks: Block[]; currency?: strin
                     ? go(`documents/${it.document_id}${it.page ? `?page=${it.page}` : ""}`)
                     : it.link && openExternal(it.link)}>
                     {String(it.name)}{it.page ? `, page ${it.page}` : ""}</button>
-                  {it.source === "pipeshub" && <span className="tag" style={{ marginInlineStart: 6 }}>{tr("PipesHub")}</span>}
                   <div className="xs muted">{String(it.snippet || "").slice(0, 220)}…</div>
                 </li>
               ))}
