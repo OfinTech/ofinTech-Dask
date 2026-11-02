@@ -5,6 +5,19 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **The public website** (`site/`): four static pages written for a finance lead rather than an engineer — what the
+  assistant answers, the four steps to using it, **what it will not do** (no payments, nothing outbound without a
+  named approval, sealed mode, an audit log the application cannot rewrite), and how to get it. Everything
+  technical moved to a single `docs.html`. Sign-in and sign-up pages post to the engine's existing
+  `/auth/form/sign-in`, `/auth/form/sign-up` and `/auth/form/google`, and the script turns the error codes the
+  engine redirects with (`#signup-exists`, `#signin-rate`, …) into a message on the page that error belongs to.
+  Arabic is the source of truth with English in `data-en` attributes, one file per page, `html[lang]` and
+  `html[dir]` switched together. No build step, no framework, no third-party request; the brand's own fonts and
+  palette. `e2e/site_check.py` drives four pages × two languages × five widths in CI and fails on any sideways
+  overflow, an unswitched string, a form that posts anywhere but the engine, or a console error.
+
 ### Removed
 
 - **PipesHub.** The optional external search engine is gone: keyword search (SQLite FTS5, BM25), semantic search

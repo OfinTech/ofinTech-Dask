@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الوثائق — OfinTech Desk</title>
+<meta name="description" content="كل ما هو تقني في مكان واحد: التثبيت على خادم، النماذج والمزوّدون، الربط بالأنظمة المحاسبية، الصلاحيات والموافقات، النسخ الاحتياطي، والواجهة البرمجية.">
+<link rel="icon" href="assets/ofintech-icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="doc">
+<a class="skip" href="#main" data-en="Skip to content">تخطّي إلى المحتوى</a>
+
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="index.html" data-en-label="OfinTech Desk — home" aria-label="OfinTech Desk — الصفحة الرئيسية">
+      <img class="mark" src="assets/ofintech-icon.svg" alt="">
+      <img class="wordmark" src="assets/ofintech-wordmark-dark.svg" alt="OfinTech">
+    </a>
+    <nav class="nav" data-en-label="Site" aria-label="الموقع">
+      <a class="hide-sm" href="index.html#how" data-en="How it works">كيف يعمل</a>
+      <a class="hide-sm" href="index.html#download" data-en="Get it">التحميل</a>
+      <a class="hide-xs" href="#" data-lang-toggle>English</a>
+      <span class="nav-sep hide-xs" aria-hidden="true"></span>
+      <a href="sign-in.html" data-en="Sign in">تسجيل الدخول</a>
+      <a class="btn primary" href="sign-up.html" data-en="Create an account">أنشئ حساباً</a>
+    </nav>
+  </div>
+</header>
+
+<div class="doc-head">
+  <div class="wrap">
+    <h1 style="font-size:clamp(28px,4vw,38px)" data-en="Documentation">الوثائق</h1>
+    <p class="sub" data-en="Everything technical lives here: installing on a server, choosing the model, connecting your accounting system, roles and approvals, backups, and the interfaces other systems can use.">
+      كل ما هو تقني في هذه الصفحة: التثبيت على خادم، واختيار النموذج، وربط نظامك المحاسبي، والأدوار والموافقات، والنسخ الاحتياطي، والواجهات التي تستخدمها الأنظمة الأخرى.
+    </p>
+  </div>
+</div>
+
+<main id="main" class="wrap doc-body">
+  <nav class="doc-nav" data-en-label="On this page" aria-label="في هذه الصفحة">
+    <a href="#server" data-en="Install on a server">التثبيت على خادم</a>
+    <a href="#desktop" data-en="Desktop app">تطبيق سطح المكتب</a>
+    <a href="#models" data-en="Models and providers">النماذج والمزوّدون</a>
+    <a href="#data" data-en="Bringing data in">إدخال البيانات</a>
+    <a href="#roles" data-en="Roles and approvals">الأدوار والموافقات</a>
+    <a href="#security" data-en="Security and data boundaries">الأمن وحدود البيانات</a>
+    <a href="#backups" data-en="Backups">النسخ الاحتياطي</a>
+    <a href="#api" data-en="Interfaces for other systems">واجهات الأنظمة الأخرى</a>
+    <a href="#limits" data-en="Limits and known gaps">الحدود والفجوات المعروفة</a>
+  </nav>
+
+  <article>
+    <h2 id="server" data-en="Install on a server">التثبيت على خادم</h2>
+    <p data-en="One container for the engine and one for the reverse proxy, which obtains and renews the TLS certificate for you. A modest virtual machine is enough: 2 vCPU, 4 GB of memory and 40 GB of disk for a finance team of ten.">
+      حاوية للمحرّك وأخرى للوكيل العكسي الذي يستصدر شهادة TLS ويجدّدها تلقائياً. خادم افتراضي متواضع يكفي: نواتان و4 غيغابايت ذاكرة و40 غيغابايت قرص لفريق مالي من عشرة أشخاص.
+    </p>
+    <p data-en="Requirements: Docker Engine 24 or newer with Compose v2, a DNS record pointing at the machine, and ports 80 and 443 open.">
+      المتطلبات: Docker Engine 24 أو أحدث مع Compose v2، وسجل DNS يشير إلى الخادم، والمنفذان 80 و443 مفتوحان.
+    </p>
+<pre><code>git clone https://github.com/OfinTech/ofinTech-Dask.git
+cd ofinTech-Dask/server
+cp .env.example .env            # set DESK_DOMAIN and DESK_PUBLIC_URL
+python -m desk_engine keygen &gt; master.key    # keep this outside the backups
+docker compose up -d --build
+docker compose logs -f engine   # wait for: Uvicorn running on http://0.0.0.0:8700</code></pre>
+    <p data-en="The first account you create becomes the owner. Every later account needs an invitation.">
+      أول حساب تنشئه يصبح المالك. وكل حساب بعده يحتاج دعوة.
+    </p>
+
+    <h3 data-en="Updating">التحديث</h3>
+    <p data-en="Take a backup first; database migrations run automatically on start-up and are never rewritten once released.">
+      خذ نسخة احتياطية أولاً؛ ترحيلات قاعدة البيانات تُنفَّذ تلقائياً عند التشغيل ولا يُعاد كتابتها بعد إصدارها.
+    </p>
+<pre><code>./backup.sh
+git fetch origin &amp;&amp; git reset --hard origin/main
+docker compose up -d --build engine</code></pre>
+    <p data-en="A plain restart is not enough: it neither rebuilds the image nor rereads .env."><code>docker compose restart</code> وحده لا يكفي: فهو لا يعيد بناء الصورة ولا يقرأ <code>.env</code> من جديد.</p>
+
+    <h2 id="desktop" data-en="Desktop app">تطبيق سطح المكتب</h2>
+    <p data-en="For one finance lead on one machine. There are no accounts and no sign-in: the operating-system account is the person. Everything — the database, the documents, the generated files — stays under your user folder.">
+      لمسؤول مالي واحد على جهاز واحد. لا حسابات ولا تسجيل دخول: حساب نظام التشغيل هو الشخص. وكل شيء — قاعدة البيانات والمستندات والملفات المُنتَجة — يبقى في مجلد المستخدم عندك.
+    </p>
+    <p data-en="Builds for macOS, Windows and Linux are on the releases page. They are not code-signed yet, so the first launch needs a confirmation: on macOS open the context menu and choose Open; on Windows choose More info then Run anyway.">
+      إصدارات macOS وWindows وLinux في صفحة الإصدارات. وهي غير موقّعة رقمياً بعد، فيحتاج التشغيل الأول تأكيداً: على macOS افتح قائمة السياق واختر فتح، وعلى Windows اختر مزيد من المعلومات ثم تشغيل على أي حال.
+    </p>
+
+    <h2 id="models" data-en="Models and providers">النماذج والمزوّدون</h2>
+    <p data-en="The product is not tied to one model vendor. An administrator adds a provider per workspace; anything with an OpenAI-compatible endpoint works, including a model running inside your own network.">
+      المنتج غير مرتبط بمزوّد نموذج واحد. يضيف المسؤول مزوّداً لكل مساحة عمل؛ وأي خدمة بواجهة متوافقة مع OpenAI تعمل، بما فيها نموذج يعمل داخل شبكتك أنت.
+    </p>
+    <ul>
+      <li data-en="A hosted provider: paste the key; it is stored encrypted and never written to a log.">مزوّد مستضاف: ألصق المفتاح؛ يُخزَّن مشفّراً ولا يُكتب في أي سجلّ.</li>
+      <li data-en="A model on your own network: give its address. In sealed mode this is the only kind allowed.">نموذج على شبكتك: أعطِ عنوانه. وفي الوضع المختوم هذا هو النوع الوحيد المسموح.</li>
+      <li data-en="Embeddings for semantic search are optional and set separately; without them search stays keyword-only, which needs no provider at all.">التضمينات للبحث الدلالي اختيارية وتُضبط على حدة؛ وبدونها يبقى البحث بالكلمات المفتاحية ولا يحتاج أي مزوّد.</li>
+    </ul>
+
+    <h2 id="data" data-en="Bringing data in">إدخال البيانات</h2>
+    <p data-en="Three ways, and you can mix them:">ثلاث طرق، ويمكن الجمع بينها:</p>
+    <ul>
+      <li data-en="<strong>Files.</strong> Excel or CSV of the general ledger, trial balance, budget or any table. The columns are read and you confirm what each one is."><strong>ملفات.</strong> Excel أو CSV لدفتر الأستاذ أو ميزان المراجعة أو الموازنة أو أي جدول. تُقرأ الأعمدة وتؤكّد أنت معنى كل عمود.</li>
+      <li data-en="<strong>An accounting system.</strong> Connect it once and it refreshes nightly. Nothing is ever written back to it without an approval."><strong>نظام محاسبي.</strong> اربطه مرة ويتحدّث كل ليلة. ولا يُكتب فيه شيء أبداً دون موافقة.</li>
+      <li data-en="<strong>Documents.</strong> Contracts, policies, board minutes, audit letters, bank statements as PDF. Scans and images are read with OCR in Arabic, English, Spanish and French."><strong>مستندات.</strong> عقود وسياسات ومحاضر مجلس وخطابات مراجعة وكشوف بنكية بصيغة PDF. والممسوحات والصور تُقرأ بالتعرّف الضوئي بالعربية والإنجليزية والإسبانية والفرنسية.</li>
+    </ul>
+
+    <h2 id="roles" data-en="Roles and approvals">الأدوار والموافقات</h2>
+    <p data-en="Four roles, checked on the server at every single request, never in the browser: viewer reads, editor changes workspace records, admin manages connections and members, owner holds the workspace.">
+      أربعة أدوار، تُفحص في الخادم عند كل طلب ولا تُفحص في المتصفح أبداً: المُطّلع يقرأ، والمحرّر يغيّر سجلات مساحة العمل، والمسؤول يدير الاتصالات والأعضاء، والمالك يملك مساحة العمل.
+    </p>
+    <p data-en="Any action that changes something outside the conversation pauses and waits. The person approving sees the tool, the exact arguments and the amounts. An approval expires, is bound to exactly those arguments, and is consumed once: if the arguments change after it was granted, it is refused.">
+      أي إجراء يغيّر شيئاً خارج المحادثة يتوقّف وينتظر. ويرى الموافِق الأداة والمعاملات والمبالغ بالضبط. والموافقة تنتهي صلاحيتها، ومرتبطة بتلك المعاملات تحديداً، وتُستهلك مرة واحدة: فإن تغيّرت المعاملات بعد منحها، تُرفض.
+    </p>
+
+    <h2 id="security" data-en="Security and data boundaries">الأمن وحدود البيانات</h2>
+    <ul>
+      <li data-en="Secrets at rest are encrypted with AES-256-GCM under a master key that never enters the database.">الأسرار المخزَّنة مشفّرة بـ AES-256-GCM بمفتاح رئيسي لا يدخل قاعدة البيانات أبداً.</li>
+      <li data-en="Stored files are encrypted before they are written, locally or to object storage, so the storage operator cannot read them.">الملفات تُشفَّر قبل كتابتها، محلياً أو في التخزين الكائني، فلا يستطيع مشغّل التخزين قراءتها.</li>
+      <li data-en="Bank identifiers are masked before any figure reaches a model or a log: an IBAN keeps its country and last four characters.">معرّفات البنوك تُقنَّع قبل وصول أي رقم إلى نموذج أو سجلّ: يحتفظ الآيبان ببلده وآخر أربعة محارف.</li>
+      <li data-en="<strong>Sealed mode</strong> stops every outbound connection at the point it would be made, including for runs already in progress."><strong>الوضع المختوم</strong> يوقف كل اتصال خارجي عند نقطة إنشائه، بما في ذلك التشغيلات الجارية بالفعل.</li>
+      <li data-en="The audit log records who asked, what was approved, what ran and what came back, and the application cannot change or delete an entry.">سجلّ التدقيق يسجّل مَن سأل وما اعتُمد وما نُفِّذ وما عاد، ولا يستطيع التطبيق تعديل أي مُدخل أو حذفه.</li>
+      <li data-en="Payments cannot exist: a tool that moves money or changes a beneficiary is refused at registration and again at the call.">المدفوعات لا يمكن أن توجد: أي أداة تحرّك أموالاً أو تغيّر مستفيداً تُرفض عند التسجيل وعند الاستدعاء معاً.</li>
+    </ul>
+    <p data-en="The repository carries the full security review, the threat model and the register of accepted risks under docs/audit. Read them before a regulated deployment.">
+      يحتوي المستودع على المراجعة الأمنية الكاملة ونموذج التهديد وسجلّ المخاطر المقبولة في <code>docs/audit</code>. اقرأها قبل أي نشر في جهة خاضعة للرقابة.
+    </p>
+
+    <h2 id="backups" data-en="Backups">النسخ الاحتياطي</h2>
+    <p data-en="Backups are sealed with a backup key that is separate from the master key, so the three things stay apart: the backup files, the key that reads them, and the key that decrypts stored credentials.">
+      النسخ الاحتياطية مختومة بمفتاح نسخ منفصل عن المفتاح الرئيسي، لتبقى الأشياء الثلاثة متفرّقة: ملفات النسخ، والمفتاح الذي يقرأها، والمفتاح الذي يفكّ تشفير بيانات الاعتماد.
+    </p>
+<pre><code>python -m desk_engine keygen &gt; backup.key    # once; chmod 600; keep it off the server
+./backup.sh                                  # encrypted copy + checksum
+python -m desk_engine backup-check &lt;file&gt; --key-file backup.key   # restore rehearsal</code></pre>
+    <p data-en="Rehearse a restore on another machine on a schedule. A backup you have never restored is not a backup.">
+      تمرّن على الاستعادة على جهاز آخر بشكل دوري. فالنسخة التي لم تستعدها مرة ليست نسخة احتياطية.
+    </p>
+
+    <h2 id="api" data-en="Interfaces for other systems">واجهات الأنظمة الأخرى</h2>
+    <ul>
+      <li data-en="<strong>A REST API</strong> for everything the app itself does, under <code>/api/w/{workspace}/…</code>, with the same role checks."><strong>واجهة REST</strong> لكل ما يفعله التطبيق نفسه، تحت <code>/api/w/{workspace}/…</code>، وبنفس فحوص الأدوار.</li>
+      <li data-en="<strong>MCP</strong>: the workspace can be used as a tool source by an outside client with a scoped access key, read-only by default."><strong>MCP</strong>: يمكن استخدام مساحة العمل كمصدر أدوات لعميل خارجي بمفتاح وصول محدود، للقراءة فقط افتراضياً.</li>
+      <li data-en="<strong>An embedded agent gateway</strong> that speaks the AG-UI protocol, so a partner application can run a read-only financial assistant inside its own screens."><strong>بوابة مساعد مُضمَّن</strong> تتحدّث بروتوكول AG-UI، لتشغيل مساعد مالي للقراءة فقط داخل شاشات تطبيق شريك.</li>
+      <li data-en="<strong>Outgoing webhooks</strong> for every audited event, so an external log or SIEM can keep its own copy."><strong>Webhooks صادرة</strong> لكل حدث مُدقَّق، ليحتفظ سجلّ خارجي أو نظام SIEM بنسخته.</li>
+    </ul>
+    <p data-en="Developer guides and the OpenAPI description are in the repository under docs/.">
+      أدلّة المطوّرين ووصف OpenAPI في المستودع تحت <code>docs/</code>.
+    </p>
+
+    <h2 id="limits" data-en="Limits and known gaps">الحدود والفجوات المعروفة</h2>
+    <p data-en="Stated plainly, because you will find them anyway:">نذكرها صراحةً، لأنك ستكتشفها على أي حال:</p>
+    <table>
+      <thead><tr>
+        <th data-en="Item">البند</th><th data-en="Where it stands">الحالة</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td data-en="Scale">الحجم</td>
+          <td data-en="One engine process per deployment. Sized and measured for a finance team, not for hundreds of concurrent users.">عملية محرّك واحدة لكل نشر. مُقاسة لفريق مالي، لا لمئات المستخدمين المتزامنين.</td>
+        </tr>
+        <tr>
+          <td data-en="Monitoring">المراقبة</td>
+          <td data-en="Logs and a health endpoint. There is no metrics endpoint or alert rules yet; use an external uptime check.">سجلّات ونقطة فحص صحة. لا توجد نقطة مقاييس ولا قواعد تنبيه بعد؛ استخدم مراقباً خارجياً.</td>
+        </tr>
+        <tr>
+          <td data-en="Compliance">الامتثال</td>
+          <td data-en="A gap assessment exists for PDPL and SAMA CSF. Nothing here is certified, and the product makes no e-invoicing claim.">يوجد تقييم فجوات لنظام حماية البيانات وإطار ساما. لا شيء هنا معتمد، ولا يدّعي المنتج أي امتثال للفوترة الإلكترونية.</td>
+        </tr>
+        <tr>
+          <td data-en="Model answers">إجابات النموذج</td>
+          <td data-en="Arithmetic is computed in code, not by the model, and figures carry sources — but wording can still mislead. The figure check flags numbers with no source behind them.">الحسابات تُنفَّذ في الكود لا في النموذج، والأرقام تحمل مصادرها — لكن الصياغة قد تضلّل. وفحص الأرقام يُعلّم ما لا مصدر له.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p data-en="Questions a page cannot answer: write to info@ofintech.ai.">
+      ما لا تجيب عنه صفحة: راسلنا على <a href="mailto:info@ofintech.ai">info@ofintech.ai</a>.
+    </p>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <a class="brand" href="index.html"><img src="assets/ofintech-wordmark-light.svg" alt="OfinTech" style="height:20px"></a>
+      <nav class="foot-links" data-en-label="Footer" aria-label="تذييل">
+        <a href="index.html#how" data-en="How it works">كيف يعمل</a>
+        <a href="index.html#download" data-en="Get it">التحميل</a>
+        <a href="sign-in.html" data-en="Sign in">تسجيل الدخول</a>
+        <a href="mailto:info@ofintech.ai">info@ofintech.ai</a>
+        <a href="#" data-lang-toggle>English</a>
+      </nav>
+    </div>
+    <div class="foot-rule">
+      <span data-en="© 2026 OfinTech. Riyadh, Saudi Arabia.">© ٢٠٢٦ أوفِن‌تِك. الرياض، المملكة العربية السعودية.</span>
+      <span data-en="This product makes no certification claim.">لا يدّعي هذا المنتج أي اعتماد أو شهادة.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

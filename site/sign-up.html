@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>أنشئ حساباً — OfinTech Desk</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/ofintech-icon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="auth-page">
+
+  <aside class="auth-aside">
+    <a class="brand" href="index.html"><img src="assets/ofintech-wordmark-light.svg" alt="OfinTech" style="height:22px"></a>
+    <div>
+      <h2 data-en="Bring in one month of the ledger. You will know within the hour.">أدخِل شهراً واحداً من دفتر الأستاذ. ستعرف رأيك خلال ساعة.</h2>
+      <p data-en="Nothing is sent anywhere without a named person approving it, and the assistant never moves money.">
+        لا شيء يُرسل إلى أي جهة دون موافقة شخص باسمه، والمساعد لا يحرّك أموالاً إطلاقاً.
+      </p>
+    </div>
+    <p style="color:color-mix(in srgb,#fff 50%,#14243A);font-size:14px" data-en="© 2026 OfinTech">© ٢٠٢٦ أوفِن‌تِك</p>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <a class="brand" href="index.html" style="margin-bottom:28px">
+        <img class="mark" src="assets/ofintech-icon.svg" alt="">
+        <img src="assets/ofintech-wordmark-dark.svg" alt="OfinTech" style="height:20px">
+      </a>
+      <h1 data-en="Create an account">أنشئ حساباً</h1>
+      <p class="sub" data-en="The first account on a new server becomes its owner. After that, accounts are created from an invitation.">
+        أول حساب على خادم جديد يصبح مالكه. وبعد ذلك تُنشأ الحسابات بدعوة.
+      </p>
+
+      <div id="alert" class="alert"></div>
+
+      <form class="form" method="post" data-engine-path="/auth/form/sign-up">
+        <div class="field">
+          <label for="name" data-en="Your name">اسمك</label>
+          <input id="name" name="name" type="text" autocomplete="name" required maxlength="120"
+                 placeholder="فهد العتيبي" data-en-placeholder="Fahad Alotaibi">
+        </div>
+        <div class="field">
+          <label for="email" data-en="Work e-mail">البريد الإلكتروني للعمل</label>
+          <input id="email" name="email" type="email" autocomplete="username" required maxlength="254"
+                 placeholder="cfo@company.sa" dir="ltr">
+        </div>
+        <div class="field">
+          <label for="password" data-en="Password">كلمة المرور</label>
+          <input id="password" name="password" type="password" autocomplete="new-password" required
+                 minlength="12" maxlength="300">
+          <span class="hint" data-en="At least 12 characters, with upper- and lower-case letters and a digit.">
+            12 حرفاً على الأقل، بأحرف كبيرة وصغيرة ورقم.
+          </span>
+        </div>
+        <button class="btn primary block lg" type="submit" data-en="Create the account">أنشئ الحساب</button>
+      </form>
+
+      <div class="or" data-en="or">أو</div>
+      <a class="btn block" data-engine-path="/auth/form/google" href="#" data-en="Continue with Google">المتابعة بحساب Google</a>
+
+      <p class="auth-foot">
+        <span data-en="Already have an account?">لديك حساب؟</span>
+        <a href="sign-in.html" data-en="Sign in">سجّل الدخول</a>
+        &nbsp;·&nbsp;
+        <a href="#" data-lang-toggle>English</a>
+      </p>
+    </div>
+  </main>
+
+</div>
+<script src="site.js"></script>
+</body>
+</html>
