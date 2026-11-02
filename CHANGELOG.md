@@ -7,6 +7,11 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **One headline everywhere a person meets the brand**: *كل رقم مرتبط بمصدره.* / *Every figure traced to its
+  source.* — the line the application's sign-in screen already carried. It is now also the site's hero, the panel
+  of both sign-in pages and the close of the film, so someone who reads it on the site and then signs in meets the
+  same promise instead of a second version of it. A surface shows the headline **or** the descriptor, never both
+  stacked.
 - **A brand line** (`docs/brand/README.md`): *ذكاء مالي، ولكل رقم مصدره.* / *Financial intelligence, sourced.*
   A descriptor rather than a slogan — it goes with the wordmark (the site's footer, the sign-in and sign-up
   panels, the film's sign-off), never on its own and never as a headline. The brand note also records why a

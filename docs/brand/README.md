@@ -25,13 +25,17 @@ Never add a compliance, certification or accuracy claim to any brand material. T
 
 ## The headline
 
-The site's own headline is sharper than the descriptor and does a different job:
+One sentence, and it is the same one everywhere a person meets the brand:
 
-> **الرقم الذي توقّع تحته. ومن أين جاء.**
-> **The figure you sign your name under. And where it came from.**
+> **كل رقم مرتبط بمصدره.**
+> **Every figure traced to its source.**
 
-It names a moment a finance lead knows by heart, and it names the differentiator. Keep it for the hero of a page
-or the close of a film; keep the descriptor for everywhere the wordmark appears quietly.
+It is on the hero of the site, on the panel of both sign-in pages, on the application's own sign-in screen, and at
+the close of the film. Someone who reads it on the site and then signs in is met by the same promise rather than a
+second version of it — which is the whole point of having one.
+
+The headline carries the differentiator, so a surface shows either the headline **or** the descriptor, never both
+stacked: the hero and the auth panels take the headline, the footer and the film's lockup take the descriptor.
 
 ## Assets
 
