@@ -36,6 +36,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The website at `ofintech.ai` is now the one in `site/`.** The four-page site — the product and who it is for,
+  a separate documentation page, sign-in and create-account, Arabic and English on every page — existed in the
+  repository but was wired to nothing: the domain still served `landing/`, a single English page with no language
+  switch. `site/` now carries its own `Dockerfile`, `nginx.conf` and compose files, and `landing/` is gone.
+  Addresses written down when the site was one page still arrive: `/features` redirects to *how it works*, and
+  `#signin` and `#signup` are sent to their pages by `site.js`, because a fragment never reaches the server.
+  `/docs` and `/sign-in` work as well as `/docs.html`. There is a 404 page in the site's own chrome.
+  The Content-Security-Policy had to change with it: the inherited one said `script-src 'none'`, which was right
+  for a site with no script and would have switched off the language switch and pointed the sign-in form at
+  itself. `e2e/site_serving.py` serves the pages under the directives read out of `nginx.conf` and fails if the
+  policy blocks the site or an old address stops arriving; it fails on the inherited policy.
 - **A UI change now reaches a browser that already loaded the app.** The build wrote the bundle at a fixed name,
   `assets/app.css` and `assets/app.js`, while the engine served everything under `/assets/` with
   `cache-control: public, max-age=31536000, immutable`. A browser holding an immutable response does not revalidate

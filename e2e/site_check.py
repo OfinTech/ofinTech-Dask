@@ -12,7 +12,7 @@ import sys, http.server, socketserver, threading, functools
 from playwright.sync_api import sync_playwright
 
 root = sys.argv[1] if len(sys.argv) > 1 else str(pathlib.Path(__file__).resolve().parents[1] / "site")
-PAGES = ["index.html", "docs.html", "sign-in.html", "sign-up.html"]
+PAGES = ["index.html", "docs.html", "sign-in.html", "sign-up.html", "404.html"]
 WIDTHS = [380, 480, 768, 1024, 1440]
 H = functools.partial(http.server.SimpleHTTPRequestHandler, directory=root)
 class Q(socketserver.TCPServer): allow_reuse_address = True

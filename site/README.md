@@ -10,6 +10,9 @@ step, no framework, no third-party request: HTML, one stylesheet, one small scri
 | `sign-in.html`, `sign-up.html` | The forms. They post to the engine, not to this site. |
 | `styles.css` | The product's own palette and type, so the site and the app read as one thing. |
 | `site.js` | Language switch, the engine's address, and the error codes the engine sends back. |
+| `404.html` | Shown for an address that is not here, in the same chrome as the rest. Its links are absolute, because a 404 is served at whatever path was asked for. |
+| `Dockerfile`, `nginx.conf` | How it is served: nginx as a non-root user on port 8080. Everything in this folder ships except the files that describe how to ship it (`.dockerignore`), so a page added here is served without editing anything. |
+| `docker-compose*.yml`, `Caddyfile` | The site alone, on the Team Server's network, or with HTTPS of its own. |
 
 ## Language
 
@@ -76,3 +79,40 @@ right page with a readable message, and no console errors. It runs in CI.
 - The claims on the page are the ones the product can keep: no payments, nothing outbound without an approval,
   sealed mode, an audit log the application cannot rewrite. Do not add a compliance or certification claim — the
   product has none, and `docs.html` says that plainly.
+
+## Serving it
+
+```bash
+cd site
+docker compose up -d --build                      # 127.0.0.1:8080, HTTPS in front of it
+```
+
+On the same server as the Team Server, so its Caddy can reach this container as `ofintech-site:8080`:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.desk.yml up -d --build
+```
+
+On a server of its own, with its own certificate:
+
+```bash
+SITE_DOMAIN=ofintech.ai ACME_EMAIL=it@ofintech.ai \
+  docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build
+```
+
+## Addresses that were written down before
+
+The site used to be a single page, where signing in and creating an account were sections of it. Those addresses
+are in people's e-mails and bookmarks, so they still arrive somewhere sensible:
+
+| Written down as | Goes to | Where that happens |
+|---|---|---|
+| `/features`, `/features/` | the home page, at *how it works* | `nginx.conf`, a 301 |
+| `/#signin`, `/#signup` | `sign-in.html`, `sign-up.html` | `site.js` — a fragment never reaches the server, so the page has to send it on |
+| `/docs`, `/sign-in` | `docs.html`, `sign-in.html` | `nginx.conf`, `try_files $uri $uri.html` |
+
+## What it is allowed to load
+
+The Content-Security-Policy in `nginx.conf` permits this site's own script, styles, images and fonts, and nothing
+from anywhere else. Forms may post only to `https://desk.ofintech.ai`. There is no analytics, no font CDN and no
+third-party request of any kind, which is also why the brand's own faces are bundled here.
