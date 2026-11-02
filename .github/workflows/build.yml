@@ -84,6 +84,8 @@ jobs:
           python e2e/ui_smoke.py e2e-output
       - name: Money figures stay inside their cells
         run: python e2e/figures_fit.py e2e-output
+      - name: The public website (overflow, both languages, forms, error codes)
+        run: python e2e/site_check.py
       - name: Session policy in a real browser (OP-12)
         run: python e2e/session_browser.py e2e-output
       - uses: actions/upload-artifact@v7
