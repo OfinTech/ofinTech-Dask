@@ -7,6 +7,12 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
+  and the three limits that make the answer worth having — type and motion on the brand field, no screen
+  recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about
+  −21 LUFS, and a voiceover script timed to the picture for whoever records one. `film.html` is the whole film as
+  one timeline (`seek(t)` paints the frame at `t` and nothing else depends on time, so renders are identical);
+  `frames.py` pipes frames into ffmpeg a chunk at a time; `music.py` writes the bed.
 - **The public website** (`site/`): four static pages written for a finance lead rather than an engineer — what the
   assistant answers, the four steps to using it, **what it will not do** (no payments, nothing outbound without a
   named approval, sealed mode, an audit log the application cannot rewrite), and how to get it. Everything
