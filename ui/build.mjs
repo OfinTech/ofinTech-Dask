@@ -9,6 +9,11 @@ rmSync("dist", { recursive: true, force: true });
 mkdirSync("dist/assets", { recursive: true });
 cpSync("index.html", "dist/index.html");
 cpSync("favicon.svg", "dist/favicon.svg");
+// The manifest and its icons make the app installable from the browser, which is how most people on a
+// managed laptop get a Desk window of their own: no download, nothing for Gatekeeper or SmartScreen to
+// object to. They are copied rather than bundled because the browser fetches them by name.
+cpSync("manifest.webmanifest", "dist/manifest.webmanifest");
+cpSync("icons", "dist/icons", { recursive: true, filter: (p) => !p.endsWith(".py") });
 cpSync("src/fonts/OFL.txt", "dist/assets/OFL-IBM-Plex-Sans-Arabic.txt");
 cpSync("src/fonts/OFL-Inter.txt", "dist/assets/OFL-Inter.txt");
 

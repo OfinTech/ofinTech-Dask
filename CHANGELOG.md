@@ -7,6 +7,14 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **The app can be installed from the browser.** Chrome and Edge now offer to install Desk from the page, Safari
+  can add it to the Dock, and the result is an icon and a window of its own with no browser chrome. It matters for
+  who can actually try the product: a finance lead on a managed laptop often cannot run a downloaded installer,
+  and an unsigned one asks them to step past Gatekeeper or SmartScreen before they have seen anything. This is the
+  same page over the same HTTPS, so there is nothing to sign, notarise or warn about. `e2e/installable.py` checks
+  the parts that each fail quietly — the manifest linked and served as a manifest, icons at 192 and 512, a
+  maskable icon whose corners are opaque so a cropping platform does not cut through the mark, and a
+  Content-Security-Policy that still permits fetching it.
 - **What the model calls cost** (Settings → Usage). The product has recorded every token it spends since the first
   release and has never been able to say what they came to. Rates are entered per workspace, per million tokens, as
   the provider quotes them, and each applies from the day it takes effect — so entering next month's price does not
