@@ -148,6 +148,32 @@ class SealedWorkspace(unittest.TestCase):
             self.assertEqual(out.text, SEALED_MESSAGE, name)
         self.assertEqual(self.outside_requests(), [])
 
+    def test_every_registered_tool_is_classified_as_inside_or_outside(self) -> None:
+        """Which tools a sealed workspace switches off is a hand-written list, and completeness is the whole point.
+
+        ``tool_sends_out`` matches a tool by name against ``EGRESS_TOOLS`` (or by the MCP category). The list is
+        complete today -- every Google and collaboration tool is on it -- but nothing held it that way: a new tool
+        that reaches an outside service would be sealed only if whoever wrote it remembered to add the name, and a
+        tool that is missed is offered inside a sealed workspace and sends.
+
+        So every registered tool must be accounted for: either it is on the list, or its category is declared here
+        as staying inside. A new category fails this test by name, which forces the decision to be made once,
+        deliberately, rather than missed quietly. It fails closed: a category that does not reach out is cheap to
+        declare, and one that does is caught.
+        """
+        inside = {"accounting", "analysis", "costcentres", "data", "files", "finance", "knowledge", "memory",
+                  "meta", "skills", "workflows"}
+        unclassified: list[str] = []
+        for name, tool in sorted(registry._tools.items()):
+            if name in EGRESS_TOOLS or tool.category == "mcp":
+                continue
+            if tool.category not in inside:
+                unclassified.append(f"{name} (category {tool.category!r})")
+        self.assertEqual([], unclassified,
+                         "each of these reaches the model in a sealed workspace: add the name to EGRESS_TOOLS in "
+                         "desk_engine/egress.py if it can send data out, or add its category to `inside` in this "
+                         "test if it cannot:\n  " + "\n  ".join(unclassified))
+
     def test_cloud_models_are_refused_local_ones_work(self) -> None:
         # a cloud model cannot be added to a sealed workspace...
         self.h.api("POST", f"/api/w/{self.ws}/providers", expect=403, json={
