@@ -208,6 +208,13 @@
 **Audit.**
 - Logged: sign-ins, membership and role changes, connections, approvals, tool executions, imports, deletions, file
   uploads and edits, memory changes, webhook secret changes, and MCP-server calls.
+- Logged: **refusals**, not only what happened. A protected route that answers 403 writes an entry, and so does a
+  tool turned away at the call — `tool.refused`, with the reason `payment`, `sealed` or `role`, the tool's name and
+  where the call came from. The entry never carries the tool's arguments: those are written by the model out of the
+  workspace's own data and can hold account numbers and counterparties, which do not belong in a log that is read
+  more widely than the ledger. Before this, the two hardest promises in the product kept themselves silently, so a
+  workspace where something tried repeatedly to move money or to push a ledger outside looked exactly like one
+  where nothing had happened.
 
 ## Not done yet
 
