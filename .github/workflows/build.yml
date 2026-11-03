@@ -84,6 +84,8 @@ jobs:
           python e2e/ui_smoke.py e2e-output
       - name: A UI change reaches a browser that already loaded the app
         run: python e2e/bundle_cache.py
+      - name: The app can be installed from the browser
+        run: python e2e/installable.py
       - name: Money figures stay inside their cells
         run: python e2e/figures_fit.py e2e-output
       - name: The public website (overflow, both languages, forms, error codes)
