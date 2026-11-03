@@ -39,6 +39,33 @@ else cannot sign a person into another account.
 Locally, on a Mac or a Windows PC: `cd desktop && npm install && npm run build && npx electron-builder --config
 electron-builder.cloud.yml --mac` (or `--win`).
 
+## Installing from the browser (no certificate needed)
+
+The fastest way to give someone a Desk window of their own, and often the only way that works. A finance lead on a
+managed laptop frequently cannot run a downloaded installer at all, and an unsigned one asks them to step past
+Gatekeeper or SmartScreen — a poor first thing to ask of someone evaluating a financial product.
+
+The web app carries a manifest, so Chrome and Edge offer to install it from the page itself:
+
+| | How |
+|---|---|
+| Chrome | the install icon in the address bar, or ⋮ → *Cast, save and share* → *Install page as app* |
+| Edge | ⋯ → *Apps* → *Install this site as an app* |
+| Safari (macOS) | *File* → *Add to Dock* |
+| iOS, iPadOS | *Share* → *Add to Home Screen* |
+
+The result is an icon in the Dock, the Start menu or the home screen, and a window with no browser chrome. It is
+the same page over the same HTTPS they already trust, so there is nothing for an operating system to warn about,
+nothing to sign and nothing to notarise. Safari does not read the manifest, which is why `index.html` also carries
+`apple-touch-icon` and the two `apple-mobile-web-app-*` tags.
+
+What it does not give you: a protocol handler for `ofintech-desk://` links, and a presence in the Applications
+folder for people who look there first. Those need the packaged app below.
+
+`e2e/installable.py` holds the parts that make it work — the manifest linked, served as a manifest, an icon at 192
+and 512, a maskable icon, and a Content-Security-Policy that permits fetching it — because each of them fails
+quietly on its own.
+
 ## Signing (strongly recommended before giving the app to people)
 
 Without signing the app works, but macOS blocks it on first open (*Control-click → Open*, or *System Settings →
