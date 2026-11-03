@@ -272,12 +272,16 @@ async def audit_log(ctx: Ctx) -> list[dict[str, Any]]:
 
 @router.get("/api/w/{ws}/usage", role="admin")
 async def usage(ctx: Ctx) -> dict[str, Any]:
-    since = now() - 30 * 86400
-    rows = ctx.engine.db.all("SELECT u.model, p.label AS provider, SUM(input_tokens) AS input_tokens, "
-                             "SUM(output_tokens) AS output_tokens, SUM(cache_read) AS cache_read, COUNT(*) AS calls FROM usage u LEFT JOIN llm_providers p "
-                             "ON p.id = u.provider_id WHERE u.workspace_id = ? AND u.created_at >= ? GROUP BY u.model, p.label "
-                             "ORDER BY calls DESC", (ctx.ws_id, since))
+    from .. import pricing
+
+    until = now()
+    since = until - 30 * 86400
+    # the rows carry their cost, so they are built by the pricing module rather than by a SUM here: a price can
+    # change inside the window, and costing the whole window against today's rate would be wrong on both sides of
+    # the change
+    priced = pricing.priced_usage(ctx.engine.db, ctx.ws_id, since, until)
     daily = ctx.engine.db.all("SELECT date(created_at, 'unixepoch') AS day, SUM(input_tokens + output_tokens) AS tokens "
                               "FROM usage WHERE workspace_id = ? AND created_at >= ? GROUP BY day ORDER BY day",
                               (ctx.ws_id, since))
-    return {"by_model": rows, "daily": daily}
+    return {"by_model": priced["by_model"], "daily": daily, "totals": priced["totals"],
+            "unpriced": priced["unpriced"], "priced": priced["priced"], "currencies": priced["currencies"]}

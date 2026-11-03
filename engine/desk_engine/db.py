@@ -830,6 +830,29 @@ MIGRATIONS: list[str] = [
     DELETE FROM secrets WHERE id IN (SELECT secret_id FROM connections WHERE provider = 'pipeshub');
     DELETE FROM connections WHERE provider = 'pipeshub';
     """,
+    # 23 — token prices, so the workspace can see what its model calls cost. Rates belong to the workspace because
+    #      the provider and its contract do: llm_providers is per workspace, and each one pays its own bill. A rate
+    #      carries the date it takes effect, so usage is costed against what was in force when it happened and
+    #      entering next month's price does not re-cost last month. provider_id is deliberately not a foreign key:
+    #      a rate is a historical record, and deleting a provider must not delete the rate that priced its past
+    #      calls, nor silently widen that rate to every provider by setting the column to NULL.
+    """
+    CREATE TABLE model_prices (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        provider_id TEXT,
+        model TEXT NOT NULL,
+        currency TEXT NOT NULL,
+        input_per_m REAL NOT NULL DEFAULT 0,
+        output_per_m REAL NOT NULL DEFAULT 0,
+        cache_read_per_m REAL NOT NULL DEFAULT 0,
+        cache_write_per_m REAL NOT NULL DEFAULT 0,
+        effective_from REAL NOT NULL,
+        note TEXT,
+        created_at REAL NOT NULL
+    );
+    CREATE INDEX ix_model_prices ON model_prices(workspace_id, model, effective_from DESC);
+    """,
 ]
 
 

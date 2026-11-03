@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **What the model calls cost** (Settings → Usage). The product has recorded every token it spends since the first
+  release and has never been able to say what they came to. Rates are entered per workspace, per million tokens, as
+  the provider quotes them, and each applies from the day it takes effect — so entering next month's price does not
+  re-cost last month, while correcting a rate typed wrongly does, with the audit log keeping what it was. Cached
+  tokens are billed at their own rates rather than as input, which the token column alone would get wrong by more
+  than five times on a workspace that caches well. Usage with no rate behind it is reported and left out of the
+  total instead of being counted as free, and currencies are kept apart and never converted. Nothing is costed
+  until someone enters a rate: no prices ship with the release, because a stale one produces a confident wrong
+  figure, and bundling a vendor's list would assume which vendor you use.
 - **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
   and the three limits that make the answer worth having — type and motion on the brand field, no screen
   recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about
@@ -36,6 +45,27 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The website at `ofintech.ai` is now the one in `site/`.** The four-page site — the product and who it is for,
+  a separate documentation page, sign-in and create-account, Arabic and English on every page — existed in the
+  repository but was wired to nothing: the domain still served `landing/`, a single English page with no language
+  switch. `site/` now carries its own `Dockerfile`, `nginx.conf` and compose files, and `landing/` is gone.
+  Addresses written down when the site was one page still arrive: `/features` redirects to *how it works*, and
+  `#signin` and `#signup` are sent to their pages by `site.js`, because a fragment never reaches the server.
+  `/docs` and `/sign-in` work as well as `/docs.html`. There is a 404 page in the site's own chrome.
+  The Content-Security-Policy had to change with it: the inherited one said `script-src 'none'`, which was right
+  for a site with no script and would have switched off the language switch and pointed the sign-in form at
+  itself. `e2e/site_serving.py` serves the pages under the directives read out of `nginx.conf` and fails if the
+  policy blocks the site or an old address stops arriving; it fails on the inherited policy.
+- **A UI change now reaches a browser that already loaded the app.** The build wrote the bundle at a fixed name,
+  `assets/app.css` and `assets/app.js`, while the engine served everything under `/assets/` with
+  `cache-control: public, max-age=31536000, immutable`. A browser holding an immutable response does not revalidate
+  it, so every browser that had ever opened Desk kept the stylesheet and script it first downloaded — for a year,
+  past any `git pull`, image rebuild or restart. The interface fixes in this release were invisible to returning
+  users for that reason. The build now writes the content hash into the bundle name and rewrites `index.html` to
+  point at it, and the engine sends `immutable` only for a name that carries a hash; `index.html` itself stays
+  `no-cache`, so it is re-fetched and hands the browser the new URLs, which also clears the stale copies already
+  cached. Builds made with `--watch` keep plain names and are served `no-cache`. `e2e/bundle_cache.py` fails the
+  build if the bundle `index.html` points at could be pinned at an unchanging URL, and it fails on the old build.
 - **Money figures no longer leave the box that holds them.** A figure in the millions or billions painted over the
   KPI cell border into the card beside it, and was clipped inside dashboard widgets and the ledger totals. Each of
   those cells is now its own query container and the figure's type size follows the cell's width, with a floor; the

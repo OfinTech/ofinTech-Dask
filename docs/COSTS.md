@@ -18,8 +18,36 @@ each request small and shaped for the providers' prompt caches.
 
 ## Seeing the effect
 
-Settings → Usage lists calls, input and output tokens per model for the last 30 days, and the share of input tokens
-served **from cache**.
+Settings → Usage lists calls, input and output tokens per model for the last 30 days, the share of input tokens
+served **from cache**, and what the calls cost.
+
+## What they cost
+
+A token price is not a property of the software. Each workspace brings its own provider and its own contract, and
+prices change, so nothing is costed until someone enters a rate in Settings → Usage → *Token rates*. Rates are per
+million tokens, written as the provider quotes them, and are entered per workspace because the provider and the
+bill are.
+
+Four things follow from treating a rate the way an accountant would:
+
+- **A rate applies from the day it takes effect.** Entering next month's price does not change what last month
+  cost. Correcting a rate that was typed wrongly does, because the figures it produced were wrong. The audit log
+  keeps what the rate was before the correction, since costs were reported from it.
+- **Cached tokens are not billed as input.** `usage.input_tokens` counts every prompt token including the cached
+  ones, so the input rate is applied to what is left after the cache reads and writes are taken out, and each of
+  those is billed at its own rate. Costing the column as it stands bills the cached part twice at the dearer rate;
+  on a workspace with a 90% cache hit rate that is more than five times the real figure.
+- **Usage nobody has priced is reported, not counted as free.** The page says how many calls in the period have no
+  rate behind them and leaves them out of the total. A cost that quietly omits part of the traffic is worse than
+  no cost, because it is believed.
+- **Currencies are kept apart and never converted.** A rate names its own currency and totals are shown per
+  currency. An exchange rate this product invented would be a figure with nothing behind it.
+
+A rate may name a provider or leave it open for any provider serving that model name. Where both could apply, the
+one naming the provider wins, whichever was entered later: naming the provider is the narrower statement.
+
+No prices are bundled with a release. A stale price producing a confident wrong figure is the failure this product
+exists to prevent, and shipping one vendor's list would be a quiet assumption about which vendor you use.
 
 ## Settings
 
