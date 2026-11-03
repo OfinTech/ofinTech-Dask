@@ -4,7 +4,7 @@ OfinTech Desk should look and feel like an intelligent financial command centre,
 application: simple for executives, powerful for CFOs, precise for accountants, transparent for accounting managers.
 One unified application, one identity, in Arabic and English (Spanish and French follow the English layout).
 
-Everything below is implemented in `ui/src/styles.css`; the website (`landing/site/index.html`) carries the same
+Everything below is implemented in `ui/src/styles.css`; the website (`site/styles.css`) carries the same
 tokens in its own stylesheet.
 
 ## Colour

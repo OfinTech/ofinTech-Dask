@@ -1,0 +1,7 @@
+# How the site is built and deployed is not part of the site.
+Dockerfile
+.dockerignore
+nginx.conf
+Caddyfile
+docker-compose*.yml
+README.md

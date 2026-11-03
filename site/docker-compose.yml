@@ -1,12 +1,12 @@
-# The landing page on its own, listening on 127.0.0.1:8080. Put HTTPS in front of it:
+# The website on its own, listening on 127.0.0.1:8080. Put HTTPS in front of it:
 #   - on the Team Server's Caddy (same server as desk.ofintech.ai), see README.md, or
 #   - with docker-compose.https.yml on a server of its own.
-name: ofintech-landing
+name: ofintech-site
 
 services:
-  landing:
+  site:
     build: .
-    image: ofintech-landing:latest
+    image: ofintech-site:latest
     restart: unless-stopped
     ports: ["127.0.0.1:8080:8080"]
     read_only: true

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { del, get, patch, post, put } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
-import { CURRENCIES, MONTHS, fmtDateTime, fmtNumber, fmtRelative } from "../lib/format";
+import { CURRENCIES, MONTHS, fmtDate, fmtDateTime, fmtMoney, fmtNumber, fmtRelative } from "../lib/format";
 import { Confirm, ErrorBox, Field, Icon, LanguagePicker, Loading, Modal, PageHead, go, useAction, useLoad, useToast } from "../components/ui";
 import { openExternal } from "../lib/api";
 import { N, tr } from "../lib/i18n";
@@ -269,18 +269,148 @@ function Audit(): ReactNode {
   );
 }
 
+// Token costs are often a fraction of a penny per call, and a column of "0.00" reads as broken rather than cheap,
+// so a small amount keeps enough decimals to be a figure. A month's total is money and is shown as money.
+function cost(amount: number, currency: string): string {
+  if (amount !== 0 && Math.abs(amount) < 0.01) return `${amount.toPrecision(2)} ${currency}`;
+  return fmtMoney(amount, currency);
+}
+
+function CostCell({ amounts }: { amounts: Record<string, number> }): ReactNode {
+  const entries = Object.entries(amounts || {});
+  if (!entries.length) return <>—</>;
+  return <>{entries.map(([c, v]) => <div key={c}>{cost(v, c)}</div>)}</>;
+}
+
 function Usage(): ReactNode {
   const { ws } = useApp();
   const u = useLoad(() => get<any>(wsPath(ws, "/usage")), [ws.id]);
-  if (!u.data) return <Loading />;
+  const rates = useLoad(() => get<any>(wsPath(ws, "/prices")), [ws.id]);
+  const [editing, setEditing] = useState<any | null>(null);
+  const [removing, setRemoving] = useState<any | null>(null);
+  const { run } = useAction();
+  if (!u.data || !rates.data) return <Loading />;
+  const d = u.data;
+  const reload = () => { u.reload(); rates.reload(); };
   return (
-    <div className="stack" style={{ maxWidth: 820 }}>
-      <p className="muted">{tr("Language model calls in the last 30 days. Costs depend on each provider's prices.")}</p>
-      <div className="table-wrap"><table className="ledger"><thead><tr><th>{tr("Provider")}</th><th>{tr("Model")}</th><th className="num">{tr("Calls")}</th><th className="num">{tr("Input tokens")}</th><th className="num">{tr("Output tokens")}</th><th className="num" title={tr("Input tokens served from the provider's prompt cache, billed at a fraction of the price")}>{tr("From cache")}</th></tr></thead>
-        <tbody>{u.data.by_model.map((r: any, i: number) => <tr key={i}><td>{r.provider || "—"}</td><td>{r.model}</td><td className="num">{fmtNumber(r.calls, 0)}</td>
+    <div className="stack" style={{ maxWidth: 980 }}>
+      <p className="muted">{tr("Language model calls in the last 30 days, and what they cost at the rates below.")}</p>
+
+      {!d.priced && <div className="notice small">{tr("No rates have been entered, so nothing here is costed. Add the prices from your provider's contract and the calls above them are costed from the day each price took effect.")}</div>}
+      {d.unpriced?.calls > 0 && d.priced && <div className="notice warn small">
+        {tr("{0} calls in this period have no rate behind them and are left out of the total.", { 0: fmtNumber(d.unpriced.calls, 0) })}</div>}
+
+      {d.currencies.length > 0 && <div className="kpis">
+        {d.currencies.map((c: string) => <div className="kpi" key={c}>
+          <div className="label">{tr("Cost")}{d.currencies.length > 1 ? ` · ${c}` : ""}</div>
+          <div className="value">{cost(d.totals[c], c)}</div></div>)}
+        <div className="kpi"><div className="label">{tr("Calls")}</div>
+          <div className="value">{fmtNumber(d.by_model.reduce((n: number, r: any) => n + r.calls, 0), 0)}</div></div>
+      </div>}
+
+      <div className="table-wrap"><table className="ledger"><thead><tr>
+        <th>{tr("Provider")}</th><th>{tr("Model")}</th><th className="num">{tr("Calls")}</th>
+        <th className="num">{tr("Input tokens")}</th><th className="num">{tr("Output tokens")}</th>
+        <th className="num" title={tr("Input tokens served from the provider's prompt cache, billed at a fraction of the price")}>{tr("From cache")}</th>
+        <th className="num">{tr("Cost")}</th></tr></thead>
+        <tbody>{d.by_model.map((r: any, i: number) => <tr key={i}>
+          <td>{r.provider || "—"}</td><td>{r.model}</td><td className="num">{fmtNumber(r.calls, 0)}</td>
           <td className="num">{fmtNumber(r.input_tokens, 0)}</td><td className="num">{fmtNumber(r.output_tokens, 0)}</td>
-          <td className="num">{r.input_tokens ? `${Math.round((100 * (r.cache_read || 0)) / r.input_tokens)}%` : "—"}</td></tr>)}</tbody></table></div>
+          <td className="num">{r.input_tokens ? `${Math.round((100 * (r.cache_read || 0)) / r.input_tokens)}%` : "—"}</td>
+          <td className="num" title={r.unpriced_calls ? tr("{0} of these calls have no rate and are not counted", { 0: fmtNumber(r.unpriced_calls, 0) }) : undefined}>
+            <CostCell amounts={r.cost} />{r.unpriced_calls ? <span className="muted small"> {r.unpriced_calls === r.calls ? tr("(unpriced)") : tr("(partly unpriced)")}</span> : null}</td></tr>)}
+          {d.currencies.length > 0 && <tr><td colSpan={6}><strong>{tr("Total")}</strong></td>
+            <td className="num"><strong><CostCell amounts={d.totals} /></strong></td></tr>}
+        </tbody></table></div>
+
+      <div className="panel panel-pad stack">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0 }}>{tr("Token rates")}</h3>
+          <button className="btn small primary" onClick={() => setEditing({})}>{tr("Add a rate")}</button>
+        </div>
+        <p className="small muted" style={{ margin: 0 }}>{tr("Prices per million tokens, as your provider quotes them. A rate applies from the day it takes effect, so entering a new price does not change what earlier months cost. Correcting a rate that was typed wrongly does.")}</p>
+        {rates.data.prices.length === 0
+          ? <p className="small muted" style={{ margin: 0 }}>{tr("No rates yet.")}</p>
+          : <div className="table-wrap"><table className="ledger"><thead><tr>
+              <th>{tr("Model")}</th><th>{tr("Provider")}</th><th>{tr("From")}</th><th className="num">{tr("Input")}</th>
+              <th className="num">{tr("Output")}</th><th className="num">{tr("Cache read")}</th><th className="num">{tr("Cache write")}</th>
+              <th>{tr("Currency")}</th><th /></tr></thead>
+            <tbody>{rates.data.prices.map((r: any) => <tr key={r.id}>
+              <td>{r.model}</td><td>{r.provider || tr("Any")}</td><td>{fmtDate(r.effective_from)}</td>
+              <td className="num">{fmtNumber(r.input_per_m, 2)}</td><td className="num">{fmtNumber(r.output_per_m, 2)}</td>
+              <td className="num">{fmtNumber(r.cache_read_per_m, 2)}</td><td className="num">{fmtNumber(r.cache_write_per_m, 2)}</td>
+              <td>{r.currency}</td>
+              <td className="row" style={{ gap: 6 }}>
+                <button className="btn small" onClick={() => setEditing(r)}>{tr("Edit")}</button>
+                <button className="btn small danger" onClick={() => setRemoving(r)}>{tr("Remove")}</button></td></tr>)}
+            </tbody></table></div>}
+      </div>
+
+      {editing && <RateForm ws={ws} existing={editing.id ? editing : null} catalogue={rates.data}
+        onClose={() => setEditing(null)} onSaved={() => { setEditing(null); reload(); }} />}
+      {removing && <Confirm text={tr("Remove the rate for {0}? The calls it covered go back to being unpriced.", { 0: removing.model })}
+        onClose={() => setRemoving(null)} yes={N("Remove")}
+        onYes={async () => { await run(() => del(wsPath(ws, `/prices/${removing.id}`)), tr("Rate removed")); reload(); }} />}
     </div>
+  );
+}
+
+function RateForm({ ws, existing, catalogue, onClose, onSaved }:
+  { ws: any; existing: any | null; catalogue: any; onClose: () => void; onSaved: () => void }): ReactNode {
+  const [f, setF] = useState({
+    model: existing?.model || catalogue.models_seen[0] || "",
+    provider_id: existing?.provider_id || "",
+    currency: existing?.currency || "USD",
+    input_per_m: String(existing?.input_per_m ?? ""),
+    output_per_m: String(existing?.output_per_m ?? ""),
+    cache_read_per_m: String(existing?.cache_read_per_m ?? ""),
+    cache_write_per_m: String(existing?.cache_write_per_m ?? ""),
+    effective_from: existing ? new Date(existing.effective_from * 1000).toISOString().slice(0, 10) : "",
+    note: existing?.note || "",
+  });
+  const { busy, run } = useAction();
+  const num = (v: string) => (v.trim() === "" ? 0 : Number(v));
+  async function save() {
+    const body: any = {
+      currency: f.currency, input_per_m: num(f.input_per_m), output_per_m: num(f.output_per_m),
+      cache_read_per_m: num(f.cache_read_per_m), cache_write_per_m: num(f.cache_write_per_m),
+      effective_from: f.effective_from || undefined, note: f.note || undefined,
+    };
+    if (!existing) { body.model = f.model.trim(); body.provider_id = f.provider_id || undefined; }
+    const r = await run(() => existing ? patch(wsPath(ws, `/prices/${existing.id}`), body) : post(wsPath(ws, "/prices"), body), tr("Saved"));
+    if (r) onSaved();
+  }
+  const rate = (key: keyof typeof f, label: string) => (
+    <Field label={label}><input className="input" inputMode="decimal" placeholder="0" value={f[key] as string}
+      onChange={(e) => setF({ ...f, [key]: e.target.value })} /></Field>);
+  return (
+    <Modal title={existing ? tr("Correct a rate") : tr("Add a rate")} onClose={onClose} footer={<>
+      <button className="btn" onClick={onClose}>{tr("Cancel")}</button>
+      <button className="btn primary" disabled={busy} onClick={save}>{tr("Save")}</button></>}>
+      <div className="stack">
+        {existing
+          ? <div className="notice small">{tr("Correcting a rate changes what the calls it covers are reported to have cost. To change the price from a date onwards, add a rate instead.")}</div>
+          : <>
+            <Field label={tr("Model")} hint={catalogue.models_seen.length ? tr("Models this workspace has called") : undefined}>
+              <input className="input" list="models-seen" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} />
+              <datalist id="models-seen">{catalogue.models_seen.map((m: string) => <option key={m} value={m} />)}</datalist></Field>
+            <Field label={tr("Provider")} hint={tr("Leave as any unless two providers serve the same model name at different prices.")}>
+              <select className="select" value={f.provider_id} onChange={(e) => setF({ ...f, provider_id: e.target.value })}>
+                <option value="">{tr("Any")}</option>
+                {catalogue.providers.map((p: any) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></Field>
+          </>}
+        <Field label={tr("Currency")}><select className="select" value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })}>
+          {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></Field>
+        <p className="small muted" style={{ margin: 0 }}>{tr("Per million tokens.")}</p>
+        <div className="row" style={{ gap: 12, flexWrap: "wrap" }}>
+          {rate("input_per_m", tr("Input"))}{rate("output_per_m", tr("Output"))}
+          {rate("cache_read_per_m", tr("Cache read"))}{rate("cache_write_per_m", tr("Cache write"))}
+        </div>
+        <Field label={tr("In effect from")} hint={tr("Earlier calls keep the rate that applied then. Today if left empty.")}>
+          <input className="input" type="date" value={f.effective_from} onChange={(e) => setF({ ...f, effective_from: e.target.value })} /></Field>
+        <Field label={tr("Note (optional)")}><input className="input" value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></Field>
+      </div>
+    </Modal>
   );
 }
 

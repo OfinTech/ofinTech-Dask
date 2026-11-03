@@ -82,10 +82,14 @@ jobs:
           pip install playwright==1.63.0
           python -m playwright install --with-deps chromium
           python e2e/ui_smoke.py e2e-output
+      - name: A UI change reaches a browser that already loaded the app
+        run: python e2e/bundle_cache.py
       - name: Money figures stay inside their cells
         run: python e2e/figures_fit.py e2e-output
       - name: The public website (overflow, both languages, forms, error codes)
         run: python e2e/site_check.py
+      - name: The website under the policy it is served with (CSP, redirects, old addresses)
+        run: python e2e/site_serving.py
       - name: Session policy in a real browser (OP-12)
         run: python e2e/session_browser.py e2e-output
       - uses: actions/upload-artifact@v7

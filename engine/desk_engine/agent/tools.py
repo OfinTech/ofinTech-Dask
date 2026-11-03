@@ -14,6 +14,7 @@ charts, links). The app renders blocks itself; it never renders HTML produced by
 from __future__ import annotations
 
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
@@ -25,6 +26,9 @@ if TYPE_CHECKING:
     from ..app import Engine
 
 Effect = Literal["read", "write"]
+
+
+log = logging.getLogger("desk.tools")
 
 
 @dataclass
@@ -167,17 +171,42 @@ class Tool:
                 pass
         return f"{self.name}({json.dumps(args, default=str)[:300]})"
 
+    def _refused(self, ctx: ToolContext, reason: str) -> None:
+        """Record that a guard turned a tool call away.
+
+        The guards below are the product's two hardest promises -- the assistant never touches payments, and a
+        sealed workspace never sends data out -- and until now they kept them silently. A refusal returned a
+        sentence to the model and left nothing behind, so a workspace where something tried a hundred times to
+        move money or push a ledger to an outside service looked exactly like one where nothing happened. A
+        refusal at the route is already audited by ``_audit_denied``; this is the same event one layer down.
+
+        The entry carries the tool, the reason and where the call came from, and deliberately not the arguments:
+        a tool's arguments are written by the model from the workspace's own data and can hold account numbers and
+        counterparties, which do not belong in a log that is read far more widely than the ledger is.
+
+        Recording must never change the outcome. If the write fails the refusal still stands.
+        """
+        try:
+            ctx.engine.audit(ctx.ws_id, ctx.user_id, "tool.refused", self.name,
+                             {"reason": reason, "source": ctx.source, "run_id": ctx.run_id},
+                             resource_type="tool", decision="deny", result=reason)
+        except Exception:  # pragma: no cover - the guard is the control; the record is evidence of it
+            log.exception("could not record a refused tool call (%s, %s)", self.name, reason)
+
     async def run(self, ctx: ToolContext, args: dict[str, Any]) -> ToolOutput:
         # checked again at the call, whatever path reached it (agent, workflow step, MCP server, approval)
         from ..egress import SEALED_MESSAGE, is_payment_tool, tool_sends_out, workspace_sealed
         if is_payment_tool(self.name, self.description, acts=self.category == "mcp" or self.needs_approval()):
+            self._refused(ctx, "payment")
             return ToolOutput("Refused: OfinTech Desk never initiates, approves or changes payments, transfers or "
                               "beneficiaries.")
         if tool_sends_out(self) and workspace_sealed(ctx.engine, ctx.workspace):
+            self._refused(ctx, "sealed")
             return ToolOutput(SEALED_MESSAGE)
         if "_invalid_json" in args or not isinstance(args, dict):
             return ToolOutput("The arguments were not valid JSON. Call the tool again with a JSON object.")
         if self.min_role != "viewer" and not ctx.may(self.min_role):
+            self._refused(ctx, "role")
             return ToolOutput(f"Refused: {self.name} needs the {self.min_role} role in this workspace; the user is a "
                               f"{ctx.role}. Tell the user what you would have done and who can do it.")
         problems = validate_args(self.parameters, args)

@@ -17,7 +17,7 @@ Requirements: Docker Engine 24+ with Compose v2, a DNS record for your domain, a
 | Address | What it serves | Where it is configured |
 |---|---|---|
 | `desk.ofintech.ai` | the product: the Team Server (web app, API, OAuth callbacks), and what the desktop client opens | `DESK_DOMAIN=desk.ofintech.ai` in `server/.env` |
-| `ofintech.ai`, `www.ofintech.ai` | the website: one page with the product, who it is for, the install guide, and the **sign-in and create-account forms**, which post to `desk.ofintech.ai` | the `ofintech.ai` block in `server/Caddyfile`, see `landing/README.md`; `DESK_SITE_URL=https://ofintech.ai` in `server/.env` |
+| `ofintech.ai`, `www.ofintech.ai` | the website: the product and who it is for, a separate documentation page, and the **sign-in and create-account pages**, whose forms post to `desk.ofintech.ai`. Arabic and English on every page | the `ofintech.ai` block in `server/Caddyfile`, see `site/README.md`; `DESK_SITE_URL=https://ofintech.ai` in `server/.env` |
 
 Both can run on one server: the Team Server's Caddy holds ports 80 and 443 and serves the two names. Point DNS
 A records for `desk.ofintech.ai`, `ofintech.ai` and `www.ofintech.ai` at that server. OAuth apps (Google,
@@ -41,7 +41,7 @@ failure the browser is sent back to `DESK_SITE_URL/#<code>`, and the website sho
 in the app, and the session cookie is the app's (HttpOnly, Secure, SameSite=strict), which reaches the app because
 the website and the app share the registrable domain. Without `DESK_SITE_URL`, failures go to the app's own
 sign-in page and only the app's origin is accepted. The website's `form-action` content-security policy must name
-the Team Server (`landing/nginx.conf`).
+the Team Server (`site/nginx.conf`).
 
 ## Install
 
