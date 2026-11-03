@@ -4,6 +4,11 @@ copyright: Copyright © 2026 OfinTech
 directories:
   output: release
   buildResources: build
+# The shell has no runtime dependencies: package.json lists only devDependencies, and `files` below ships
+# dist, static and package.json without node_modules. @electron/rebuild therefore has nothing to rebuild, and on
+# macOS it does not merely do nothing -- it searches for node modules, finds none, and the build stops with
+# "<projectDir> not a file". Turning it off removes a step that could only ever fail here.
+npmRebuild: false
 files:
   - dist/**
   - static/**
