@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **What the model calls cost** (Settings → Usage). The product has recorded every token it spends since the first
+  release and has never been able to say what they came to. Rates are entered per workspace, per million tokens, as
+  the provider quotes them, and each applies from the day it takes effect — so entering next month's price does not
+  re-cost last month, while correcting a rate typed wrongly does, with the audit log keeping what it was. Cached
+  tokens are billed at their own rates rather than as input, which the token column alone would get wrong by more
+  than five times on a workspace that caches well. Usage with no rate behind it is reported and left out of the
+  total instead of being counted as free, and currencies are kept apart and never converted. Nothing is costed
+  until someone enters a rate: no prices ship with the release, because a stale one produces a confident wrong
+  figure, and bundling a vendor's list would assume which vendor you use.
 - **A 90-second brand film** (`docs/brand/film/`): the figure, the question behind it, the answer with its source,
   and the three limits that make the answer worth having — type and motion on the brand field, no screen
   recordings, so it does not go stale when the app changes. 1920×1080 at 30 fps with a quiet bed at about
