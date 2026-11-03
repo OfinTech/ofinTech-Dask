@@ -53,6 +53,12 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The macOS installers build again.** `@electron/rebuild` ran on every desktop package, searched for node
+  modules, found none — the shell has no runtime dependencies and `files` ships without `node_modules` — and on
+  macOS stopped the build with `<projectDir> not a file`. Windows was unaffected, which is why it went unnoticed:
+  the `v1.1.0` tag produced no release because the release job waits for installers from all three systems, and
+  `desk-v1.0.0` failed the same way on macOS while succeeding on Windows. `npmRebuild: false` in both builder
+  configurations removes a step that had nothing to do and could only ever fail.
 - **The website at `ofintech.ai` is now the one in `site/`.** The four-page site — the product and who it is for,
   a separate documentation page, sign-in and create-account, Arabic and English on every page — existed in the
   repository but was wired to nothing: the domain still served `landing/`, a single English page with no language
