@@ -288,7 +288,7 @@ function Usage(): ReactNode {
   const rates = useLoad(() => get<any>(wsPath(ws, "/prices")), [ws.id]);
   const [editing, setEditing] = useState<any | null>(null);
   const [removing, setRemoving] = useState<any | null>(null);
-  const { busy, run } = useAction();
+  const { run } = useAction();
   if (!u.data || !rates.data) return <Loading />;
   const d = u.data;
   const reload = () => { u.reload(); rates.reload(); };
