@@ -7,6 +7,15 @@ on:
     branches: [main]
     tags: ["v*"]
   pull_request:
+  # Some of these gates are about the outside world rather than the code: pip-audit and the Trivy image scan
+  # both fail on advisories published after the last commit, so without a schedule the first push after one
+  # appears is what finds it -- and it then looks like that push broke the build. CVE-2026-109518 in apt was
+  # exactly that: Debian published the fix on 4 November and an unrelated merge on the 5th was the first build
+  # to see it. A daily run separates "a new advisory landed" from "a change regressed", at the cost of one
+  # Ubuntu runner. Off the hour, because scheduled runs at :00 queue behind everybody else's.
+  schedule:
+    - cron: "17 5 * * *"   # 08:17 in Riyadh, so the night's advisories are already triaged by the working day
+  workflow_dispatch:
 
 # Jobs get a read-only token unless they say otherwise (only `release` writes, to attach installers).
 permissions:
@@ -109,6 +118,10 @@ jobs:
 
   desktop:
     needs: test
+    # The installers depend on the commit, not on the calendar, so the daily run leaves them alone: packaging on
+    # three systems every night would spend the macOS and Windows minutes for a result that cannot have changed.
+    # A tag or a push still builds them, and `release` waits on this job, so a tag is never released without it.
+    if: github.event_name != 'schedule'
     strategy:
       fail-fast: false
       matrix:
