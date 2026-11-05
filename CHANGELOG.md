@@ -7,6 +7,23 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **`/ready` says whether the engine can actually work.** `/health` has always answered `ok` whenever the
+  process was running, which is the right answer to the question it asks and the wrong one to rely on: a
+  container on a full disk, a deploy whose migrations did not run, a bucket whose policy changed after
+  deployment and a background loop stuck on an `await` all answer it perfectly, and none of them fails a
+  request until somebody's work is already lost. The new route runs five checks — the schema version against
+  the build in **both** directions, a write transaction taken and rolled back, free space on the data volume,
+  the object store, and how long since the background scheduler last came round — and answers `503` when the
+  engine should be taken out of rotation, `200` with `degraded` for a warning. `/health` is unchanged and
+  stays what a restart policy points at: nothing `/ready` reports is fixed by restarting, and a schema
+  mismatch or a refusing bucket would turn a restart policy into a restart loop.
+
+  The route is unauthenticated, because a container probe has no credentials to offer, so what it says is
+  public and is treated that way: a status and a reason code from a closed set, with no path, version or
+  free-byte count anywhere in the body. The numbers go to the log, once each time the overall state changes.
+  One evaluation serves two seconds, so holding down a reload cannot make the engine hammer its own object
+  store. It does not replace an outside monitor — a process that is down answers nothing at all, and no
+  internal check can report its own absence.
 - **Every document search records what it cost.** One line per search: how many vectors were compared, whether
   the matrix was already in memory, the keyword and semantic phases separately, the total, the memory the cache
   holds and the resident memory of the process. A search slower than 500 ms is logged as a warning rather than as

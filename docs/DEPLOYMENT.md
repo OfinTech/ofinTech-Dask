@@ -158,11 +158,54 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
 - [ ] File storage decided (data volume or S3/MinIO with engine-side encryption on).
 - [ ] `backup.key` generated and stored apart from the server and from `DESK_MASTER_KEY`; `backup.sh` scheduled (cron);
       `backup-check` scheduled from the backup store and a full restore tested on another machine; bucket versioning on if you use S3.
-- [ ] Monitoring: the container health check (`/health`), disk space of the `desk_data` volume, and the audit log
-      (Settings → Audit log) reviewed by an administrator.
+- [ ] Monitoring: an outside check on `/ready` (see below), the container health check (`/health`), and the audit
+      log (Settings → Audit log) reviewed by an administrator.
 - [ ] Firewall: only ports 80 and 443 open; the MinIO console stays on `127.0.0.1`.
 - [ ] Your own review of the legal points in [LICENSES.md](../LICENSES.md) and of any regulation that applies to the
       data you process; the product claims no certification or compliance.
+
+## Health and readiness
+
+Two endpoints, and the difference between them decides what you point at each.
+
+| | `/health` | `/ready` |
+|---|---|---|
+| Question | is the process running? | can it do its work? |
+| Cost | none: no lock, no query | a write transaction, and for S3 a request to the bucket |
+| Answers | always `200` while the process is up | `200` ready or degraded, `503` unready |
+| Point at it | the container restart policy | your load balancer and your outside monitor |
+
+**Do not drive a restart policy from `/ready`.** None of what it checks is fixed by restarting, and two of
+them — a schema that does not match the build, a bucket that refuses — turn a restart policy into a restart
+loop. The container's `HEALTHCHECK` stays on `/health` for exactly that reason.
+
+`/ready` runs five checks:
+
+| Check | Fails when | Reason codes |
+|---|---|---|
+| `migrations` | the schema is not the version this build expects, in either direction | `migrations_behind`, `migrations_ahead` |
+| `database` | a write transaction cannot be taken | `database_readonly`, `database_locked` (warn), `database_error` |
+| `disk` | the data volume is nearly full | `disk_critical` (fail), `disk_low` (warn), `disk_unknown` (warn) |
+| `storage` | the object store does not answer | `storage_unreachable` |
+| `scheduler` | the background loop has not come round for 60 seconds | `scheduler_stalled` |
+
+A warning answers `200` with `"status": "degraded"`: a disk at 92% is a problem to fix, not a reason to take
+the server out of rotation.
+
+**The route is unauthenticated**, because a container probe has no credentials to offer, so the body carries a
+status and a reason code and nothing else — no path, no version, no free-byte count. The numbers an operator
+needs are written to the log instead, once each time the overall state changes:
+
+```
+readiness unready; migrations=fail(migrations_behind: schema at 22, build expects 23) database=ok
+  disk=warn(disk_low: 480 MB free of 51200 MB (0.9%)) storage=ok scheduler=ok(3s since the last tick)
+```
+
+One evaluation serves two seconds. Probe as often as you like; the checks behind it run at most every other
+second, so nobody can make the engine hammer its own object store by holding down a reload.
+
+What this does **not** cover: a process that is down answers nothing at all. An internal check cannot report
+its own absence, so an outside monitor against `/health` — and a certificate-expiry check — stays necessary.
 
 ## Settings
 
