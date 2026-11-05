@@ -6,7 +6,9 @@
 Needs: Python Playwright with Chromium (`pip install playwright && playwright install chromium`).
 """
 
+import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -19,6 +21,26 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 TOKEN = "e2e" + "k" * 40
 PORT = 47822
+
+
+def arabic_for(key: str) -> str:
+    """A fragment of the Arabic the app would show for an English interface string.
+
+    The words on an Arabic page are whatever `ui/src/i18n/ar.ts` says today, so this reads that file rather
+    than carrying a copy of it. A copy goes stale silently: a translation pass changes the wording, the page
+    is still correct, and the test fails looking for a sentence nobody writes any more -- which is exactly
+    what happened to "على المسار" and "المطابقة والإقفال".
+
+    Placeholders are substituted before the text reaches the page, so what comes back is the longest run of
+    the translation that has none, which is what `text=` can match.
+    """
+    src = (ROOT / "ui" / "src" / "i18n" / "ar.ts").read_text(encoding="utf-8")
+    table = {json.loads(m.group(1)): json.loads(m.group(2)) for m in
+             re.finditer(r'^\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*")\s*,?\s*$', src, re.M)}
+    if key not in table:
+        raise SystemExit(f"e2e: ui/src/i18n/ar.ts has no entry for {key!r}; "
+                         "the English string changed, so this check needs its new key")
+    return max((part.strip() for part in re.split(r"\{\d+\}", table[key])), key=len)
 
 
 def wait_line(proc: subprocess.Popen, needle: str, timeout: float = 60) -> None:
@@ -542,12 +564,16 @@ def run_steps(pg, base, out, xlsx):
     assert font.startswith('"IBM Plex Sans Arabic"'), font
     assert pg.evaluate("document.fonts.check('600 16px \"IBM Plex Sans Arabic\"', 'مرحبا')")
     pg.screenshot(path=str(out / "ar-settings.png"))
-    for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
-                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر"),
-                         ("overview", "على المسار"), ("overview/profit", "الربحية"), ("finance/receivables", "حسب العميل"),
-                         ("ledger/entries", "قيود اليومية"), ("oversight", "المطابقة والإقفال")):
+    # Named by the English string each page shows; the Arabic is read from the dictionary the app ships, so a
+    # change of wording moves this check with it instead of breaking it.
+    for path, key in (("chat", "Assistant"), ("files", "Files"), ("workflows", "Start from a template"),
+                      ("costcentres", "Cost centres"), ("analysis", "Growth and profitability"),
+                      ("close", "Close the month"), ("overview", "{0} of {1} measures on track"),
+                      ("overview/profit", "Profitability"), ("finance/receivables", "by customer"),
+                      ("ledger/entries", "Journal entries"),
+                      ("oversight", "Reconciliation and close, last six months")):
         pg.goto(f"{base}/#/{path}")
-        pg.wait_for_selector(f"text={needle}")
+        pg.wait_for_selector(f"text={arabic_for(key)}")
         pg.wait_for_timeout(300)
         pg.screenshot(path=str(out / f"ar-{path.replace('/', '-')}.png"))
     pg.goto(f"{base}/#/settings/account")
