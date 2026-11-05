@@ -1,7 +1,7 @@
 # Runtime dependencies of the OfinTech Desk engine (all permissive licences; see LICENSES.md).
 starlette==1.10.0
 uvicorn==0.54.0
-pydantic==2.14.1
+pydantic==2.14.2
 httpx2==2.16.0
 mcp==2.3.0
 openpyxl==3.1.5
