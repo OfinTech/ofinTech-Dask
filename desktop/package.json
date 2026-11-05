@@ -18,7 +18,7 @@
     "test": "npm run build && node --test \"test/*.test.mjs\""
   },
   "overrides": {
-    "app-builder-lib": { "minimatch": "^11.0.1" }
+    "minimatch@^10": "^11.0.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
