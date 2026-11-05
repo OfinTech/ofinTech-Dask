@@ -6,42 +6,20 @@
 Needs: Python Playwright with Chromium (`pip install playwright && playwright install chromium`).
 """
 
-import json
 import os
-import re
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
 
+from i18n import translated
 from openpyxl import Workbook
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 TOKEN = "e2e" + "k" * 40
 PORT = 47822
-
-
-def arabic_for(key: str) -> str:
-    """A fragment of the Arabic the app would show for an English interface string.
-
-    The words on an Arabic page are whatever `ui/src/i18n/ar.ts` says today, so this reads that file rather
-    than carrying a copy of it. A copy goes stale silently: a translation pass changes the wording, the page
-    is still correct, and the test fails looking for a sentence nobody writes any more -- which is exactly
-    what happened to "على المسار" and "المطابقة والإقفال".
-
-    Placeholders are substituted before the text reaches the page, so what comes back is the longest run of
-    the translation that has none, which is what `text=` can match.
-    """
-    src = (ROOT / "ui" / "src" / "i18n" / "ar.ts").read_text(encoding="utf-8")
-    table = {json.loads(m.group(1)): json.loads(m.group(2)) for m in
-             re.finditer(r'^\s*("(?:[^"\\]|\\.)*")\s*:\s*("(?:[^"\\]|\\.)*")\s*,?\s*$', src, re.M)}
-    if key not in table:
-        raise SystemExit(f"e2e: ui/src/i18n/ar.ts has no entry for {key!r}; "
-                         "the English string changed, so this check needs its new key")
-    parts = (part.strip().strip("\u060c\u061b.,:\u2014- ") for part in re.split(r"\{\d+\}", table[key]))
-    return max(parts, key=len)
 
 
 def wait_line(proc: subprocess.Popen, needle: str, timeout: float = 60) -> None:
@@ -559,7 +537,7 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#/settings/account")
     pg.get_by_role("button", name="العربية").click()
     pg.wait_for_selector("html[dir=rtl][lang=ar]", state="attached")
-    pg.wait_for_selector("text=اللغة")
+    pg.wait_for_selector(f"text={translated('Language')}")
     pg.evaluate("document.fonts.ready")
     font = pg.evaluate("getComputedStyle(document.body).fontFamily")
     assert font.startswith('"IBM Plex Sans Arabic"'), font
@@ -574,7 +552,7 @@ def run_steps(pg, base, out, xlsx):
                       ("ledger/entries", "Journal entries"),
                       ("oversight", "Reconciliation and close, last six months")):
         pg.goto(f"{base}/#/{path}")
-        pg.wait_for_selector(f"text={arabic_for(key)}")
+        pg.wait_for_selector(f"text={translated(key)}")
         pg.wait_for_timeout(300)
         pg.screenshot(path=str(out / f"ar-{path.replace('/', '-')}.png"))
     pg.goto(f"{base}/#/settings/account")

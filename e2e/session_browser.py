@@ -28,13 +28,14 @@ import time
 from pathlib import Path
 from typing import Any
 
+from i18n import translated
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 PW = "Correct-Horse-9"
 MIN = 60_000
 EN_WARNING = "Your session will expire in 2 minutes due to inactivity."
-AR_WARNING = "ستنتهي جلستك خلال دقيقتين بسبب عدم النشاط."
+AR_WARNING = translated(EN_WARNING)   # whatever ui/src/i18n/ar.ts says today, not a copy of it
 EN_SIGNED_OUT = "You were signed out because nothing happened for a while."
 
 
