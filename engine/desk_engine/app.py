@@ -7,6 +7,7 @@ import contextlib
 import getpass
 import logging
 import re
+import time
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,7 @@ from .config import VERSION, Settings
 from .costcentres import CostCentres
 from .db import Database, dumps, new_id, now
 from .events import EventHub
+from .health import CACHE_SECONDS, log_line, readiness, response_body
 from .files.service import Files
 from .knowledge.base import Knowledge
 from .llm.base import Usage
@@ -105,6 +107,10 @@ class Engine:
         self.embedded = Embedded(self)
         self.mcp_server_lifespan: Any = None
         self._background: list[asyncio.Task[None]] = []
+        # When the scheduler last came round, on the monotonic clock. The loop swallows every exception to stay
+        # alive, so it does not die by raising: it dies by awaiting something that never returns, and a
+        # heartbeat is the only thing that tells the difference between that and a quiet few minutes.
+        self.scheduler_beat: float | None = None
 
     @staticmethod
     def _storage_hosts(settings: Settings) -> frozenset[str]:
@@ -148,6 +154,7 @@ class Engine:
     async def _scheduler(self) -> None:
         tick = 0
         while True:
+            self.scheduler_beat = time.monotonic()
             try:
                 await self.channels.poll_telegram_once()
                 await self.webhooks.deliver_pending()
@@ -296,9 +303,35 @@ def create_app(settings: Settings, *, engine: Engine | None = None) -> Starlette
                 await engine.stop_background()
 
     async def health(request: Request) -> Response:
+        """Liveness: the process is running and can answer. Deliberately unchanged and deliberately cheap --
+        it takes no lock and reads nothing, so it stays true when everything behind it is broken."""
         return JSONResponse({"status": "ok", "version": VERSION, "mode": settings.mode})
 
-    routes: list[Any] = [Route("/health", health), *public_routes(), *all_routes(engine), Route("/mcp", endpoint=mcp_app)]
+    last_ready: dict[str, str] = {}
+    cached: dict[str, Any] = {}
+
+    async def ready(request: Request) -> Response:
+        """Readiness: whether the engine can do its work. 503 when it cannot, so an orchestrator takes the
+        instance out of rotation instead of sending it requests it will get wrong.
+
+        The body carries a status and a reason code per check and nothing else -- no path, no version, no free
+        byte count -- because this route is unauthenticated: a container probe has no credentials to offer. The
+        numbers an operator needs are logged instead, once per change of state, so a probe every second does
+        not fill the log with the same line.
+        """
+        mono = time.monotonic()
+        if cached and mono - cached["at"] < CACHE_SECONDS:
+            status, checks = cached["status"], cached["checks"]
+        else:
+            status, checks = await readiness(engine, mono)
+            cached.update(at=mono, status=status, checks=checks)
+        if last_ready.get("status") != status:
+            last_ready["status"] = status
+            (log.warning if status != "ready" else log.info)("%s", log_line(status, checks))
+        return JSONResponse(response_body(status, checks), status_code=200 if status != "unready" else 503)
+
+    routes: list[Any] = [Route("/health", health), Route("/ready", ready), *public_routes(), *all_routes(engine),
+                         Route("/mcp", endpoint=mcp_app)]
     ui_dir = settings.ui_dir
     if ui_dir and (ui_dir / "index.html").exists():
         routes.append(Route("/{path:path}", _ui_handler(ui_dir)))
