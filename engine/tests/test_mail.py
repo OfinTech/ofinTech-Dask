@@ -87,7 +87,7 @@ class WhyASendFailed(unittest.TestCase):
     def send(self, **over) -> Mailer:
         m = Mailer(**{"host": "127.0.0.1", "port": self.smtp.port, "sender": "Desk <desk@acme.test>",
                       "security": "none"} | over)
-        self.assertFalse(asyncio.run(m.send("someone@acme.test", "Subject", "Body")) is None)
+        self.assertIsNotNone(asyncio.run(m.send("someone@acme.test", "Subject", "Body")))
         return m
 
     def test_a_server_with_no_starttls_says_which_extension_is_missing(self):
