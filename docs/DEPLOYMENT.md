@@ -174,6 +174,7 @@ at start-up and are only ever added, never rewritten; read `CHANGELOG.md` for an
 | `DESK_ALLOW_PRIVATE_URLS` | `false` | Allow model or MCP endpoints on private networks (for example a self-hosted vLLM in the same VPC) |
 | `DESK_ALLOW_STDIO_MCP` | `false` | Allow local-command MCP servers on the server (not recommended) |
 | `DESK_MAX_UPLOAD_MB` | `25` | Import size limit |
+| `DESK_KNOWLEDGE_CACHE_MB` | `512` | Memory for cached embedding matrices, across all workspaces. Least recently used are dropped first; `0` removes the limit |
 | `DESK_SESSION_IDLE_MINUTES` | `30` | Sign out after this long with no activity. 30 to 45 on a Team Server; a value outside the range is pulled back into it and the check cannot be switched off |
 | `DESK_SESSION_HOURS` | `12` | Absolute lifetime of a session in hours, whatever the person does (1–24 on a server) |
 | `DESK_ADMIN_SESSION_HOURS` | `8` | Lifetime for anyone who is admin or owner of any workspace (1–24, capped by `DESK_SESSION_HOURS`) |

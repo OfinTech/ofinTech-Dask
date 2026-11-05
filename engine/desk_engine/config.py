@@ -104,6 +104,7 @@ class Settings:
     reauth_minutes: int = 10        # how recently a person must have proved who they are for a high-risk action
     session_idle_minutes: int = 30  # sign out after this long with no activity (Team Server: 30 to 45; 0 = never)
     max_upload_mb: int = 25
+    knowledge_cache_mb: int = 512    # memory for cached embedding matrices across all workspaces (0 = no limit)
     whatsapp_graph_version: str = "v26.0"
     log_level: str = "info"
     extra: dict[str, str] = field(default_factory=dict)
@@ -245,6 +246,7 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         reauth_minutes=max(1, min(60, _minutes_or_days("DESK_REAUTH_MINUTES", "10") or 10)),
         session_idle_minutes=_idle_minutes(_minutes_or_days("DESK_SESSION_IDLE_MINUTES", "30"), mode),
         max_upload_mb=int(_env("DESK_MAX_UPLOAD_MB", "25")),
+        knowledge_cache_mb=int(_env("DESK_KNOWLEDGE_CACHE_MB", "512")),
         whatsapp_graph_version=_env("DESK_WHATSAPP_GRAPH_VERSION", "v26.0"),
         log_level=_env("DESK_LOG_LEVEL", "info"),
         storage=storage_settings(),

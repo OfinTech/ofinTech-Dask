@@ -9,6 +9,8 @@ import asyncio
 import hashlib
 import logging
 import re
+import time
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -27,9 +29,21 @@ CHUNK_CHARS = 1600
 OVERLAP_CHARS = 200
 MAX_FILE_MB = 50
 RRF_K = 60
+SLOW_SEARCH_MS = 500   # a search slower than this is logged as a warning, not as routine information
 STOP = set("""a an and are as at be by for from has have how i in is it of on or our that the this to was were what when
 where which who why will with does do did can could should would about into than then there their these those your you
 we me my us""".split())
+
+
+def rss_mb() -> float | None:
+    """Resident memory of this process, or None where the platform does not expose it cheaply. Read from
+    /proc so the figure is the memory held right now, not the peak that getrusage reports."""
+    try:
+        with open("/proc/self/statm", encoding="ascii") as fh:
+            pages = int(fh.read().split()[1])
+    except (OSError, IndexError, ValueError):
+        return None
+    return round(pages * 4096 / 1048576, 1)
 
 
 def chunk_sections(sections: list[Section]) -> list[tuple[int | None, str | None, str]]:
@@ -75,7 +89,10 @@ class Knowledge:
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
         self.tasks: set[asyncio.Task[None]] = set()
-        self._matrix_cache: dict[tuple[str, str], tuple[tuple[int, int], np.ndarray, list[int]]] = {}
+        # Least-recently-used, bounded by settings.knowledge_cache_mb. One entry is one workspace's
+        # embedding matrix, which is float32 and grows with the number of chunks: an unbounded map of them
+        # is how a server with many workspaces runs out of memory without any one workspace looking large.
+        self._matrix_cache: OrderedDict[tuple[str, str], tuple[tuple[int, int], np.ndarray, list[int]]] = OrderedDict()
 
     # -- files ---------------------------------------------------------------------------------------
     @staticmethod
@@ -279,6 +296,12 @@ class Knowledge:
         rows = self.engine.db.all("SELECT id, heading, text FROM doc_chunks WHERE document_id = ? AND "
                                   "(embedding IS NULL OR embedding_model IS NOT ?) ORDER BY ord", (doc_id, embedder.model))
         if not rows:
+            # Nothing to embed. That is not the same as nothing being embedded: every chunk may already carry a
+            # vector from this very model. Whoever cleared the document's flag before calling this has to see it
+            # put back, or the workspace reports no document as embedded while semantic search is working fine.
+            if self.engine.db.scalar("SELECT COUNT(*) FROM doc_chunks WHERE document_id = ?", (doc_id,)):
+                self.engine.db.execute("UPDATE documents SET embedded = 1, error = NULL, updated_at = ? WHERE id = ?",
+                                       (now(), doc_id))
             return
         try:
             vectors = await embedder.embed([(f"{r['heading']}\n" if r["heading"] else "") + r["text"] for r in rows])
@@ -298,8 +321,25 @@ class Knowledge:
         self.engine.audit(ws_id, user_id, "document.delete", doc_id, {"name": doc["name"]})
 
     def reembed_all(self, ws_id: str) -> int:
-        docs = self.engine.db.all("SELECT id FROM documents WHERE workspace_id = ? AND status = 'indexed'", (ws_id,))
-        self.engine.db.execute("UPDATE documents SET embedded = 0 WHERE workspace_id = ?", (ws_id,))
+        """Queues the documents whose chunks are not already embedded with the workspace's current model.
+
+        Saving the embedding settings calls this every time, including when provider and model have not changed.
+        Queueing everything then meant clearing the embedded flag for the whole workspace and walking each
+        document only to find nothing to do -- so re-saving an unchanged setting reported nothing as embedded
+        and, on a large workspace, spent a pass over every document to reach that wrong answer."""
+        workspace = self.engine.db.one("SELECT embedding_model FROM workspaces WHERE id = ?", (ws_id,))
+        model = (workspace or {}).get("embedding_model")
+        if not model:
+            return 0
+        docs = self.engine.db.all(
+            "SELECT id FROM documents WHERE workspace_id = ? AND status = 'indexed' AND id IN ("
+            "  SELECT DISTINCT document_id FROM doc_chunks WHERE workspace_id = ?"
+            "   AND (embedding IS NULL OR embedding_model IS NOT ?))", (ws_id, ws_id, model))
+        if not docs:
+            return 0
+        self.engine.db.execute(
+            f"UPDATE documents SET embedded = 0 WHERE workspace_id = ? AND id IN ({', '.join('?' for _ in docs)})",
+            [ws_id, *(d["id"] for d in docs)])
 
         async def run() -> None:
             for d in docs:
@@ -351,40 +391,93 @@ class Knowledge:
         params.append(limit)
         return [r["id"] for r in self.engine.db.all(sql, params)]
 
-    def _matrix(self, ws_id: str, model: str) -> tuple[np.ndarray, list[int]]:
+    def cache_bytes(self) -> int:
+        return sum(entry[1].nbytes for entry in self._matrix_cache.values())
+
+    def forget(self, ws_id: str) -> None:
+        """Drops a workspace's cached matrices. Called when the workspace goes, so a deleted tenant does not
+        keep holding memory until the process restarts."""
+        for key in [k for k in self._matrix_cache if k[0] == ws_id]:
+            del self._matrix_cache[key]
+
+    def _evict(self, keep: tuple[str, str]) -> None:
+        """Trims the cache to the configured budget, oldest use first, never dropping the entry just used.
+
+        A single workspace larger than the whole budget is still kept: it is the matrix this query needs, and
+        rebuilding it from SQLite on every search costs far more than the memory. That case is logged, because
+        it is the signal that the workspace has outgrown an exhaustive scan."""
+        budget = max(0, self.engine.settings.knowledge_cache_mb) * 1048576
+        if not budget:
+            return
+        held = self.cache_bytes()
+        for key in list(self._matrix_cache):
+            if held <= budget:
+                return
+            if key == keep:
+                continue
+            held -= self._matrix_cache[key][1].nbytes
+            del self._matrix_cache[key]
+        if held > budget:
+            log.warning("embedding matrix for workspace %s is %.0f MB, over the %.0f MB cache budget; raise "
+                        "DESK_KNOWLEDGE_CACHE_MB or move this workspace off an exhaustive scan",
+                        keep[0], held / 1048576, budget / 1048576)
+
+    def _matrix(self, ws_id: str, model: str) -> tuple[np.ndarray, list[int], bool]:
+        """The workspace's embedding matrix and the chunk ids behind its rows, plus whether it came from cache.
+
+        The signature is the number of embedded chunks and the highest chunk id. Chunk ids come from an
+        AUTOINCREMENT column and so only ever grow, which makes the pair sufficient: an insert raises the
+        maximum, a delete lowers the count, and no sequence of either can return both to what they were."""
         stamp = self.engine.db.one("SELECT COUNT(*) AS n, COALESCE(MAX(id), 0) AS m FROM doc_chunks WHERE workspace_id = ? "
                                    "AND embedding_model = ?", (ws_id, model))
         key = (ws_id, model)
         sig = (stamp["n"], stamp["m"])
         cached = self._matrix_cache.get(key)
         if cached and cached[0] == sig:
-            return cached[1], cached[2]
+            self._matrix_cache.move_to_end(key)
+            return cached[1], cached[2], True
         rows = self.engine.db.all("SELECT id, embedding FROM doc_chunks WHERE workspace_id = ? AND embedding_model = ?",
                                   (ws_id, model))
         if not rows:
-            return np.zeros((0, 1), dtype=np.float32), []
+            self._matrix_cache.pop(key, None)
+            return np.zeros((0, 1), dtype=np.float32), [], False
         ids = [r["id"] for r in rows]
         mat = np.vstack([np.frombuffer(r["embedding"], dtype=np.float32) for r in rows])
         self._matrix_cache[key] = (sig, mat, ids)
-        return mat, ids
+        self._matrix_cache.move_to_end(key)
+        self._evict(key)
+        return mat, ids, False
 
-    async def _semantic(self, workspace: dict[str, Any], query: str, limit: int) -> list[int]:
+    async def _semantic(self, workspace: dict[str, Any], query: str, limit: int,
+                        stats: dict[str, Any] | None = None) -> list[int]:
+        """The chunk ids closest to the query. ``stats``, when given, is filled in with what the scan cost:
+        how many vectors it compared, whether the matrix was already in memory, and where it stopped if it
+        could not run. Nothing about the query or the documents is recorded."""
+        note = stats if stats is not None else {}
+        note["semantic"] = "off"
         try:
             embedder = workspace_embedder(self.engine, workspace)
         except AppError:
+            note["semantic"] = "misconfigured"
             return []
         if embedder is None:
             return []
-        mat, ids = self._matrix(workspace["id"], embedder.model)
+        mat, ids, hit = self._matrix(workspace["id"], embedder.model)
+        note["cache"] = "hit" if hit else "build"
+        note["scanned"] = len(ids)
         if not ids:
+            note["semantic"] = "no vectors"
             return []
         try:
             q = (await embedder.embed([query]))[0]
         except AppError as exc:
+            note["semantic"] = "query embedding failed"
             log.warning("query embedding failed: %s", exc.message)
             return []
         if mat.shape[1] != q.shape[0]:
+            note["semantic"] = "dimension mismatch"
             return []
+        note["semantic"] = "ok"
         scores = mat @ q
         top = np.argsort(-scores)[:limit]
         return [ids[i] for i in top if scores[i] > 0.15]
@@ -392,8 +485,13 @@ class Knowledge:
     async def search(self, workspace: dict[str, Any], query: str, *, top_k: int = 6, collection_id: str | None = None,
                      doc_ids: list[str] | None = None) -> list[dict[str, Any]]:
         ws_id = workspace["id"]
+        stats: dict[str, Any] = {"semantic": "off", "cache": "-", "scanned": 0}
+        started = time.perf_counter()
         keyword = self._keyword(ws_id, query, collection_id, doc_ids, 50)
-        semantic = await self._semantic(workspace, query, 50)
+        keyword_ms = (time.perf_counter() - started) * 1000
+        semantic_started = time.perf_counter()
+        semantic = await self._semantic(workspace, query, 50, stats)
+        semantic_ms = (time.perf_counter() - semantic_started) * 1000
         if collection_id or doc_ids:
             allowed = {r["id"] for r in self.engine.db.all(
                 "SELECT c.id FROM doc_chunks c JOIN documents d ON d.id = c.document_id WHERE c.workspace_id = ?"
@@ -420,4 +518,26 @@ class Knowledge:
                                  "score": round(fused[cid], 5), "match": ("keyword+semantic" if cid in keyword and cid in semantic
                                                                           else "keyword" if cid in keyword else "semantic")})
         hits.sort(key=lambda h: -h["score"])
-        return hits[:top_k]
+        hits = hits[:top_k]
+        self._log_search(ws_id, stats, keyword_ms, semantic_ms, (time.perf_counter() - started) * 1000,
+                         len(keyword), len(semantic), len(hits))
+        return hits
+
+    def _log_search(self, ws_id: str, stats: dict[str, Any], keyword_ms: float, semantic_ms: float,
+                    total_ms: float, keyword_n: int, semantic_n: int, hits: int) -> None:
+        """One line per search, so the cost of retrieval can be read off a running server rather than guessed.
+
+        Only counts and timings are recorded. The query, the chunk text and the document names are not: a
+        search line is written on every lookup, including the ones an agent makes on a customer's ledger, and a
+        log is the easiest place to leak the contents of the thing being searched."""
+        rss = rss_mb()
+        line = ("search ws=%s chunks=%s cache=%s semantic=%s keyword_ms=%.1f semantic_ms=%.1f total_ms=%.1f "
+                "cache_mb=%.1f keyword_hits=%s semantic_hits=%s returned=%s")
+        args = (ws_id, stats.get("scanned", 0), stats.get("cache", "-"), stats.get("semantic", "off"),
+                keyword_ms, semantic_ms, total_ms, self.cache_bytes() / 1048576, keyword_n, semantic_n, hits)
+        if rss is not None:
+            line, args = line + " rss_mb=%.1f", (*args, rss)
+        if total_ms >= SLOW_SEARCH_MS:
+            log.warning(line, *args)
+        else:
+            log.info(line, *args)

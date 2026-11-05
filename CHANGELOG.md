@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Every document search records what it cost.** One line per search: how many vectors were compared, whether
+  the matrix was already in memory, the keyword and semantic phases separately, the total, the memory the cache
+  holds and the resident memory of the process. A search slower than 500 ms is logged as a warning rather than as
+  routine information. This is what makes the next decision about retrieval a measured one: the thresholds worth
+  watching are chunks per workspace, process memory and the slow-search warnings, and nothing in the product
+  could report any of them. The query, the matched text and the document names are deliberately not recorded — a
+  search line is written on every lookup, including the ones an agent makes over a customer's ledger, and a log
+  is the easiest place to spill the contents of the thing being searched.
+
 - **The app can be installed from the browser.** Chrome and Edge now offer to install Desk from the page, Safari
   can add it to the Dock, and the result is an icon and a window of its own with no browser chrome. It matters for
   who can actually try the product: a finance lead on a managed laptop often cannot run a downloaded installer,
@@ -53,6 +62,21 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **A workspace no longer reports nothing as embedded after its embedding settings are saved again.** Saving the
+  settings re-queues the workspace, and queueing cleared the embedded flag on every document before walking each
+  one to embed it. A document whose chunks already carried a vector from that same model had nothing to embed, so
+  the walk returned without putting the flag back: semantic search went on working while *Knowledge → settings*
+  reported `embedded: 0`, and on a large workspace that wrong answer cost a pass over every document. Re-queueing
+  now selects only the documents whose chunks are not already embedded with the current model, so saving an
+  unchanged setting queues nothing, and embedding a document that needs no work restores its flag.
+- **The cache of embedding matrices has a ceiling.** Semantic search holds a workspace's vectors in memory as one
+  float32 matrix, which is what makes the search a single multiplication rather than thousands of reads. There
+  was one such matrix per workspace and model, kept for the life of the process, with nothing to evict it: a
+  server with many workspaces could exhaust its memory without any single workspace looking large, and a deleted
+  workspace went on holding its matrix until a restart. The cache is now least-recently-used and bounded by
+  `DESK_KNOWLEDGE_CACHE_MB` (512 MB by default, `0` for no limit), and deleting a workspace releases its matrix.
+  A workspace whose own matrix exceeds the budget is still kept — rebuilding it per query would cost far more
+  than the memory — and logged, because that is the point at which it has outgrown an exhaustive scan.
 - **The macOS installers build again.** `@electron/rebuild` ran on every desktop package, searched for node
   modules, found none — the shell has no runtime dependencies and `files` ships without `node_modules` — and on
   macOS stopped the build with `<projectDir> not a file`. Windows was unaffected, which is why it went unnoticed:
