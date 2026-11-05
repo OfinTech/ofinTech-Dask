@@ -109,6 +109,7 @@ async def delete_workspace(ctx: Ctx) -> None:
     with ctx.engine.db.tx() as c:
         c.execute("DELETE FROM secrets WHERE workspace_id = ?", (ctx.ws_id,))
         c.execute("DELETE FROM workspaces WHERE id = ?", (ctx.ws_id,))
+    ctx.engine.knowledge.forget(ctx.ws_id)
     from ..storage import delete_prefix
 
     for area in ("documents", "uploads", "files"):
