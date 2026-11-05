@@ -31,6 +31,12 @@ class Mailer:
                               "password would travel unencrypted. Use 'starttls' or 'ssl'.")
         self.security = security
         self.sent: deque[EmailMessage] = deque(maxlen=200)  # the last messages, for tests and this process's trail
+        # Why the last send failed. `send` returns a bool because most callers only need to know whether the
+        # message went, but the reason was being thrown away: four unrelated faults -- a port with nothing
+        # listening, a host that does not resolve, a server with no STARTTLS, a rejected password -- were
+        # indistinguishable to anyone reading the log, which carried the exception's class name and not its
+        # text. An administrator whose e-mail does not work has to be able to tell them apart.
+        self.last_error: str = ""
 
     @classmethod
     def from_env(cls) -> Mailer:
@@ -79,8 +85,10 @@ class Mailer:
         try:
             await asyncio.to_thread(self._send_sync, msg)
         except Exception as exc:
-            log.warning("could not send e-mail to %s: %s", to, type(exc).__name__)
+            self.last_error = f"{type(exc).__name__}: {exc}".strip().rstrip(":").strip()
+            log.warning("could not send e-mail to %s: %s", to, self.last_error)
             return False
+        self.last_error = ""
         self.sent.append(msg)
         return True
 
