@@ -10,10 +10,22 @@ RUN node build.mjs
 
 FROM python:3.12-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+# apt is upgraded before anything else is installed, and the base image's other packages with it, so the image
+# ships with the operating-system fixes Debian has already published rather than whichever ones its base layer
+# happened to be built with. CVE-2026-109518 is why this is not optional: apt's handling of a resumed HTTP
+# download could be made to merge two downloads when a redirect gave them the same address, letting an on-path
+# attacker substitute a package after it had passed verification and run code as root. Debian fixed it in apt
+# 3.0.4 for trixie. Retries are switched off first, in the layer's own first command, because the apt that
+# fetches the fix is still the vulnerable one: with no retry there is no resumed download to merge, which is the
+# mitigation the advisory gives for a build whose sources are not yet HTTPS. The drop-in goes away with the
+# package lists, since once apt is past 3.0.4 the stock setting is the right one again.
 # Tesseract OCR (Apache-2.0) for scanned PDFs and images, with English, Arabic, Spanish and French
-RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-ara \
+RUN printf 'Acquire::Retries "0";\n' > /etc/apt/apt.conf.d/99-ci-no-retries \
+    && apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng tesseract-ocr-ara \
         tesseract-ocr-spa tesseract-ocr-fra \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /etc/apt/apt.conf.d/99-ci-no-retries
 RUN useradd --system --uid 10001 --home /var/lib/ofintech-desk desk && mkdir -p /var/lib/ofintech-desk \
     && chown desk /var/lib/ofintech-desk
 WORKDIR /app
