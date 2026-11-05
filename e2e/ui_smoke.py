@@ -13,6 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from i18n import translated
 from openpyxl import Workbook
 from playwright.sync_api import sync_playwright
 
@@ -536,18 +537,22 @@ def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#/settings/account")
     pg.get_by_role("button", name="العربية").click()
     pg.wait_for_selector("html[dir=rtl][lang=ar]", state="attached")
-    pg.wait_for_selector("text=اللغة")
+    pg.wait_for_selector(f"text={translated('Language')}")
     pg.evaluate("document.fonts.ready")
     font = pg.evaluate("getComputedStyle(document.body).fontFamily")
     assert font.startswith('"IBM Plex Sans Arabic"'), font
     assert pg.evaluate("document.fonts.check('600 16px \"IBM Plex Sans Arabic\"', 'مرحبا')")
     pg.screenshot(path=str(out / "ar-settings.png"))
-    for path, needle in (("chat", "المساعد"), ("files", "الملفات"), ("workflows", "البدء من قالب"),
-                         ("costcentres", "مراكز التكلفة"), ("analysis", "النمو والربحية"), ("close", "إقفال الشهر"),
-                         ("overview", "على المسار"), ("overview/profit", "الربحية"), ("finance/receivables", "حسب العميل"),
-                         ("ledger/entries", "قيود اليومية"), ("oversight", "المطابقة والإقفال")):
+    # Named by the English string each page shows; the Arabic is read from the dictionary the app ships, so a
+    # change of wording moves this check with it instead of breaking it.
+    for path, key in (("chat", "Assistant"), ("files", "Files"), ("workflows", "Start from a template"),
+                      ("costcentres", "Cost centres"), ("analysis", "Growth and profitability"),
+                      ("close", "Close the month"), ("overview", "{0} of {1} measures on track"),
+                      ("overview/profit", "Profitability"), ("finance/receivables", "What customers owed at {0}, by customer, aged from the invoice date."),
+                      ("ledger/entries", "Journal entries"),
+                      ("oversight", "Reconciliation and close, last six months")):
         pg.goto(f"{base}/#/{path}")
-        pg.wait_for_selector(f"text={needle}")
+        pg.wait_for_selector(f"text={translated(key)}")
         pg.wait_for_timeout(300)
         pg.screenshot(path=str(out / f"ar-{path.replace('/', '-')}.png"))
     pg.goto(f"{base}/#/settings/account")
