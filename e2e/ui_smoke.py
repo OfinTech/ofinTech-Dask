@@ -40,7 +40,8 @@ def arabic_for(key: str) -> str:
     if key not in table:
         raise SystemExit(f"e2e: ui/src/i18n/ar.ts has no entry for {key!r}; "
                          "the English string changed, so this check needs its new key")
-    return max((part.strip() for part in re.split(r"\{\d+\}", table[key])), key=len)
+    parts = (part.strip().strip("\u060c\u061b.,:\u2014- ") for part in re.split(r"\{\d+\}", table[key]))
+    return max(parts, key=len)
 
 
 def wait_line(proc: subprocess.Popen, needle: str, timeout: float = 60) -> None:
@@ -569,7 +570,7 @@ def run_steps(pg, base, out, xlsx):
     for path, key in (("chat", "Assistant"), ("files", "Files"), ("workflows", "Start from a template"),
                       ("costcentres", "Cost centres"), ("analysis", "Growth and profitability"),
                       ("close", "Close the month"), ("overview", "{0} of {1} measures on track"),
-                      ("overview/profit", "Profitability"), ("finance/receivables", "by customer"),
+                      ("overview/profit", "Profitability"), ("finance/receivables", "What customers owed at {0}, by customer, aged from the invoice date."),
                       ("ledger/entries", "Journal entries"),
                       ("oversight", "Reconciliation and close, last six months")):
         pg.goto(f"{base}/#/{path}")
