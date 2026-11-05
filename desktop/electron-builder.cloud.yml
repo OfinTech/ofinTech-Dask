@@ -4,7 +4,7 @@
 # Another server: add  -c.extraMetadata.deskEdition.defaultServer=https://desk.example.com
 appId: ai.ofintech.desk
 productName: OfinTech Desk
-copyright: Copyright © 2026 OfinTech
+copyright: Copyright © 2026 OFIN INC
 artifactName: OfinTech-Desk-${version}-${os}-${arch}.${ext}
 directories:
   output: release-cloud

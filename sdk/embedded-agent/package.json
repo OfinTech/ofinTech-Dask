@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Embed OfinTech Desk's read-only financial agent in your own React application over the AG-UI protocol.",
   "license": "Apache-2.0",
+  "author": { "name": "OFIN INC", "email": "it@ofintech.ai", "url": "https://ofintech.ai" },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

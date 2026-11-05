@@ -5,6 +5,19 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Changed
+
+- **The product's owner is named: OFIN INC, 8 The Green, Suite B, Dover, DE 19901, United States.** The
+  copyright holder in `NOTICE` was «The OfinTech Desk authors», which names nobody and leaves the marks
+  belonging to no one in particular. The entity now appears in `NOTICE` with its registered address, in the
+  installer metadata the operating system shows before anyone runs the file, in the published package
+  metadata (`@ofintech/embedded-agent`, the engine, the desktop app and the UI), and in the website footer
+  beside the Riyadh operation it runs from. "OfinTech", "OfinTech Desk" and the OFINTECH logo are stated as
+  marks of OFIN INC, which is what section 6 of the licence leaves out of the grant.
+
+  `LICENSE` is deliberately untouched: the copyright notice at the end of the Apache-2.0 text is the
+  licence's own template, not a field to fill in, and the real notice belongs in `NOTICE`.
+
 ### Added
 
 - **`/ready` says whether the engine can actually work.** `/health` has always answered `ok` whenever the
