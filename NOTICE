@@ -1,5 +1,6 @@
 OfinTech Desk
-Copyright 2026 The OfinTech Desk authors
+Copyright 2026 OFIN INC
+8 The Green, Suite B, Dover, DE 19901, United States
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
@@ -7,8 +8,8 @@ It includes third-party components under their own licences; they are listed wit
 The desktop installers also carry Electron's and Chromium's notices (LICENSES.chromium.html) and the UI bundle's
 notices (app.js.LEGAL.txt).
 
-Trademarks: "OfinTech", "OfinTech Desk" and the OFINTECH logo (docs/brand) identify this project. The Apache
-License does not grant permission to use them (section 6), except to describe the origin of the software. If you
-distribute a modified version, give it a name and logo of your own.
+Trademarks: "OfinTech", "OfinTech Desk" and the OFINTECH logo (docs/brand) are marks of OFIN INC and identify
+this project. The Apache License does not grant permission to use them (section 6), except to describe the origin
+of the software. If you distribute a modified version, give it a name and logo of your own.
 
 No code from OpenHuman (GPL-3.0) is included; only its publicly described concepts inspired the design.
