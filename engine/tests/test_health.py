@@ -147,7 +147,7 @@ class WhatAProbeIsTold(unittest.TestCase):
         gathered = {health.check_migrations(engine).reason, health.check_disk(engine).reason,
                     health.check_scheduler(engine, time.monotonic()).reason,
                     health.Check("database", health.FAIL, "database_readonly").reason}
-        self.assertTrue({r for r in gathered if r} <= health.REASONS)
+        self.assertLessEqual({r for r in gathered if r}, health.REASONS)
 
     def test_the_log_keeps_what_the_response_drops(self) -> None:
         """An operator needs the numbers; a probe does not get them. They are written once per change of
