@@ -62,6 +62,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The Team Server image no longer ships a vulnerable `apt`, and the build that produces it is no longer the
+  place to attack.** CVE-2026-109518: apt's handling of a resumed HTTP download could be made to merge two
+  downloads when a redirect gave them the same address, which let an on-path attacker substitute a package
+  *after* it had passed verification and run code as root. Debian published the fix as apt 3.0.4 for trixie on
+  4 November; the image was built on 3.0.3, so the Trivy gate in CI — which fails a build on any HIGH finding
+  that has a fix available — stopped the first build that ran afterwards. The image now upgrades apt, and the
+  rest of the base image with it, before installing anything, so it carries the operating-system fixes Debian
+  has already published instead of whichever ones its base layer happened to be built with. Retries are
+  switched off first, because the apt that fetches the fix is still the vulnerable one and with no retry there
+  is no resumed download to merge — the mitigation the advisory gives for a build whose package sources are not
+  yet HTTPS.
 - **A workspace no longer reports nothing as embedded after its embedding settings are saved again.** Saving the
   settings re-queues the workspace, and queueing cleared the embedded flag on every document before walking each
   one to embed it. A document whose chunks already carried a vector from that same model had nothing to embed, so
