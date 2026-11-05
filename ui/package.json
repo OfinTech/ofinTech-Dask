@@ -20,5 +20,10 @@
     "esbuild": "0.28.2",
     "typescript": "^7.0.2"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "author": {
+    "name": "OFIN INC",
+    "email": "it@ofintech.ai",
+    "url": "https://ofintech.ai"
+  }
 }
