@@ -4,6 +4,7 @@ version = "1.1.0"
 description = "Engine of OfinTech Desk: agent, data, dashboards, workflows, connectors, MCP, channels."
 requires-python = ">=3.11"
 license = "Apache-2.0"
+authors = [{ name = "OFIN INC", email = "it@ofintech.ai" }]
 dependencies = [
   "starlette==1.10.0", "uvicorn==0.54.0", "pydantic==2.14.1", "httpx2==2.16.0", "mcp==2.3.0",
   "openpyxl==3.1.5", "Pillow==13.0.0", "cryptography==50.0.2", "python-multipart==0.0.32", "PyYAML==6.0.3",

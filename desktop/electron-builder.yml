@@ -1,6 +1,6 @@
 appId: ai.ofintech.desk
 productName: OfinTech Desk
-copyright: Copyright © 2026 OfinTech
+copyright: Copyright © 2026 OFIN INC
 directories:
   output: release
   buildResources: build

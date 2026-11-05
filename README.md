@@ -159,4 +159,4 @@ i18n:check`; browser: `python e2e/ui_smoke.py`. What was run for this release is
 ## Licence
 
 Apache License 2.0; see [LICENSE](LICENSE) and [NOTICE](NOTICE). Third-party components and their licences are
-listed in [LICENSES.md](LICENSES.md). "OfinTech" and the OFINTECH logo are not covered by the licence; see NOTICE.
+listed in [LICENSES.md](LICENSES.md). "OfinTech" and the OFINTECH logo are marks of OFIN INC and are not covered by the licence; see NOTICE.
