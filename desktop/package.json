@@ -17,6 +17,9 @@
     "dist": "npm run build && electron-builder --publish never",
     "test": "npm run build && node --test \"test/*.test.mjs\""
   },
+  "overrides": {
+    "app-builder-lib": { "minimatch": "^11.0.1" }
+  },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "electron": "^45.0.0",
