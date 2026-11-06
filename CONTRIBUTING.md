@@ -25,6 +25,20 @@ GitHub issue for bugs and feature requests, so they can be tracked.
 - Do not post API keys, passwords, tokens, customer names or real financial figures on Discord. Use invented data in
   screenshots and examples.
 - Report security problems privately as described in [SECURITY.md](SECURITY.md), not on Discord or in an issue.
+- **Write in Arabic or English, whichever you think in.** Issues, discussions and pull request descriptions are
+  read in both. Code, comments and interface strings stay in English so that everyone can review them.
+
+## Contribute your bank's statement shape (no code needed)
+
+Banks write the same five facts in endlessly different ways, and a reader that works for one country's banks
+breaks quietly for another's. The most useful thing most people can send is the *shape* of their bank's
+statement, invented row by row, under `fixtures/statements/<country>/<bank>/` with a note of what the file says.
+Every fixture is read on every build from then on. How to make one safely, and how to check it before you open a
+pull request, is in [fixtures/README.md](fixtures/README.md).
+
+The same goes for a statement the desk reads **wrongly**: that is the valuable case, and
+[*A bank statement is not read correctly*](../../issues/new?template=statement-not-read.yml) asks for exactly
+what is needed to fix it.
 
 ## Development setup
 
