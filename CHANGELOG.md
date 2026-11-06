@@ -7,6 +7,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A corpus of bank statement shapes, contributed rather than guessed.** `fixtures/statements/<country>/<bank>/`
+  holds an invented statement and a note of what the file says; `fixtures/validate.py` checks one before it is
+  sent, and `engine/tests/test_statement_corpus.py` reads every one of them on every build, so a shape that is
+  read today keeps being read while the reader is changed for somebody else's bank. Two worked examples are
+  included: money-in/money-out columns under a letterhead, and a single signed amount column with the minus
+  written after the figure. Contributing one needs no code — see [fixtures/README.md](fixtures/README.md).
+- **Two issue forms for the two reports that matter most**, each asking for what is actually needed to fix the
+  problem: *A bank statement is not read correctly* (the top of the file with invented figures, and what the
+  file says) and *A figure is wrong* (the account, the period, both figures, and where yours comes from).
+- **A ten-minute way in** at the top of *Run it*: install, import the Harbor Line demo company's 14 months of
+  invented books, and follow a figure down to one journal entry.
 - **A corpus of charts of accounts, contributed by the accountants who use them.**
   `fixtures/charts-of-accounts/<country>/<slug>/` holds a chart with the account class **in the words that
   country's systems write** and the role each account should get **as an accountant judges it**;

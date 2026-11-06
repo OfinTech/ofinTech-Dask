@@ -10,7 +10,9 @@ the class together with the name suggests a **role** (`cash`, `receivables`, `in
 `depreciation`, `interest`, `tax` and a few more). A person confirms or changes every suggestion — nothing here
 is decided by a model — but a bad suggestion on a 400-account chart is an afternoon of clicking.
 
-Both steps are word lists, and a word list is only as good as the charts it has been shown. That is this folder.
+Both steps are word lists, and a word list is only as good as the charts it has been shown. That is this folder. The
+other half is next door: [`fixtures/`](../README.md) keeps the *shape* of a country's bank statements, the same
+way this keeps the shape of its chart.
 
 ## What a fixture is
 
