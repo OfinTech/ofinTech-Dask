@@ -5,6 +5,24 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **A corpus of charts of accounts, contributed by the accountants who use them.**
+  `fixtures/charts-of-accounts/<country>/<slug>/` holds a chart with the account class **in the words that
+  country's systems write** and the role each account should get **as an accountant judges it**;
+  `engine/tests/test_chart_corpus.py` holds the classification to it on every build, and
+  `fixtures/charts-of-accounts/validate.py` shows a contributor what the product makes of their chart before
+  they send it. Contributing one needs no code — see
+  [fixtures/charts-of-accounts/README.md](fixtures/charts-of-accounts/README.md).
+  A fixture can record a **gap** — a class word the product does not know, or a role it suggests wrongly — with
+  a reason, instead of bending the expectation to match the code. A recorded gap is asserted to still
+  reproduce, so when somebody extends a word list the build fails and says to delete it. The two charts
+  included carry one gap each, both found by writing them: a UK loan written *(over one year)* is suggested as
+  **short-term** debt, because the long-term words are «long-term», «long term» and «non-current»; and an
+  account class written in Arabic is **not recognised at all** (the ledger import then refuses the row with
+  "unknown account class"), because `CLASS_ALIASES` is English only while the role words beside it are in four
+  languages — the same is true of French and Spanish.
+
 ### Changed
 
 - **The product's owner is named: OFIN INC, 8 The Green, Suite B, Dover, DE 19901, United States.** The
