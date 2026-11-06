@@ -1,0 +1,14 @@
+{
+  "about": "One signed amount column: thousands separators, a minus written after the figure (7,310.00-) and a negative in brackets ((45.00)). Dates as 02 Jun 2026. No balance column, so there is no closing balance to read.",
+  "country": "example",
+  "bank": "Harbor Line Bank (invented)",
+  "file": "statement.csv",
+  "invented": true,
+  "expect": {
+    "lines": 5,
+    "first_date": "2026-06-02",
+    "last_date": "2026-06-21",
+    "total": 22569.05,
+    "closing": null
+  }
+}

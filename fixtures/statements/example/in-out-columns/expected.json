@@ -1,0 +1,14 @@
+{
+  "about": "Money-out and money-in as two columns, a running balance, and two lines of letterhead above the header.",
+  "country": "example",
+  "bank": "Harbor Line Bank (invented)",
+  "file": "statement.csv",
+  "invented": true,
+  "expect": {
+    "lines": 8,
+    "first_date": "2026-06-02",
+    "last_date": "2026-06-30",
+    "total": -10134.39,
+    "closing": { "date": "2026-06-30", "amount": 109865.61 }
+  }
+}

@@ -1,0 +1,70 @@
+name: A figure is wrong
+description: A number in the statements, overview, analysis or an answer does not agree with your books.
+title: "Figure: "
+labels: ["bug", "figures"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A wrong figure is the most serious kind of bug this project can have, and the quickest to find when the
+        report carries the account and the period. Please replace real amounts and party names with invented
+        ones, keeping the *difference* the same. العربية مرحّب بها.
+  - type: input
+    id: where
+    attributes:
+      label: Where you saw it
+      description: The page, and the path you took to it.
+      placeholder: Statements → Profit and loss → June 2026, then the Cost of sales line
+    validations:
+      required: true
+  - type: input
+    id: period
+    attributes:
+      label: Account and period
+      placeholder: 5100 Fuel and tolls — June 2026 (fiscal year starting April)
+    validations:
+      required: true
+  - type: textarea
+    id: numbers
+    attributes:
+      label: What it showed, and what you expected
+      description: Both figures, and the difference.
+      placeholder: |
+        Showed 61,240.50. Expected 59,000.00. Difference 2,240.50, which is the June fuel-card bill.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Where your figure comes from
+      description: >
+        A trial balance from your ledger, your own spreadsheet, last month's filed accounts — and anything about
+        your books that matters here: an opening balance, a journal posted twice, a foreign-currency bill, a
+        credit note.
+    validations:
+      required: true
+  - type: textarea
+    id: drilldown
+    attributes:
+      label: What the drill-down showed
+      description: >
+        Every figure opens into the accounts behind it, then the ledger lines, then one entry with its source.
+        If you followed it down, say where the two numbers stopped agreeing — that is usually the answer.
+  - type: dropdown
+    id: marked
+    attributes:
+      label: How the figure was marked
+      description: Each one says whether it is actual, unverified, budget, forecast or an AI estimate.
+      options: ["Actual", "Unverified", "Budget", "Forecast", "AI estimate", "It was not marked"]
+  - type: input
+    id: version
+    attributes:
+      label: Version and where it runs
+      placeholder: 1.2.0 — Team Server on Ubuntu 24.04
+  - type: checkboxes
+    id: promises
+    attributes:
+      label: Before you send it
+      options:
+        - label: The amounts and names above are invented or safe to publish.
+          required: true
