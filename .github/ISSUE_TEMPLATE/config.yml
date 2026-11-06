@@ -3,6 +3,9 @@ contact_links:
   - name: Questions and help (Discord)
     url: https://discord.gg/hbzN6udBM
     about: Ask the community about setting up OfinTech Desk or connecting a ledger.
+  - name: Ideas and questions (Discussions)
+    url: https://github.com/OfinTech/ofinTech-Dask/discussions
+    about: Ask how something works, or talk through an idea before opening an issue. Arabic and English both welcome.
   - name: Report a security vulnerability
     url: https://github.com/OfinTech/ofinTech-Dask/security/advisories/new
     about: Please report security problems privately, not in a public issue.

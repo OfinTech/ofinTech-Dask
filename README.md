@@ -58,6 +58,24 @@ and your company's own chart of accounts, currency and fiscal year.*
 
 ## Run it
 
+### Try it on books that already exist
+
+The quickest look needs nothing but the app and three files of invented books. **Harbor Line Logistics
+Ltd** is a freight company with 14 months of them in USD: 182 invoices, 98 bills, 47 journals, a project whose
+budget runs out before its planned end, a customer who pays 40–70 days late, and a payment sitting in Suspense.
+
+1. Install the desktop app from the [latest release](../../releases/latest), or set up a server by following
+   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+2. From `examples/demo-company/HarborLine-demo/ofintech-desk/`:
+   - `HarborLine_General_Ledger.xlsx` → **Data → Import**;
+   - `EWF_Project_Budget.xlsx` → **Cost centres → Read budget from a file**;
+   - `HarborLine_Bank_Statement_2026-10.csv` → **Month-end close**.
+3. Open the overview, then the profit and loss, then click a figure until you reach one journal entry and its
+   source. Ask the assistant why the project's budget runs out, and check the figures in its answer.
+
+Everything in that folder is invented, down to the e-mail addresses. What is in it on purpose — and what the
+product is supposed to find — is listed in [examples/demo-company/README.md](examples/demo-company/README.md).
+
 ### Desktop app, from source
 
 Requirements: Python 3.11+ and Node.js 22+. Optional: `tesseract` with the `eng ara spa fra` language data for OCR of
