@@ -1,0 +1,75 @@
+name: A bank statement is not read correctly
+description: Your bank's file is refused, or its lines, dates, signs or balance come out wrong.
+title: "Statement: "
+labels: ["bug", "statement reader"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please use **invented** figures and names throughout — never a real statement, account number, IBAN or
+        customer name. The shape of the file is what matters, not the data in it. العربية مرحّب بها.
+  - type: input
+    id: bank
+    attributes:
+      label: Country and bank
+      description: And whether the file came from online banking, a branch, or an export from another system.
+      placeholder: United Kingdom — Example Bank plc, downloaded from online banking
+    validations:
+      required: true
+  - type: dropdown
+    id: filetype
+    attributes:
+      label: File type
+      options: ["CSV", "XLSX", "XLS", "PDF", "Something else"]
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: The top of the file, with invented figures
+      description: >
+        Everything above the table, the header row, and three or four rows of data — with every figure, name and
+        number replaced. This is the single most useful thing in the report.
+      render: text
+      placeholder: |
+        Example Bank plc - Business Current Account
+        Account 00-11-22 / 10045567   1 June 2026 to 30 June 2026
+        Date,Description,Money out,Money in,Balance
+        02/06/2026,FUEL CARD JUNE,1240.50,,118759.50
+        05/06/2026,CUSTOMER PAYMENT INV-1180,,48500.00,167259.50
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What the desk did
+      description: The message it showed, or which lines, dates, signs or balance came out wrong.
+      placeholder: |
+        It said "No bank statement table was found". / It read 142 of 428 lines. / Money out came through
+        positive, so the reconciliation was double the difference.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What the file says
+      description: Number of lines, the first and last date, the total with money in positive, and the closing balance.
+      placeholder: 8 lines, 2 to 30 June 2026, total -10,134.39, closing balance 109,865.61 on 30 June.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version and where it runs
+      description: Settings → Account shows the version.
+      placeholder: 1.2.0 — desktop app on Windows 11
+  - type: checkboxes
+    id: promises
+    attributes:
+      label: Before you send it
+      options:
+        - label: Every figure, name, account number and reference in this report is invented.
+          required: true
+        - label: >
+            I can add the file as a fixture (see fixtures/README.md) so this shape is read on every build from
+            now on — or I am happy for a maintainer to make one from the rows above.
