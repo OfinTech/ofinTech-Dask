@@ -1,0 +1,21 @@
+{
+  "about": "A Saudi transport company's chart with Arabic account names. The first twenty rows carry the account class in English, as a bilingual ledger export does, and every Arabic name is read correctly -- including طويل الاجل as long-term debt and مكافاة نهاية الخدمة as a non-current liability. The last two rows carry the class in Arabic, which is where it stops working.",
+  "country": "sa",
+  "source": "Invented, in the shape a Saudi trading company's ledger export has.",
+  "invented": true,
+  "gaps": {
+    "classes": [
+      {
+        "written": "البنك",
+        "expected": "Bank",
+        "why": "CLASS_ALIASES in costcentres/templates.py is English only (cash, debtors, creditors, sales, expenses…), while the role words beside it are in four languages. An Arabic ledger whose class column says البنك or ايرادات is refused row by row with “unknown account class”, in a product whose interface and documentation are Arabic first."
+      },
+      {
+        "written": "ايرادات",
+        "expected": "Income",
+        "why": "The same gap. French (Banque, Produits) and Spanish (Ingresos, Gastos) are missing in the same way, and so is German, which the interface does not claim to support."
+      }
+    ],
+    "roles": []
+  }
+}
