@@ -1,0 +1,23 @@
+Code,Account,Account class,Expected role
+1210,النقد في الصندوق,Bank,cash
+1310,ذمم مدينة تجارية,Receivable,receivables
+1400,المخزون,Asset,inventory
+1450,مصروفات مدفوعة مقدما,Asset,other_current_assets
+0120,سيارات ومركبات,Asset,fixed_assets
+0121,مجمع الاهلاك - سيارات,Asset,fixed_assets
+2110,ذمم دائنة تجارية,Payable,payables
+2210,ضريبة القيمة المضافة المستحقة,Liability,other_current_liabilities
+2310,قرض بنكي طويل الاجل,Liability,long_term_debt
+2320,سحب على المكشوف,Liability,short_term_debt
+2400,مكافاة نهاية الخدمة,Liability,other_non_current_liabilities
+3100,رأس المال,Equity,equity
+4100,ايرادات الشحن,Income,revenue
+4200,ايرادات اخرى,Other income,other_income
+5100,تكلفة النقل - مقاولون,Cost of sales,cogs
+6100,رواتب واجور,Expense,payroll
+6300,اهلاك الممتلكات والمعدات,Expense,depreciation
+6400,فوائد وعمولات بنكية,Expense,interest
+6500,ايجار المستودع,Expense,opex
+7100,ضريبة الدخل,Expense,tax
+1220,النقد في البنك,البنك,cash
+4300,ايرادات متنوعة,ايرادات,revenue

@@ -1,0 +1,17 @@
+Code,Account,Account class,Expected role
+1200,Bank current account,Bank,cash
+1100,Trade debtors,Debtors,receivables
+1105,Prepayments,Assets,other_current_assets
+1400,Stock on hand,Assets,inventory
+0050,Motor vehicles,Assets,fixed_assets
+0051,Accumulated depreciation,Assets,fixed_assets
+2100,Trade creditors,Creditors,payables
+2200,VAT control account,Liabilities,other_current_liabilities
+2300,Bank loan (over one year),Liabilities,long_term_debt
+3000,Share capital,Equity,equity
+4000,Turnover - haulage,Sales,revenue
+5000,Subcontractor costs,Cost of goods sold,cogs
+7000,Wages and salaries,Expenses,payroll
+7600,Bank interest payable,Expenses,interest
+7700,Depreciation charge,Expenses,depreciation
+8000,Corporation tax,Expenses,tax
