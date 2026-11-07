@@ -14,15 +14,74 @@ from typing import Any
 
 from ..connectors.accounting import ACCOUNT_CLASSES, GL_COLUMNS
 from ..errors import Invalid
+from .rules import norm
 
 GL_NAMES = [c["name"] for c in GL_COLUMNS]
-CLASS_ALIASES = {  # what people type -> the canonical class
-    "cash": "Bank", "bank and cash": "Bank", "accounts receivable": "Receivable", "receivables": "Receivable",
-    "debtors": "Receivable", "accounts payable": "Payable", "payables": "Payable", "creditors": "Payable",
-    "assets": "Asset", "liabilities": "Liability", "revenue": "Income", "sales": "Income", "cogs": "Cost of sales",
-    "cost of goods sold": "Cost of sales", "direct costs": "Cost of sales", "expenses": "Expense", "opex": "Expense",
-    "other expenses": "Other expense", "other incomes": "Other income",
+# What a ledger's class column says -> the canonical class.
+#
+# The class column is written in the words the customer's own accounting system uses, in the language the company
+# keeps its books in. The role words beside this table (``analysis/roles.py``) are in English, Arabic, Spanish and
+# French for exactly that reason, so these are too: a ledger whose class column says «ايرادات» or *Proveedores* is
+# the ordinary case in several of the places this product is used, not an exotic one, and a class word that is not
+# recognised stops the whole row -- the import refuses it with "unknown account class" and the account never reaches
+# the statements or the ratios.
+#
+# Two rules kept this list honest while it was written. A word goes in only where it names the *class*, not an
+# account: «مخزون» and *existencias* are inventory accounts of class Asset, and putting them here would make a class
+# column out of an account name. And a word that two classes could claim goes to the narrower reading or stays out:
+# bare *dettes* and *deudas* are a liability, while *dettes fournisseurs* and *proveedores* are the payables control
+# account, so they sit on different rows below.
+CLASS_WORDS: dict[str, tuple[str, ...]] = {
+    "Bank": ("cash", "bank and cash", "cash and bank", "cash at bank", "cash and cash equivalents", "petty cash",
+             "نقد", "نقدية", "بنك", "بنوك", "صندوق", "نقد وما يعادله",
+             "caja", "banco", "bancos", "tesoreria", "efectivo", "caja y bancos",
+             "banque", "banques", "caisse", "tresorerie", "disponibilites"),
+    "Receivable": ("accounts receivable", "receivable", "receivables", "debtors", "trade receivables",
+                   "trade debtors",
+                   "ذمم مدينة", "مدينون", "عملاء", "ذمم عملاء", "مدينون تجاريون", "حسابات مدينة",
+                   "clientes", "deudores", "cuentas por cobrar", "cuentas a cobrar",
+                   "clients", "creances", "creances clients", "comptes clients", "debiteurs"),
+    "Payable": ("accounts payable", "payable", "payables", "creditors", "trade payables", "trade creditors",
+                "ذمم دائنة", "دائنون", "موردون", "ذمم موردين", "دائنون تجاريون", "حسابات دائنة",
+                "proveedores", "acreedores", "cuentas por pagar", "cuentas a pagar",
+                "fournisseurs", "dettes fournisseurs", "comptes fournisseurs", "crediteurs"),
+    "Asset": ("assets", "current assets", "non-current assets", "fixed assets", "fixed asset",
+              "اصول", "اصول ثابتة", "اصول متداولة", "اصول غير متداولة", "موجودات",
+              "activo", "activos", "activo corriente", "activo no corriente", "inmovilizado",
+              "actif", "actifs", "actif circulant", "immobilisations"),
+    "Liability": ("liabilities", "liability", "current liabilities", "non-current liabilities",
+                  "التزامات", "خصوم", "مطلوبات", "التزامات متداولة", "التزامات غير متداولة",
+                  "pasivo", "pasivos", "pasivo corriente", "pasivo no corriente", "deudas",
+                  "passif", "dettes", "dettes financieres", "passif circulant"),
+    "Equity": ("shareholders equity", "shareholders' equity", "shareholder equity", "owners equity",
+               "owner's equity", "capital", "share capital",
+               "حقوق الملكية", "حقوق المساهمين", "حقوق الشركاء", "رأس المال",
+               "patrimonio", "patrimonio neto", "fondos propios", "capital social",
+               "capitaux propres", "fonds propres"),
+    "Income": ("revenue", "revenues", "sales", "turnover",
+               "ايرادات", "ايراد", "مبيعات", "دخل", "ايرادات التشغيل",
+               "ingresos", "ingreso", "ventas", "cifra de negocios",
+               "produits", "ventes", "chiffre d'affaires", "produits d'exploitation"),
+    "Other income": ("other incomes", "other revenue", "non-operating income",
+                     "ايرادات اخرى", "دخل اخر",
+                     "otros ingresos",
+                     "autres produits", "produits divers"),
+    "Cost of sales": ("cogs", "cost of goods sold", "cost of revenue", "direct costs",
+                      "تكلفة المبيعات", "تكلفة البيع", "تكلفة الايرادات", "تكاليف مباشرة",
+                      "coste de ventas", "costo de ventas", "coste de las ventas", "aprovisionamientos",
+                      "cout des ventes", "cout des marchandises vendues", "achats"),
+    "Expense": ("expenses", "opex", "operating expenses", "overheads",
+                "مصروفات", "مصاريف", "نفقات", "مصروف", "مصروفات تشغيلية",
+                "gastos", "gasto", "gastos de explotacion",
+                "charges", "frais", "charges d'exploitation"),
+    "Other expense": ("other expenses", "non-operating expenses",
+                      "مصروفات اخرى", "مصاريف اخرى", "اعباء اخرى",
+                      "otros gastos",
+                      "autres charges", "charges diverses"),
 }
+# Normalised on the way in, the same way the role words are: case, spacing, diacritics, tatweel and the alef, teh
+# marbuta and yeh forms, so «الإيرادات» and «الايرادات» are one word and *Amortización* needs no second spelling.
+CLASS_ALIASES = {norm(word): canonical for canonical, words in CLASS_WORDS.items() for word in words}
 
 
 def _style(ws: Any, header_row: int, widths: list[int]) -> None:
@@ -118,22 +177,28 @@ def ledger_template(currency: str = "USD") -> bytes:
     ws.add_data_validation(dv)
     dv.add("F2:F5000")
     guide = wb.create_sheet("Guide")
-    lines = [
-        "General ledger for OfinTech Desk: one row per journal line",
-        "",
-        "Keep the header row exactly as it is and delete the example rows before you upload.",
-        "",
+    fields = [
         "Date            yyyy-mm-dd (or an Excel date).",
         "Entry           the journal entry number. Lines of the same entry share it, and each entry balances (debits = credits).",
         "Type            Supplier bill, Customer invoice, Payment, Journal… (free text, optional).",
         "Account code    the account's code in your chart of accounts (optional but recommended).",
         "Account         the account's name.",
         "Account class   one of: " + ", ".join(ACCOUNT_CLASSES) + ".",
+        "                Your own system's word is accepted too, in English, Arabic, Spanish or French —",
+        "                debtors, creditors, الايرادات, Proveedores, Charges — and any word we do not know is",
+        "                named with its row number instead of being guessed at.",
         "                Bank = bank and cash accounts; Payable = the supplier control account; Receivable = the customer control account.",
         f"Debit, Credit   positive amounts in {currency}; one of them is usually 0.",
         "Description     the line's narrative (optional). Words here can be used by cost-centre rules.",
         "Party           the customer or supplier (optional). Needed to match payments to the right bills.",
         "Cost centre tags  Project: Riyadh tower | Department: Sales (40%) — any dimension your system has (optional).",
+    ]
+    lines = [
+        "General ledger for OfinTech Desk: one row per journal line",
+        "",
+        "Keep the header row exactly as it is and delete the example rows before you upload.",
+        "",
+        *fields,
         "",
         "Upload the file under Cost centres → Import a general ledger file, or under Data → Import. Cost centres,",
         "financial analysis and forecasts then read it. Upload it again after each month-end to replace the data.",
@@ -142,7 +207,8 @@ def ledger_template(currency: str = "USD") -> bytes:
         guide.append([line])
     guide.column_dimensions["A"].width = 130
     guide["A1"].font = Font(bold=True, size=13)
-    for r in range(5, 5 + 11):
+    first_field = lines.index(fields[0]) + 1                 # 1-based, and the column-A rows are the list's order
+    for r in range(first_field, first_field + len(fields)):
         guide.cell(row=r, column=1).font = Font(name="Consolas")
     buf = io.BytesIO()
     wb.save(buf)
@@ -153,12 +219,36 @@ def _norm(s: Any) -> str:
     return " ".join(str(s or "").strip().lower().replace("_", " ").split())
 
 
+# The definite article: a chart writes «الالتزامات المتداولة» and *Les charges* where the word lists hold
+# «التزامات متداولة» and *charges*, and neither is a different class. Arabic joins it to every word it governs, so
+# it comes off each one; the Latin ones stand alone in front and only the first word can carry one.
+_LATIN_ARTICLES = ("the ", "les ", "le ", "la ", "los ", "las ", "el ")
+
+
+def _bare(text: str) -> str:
+    """The same words with the Arabic definite article taken off each of them.
+
+    The length guard leaves «الات» (machines) alone: a four-letter word that happens to start with those two
+    letters is a word, not an article and a stem.
+    """
+    return " ".join(w[2:] if w.startswith("ال") and len(w) > 4 else w for w in text.split())
+
+
 def _cls(v: Any) -> str | None:
+    """The canonical class a ledger's class column means, or ``None`` when nothing in this product knows the word."""
     t = _norm(v)
     for c in ACCOUNT_CLASSES:
         if t == c.lower():
             return c
-    return CLASS_ALIASES.get(t)
+    n = norm(t)
+    readings = [n, _bare(n)]
+    readings += [r[len(a):] for r in list(readings) for a in _LATIN_ARTICLES
+                 if r.startswith(a) and len(r) > len(a) + 1]
+    for reading in readings:
+        found = CLASS_ALIASES.get(reading)
+        if found:
+            return found
+    return None
 
 
 def _date(v: Any) -> str | None:
