@@ -68,6 +68,11 @@ python e2e/ui_smoke.py                                      # browser smoke test
   someone adds it, and `npm run i18n:check` lists what is missing.
 - Write interface text in plain words for finance people: what a thing does, not how it is built.
 - Update the relevant page in `docs/` and add a line to `CHANGELOG.md` under *Unreleased*.
+- Changing how an account class or an account name is classified? Add or extend a chart in
+  `fixtures/charts-of-accounts/` so the words you relied on are held on every build, and delete any gap your
+  change fixes — the build will tell you which. See
+  [fixtures/charts-of-accounts/README.md](fixtures/charts-of-accounts/README.md); contributing a chart needs no
+  code at all.
 
 ## Commits and reviews
 

@@ -80,6 +80,9 @@ is a bug report nobody can misunderstand.
 Every fixture here runs in `engine/tests/test_statement_corpus.py` on every build, so once your bank's shape is
 in, it stays read.
 
+The other half of the same idea is next door: [`charts-of-accounts/`](charts-of-accounts/README.md), where the
+chart your country's accountants use is kept against what each account is *for*.
+
 ---
 
 # أشكال كشوف البنوك

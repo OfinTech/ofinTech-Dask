@@ -1,0 +1,17 @@
+{
+  "about": "A small UK haulage company's chart, in the vocabulary UK bookkeeping uses: debtors and creditors rather than receivable and payable, turnover rather than revenue, a VAT control account, and four-digit codes with the fixed assets at 00xx.",
+  "country": "gb",
+  "source": "Invented, in the shape a UK trading company's ledger export has.",
+  "invented": true,
+  "gaps": {
+    "classes": [],
+    "roles": [
+      {
+        "code": "2300",
+        "expected": "long_term_debt",
+        "got": "short_term_debt",
+        "why": "the long-term words are \"long-term\", \"long term\", \"non-current\" and their translations. A UK accountant writes \"over one year\", so a mortgage or a term loan is suggested as short-term debt and lands in current liabilities, which moves the current ratio and working capital. A person confirms the role, so nothing is silently wrong -- but the suggestion is wrong for the commonest UK wording."
+      }
+    ]
+  }
+}
