@@ -48,7 +48,7 @@ the expectation:
   "source": "Invented, in the shape a UK trading company's ledger export has.",
   "invented": true,
   "gaps": {
-    "classes": [{ "written": "Débiteurs", "expected": "Receivable", "why": "…" }],
+    "classes": [{ "written": "Sundry", "expected": "Other expense", "why": "…" }],
     "roles":   [{ "code": "2300", "expected": "long_term_debt", "got": "short_term_debt", "why": "…" }]
   }
 }
@@ -59,10 +59,14 @@ says to delete the gap — so the list cannot quietly rot into a list of things 
 also needs a `why` worth reading: a gap without a reason is a hidden failing test, which is worse than a
 failing test.
 
-The two fixtures here already carry one each: a UK loan written *(over one year)* is suggested as **short-term**
-debt, because the long-term words are «long-term», «long term» and «non-current»; and an account class written
-in Arabic is not recognised at all, because the class words are English only while the role words beside them
-are in four languages.
+The UK fixture here carries one: a loan written *(over one year)* is suggested as **short-term** debt, because
+the long-term words are «long-term», «long term», «non-current» and their translations. A UK accountant writes
+*over one year*, so the loan lands in current liabilities and moves the current ratio. A person confirms the
+role, so nothing is silently wrong — but the suggestion is wrong for the commonest UK wording.
+
+The Saudi fixture carried one too, and it is now fixed: an account class written in Arabic was not recognised at
+all, because the class words were English only while the role words beside them were in four languages. The
+class words are in the same four languages now, so that gap is deleted — which is exactly what this test is for.
 
 ## Check it before you send it
 
