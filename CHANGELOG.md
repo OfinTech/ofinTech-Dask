@@ -36,6 +36,35 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Changed
 
+- **The account class column is read in four languages, not one.** A ledger arrives with its class column
+  written in the words the customer's own system uses — *Debtors*, *Creditors*, «الإيرادات», *Proveedores*,
+  *Les charges* — and `CLASS_ALIASES` held twenty English words, while the role words beside it
+  (`analysis/roles.py`) have always been in English, Arabic, Spanish and French. An unrecognised class word is
+  not a degraded suggestion: the import refuses that row with "unknown account class", so the account never
+  reaches the statements or the ratios. In a product whose interface and documentation are Arabic first, an
+  Arabic class column was refused row by row.
+
+  The table is now `CLASS_WORDS`, keyed by the canonical class, with each of the eleven classes written the way
+  all four languages write it — 181 words, normalised on the way in the same way the role words are, so
+  «الإيرادات» and «الايرادات» are one word and *Amortización* needs no second spelling. The definite article is
+  read as a second reading: Arabic joins it to every word it governs, so it comes off each one and
+  «الالتزامات المتداولة» reaches «التزامات متداولة»; *Les charges* and *La caisse* lose theirs from the front.
+  A word that two classes could claim goes to the narrower reading or stays out — bare *dettes* and *deudas*
+  are a liability while *dettes fournisseurs* and *proveedores* are the payables control account — and a word
+  that names an *account* rather than a class stays out altogether, so «مخزون» and *existencias* are still
+  inventory accounts of class Asset rather than a class of their own.
+
+  `engine/tests/test_cost_centres.py` states the four words for each of the eleven classes in a list written
+  independently of the table, fails if a class is added without them, fails if any word is claimed by two
+  classes, and reads an Arabic ledger end to end. A word nobody knows is still unknown: the row is named with
+  its number so a person can correct the file, because guessing is worse than refusing. The class-word gap
+  recorded in `fixtures/charts-of-accounts/sa/trading-company` is deleted, which is what the corpus test asked
+  for in so many words.
+
+  The ledger template's own Guide sheet now says so, where somebody filling the file in will read it, and the
+  monospace block on that sheet follows the list of field lines instead of a hard-coded row count — which is
+  what hid the three new lines in the first draft of this change.
+
 - **The product's owner is named: OFIN INC, 8 The Green, Suite B, Dover, DE 19901, United States.** The
   copyright holder in `NOTICE` was «The OfinTech Desk authors», which names nobody and leaves the marks
   belonging to no one in particular. The entity now appears in `NOTICE` with its registered address, in the

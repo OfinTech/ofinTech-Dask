@@ -11,7 +11,8 @@ import math
 import unittest
 from datetime import date, timedelta
 
-from desk_engine.connectors.accounting import gl_rows
+from desk_engine.analysis import roles
+from desk_engine.connectors.accounting import ACCOUNT_CLASSES, GL_COLUMNS, gl_rows
 from desk_engine.costcentres.analysis import Analysis
 from desk_engine.costcentres.budget import match_accounts, parse_docx, parse_xlsx
 from desk_engine.costcentres.rules import Matcher, norm, parse_tags, prepare
@@ -416,6 +417,81 @@ class TemplatesAndUpload(unittest.TestCase):
         h.client.post(f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("notes.docx", b"x")}).status_code
         self.assertEqual(h.client.post(f"/api/w/{ws}/cost-centres/ledger/upload",
                                        files={"file": ("other.xlsx", budget_xlsx())}).status_code, 422)
+
+
+# One way each of the four languages writes each of the eleven classes, as a ledger export actually writes it:
+# with the definite article, with the accents, and in the plural the local standard uses. The list is written here
+# independently of the table in templates.py on purpose -- a test that reads the same list it is checking proves
+# only that the list exists.
+WRITTEN_AS = [
+    ("Bank", "Cash and bank", "البنك", "Bancos", "La caisse"),
+    ("Receivable", "Trade debtors", "الذمم المدينة", "Clientes", "Créances clients"),
+    ("Payable", "Trade creditors", "الموردون", "Proveedores", "Dettes fournisseurs"),
+    ("Asset", "Fixed assets", "الأصول الثابتة", "Inmovilizado", "Immobilisations"),
+    ("Liability", "Current liabilities", "الالتزامات المتداولة", "Pasivo corriente", "Passif circulant"),
+    ("Equity", "Share capital", "حقوق الملكية", "Patrimonio neto", "Capitaux propres"),
+    ("Income", "Turnover", "الإيرادات", "Ventas", "Chiffre d'affaires"),
+    ("Other income", "Other revenue", "إيرادات أخرى", "Otros ingresos", "Autres produits"),
+    ("Cost of sales", "Cost of goods sold", "تكلفة المبيعات", "Coste de ventas", "Achats"),
+    ("Expense", "Operating expenses", "المصروفات", "Gastos", "Les charges"),
+    ("Other expense", "Other expenses", "مصروفات أخرى", "Otros gastos", "Autres charges"),
+]
+
+
+class AccountClassWords(unittest.TestCase):
+    """The class column is read in the four languages the role words beside it are already written in.
+
+    A class word that is not recognised is not a degraded suggestion: the import refuses that row outright, so the
+    account never reaches the statements or the ratios. An Arabic, Spanish or French class column is the ordinary
+    case in several of the places this product is used.
+    """
+
+    def test_every_class_is_recognised_in_all_four_languages(self) -> None:
+        from desk_engine.costcentres.templates import _cls
+
+        for canonical, *written in WRITTEN_AS:
+            self.assertIn(canonical, ACCOUNT_CLASSES)
+            for word, language in zip(written, ("English", "Arabic", "Spanish", "French")):
+                with self.subTest(language=language, written=word):
+                    self.assertEqual(canonical, _cls(word))
+
+    def test_the_eleven_classes_are_all_covered(self) -> None:
+        self.assertEqual(sorted(ACCOUNT_CLASSES), sorted(c for c, *_ in WRITTEN_AS),
+                         "a class was added or renamed: give it its four words above")
+
+    def test_no_word_is_claimed_by_two_classes(self) -> None:
+        from desk_engine.costcentres.templates import CLASS_WORDS
+
+        seen: dict[str, str] = {}
+        for canonical, words in CLASS_WORDS.items():
+            for word in words:
+                key = norm(word)
+                self.assertNotIn(key, seen, f"“{word}” is listed under both {seen.get(key)} and {canonical}")
+                seen[key] = canonical
+
+    def test_a_word_nobody_knows_stays_unknown(self) -> None:
+        from desk_engine.costcentres.templates import _cls
+
+        # Guessing would be worse than refusing: the row is named with its number so a person can correct the file.
+        for word in ("Sundry", "Cuenta", "Divers", "حساب", "", "ال"):
+            with self.subTest(written=word):
+                self.assertIsNone(_cls(word))
+
+    def test_an_arabic_ledger_is_read_end_to_end(self) -> None:
+        from desk_engine.costcentres.templates import read_ledger_file
+
+        header = ",".join(c["name"] for c in GL_COLUMNS)
+        rows = [("2026-01-31", "JV-1", "قيد", "1220", "النقد في البنك", "البنك", "5000", "0", "", "", ""),
+                ("2026-01-31", "JV-1", "قيد", "4300", "إيرادات متنوعة", "الإيرادات", "0", "5000", "", "", ""),
+                ("2026-02-28", "JV-2", "قيد", "6500", "إيجار المستودع", "المصروفات", "1200", "0", "", "", ""),
+                ("2026-02-28", "JV-2", "قيد", "2100", "الموردون", "ذمم دائنة", "0", "1200", "", "", "")]
+        csv_text = header + "\n" + "\n".join(",".join(r) for r in rows) + "\n"
+        parsed = read_ledger_file(csv_text.encode("utf-8"), "ledger.csv")
+        self.assertEqual(4, parsed["lines"])          # not one row refused with "unknown account class"
+        classes = [row[5] for row in parsed["rows"]]  # the general-ledger columns, in order
+        self.assertEqual(["Bank", "Income", "Expense", "Payable"], classes)
+        self.assertEqual(["cash", "revenue", "opex", "payables"],
+                         [roles.suggest(row[5], row[4]) for row in parsed["rows"]])
 
 
 class ConnectorLines(unittest.TestCase):
