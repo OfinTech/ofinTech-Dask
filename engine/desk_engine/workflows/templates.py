@@ -195,5 +195,8 @@ def localized(lang: str | None) -> list[dict[str, Any]]:
             t["name"], t["description"], t["category"] = loc["name"], loc["description"], loc["category"]
             for step, name in zip(t["definition"]["steps"], loc["steps"], strict=False):
                 step["name"] = name
+        # Computed, never written by hand: a template needs a language model when one of its steps asks the
+        # assistant to do the work. A sealed workspace with no local model can use every other template as it is.
+        t["needs_model"] = any(s.get("type") == "agent" for s in t["definition"]["steps"])
         out.append(t)
     return out

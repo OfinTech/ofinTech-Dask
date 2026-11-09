@@ -7,6 +7,18 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Changed
 
+- **A sealed workspace refuses an outside model when the workflow is saved, not when it runs.** A workspace
+  that keeps its data inside accepts only a language model on its own network, and `egress.check_model_endpoint`
+  enforced that where the model is built — in the middle of a run, which for a scheduled workflow is the small
+  hours with nobody watching. The same question is now asked in `Workflows.save` and at the start of a run, and
+  the answer names the step and the host (`workflow_external_model`, with `details` per step, the shape the app
+  already shows beside a step). A workflow already saved is checked again at the start of the run, since the
+  workspace may have been sealed, or the provider edited, after it was written. Tool steps are untouched: a
+  sealed workspace with no local model still runs every workflow built from tools.
+- **A workflow template says whether it needs a language model.** `GET /api/w/{ws}/workflow-templates` returns
+  `needs_model` on each template, computed from its own steps rather than written by hand, so it cannot fall
+  out of step with them. Two of the seven need no model at all.
+
 - **The product's owner is named: OFIN INC, 8 The Green, Suite B, Dover, DE 19901, United States.** The
   copyright holder in `NOTICE` was «The OfinTech Desk authors», which names nobody and leaves the marks
   belonging to no one in particular. The entity now appears in `NOTICE` with its registered address, in the

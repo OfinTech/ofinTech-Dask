@@ -7,6 +7,7 @@ import asyncio
 import logging
 import re
 import time
+from urllib.parse import urlparse
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Any, Literal
 
@@ -145,6 +146,54 @@ def problems(definition: "WorkflowDef") -> list[dict[str, str]]:
     return out
 
 
+def external_model_problems(engine: "Engine", workspace: dict[str, Any], definition: "WorkflowDef") -> list[dict[str, str]]:
+    """Agent steps that would send a sealed workspace's data to a model outside its own network.
+
+    A sealed workspace (``egress_policy = 'sealed'``) accepts only a language model on its own network, and
+    ``egress.check_model_endpoint`` enforces that — when the model is built, which is in the middle of a run. A
+    workflow that runs at three in the morning then fails at step three with nobody there. The same question is
+    asked here, where the workflow is saved and switched on, and the answer names the step.
+
+    A step is judged by the provider it would use: its own, else the workspace's default, else the first one
+    configured — the order ``llm.registry.resolve_choice`` uses. A workspace with no provider at all is not a
+    problem of this kind and is left to ``resolve_choice`` to report at run time.
+    """
+    from ..egress import allowed_hosts, url_internal, workspace_sealed
+
+    steps = [(i, s) for i, s in enumerate(definition.steps) if isinstance(s, AgentStep)]
+    if not steps or not workspace_sealed(engine, workspace):
+        return []
+    allow = allowed_hosts(engine)
+    fallback = workspace.get("default_provider_id")
+    if not fallback:
+        row = engine.db.one("SELECT id FROM llm_providers WHERE workspace_id = ? ORDER BY created_at LIMIT 1",
+                            (workspace["id"],))
+        fallback = row["id"] if row else None
+    out: list[dict[str, str]] = []
+    for i, step in steps:
+        pid = step.provider_id or fallback
+        if not pid:
+            continue
+        row = engine.db.one("SELECT label, base_url FROM llm_providers WHERE id = ? AND workspace_id = ?",
+                            (pid, workspace["id"]))
+        if row is None or url_internal(row["base_url"] or "", allow):
+            continue
+        label = f"Step {i + 1}" + (f" “{step.name.strip()}”" if step.name.strip() else "")
+        host = urlparse(row["base_url"] or "").hostname or row["base_url"] or "elsewhere"
+        out.append({"field": f"steps.{i}.provider_id",
+                    "message": f"{label}: this workspace keeps its data inside the organization, and "
+                               f"“{row['label']}” is reached at {host}, outside your network. Choose a model that "
+                               f"runs on your own network (for example Ollama or vLLM), or do the step with a tool."})
+    return out
+
+
+def require_local_models(engine: "Engine", workspace: dict[str, Any], definition: "WorkflowDef", action: str) -> None:
+    issues = external_model_problems(engine, workspace, definition)
+    if issues:
+        raise Invalid(f"This workflow cannot {action}: " + " ".join(i["message"] for i in issues[:3]),
+                      code="workflow_external_model", details=issues)
+
+
 def require_complete(definition: "WorkflowDef", action: str) -> None:
     issues = problems(definition)
     if issues:
@@ -213,6 +262,7 @@ class Workflows:
     def save(self, workspace: dict[str, Any], user_id: str, name: str, description: str, definition: WorkflowDef,
              enabled: bool, wf_id: str | None = None) -> dict[str, Any]:
         self._validate_tools(definition)
+        require_local_models(self.engine, workspace, definition, "be saved")
         if enabled:
             require_complete(definition, "switch on")
         d = definition.model_dump()
@@ -242,7 +292,10 @@ class Workflows:
     def start(self, workspace: dict[str, Any], wf: dict[str, Any], trigger: dict[str, Any], started_by: str) -> str:
         definition = wf.get("definition")
         if isinstance(definition, dict):
-            require_complete(WorkflowDef.model_validate(definition), "run")
+            parsed = WorkflowDef.model_validate(definition)
+            require_complete(parsed, "run")
+            # the workspace may have been sealed, or the provider edited, since the workflow was saved
+            require_local_models(self.engine, workspace, parsed, "run")
         run_id = new_id("wr_")
         context = {"trigger": trigger, "steps": {}, "workspace": {"name": workspace["name"],
                                                                   "currency": workspace.get("base_currency")},

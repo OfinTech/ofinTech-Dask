@@ -153,6 +153,51 @@ class WorkflowRuns(unittest.TestCase):
         self.assertTrue(h.api("PUT", url, json={**body, "enabled": True})["enabled"])
         h.wait_workflow(h.api("POST", f"{url}/run", json={"input": ""})["run_id"])
 
+    def test_a_sealed_workspace_refuses_an_outside_model_when_the_workflow_is_saved(self) -> None:
+        """A sealed workspace accepts only a model on its own network, and egress enforces that when the model is
+        built — in the middle of a run, at three in the morning, with nobody there. The same question is asked
+        when the workflow is saved and switched on, and the answer names the step."""
+        h, ws = self.h, self.ws
+        steps = [{"id": "ask", "name": "Summarise", "type": "agent", "prompt": "Summarise the month."},
+                 {"id": "tell", "name": "Tell me", "type": "notify", "message": "{{steps.ask.output}}"}]
+        wf = self.create(steps)                                        # an open workspace saves it
+        h.engine.db.update("workspaces", ws, {"egress_policy": "sealed"})
+        url = f"/api/w/{ws}/workflows/{wf['id']}"
+        body = {"name": "Weekly check", "description": "", "enabled": True,
+                "definition": {"trigger": {"type": "manual"}, "steps": steps}}
+        r = h.api("PUT", url, json=body, expect=422)
+        self.assertEqual(r["error"], "workflow_external_model")
+        self.assertIn("Step 1 “Summarise”", r["message"])
+        self.assertIn("llm.test", r["message"])                        # the host, so the person can see which one
+        self.assertIn("runs on your own network", r["message"])
+        self.assertEqual([d["field"] for d in r["details"]], ["steps.0.provider_id"])
+        # the one already saved does not run either: the workspace was sealed after it was written
+        r = h.api("POST", f"{url}/run", json={"input": ""}, expect=422)
+        self.assertEqual(r["error"], "workflow_external_model")
+        # tools are not the assistant: the same workflow without an agent step saves and runs
+        h.api("PUT", url, json={**body, "definition": {"trigger": {"type": "manual"}, "steps": [
+            {"id": "calc", "name": "Project NPV", "type": "tool", "tool": "calc_npv_irr",
+             "arguments": {"rate": 0.1, "cashflows": [-100, 60, 60]}},
+            {"id": "tell", "name": "Tell me", "type": "notify", "message": "{{steps.calc.output}}"}]}})
+
+    def test_a_model_on_the_workspaces_own_network_is_allowed(self) -> None:
+        h, ws = self.h, self.ws
+        h.engine.db.update("workspaces", ws, {"egress_policy": "sealed"})
+        h.engine.db.execute("UPDATE llm_providers SET base_url = ? WHERE workspace_id = ?",
+                            ("http://ollama:11434/v1", ws))
+        wf = self.create([{"id": "ask", "name": "Summarise", "type": "agent", "prompt": "Summarise the month."},
+                          {"id": "tell", "name": "Tell me", "type": "notify", "message": "{{steps.ask.output}}"}])
+        self.assertTrue(wf["enabled"])
+
+    def test_a_template_says_whether_it_needs_a_model(self) -> None:
+        """Computed from the template's own steps, so it cannot rot: a sealed workspace with no local model can
+        still use every template that does the work with tools."""
+        by_key = {t["key"]: t for t in self.h.api("GET", f"/api/w/{self.ws}/workflow-templates")}
+        for t in by_key.values():
+            self.assertEqual(t["needs_model"], any(s["type"] == "agent" for s in t["definition"]["steps"]), t["key"])
+        self.assertFalse(by_key["close_overnight"]["needs_model"])     # the close is a tool
+        self.assertTrue(by_key["bank_statement_mail"]["needs_model"])  # reading a statement is the assistant, today
+
     def test_tools_catalog(self) -> None:
         tools = self.h.api("GET", f"/api/w/{self.ws}/tools")
         names = {t["name"]: t for t in tools}

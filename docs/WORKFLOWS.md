@@ -49,6 +49,18 @@ Content-Type: application/json
 Notifications reach **workspace members only**. Messages to outside parties go through tool steps, which need
 approval.
 
+### Assistant steps in a sealed workspace
+
+A workspace that keeps its data inside (`egress_policy = sealed`, `docs/DATA_BOUNDARIES.md`) accepts only a
+language model on its own network. An **assistant step** would send that workspace's data to the model it names
+— its own provider, else the workspace's default — so a workflow with such a step pointing outside the network
+is refused **when it is saved and when it is switched on**, with the step named, rather than failing in the
+middle of a run at three in the morning. A workflow already saved is refused at the start of the run too, since
+the workspace may have been sealed, or the provider changed, after it was written.
+
+Tool steps are not affected: they do the work in the engine. A sealed workspace with no local model can still
+run every template that is built from tools.
+
 ### When a step fails
 
 Tool, file and notify steps can **try again** up to five times. The first wait is set per step (10 seconds to 15
@@ -80,6 +92,11 @@ The Workflows page offers ready-made routines, shown in each person's language a
 | Bank statements from e-mail | an e-mail from the bank with a statement | save and read the statement → share |
 | Event from another system | webhook | check the event → needs a decision? → approval |
 | Refresh a workbook every morning | working days 06:00 | refresh the chosen workbook (two retries) → tell me |
+
+Each template carries `needs_model`: `true` when one of its steps asks the assistant to do the work, `false`
+when tools do all of it ("Close while you sleep" and "Refresh a workbook every morning" today). It is computed
+from the template's own steps, so it cannot fall out of step with them, and it tells a workspace with no
+language model which routines it can use as they are.
 
 The API: `GET /api/w/{ws}/workflow-templates?lang=ar` and `POST /api/w/{ws}/workflows/from-template`
 (`{"key": "month_end_pack"}`).
