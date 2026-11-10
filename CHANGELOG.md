@@ -5,6 +5,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **A probability that has a source** (`engine/desk_engine/decide/`). A scorecard's number says why a proposal
+  looks good, not how often proposals that look this good are right. `fit` turns a list of (score, accepted or
+  rejected) verdicts into a curve: the share of proposals scoring like this one that a person accepted. It is
+  isotonic regression in plain Python — no library, nothing to tune, and the same verdicts always give the same
+  curve and the same version. It refuses rather than guesses: under 30 verdicts, or fewer than 5 of either
+  outcome, there is no curve; outside the range of scores the verdicts cover, a figure is marked
+  `extrapolated`. This is the computation only. The repository has no scorecard that feeds it and no record of
+  verdicts yet, so no page shows a figure from it. See [docs/MEASURED_PROBABILITY.md](docs/MEASURED_PROBABILITY.md).
+
 ## 1.3.0 — 2026-11-11
 
 ### Added
