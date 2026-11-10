@@ -5,6 +5,8 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+## 1.3.0 — 2026-11-11
+
 ### Added
 
 - **A corpus of bank statement shapes, contributed rather than guessed.** `fixtures/statements/<country>/<bank>/`
@@ -326,6 +328,12 @@ migrations are applied automatically on start-up and are never rewritten once re
 - **Behaviour change:** the assistant of a *viewer* no longer creates dashboards, workbooks, reports, editable file
   copies or month-end close runs, and does not refresh accounting datasets: these tools now need the editor role,
   like the pages that do the same thing. Editors and above are unaffected.
+
+## 1.2.0 — 2026-11-03
+
+Tagged at `08c20fb` and published with no notes and no installers; the code at that tag still read 1.1.0, so
+nothing was installed under this number. Every change made since 1.1.0, before and after that tag, is listed
+under 1.3.0.
 
 ## 1.1.0 — 2026-11-01
 
