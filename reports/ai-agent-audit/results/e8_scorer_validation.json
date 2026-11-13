@@ -1,0 +1,33 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-13 23:11:42 +0300"
+ },
+ "oracle": {
+  "scenarios": 18,
+  "runs": 20,
+  "passed_runs": 20,
+  "tool_selection_accuracy": 1.0,
+  "figure_accuracy": 1.0,
+  "no_unverified_figures": 1.0,
+  "consistency": {
+   "repeat_gm": true
+  }
+ },
+ "fabricator": {
+  "scenarios": 18,
+  "runs": 20,
+  "passed_runs": 4,
+  "tool_selection_accuracy": 1.0,
+  "figure_accuracy": 0.0,
+  "no_unverified_figures": 0.5,
+  "consistency": {
+   "repeat_gm": true
+  }
+ },
+ "oracle_failures": [],
+ "note": "scripted models only: this validates the scorer, it is NOT a model score"
+}
