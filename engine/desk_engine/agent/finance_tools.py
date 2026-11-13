@@ -363,7 +363,7 @@ def _pct(x: float | None) -> str:
 @registry.tool("calc_npv_irr", "Net present value and internal rate of return for periodic cash flows "
                "(first value is at time 0, usually negative).",
                schema({"cashflows": NUMS, "discount_rate": {**NUM, "description": "e.g. 0.1 for 10%"}},
-                      ["cashflows"]))
+                      ["cashflows"]), pure=True)
 async def _npv_irr(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cfs = [float(x) for x in a["cashflows"]]
     if a.get("discount_rate") is not None and (bad := _rate_problem(a["discount_rate"], "discount_rate")):
@@ -392,7 +392,7 @@ async def _npv_irr(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("calc_xnpv_xirr", "NPV and IRR for cash flows on specific dates (like Excel XNPV/XIRR).",
                schema({"cashflows": NUMS, "dates": {"type": "array", "items": {"type": "string",
                                                                                 "description": "YYYY-MM-DD"}},
-                       "discount_rate": NUM}, ["cashflows", "dates"]))
+                       "discount_rate": NUM}, ["cashflows", "dates"]), pure=True)
 async def _xnpv(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cfs = [float(x) for x in a["cashflows"]]
     dates = [date.fromisoformat(s) for s in a["dates"]]
@@ -426,7 +426,7 @@ async def _xnpv(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"principal": NUM, "annual_rate": {**NUM, "description": "e.g. 0.065"},
                        "periods": {"type": "integer", "description": "number of payments"},
                        "payments_per_year": {"type": "integer", "default": 12}},
-                      ["principal", "annual_rate", "periods"]))
+                      ["principal", "annual_rate", "periods"]), pure=True)
 async def _loan(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     if bad := _rate_problem(a["annual_rate"], "annual_rate", allow_negative=False):
         return ToolOutput(bad)
@@ -458,7 +458,7 @@ async def _loan(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("calc_depreciation", "Depreciation schedule: straight_line, double_declining or sum_of_years.",
                schema({"cost": NUM, "salvage_value": NUM, "useful_life_years": {"type": "integer"},
                        "method": {"type": "string", "enum": ["straight_line", "double_declining", "sum_of_years"]}},
-                      ["cost", "useful_life_years"]))
+                      ["cost", "useful_life_years"]), pure=True)
 async def _dep(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     life = int(a["useful_life_years"])
     if not 1 <= life <= 100:
@@ -485,7 +485,7 @@ async def _dep(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({k: NUM for k in ["revenue", "cogs", "operating_income", "net_income", "total_assets",
                                         "total_equity", "current_assets", "current_liabilities", "inventory",
                                         "receivables", "payables", "cash", "total_debt", "interest_expense"]}
-                      | {"days_in_period": {"type": "integer", "default": 365}}))
+                      | {"days_in_period": {"type": "integer", "default": 365}}), pure=True)
 async def _ratios(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     days = int(a.get("days_in_period", 365) or 365)     # read, never removed: the stored call keeps every argument
     rows = ratios({k: float(v) for k, v in a.items() if v is not None and k != "days_in_period"}, days)
@@ -509,7 +509,7 @@ async def _ratios(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"lines": {"type": "array", "items": {"type": "object", "properties": {
                    "name": {"type": "string"}, "actual": NUM, "budget": NUM,
                    "higher_is_better": {"type": "boolean", "description": "true for revenue, false for costs"}},
-                   "required": ["name", "actual", "budget"]}}}, ["lines"]))
+                   "required": ["name", "actual", "budget"]}}}, ["lines"]), pure=True)
 async def _variance(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cols = [{"key": "name", "label": "Line", "format": "text"}, {"key": "actual", "label": "Actual", "format": "money"},
             {"key": "budget", "label": "Budget", "format": "money"},
@@ -529,7 +529,7 @@ async def _variance(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_sales_tax", "Split an amount into net, tax and gross for any VAT, GST or sales tax rate.",
                schema({"amount": NUM, "rate": {**NUM, "description": "e.g. 0.2 for 20%"},
-                       "amount_includes_tax": {"type": "boolean"}}, ["amount", "rate", "amount_includes_tax"]))
+                       "amount_includes_tax": {"type": "boolean"}}, ["amount", "rate", "amount_includes_tax"]), pure=True)
 async def _tax(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     if bad := _rate_problem(a["rate"], "rate", allow_negative=False):
         return ToolOutput(bad)
@@ -542,7 +542,7 @@ async def _tax(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_breakeven", "Break-even units and revenue.",
                schema({"fixed_costs": NUM, "unit_price": NUM, "unit_variable_cost": NUM},
-                      ["fixed_costs", "unit_price", "unit_variable_cost"]))
+                      ["fixed_costs", "unit_price", "unit_variable_cost"]), pure=True)
 async def _breakeven(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     margin = float(a["unit_price"]) - float(a["unit_variable_cost"])
     if margin <= 0:
@@ -558,7 +558,7 @@ async def _breakeven(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_growth", "Compound annual growth rate and period-over-period growth.",
                schema({"values": {**NUMS, "description": "values in time order"},
-                       "years": {**NUM, "description": "years between first and last value, for CAGR"}}, ["values"]))
+                       "years": {**NUM, "description": "years between first and last value, for CAGR"}}, ["values"]), pure=True)
 async def _growth(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     vals = [float(x) for x in a["values"]]
     if len(vals) < 2:
@@ -587,7 +587,7 @@ async def _growth(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "(the app has no live FX feed; always state the rate and its date).",
                schema({"amounts": NUMS, "rate": {**NUM, "description": "units of target currency per 1 source"},
                        "from_currency": {"type": "string"}, "to_currency": {"type": "string"},
-                       "rate_date": {"type": "string"}}, ["amounts", "rate", "from_currency", "to_currency"]))
+                       "rate_date": {"type": "string"}}, ["amounts", "rate", "from_currency", "to_currency"]), pure=True)
 async def _fx(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     rate = d(a["rate"])
     out = [float(q2(d(x) * rate)) for x in a["amounts"]]

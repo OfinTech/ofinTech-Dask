@@ -34,6 +34,10 @@ log = logging.getLogger("desk.agent")
 
 MAX_STEPS = 16
 HISTORY_MESSAGES = 60
+EARLIER_USER_MESSAGES = 20      # user messages older than the window, carried as one note
+EARLIER_USER_CHARS = 300        # of each
+EARLIER_NOTE_CHARS = 3000       # of the note in all
+REPEAT_LIMIT = 2                # identical read-tool calls served from the run's own earlier result after this many
 
 # Model calls that failed for a reason that may pass are tried again, a bounded number of times, and only while
 # nothing of the answer has been shown yet (a partial answer is never replayed). Tools are never retried here.
@@ -120,6 +124,23 @@ def history(engine: Engine, thread_id: str) -> list[ChatMessage]:
     # drop leading tool results whose assistant call fell outside the window
     while msgs and msgs[0].role == "tool":
         msgs.pop(0)
+    # what the user said before the window still matters (a fiscal year end, a unit, a constraint): their own earlier
+    # messages are carried in one short note instead of being dropped; tool results and answers are not
+    if rows and len(rows) >= HISTORY_MESSAGES:
+        older = engine.db.all("SELECT content FROM messages WHERE thread_id = ? AND role = 'user' AND created_at < ? "
+                              "ORDER BY created_at DESC LIMIT ?", (thread_id, rows[0]["created_at"], EARLIER_USER_MESSAGES))
+        if older:
+            lines, used = [], 0
+            for r in reversed(older):
+                text = " ".join((r["content"] or "").split())[:EARLIER_USER_CHARS]
+                if used + len(text) > EARLIER_NOTE_CHARS:
+                    break
+                lines.append(f"- {text}")
+                used += len(text)
+            if lines:
+                msgs.insert(0, ChatMessage("user", "[Earlier in this conversation: the user's own messages that no longer "
+                                                   "fit, oldest first. They are what the user said, not new requests.]\n"
+                                           + "\n".join(lines)))
     # every tool call must have a result (the model APIs require it)
     answered = {m.tool_call_id for m in msgs if m.role == "tool"}
     fixed: list[ChatMessage] = []
@@ -198,6 +219,12 @@ class Agent:
     def _spawn(self, thread_id: str, run_id: str) -> None:
         task = asyncio.get_running_loop().create_task(self._run_safely(run_id))
         self.tasks[thread_id] = task
+
+        def release(done: asyncio.Task[None], tid: str = thread_id) -> None:
+            # a finished run's task is dropped, so the registry holds running conversations only
+            if self.tasks.get(tid) is done:
+                del self.tasks[tid]
+        task.add_done_callback(release)
 
     async def wait(self, thread_id: str) -> None:
         task = self.tasks.get(thread_id)
@@ -341,6 +368,8 @@ class Agent:
             dynamic += "\n\n" + mem_block
 
         step = int(state.get("step", 0))
+        seen: dict[tuple[str, str], int] = {}          # identical read calls in this run segment
+        last_output: dict[tuple[str, str], ToolOutput] = {}
         while step < MAX_STEPS:
             step += 1
             past = history(engine, thread["id"])
@@ -395,6 +424,18 @@ class Agent:
             pending: list[dict[str, Any]] = []
             for call in result.tool_calls:
                 tool = tools.get(call.name)
+                if tool is not None and not tool.needs_approval():
+                    key = (call.name, dumps(call.arguments))
+                    seen[key] = seen.get(key, 0) + 1
+                    if seen[key] > REPEAT_LIMIT and key in last_output:
+                        # the same read with the same arguments again in this run: answered from its own result,
+                        # without running the tool again (bounded loops, no extra load); a write is never cached
+                        prev = last_output[key]
+                        self._tool_message(ctx, call, ToolOutput(
+                            f"Same call with the same arguments as before in this turn (call {seen[key]}); the result is "
+                            "unchanged and repeated below. Use it, or answer, instead of calling it again.\n\n" + prev.text,
+                            prev.blocks, prev.data), "ok")
+                        continue
                 if tool is None:
                     engine.audit(ctx.ws_id, ctx.user_id, "tool.denied", call.name[:120], {"reason": "unknown_or_not_offered"},
                                  resource_type="tool", decision="denied", result="refused", request_id=ctx.run_id)
@@ -405,7 +446,9 @@ class Agent:
                     pending.append({"call": {"id": call.id, "name": call.name, "arguments": call.arguments},
                                     "approval_id": approval_id})
                     continue
-                await self._execute(ctx, tool, call)
+                out = await self._execute(ctx, tool, call)
+                if not tool.needs_approval():
+                    last_output[(call.name, dumps(call.arguments))] = out
             if pending:
                 state.update(step=step, pending=pending)
                 engine.db.execute("UPDATE agent_runs SET status = 'waiting_approval', state = ?, usage = ?, "

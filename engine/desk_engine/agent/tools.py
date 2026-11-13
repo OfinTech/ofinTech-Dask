@@ -154,6 +154,9 @@ class Tool:
     # or refreshes workspace records without an approval (dashboards, generated files, close runs, synced datasets)
     # is editor-only, exactly as its route is. Checked when tools are offered and again at every call.
     min_role: str = "viewer"
+    # Pure computation (no database, no network, no engine state): runs in a worker thread, so heavy arithmetic cannot
+    # stall other conversations and the timeout holds even if the handler never yields.
+    pure: bool = False
 
     def spec(self) -> ToolSpec:
         return ToolSpec(self.name, self.description, self.parameters)
@@ -214,6 +217,9 @@ class Tool:
             return ToolOutput("Error: the arguments do not match the tool's schema. " + " ".join(problems[:6]))
         import asyncio
         try:
+            if self.pure:
+                handler = self.handler
+                return await asyncio.wait_for(asyncio.to_thread(lambda: asyncio.run(handler(ctx, args))), self.timeout)
             return await asyncio.wait_for(self.handler(ctx, args), self.timeout)
         except TimeoutError:
             return ToolOutput(f"Error: {self.name} did not finish within {int(self.timeout)} seconds and was stopped.")
@@ -253,10 +259,11 @@ class ToolRegistry:
     def tool(self, name: str, description: str, parameters: dict[str, Any], *, effect: Effect = "read",
              category: str = "finance", summarize: Callable[[dict[str, Any]], str] | None = None,
              available: Callable[[ToolContext], bool] | None = None,
-             timeout: float = DEFAULT_TOOL_TIMEOUT, min_role: str = "viewer") -> Callable[[Handler], Handler]:
+             timeout: float = DEFAULT_TOOL_TIMEOUT, min_role: str = "viewer",
+             pure: bool = False) -> Callable[[Handler], Handler]:
         def deco(fn: Handler) -> Handler:
             self.add(Tool(name, description, parameters, fn, effect, category, summarize, available, timeout=timeout,
-                          min_role=min_role))
+                          min_role=min_role, pure=pure))
             return fn
         return deco
 
