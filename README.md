@@ -32,12 +32,12 @@ and your company's own chart of accounts, currency and fiscal year.*
 ## Demo
 
 <p align="center">
-  <a href="docs/demo/ofintech-desk-tour.mp4">
+  <a href="https://youtu.be/jfSBOAi2N0U">
     <img alt="Watch the 2½-minute tour of OfinTech Desk" src="docs/demo/ofintech-desk-tour.jpg" width="800">
   </a>
 </p>
 
-**[Watch the 2½-minute tour](docs/demo/ofintech-desk-tour.mp4)**: how to use OfinTech Desk, from creating a
+**[Watch the 2½-minute tour on YouTube](https://youtu.be/jfSBOAi2N0U)**: how to use OfinTech Desk, from creating a
 workspace to the month-end close. It covers connecting a model, importing the general ledger, the executive
 overview, statements and KPIs, the assistant (with approvals and cited sources), evidence-linked workbooks,
 dashboards, cost centres, the close, workflows, connections, memory, search and permissions.
