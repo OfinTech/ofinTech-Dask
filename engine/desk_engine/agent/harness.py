@@ -67,6 +67,8 @@ OUTCOME_FOR_CODE = {"llm_timeout": "timed_out", "too_many_steps": "failed", "ans
 
 
 # --- figure check -----------------------------------------------------------------------------
+# The answer check lives in figures.py (provenance-aware: tool, derived, memory, user, unsupported). The number
+# reader below is kept unchanged for the workbook and report evidence in desk_engine/files.
 
 _NUM_RE = re.compile(r"(?<![\w.])[-−(]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*(?:%|k|m|bn|million|billion)?(?![\w])",
                      re.I)
@@ -91,29 +93,10 @@ def _numbers(text: str) -> list[tuple[str, float]]:
 
 
 def unverified_figures(answer: str, evidence: list[str]) -> list[str]:
-    known: list[float] = []
-    for text in evidence:
-        for _, v in _numbers(text):
-            known.append(v)
-    flagged = []
-    for raw, v in _numbers(answer):
-        a = abs(v)
-        if a < 100 and "." not in raw and "%" not in raw:
-            continue  # small counts, list numbers, days
-        if 1900 <= a <= 2100 and "." not in raw and "," not in raw:
-            continue  # years
-        ok = False
-        for k in known:
-            for cand in (k, k * 100, k / 100):
-                tol = max(abs(cand) * 0.005, 0.011)
-                if abs(abs(cand) - a) <= tol:
-                    ok = True
-                    break
-            if ok:
-                break
-        if not ok and raw not in flagged:
-            flagged.append(raw)
-    return flagged[:20]
+    """Figures in ``answer`` that match nothing in ``evidence`` (all of it treated as tool output). Kept for callers
+    that have one undivided evidence list; the agent loop uses ``figures.report`` with the sources kept apart."""
+    from .figures import report
+    return report(answer, evidence, [], [])["unverified_figures"]
 
 
 # --- conversation <-> storage -----------------------------------------------------------------
@@ -390,8 +373,9 @@ class Agent:
                 raise AppError(f"The answer {why} before it was finished. It is kept above, marked incomplete; do not "
                                "rely on it. Ask for a shorter answer or split the question.", code="answer_incomplete")
             if not result.tool_calls:
-                evidence = [m.content for m in past if m.role in ("tool", "user")] + [m["content"] for m in memories]
-                payload["unverified_figures"] = unverified_figures(result.text, evidence)
+                from .figures import report
+                payload.update(report(result.text, [m.content for m in past if m.role == "tool"],
+                                      [m.content for m in past if m.role == "user"], [m["content"] for m in memories]))
                 if memories:
                     payload["memories"] = [{"id": m["id"], "content": m["content"], "scope": m["scope"]} for m in memories]
                     engine.memory.mark_used([m["id"] for m in memories])
