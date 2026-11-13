@@ -312,9 +312,11 @@ function MessageView({ m }: { m: Message }): ReactNode {
   }
   if (!m.content) return null;
   const flagged: string[] = m.payload?.unverified_figures || [];
+  const fromUser: string[] = m.payload?.user_figures || [];
   return (
     <div className="msg">
       <div className="who">{tr("Assistant")}{m.payload?.model ? `, ${m.payload.model}` : ""}</div>
+      {m.payload?.incomplete && <div className="figcheck">{tr("This answer is incomplete and must not be relied on.")}</div>}
       <Markdown text={m.content} />
       {(m.payload?.memories || []).length > 0 && (
         <details className="memory-used"><summary className="xs muted"><Icon name="memory" size={13} />{" "}{tr("Memory consulted (")}{m.payload.memories.length})</summary>
@@ -323,6 +325,9 @@ function MessageView({ m }: { m: Message }): ReactNode {
       )}
       {flagged.length > 0 && (
         <div className="figcheck">{tr("Check before relying on:")}{" "}{flagged.join(", ")}{tr(". These figures do not appear in any tool result or message in this conversation.")}</div>
+      )}
+      {fromUser.length > 0 && (
+        <div className="figcheck">{tr("From your messages, not checked against the books:")}{" "}{fromUser.join(", ")}</div>
       )}
     </div>
   );
