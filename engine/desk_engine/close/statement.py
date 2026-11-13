@@ -116,6 +116,48 @@ def _days(a: str, b: str) -> int:
     return abs((date.fromisoformat(a) - date.fromisoformat(b)).days)
 
 
+def _match(stmt: list[dict[str, Any]], book: list[dict[str, Any]]) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Pairs under the rule (same amount to the cent, dates at most MATCH_DAYS apart), as many as the rule allows.
+
+    Each statement line, in date order, tries its candidates nearest date first; when the one it wants is taken, the
+    line holding it looks for another (an augmenting path). Taking the nearest line greedily could leave a later
+    statement line with nothing although a full pairing existed, and report two false exceptions."""
+    cands = {s["id"]: sorted((b for b in book if abs(b["amount"] - s["amount"]) < 0.005
+                              and _days(b["date"], s["date"]) <= MATCH_DAYS),
+                             key=lambda b: (_days(b["date"], s["date"]), b["date"])) for s in stmt}
+    owner: dict[str, dict[str, Any]] = {}          # ledger id -> statement line
+
+    def place(start: dict[str, Any]) -> None:
+        # depth-first search for an augmenting path, without recursion (many equal amounts make long chains)
+        seen: set[str] = set()
+        stack = [(start, iter(cands[start["id"]]))]
+        via: list[dict[str, Any]] = []             # the ledger line taken at each level of the stack
+        while stack:
+            s, options = stack[-1]
+            for b in options:
+                if b["id"] in seen:
+                    continue
+                seen.add(b["id"])
+                if b["id"] not in owner:
+                    owner[b["id"]] = s
+                    for (level, _), taken in zip(stack[:-1], via, strict=True):
+                        owner[taken["id"]] = level
+                    return
+                via.append(b)
+                stack.append((owner[b["id"]], iter(cands[owner[b["id"]]["id"]])))
+                break
+            else:
+                stack.pop()
+                if via:
+                    via.pop()
+
+    for s in stmt:
+        place(s)
+    by_id = {b["id"]: b for b in book}
+    pairs = [(s, by_id[bid]) for bid, s in owner.items()]
+    return sorted(pairs, key=lambda p: (p[0]["date"], p[0]["id"]))
+
+
 def reconcile(statement: dict[str, Any], ledger_lines: list[dict[str, Any]], *, month: str, month_end: str,
               account: dict[str, Any], book_balance: float, closing_balance: float | None) -> dict[str, Any]:
     """Match the month's statement lines to the month's ledger lines on the bank account and reconcile."""
@@ -125,11 +167,7 @@ def reconcile(statement: dict[str, Any], ledger_lines: list[dict[str, Any]], *, 
             for ln in ledger_lines if ln["date"][:7] == month and abs(ln["debit"] - ln["credit"]) > 0.005]
     free = {b["id"]: b for b in book}
     matched = []
-    for s in sorted(stmt, key=lambda x: x["date"]):
-        cands = [b for b in free.values() if abs(b["amount"] - s["amount"]) < 0.005 and _days(b["date"], s["date"]) <= MATCH_DAYS]
-        if not cands:
-            continue
-        best = min(cands, key=lambda b: (_days(b["date"], s["date"]), b["date"]))
+    for s, best in _match(sorted(stmt, key=lambda x: x["date"]), book):
         del free[best["id"]]
         matched.append({"statement": s, "ledger": best})
     matched_ids = {m["statement"]["id"] for m in matched}
