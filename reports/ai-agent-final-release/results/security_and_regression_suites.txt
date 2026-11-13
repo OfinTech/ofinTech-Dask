@@ -1,0 +1,217 @@
+....../usr/local/lib/python3.13/asyncio/base_events.py:765: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+........................../usr/local/lib/python3.13/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 42659)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.13/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 43427)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.13/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 46839)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.13/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 41025)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+DESK_SEALED: e-mail is off because DESK_SMTP_HOST smtp.gmail.com is outside the private network
+./usr/local/lib/python3.13/unittest/suite.py:107: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 44463)>
+  for index, test in enumerate(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+./usr/local/lib/python3.13/unittest/suite.py:84: ResourceWarning: unclosed <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 33069)>
+  return self.run(*args, **kwds)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..not replying via telegram: workspace ws_45a4288ff01b4ebd9829 keeps its data inside
+..........could not record a refused tool call (create_payment_batch, payment)
+Traceback (most recent call last):
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 200, in _refused
+    ctx.engine.audit(ctx.ws_id, ctx.user_id, "tool.refused", self.name,
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     {"reason": reason, "source": ctx.source, "run_id": ctx.run_id},
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     resource_type="tool", decision="deny", result=reason)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/ofintech-dask/engine/tests/test_guard_audit.py", line 116, in explode
+    raise RuntimeError("audit store unavailable")
+RuntimeError: audit store unavailable
+............./usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf427c6200>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43057010>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054220>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43056200>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430563e0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054400>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430566b0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43056980>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43055030>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430549a0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054310>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43055f30>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43056110>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054a90>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430546d0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054d60>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054130>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430558a0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430557b0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430547c0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43054c70>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430555d0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf430573d0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf43057100>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e8040>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e8130>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e8220>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e8310>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e8400>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/asyncio/unix_events.py:88: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7fcf414e84f0>
+  continue
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+[isolation] 89 route(s) refused another workspace's id outright; 29 stopped earlier (request validation, or a fixture row that could not be planted)
+............................model call failed (llm_rate_limited), retry 1 in 0.0s
+model call failed (llm_rate_limited), retry 2 in 0.0s
+model call failed (llm_rate_limited), retry 3 in 0.0s
+.tool calc_growth failed (run run_325a78d22d004bb4b868)
+Traceback (most recent call last):
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 231, in run
+    return await asyncio.wait_for(asyncio.to_thread(_run_on_worker_loop, call), self.timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/tasks.py", line 514, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/threads.py", line 26, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 263, in _run_on_worker_loop
+    return loop.run_until_complete(make())
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 726, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 230, in call
+    return await handler(ctx, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/ofintech-dask/engine/tests/test_response_lifecycle.py", line 169, in boom
+    raise sqlite3.OperationalError("database is locked")
+sqlite3.OperationalError: database is locked
+...model call failed (llm_network), retry 1 in 0.0s
+...model call failed (llm_unavailable), retry 1 in 0.0s
+.....model call failed (llm_incomplete), retry 1 in 0.0s
+..model call failed (llm_timeout), retry 1 in 0.0s
+model call failed (llm_timeout), retry 2 in 0.0s
+............/usr/local/lib/python3.13/site-packages/PIL/Image.py:3602: DecompressionBombWarning: Image size (100000000 pixels) exceeds limit of 89478485 pixels, could be decompression bomb DOS attack.
+  warnings.warn(
+......................../usr/local/lib/python3.13/asyncio/base_events.py:765: ResourceWarning: unclosed event loop <_UnixSelectorEventLoop running=False closed=False debug=False>
+  _warn(f"unclosed event loop {self!r}", ResourceWarning, source=self)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...................unhandled error on GET /api/w/{ws}/threads/{tid}
+Traceback (most recent call last):
+  File "/home/claude/ofintech-dask/engine/desk_engine/web.py", line 187, in endpoint
+    result = await result
+             ^^^^^^^^^^^^
+  File "/home/claude/ofintech-dask/engine/desk_engine/routes/threads.py", line 93, in get_thread
+    full = ctx.engine.agent.run_out(run["id"])
+  File "/usr/local/lib/python3.13/unittest/mock.py", line 1169, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/unittest/mock.py", line 1173, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/unittest/mock.py", line 1234, in _execute_mock_call
+    raise effect
+RuntimeError: boom
+.model call failed (llm_timeout), retry 1 in 0.0s
+model call failed (llm_timeout), retry 2 in 0.0s
+.model call failed (llm_unavailable), retry 1 in 0.0s
+model call failed (llm_unavailable), retry 2 in 0.0s
+.model call failed (llm_unavailable), retry 1 in 0.0s
+model call failed (llm_unavailable), retry 2 in 0.0s
+..tool calc_growth failed (run run_a3c6531439d04efd9588)
+Traceback (most recent call last):
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 231, in run
+    return await asyncio.wait_for(asyncio.to_thread(_run_on_worker_loop, call), self.timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/tasks.py", line 514, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/threads.py", line 26, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.13/concurrent/futures/thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 263, in _run_on_worker_loop
+    return loop.run_until_complete(make())
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/usr/local/lib/python3.13/asyncio/base_events.py", line 726, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/claude/ofintech-dask/engine/desk_engine/agent/tools.py", line 230, in call
+    return await handler(ctx, args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/claude/ofintech-dask/engine/tests/test_observability.py", line 216, in broken
+    raise RuntimeError("database is locked")
+RuntimeError: database is locked
+................................
+----------------------------------------------------------------------
+Ran 196 tests in 42.260s
+
+OK

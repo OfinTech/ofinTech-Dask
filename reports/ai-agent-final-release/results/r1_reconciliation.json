@@ -1,0 +1,13 @@
+{
+ "cases": 211,
+ "passed": 211,
+ "pair_recall": 1.0,
+ "false_matches": 0,
+ "exception_recall": 1.0,
+ "reconciliation_identity": {
+  "difference": 0.0,
+  "expected": 0.0,
+  "pass": true
+ },
+ "failures": []
+}

@@ -53,7 +53,7 @@ credentials in files.
 | Every alert has a severity (critical, warning, info), summary and runbook | test | pass |
 | No customer data in alert text | annotations may reference only exported labels; no workspace, user, thread, email or account label exists | pass |
 | The signal moves when the failure is injected (`AlertSignals`, 6 tests) | model 503 → `desk_llm_calls_total{outcome="llm_unavailable"}` and 2 retries; timeouts → `llm_timeout`; tool exception → `desk_tool_calls_total{status="error"}`; a handler crash → `desk_http_requests_total{code="5xx"}`; a payment attempt → `desk_tool_refusals_total{reason="payment"}`; recovery → successful calls and completed runs resume | pass |
-| Monitoring after a restart | D2: a real engine process, SIGTERM, restart; the scrape returns 200 with `desk_up 1` and a new start time | see 05 / 08 |
+| Monitoring after a restart | D2: a real engine process, SIGTERM, restart; the scrape returns 200 with `desk_up 1` and a new start time | **pass** (`results/d2_deployment.json`) |
 | Alert evaluation, firing, recovery, routing, suppression, delivery | requires Prometheus + Alertmanager + a receiver | **NOT DONE (blocked)** |
 
 ## How to complete the validation (staging, ~30 minutes)

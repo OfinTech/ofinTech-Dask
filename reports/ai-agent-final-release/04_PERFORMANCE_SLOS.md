@@ -41,14 +41,14 @@ spends 2% of that budget in one hour.
 
 ## Technical results against the proposed targets (L1, scripted model, 2 vCPU)
 
-See 05_LOAD_TEST_RESULTS.md for the full tables. The results are summarised there after the run.
+Full tables: 05_LOAD_TEST_RESULTS.md.
 
 | SLO (orchestration and API part only) | Result | Status |
 |---|---|---|
-| Standard financial tool P95 ≤ 1 s | met in every normal stage | technically met (short test) |
-| API error rate < 1% | 0% in every normal and peak stage | technically met (short test) |
-| Agent success ≥ 99% outside injected failures | 100% | technically met (short test) |
-| Agent response P95 ≤ 10 s | orchestration P95 is far below 10 s up to 100 users; the model's share is unknown | **cannot be judged** without the live model |
+| Standard financial tool P95 ≤ 1 s | KPI turn (tool + 2 model calls) P95 318 ms at 25 users and 1.29 s at 100 users; the tool alone is inside that | met up to 50 users; at 100 users the whole turn exceeds 1 s on 2 vCPU |
+| API error rate < 1% | 0% in A, B (10–100 users) and C (200 users) | technically met (short test) |
+| Agent success ≥ 99% outside injected failures | 100% of 10,629 normal and peak actions | technically met (short test) |
+| Agent response P95 ≤ 10 s | orchestration P95 1.1 s at 100 users, 2.3 s at 200; the model's share is unknown | **cannot be judged** without the live model |
 | API availability 99.9% monthly | not measurable in a short test | **not tested** |
 | Tenant exposure 0, incomplete-as-complete 0, financial correctness 100% | 0 / 0 / 100% (07) | met in the defined tests |
 

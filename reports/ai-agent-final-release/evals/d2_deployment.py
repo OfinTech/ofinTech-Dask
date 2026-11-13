@@ -21,6 +21,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, ".")
+
 TOKEN = "m" * 48
 
 
@@ -49,6 +51,18 @@ def get(url: str, token: str | None = None) -> tuple[int, str]:
         return 0, ""
 
 
+def post(url: str, body: dict, origin: str, token: str | None = None) -> tuple[int, dict]:
+    headers = {"content-type": "application/json", "origin": origin}
+    if token:
+        headers["authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:     # noqa: S310 -- local test server
+            return r.status, json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        return e.code, {"error": e.read().decode()[:200]}
+
+
 def start(env: dict[str, str]) -> tuple[subprocess.Popen, float]:
     p = subprocess.Popen([sys.executable, "-m", "desk_engine", "serve"], env=env, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, text=True)
@@ -72,8 +86,12 @@ def stop(p: subprocess.Popen) -> dict:
         p.kill()
         code = "killed"
     log = p.stdout.read() if p.stdout else ""
+    # uvicorn shuts down (lifespan, engine.stop_background, database close) and then re-raises the signal, so the
+    # exit status is -15 after a clean shutdown; the log line is the evidence that the shutdown ran
     return {"exit_code": code, "seconds": round(time.perf_counter() - t0, 2),
-            "traceback_in_log": "Traceback" in log, "graceful": code == 0}
+            "traceback_in_log": "Traceback" in log,
+            "application_shutdown_complete": "Application shutdown complete" in log,
+            "graceful": code in (0, -15) and "Application shutdown complete" in log and "Traceback" not in log}
 
 
 def main() -> None:
@@ -102,6 +120,11 @@ def main() -> None:
                                     "series": sum(1 for x in m[1].splitlines() if x and not x.startswith("#"))}
         out["scrape_without_token"] = get(f"{base}/api/admin/metrics")[0]
         out["scrape_wrong_token"] = get(f"{base}/api/admin/metrics", "x" * 48)[0]
+        su = post(f"{base}/api/auth/signup", {"email": "owner@example.test", "name": "Owner",
+                                             "password": "Correct-Horse-9"}, base)
+        ws = post(f"{base}/api/workspaces", {"name": "Restore Check Ltd", "base_currency": "GBP"}, base,
+                  su[1].get("token"))
+        out["data_created"] = {"signup": su[0], "workspace": ws[0]}
         start_1 = next(x for x in m[1].splitlines() if x.startswith("desk_process_start_time_seconds"))
         out["shutdown_1"] = stop(p)
 
@@ -115,7 +138,8 @@ def main() -> None:
 
         bkey = Path(tmp) / "backup.key"
         bkey.write_text(subprocess.check_output([sys.executable, "-m", "desk_engine", "keygen"], text=True))
-        bfile = Path(tmp) / "desk.backup"
+        from desk_engine.backup import SUFFIX
+        bfile = Path(tmp) / f"nightly{SUFFIX}"
         b = subprocess.run([sys.executable, "-m", "desk_engine", "backup", str(bfile), "--key-file", str(bkey)],
                            env=env, capture_output=True, text=True, timeout=120)
         c = subprocess.run([sys.executable, "-m", "desk_engine", "backup-check", str(bfile), "--key-file", str(bkey)],
@@ -125,10 +149,12 @@ def main() -> None:
         rr = subprocess.run([sys.executable, "-m", "desk_engine", "restore", str(bfile), "--key-file", str(bkey)],
                             env=env_r, capture_output=True, text=True, timeout=120)
         out["backup"] = {"backup_exit": b.returncode, "check_exit": c.returncode, "restore_exit": rr.returncode,
+                         "check_tail": (c.stdout + c.stderr).strip().splitlines()[-1:],
                          "restore_tail": (rr.stdout + rr.stderr).strip().splitlines()[-2:]}
         if rr.returncode == 0:
             p, secs = start(env_r)
-            out["restored_instance"] = {"health": True, "ready_status": get(f"http://127.0.0.1:{env_r['DESK_PORT']}/ready")[0]}
+            out["restored_instance"] = {"health": True, "ready_status": get(f"http://127.0.0.1:{env_r['DESK_PORT']}/ready")[0],
+                                     "workspaces_restored": None}
             out["shutdown_3"] = stop(p)
     print(json.dumps(out, indent=1))
     json.dump(out, open(sys.argv[1], "w"), indent=1)
