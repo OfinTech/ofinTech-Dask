@@ -38,7 +38,7 @@ QUERY_SCHEMA = {
 
 
 @registry.tool("list_datasets", "List the workspace's datasets (imported spreadsheets and synced accounting data) "
-               "with their columns.", schema({}), category="data")
+               "with their columns.", schema({}), category="data", offload=True)
 async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     items = store.list_datasets(ctx.engine, ctx.ws_id)
     if not items:
@@ -51,7 +51,7 @@ async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("describe_dataset", "Column statistics and the most frequent values of a dataset; use before "
                "querying an unfamiliar dataset.", schema({"dataset": {"type": "string"}}, ["dataset"]),
-               category="data")
+               category="data", offload=True)
 async def _describe(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     ds = store.find_dataset(ctx.engine, ctx.ws_id, a["dataset"])
     summary = dataset_summary(ctx.engine, ctx.ws_id, ds["id"])
@@ -68,7 +68,8 @@ async def _describe(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 
 @registry.tool("query_dataset", "Aggregate a dataset: measures (sum/avg/...), optional grouping (dates by month, "
-               "quarter, year or fiscal_year), filters and sort. Returns a table.", QUERY_SCHEMA, category="data")
+               "quarter, year or fiscal_year), filters and sort. Returns a table.", QUERY_SCHEMA, category="data",
+               offload=True)
 async def _query(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         spec = QuerySpec.model_validate(a)

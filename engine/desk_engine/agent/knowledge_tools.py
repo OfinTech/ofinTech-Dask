@@ -49,7 +49,7 @@ async def _search(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 
 @registry.tool("list_documents", "List documents in the knowledge base (name, collection, pages, status).",
-               schema({"collection": {"type": "string"}}), category="knowledge", available=_has_docs)
+               schema({"collection": {"type": "string"}}), category="knowledge", available=_has_docs, offload=True)
 async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     coll = _collection_id(ctx, a.get("collection"))
     docs = ctx.engine.knowledge.list(ctx.ws_id, None if coll == "__none__" else coll)
@@ -62,7 +62,8 @@ async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("read_document", "Read the text of one document (or a page range) when search passages are not enough, "
                "e.g. to review a whole contract clause or policy section.",
                schema({"document_id": {"type": "string"}, "page_from": {"type": "integer"},
-                       "page_to": {"type": "integer"}}, ["document_id"]), category="knowledge", available=_has_docs)
+                       "page_to": {"type": "integer"}}, ["document_id"]), category="knowledge", available=_has_docs,
+                       offload=True)
 async def _read(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     doc = ctx.engine.knowledge.get(ctx.ws_id, a["document_id"])
     if doc["status"] == "processing":
