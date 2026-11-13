@@ -153,6 +153,9 @@ class Close(unittest.TestCase):
         v = h.api("POST", f"/api/w/{ws}/close/{r}/statement", files={"file": ("sep.csv", statement_csv(None))})
         b = v["bank"]
         self.assertEqual((b["statement_lines"], b["matched"]), (5, 3))
+        metrics = h.api("GET", "/api/admin/metrics")          # the reconciliation is counted, without amounts
+        self.assertIn('desk_reconciliation_lines_total{result="matched"} 3', metrics)
+        self.assertIn('desk_reconciliation_lines_total{result="statement_only"} 2', metrics)
         self.assertEqual([x["entry"] for x in b["ledger_only"]], ["PAY-S1"])
         self.assertEqual(b["book_balance"], BOOK)
         self.assertEqual(b["closing_balance"], BOOK + 2000 + 1500 - 25)

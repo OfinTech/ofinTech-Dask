@@ -1,0 +1,63 @@
+# SLIs as recording rules and multi-window burn-rate alerts (reports/ai-agent-final-release/04_PERFORMANCE_SLOS.md).
+# The targets are PROPOSED, not approved. Windows: 30 days. Burn-rate pairs follow the usual 1h/5m (14.4x) and
+# 6h/30m (6x) scheme.
+groups:
+  - name: ofintech-desk-sli
+    interval: 1m
+    rules:
+      # API availability: requests that did not end in a server error
+      - record: desk_slo:api_errors:ratio_rate5m
+        expr: sum(rate(desk_http_requests_total{code="5xx"}[5m])) / sum(rate(desk_http_requests_total[5m]))
+      - record: desk_slo:api_errors:ratio_rate30m
+        expr: sum(rate(desk_http_requests_total{code="5xx"}[30m])) / sum(rate(desk_http_requests_total[30m]))
+      - record: desk_slo:api_errors:ratio_rate1h
+        expr: sum(rate(desk_http_requests_total{code="5xx"}[1h])) / sum(rate(desk_http_requests_total[1h]))
+      - record: desk_slo:api_errors:ratio_rate6h
+        expr: sum(rate(desk_http_requests_total{code="5xx"}[6h])) / sum(rate(desk_http_requests_total[6h]))
+      # agent success: runs that completed, out of runs not cancelled by the user
+      - record: desk_slo:agent_failures:ratio_rate5m
+        expr: |
+          sum(rate(desk_agent_runs_total{outcome!~"completed|cancelled"}[5m]))
+            / sum(rate(desk_agent_runs_total{outcome!="cancelled"}[5m]))
+      - record: desk_slo:agent_failures:ratio_rate1h
+        expr: |
+          sum(rate(desk_agent_runs_total{outcome!~"completed|cancelled"}[1h]))
+            / sum(rate(desk_agent_runs_total{outcome!="cancelled"}[1h]))
+      - record: desk_slo:agent_failures:ratio_rate30m
+        expr: |
+          sum(rate(desk_agent_runs_total{outcome!~"completed|cancelled"}[30m]))
+            / sum(rate(desk_agent_runs_total{outcome!="cancelled"}[30m]))
+      - record: desk_slo:agent_failures:ratio_rate6h
+        expr: |
+          sum(rate(desk_agent_runs_total{outcome!~"completed|cancelled"}[6h]))
+            / sum(rate(desk_agent_runs_total{outcome!="cancelled"}[6h]))
+      # latency SLIs: share of requests faster than the threshold
+      - record: desk_slo:api_fast:ratio_rate30m
+        expr: |
+          sum(rate(desk_http_request_seconds_bucket{le="1"}[30m])) / sum(rate(desk_http_request_seconds_count[30m]))
+      - record: desk_slo:agent_fast:ratio_rate30m
+        expr: |
+          sum(rate(desk_agent_run_seconds_bucket{outcome="completed",le="10"}[30m]))
+            / sum(rate(desk_agent_run_seconds_count{outcome="completed"}[30m]))
+      - record: desk_slo:tool_fast:ratio_rate30m
+        expr: |
+          sum(rate(desk_tool_seconds_bucket{tool!="mcp",le="1"}[30m])) / sum(rate(desk_tool_seconds_count{tool!="mcp"}[30m]))
+
+  - name: ofintech-desk-slo-burn
+    rules:
+      - alert: DeskApiAvailabilityBudgetBurn
+        expr: |
+          (desk_slo:api_errors:ratio_rate1h > 14.4 * 0.001 and desk_slo:api_errors:ratio_rate5m > 14.4 * 0.001)
+          or (desk_slo:api_errors:ratio_rate6h > 6 * 0.001 and desk_slo:api_errors:ratio_rate30m > 6 * 0.001)
+        labels: { severity: critical, service: ofintech-desk }
+        annotations:
+          summary: "The API is spending its 99.9% availability error budget too fast."
+          runbook: "10_OPERATIONS_RUNBOOK.md#api-errors"
+      - alert: DeskAgentSuccessBudgetBurn
+        expr: |
+          (desk_slo:agent_failures:ratio_rate1h > 14.4 * 0.01 and desk_slo:agent_failures:ratio_rate5m > 14.4 * 0.01)
+          or (desk_slo:agent_failures:ratio_rate6h > 6 * 0.01 and desk_slo:agent_failures:ratio_rate30m > 6 * 0.01)
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Assistant runs fail fast enough to exhaust the 99% success budget early."
+          runbook: "10_OPERATIONS_RUNBOOK.md#agent-errors"
