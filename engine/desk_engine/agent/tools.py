@@ -13,8 +13,10 @@ charts, links). The app renders blocks itself; it never renders HTML produced by
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+import threading
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal
@@ -219,14 +221,13 @@ class Tool:
         problems = validate_args(self.parameters, args)
         if problems:
             return ToolOutput("Error: the arguments do not match the tool's schema. " + " ".join(problems[:6]))
-        import asyncio
         try:
             if self.pure or self.offload:
                 handler = self.handler
 
                 async def call() -> ToolOutput:
                     return await handler(ctx, args)
-                return await asyncio.wait_for(asyncio.to_thread(asyncio.run, call()), self.timeout)
+                return await asyncio.wait_for(asyncio.to_thread(_run_on_worker_loop, call), self.timeout)
             return await asyncio.wait_for(self.handler(ctx, args), self.timeout)
         except TimeoutError:
             return ToolOutput(f"Error: {self.name} did not finish within {int(self.timeout)} seconds and was stopped.")
@@ -244,6 +245,21 @@ class Tool:
 
 def schema(properties: dict[str, Any], required: list[str] | None = None) -> dict[str, Any]:
     return {"type": "object", "properties": properties, "required": required or [], "additionalProperties": False}
+
+
+_worker = threading.local()
+
+
+def _run_on_worker_loop(make: Callable[[], Awaitable[ToolOutput]]) -> ToolOutput:
+    """Runs a tool in this worker thread on the thread's own event loop, kept for the thread's life. A fresh loop
+    per call (asyncio.run) would also start a fresh executor for any work the tool hands to a thread, and every new
+    thread opens its own SQLite connection: 60 calls, 60 connections. The pool's threads are few and reused, and so
+    are their loops and connections."""
+    loop = getattr(_worker, "loop", None)
+    if loop is None or loop.is_closed():
+        loop = asyncio.new_event_loop()
+        _worker.loop = loop
+    return loop.run_until_complete(make())
 
 
 class ToolRegistry:
