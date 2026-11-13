@@ -219,7 +219,10 @@ class Tool:
         try:
             if self.pure:
                 handler = self.handler
-                return await asyncio.wait_for(asyncio.to_thread(lambda: asyncio.run(handler(ctx, args))), self.timeout)
+
+                async def call() -> ToolOutput:
+                    return await handler(ctx, args)
+                return await asyncio.wait_for(asyncio.to_thread(asyncio.run, call()), self.timeout)
             return await asyncio.wait_for(self.handler(ctx, args), self.timeout)
         except TimeoutError:
             return ToolOutput(f"Error: {self.name} did not finish within {int(self.timeout)} seconds and was stopped.")

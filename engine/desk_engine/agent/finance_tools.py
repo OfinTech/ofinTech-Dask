@@ -49,17 +49,17 @@ def irr(cashflows: list[float], guess: float = 0.1) -> float | None:
         if abs(nxt - r) < 1e-10:
             return nxt
         r = nxt
-    # bisection fallback over a bracket widened as far as needed (up to RATE_CEILING)
-    def f(r: float) -> float:  # noqa: F811 -- the robust form from here on
+    # bisection fallback over a bracket widened as far as needed (up to RATE_CEILING), on the robust NPV
+    def g(r: float) -> float:
         return _npv_robust(r, cashflows)
-    bracket = _bracket_up(f)
+    bracket = _bracket_up(g)
     if bracket is None:
         return None
     lo, hi = bracket
-    flo = f(lo)
+    flo = g(lo)
     for _ in range(300):
         mid = (lo + hi) / 2
-        fm = f(mid)
+        fm = g(mid)
         if abs(fm) < 1e-9:
             return mid
         if flo * fm < 0:
