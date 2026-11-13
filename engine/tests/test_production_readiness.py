@@ -379,3 +379,25 @@ class BankMatching(unittest.TestCase):
         r = self.rec(stmt, ledger)
         self.assertEqual(r["matched"], 3000)
         self.assertLess(time.perf_counter() - started, 20)
+
+
+class OffloadResources(unittest.TestCase):
+    """Running tools off the loop must not open a database connection (or a thread) per call."""
+
+    def test_connections_stay_bounded(self) -> None:
+        from tests.test_overview import GL
+        h = Harness()
+        self.addCleanup(h.close)
+        ws = h.setup_workspace()
+        h.api("POST", f"/api/w/{ws}/cost-centres/ledger/upload", files={"file": ("GL.xlsx", GL.read_bytes())})
+        tool = registry.get_static("financial_kpis")
+        ctx = _ctx(h, ws)
+
+        async def calls(n):
+            for _ in range(n):
+                out = await tool.run(ctx, {"month": "2026-10"})
+                self.assertIn("Gross margin", out.text)
+        h.client.portal.call(calls, 5)
+        before = len(h.engine.db._all)
+        h.client.portal.call(calls, 60)
+        self.assertLessEqual(len(h.engine.db._all) - before, 12)
