@@ -372,7 +372,7 @@ async def _npv_irr(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     result: dict[str, Any] = {"irr": info["irr"]}
     if info["status"] == "multiple":
         result.update(irr_status="multiple", irrs=info["irrs"])
-        lines = ["IRR: not unique. " + ", ".join(_pct(r) for r in info["irrs"]) + " all make the NPV zero, because "
+        lines = ["IRR: not unique (multiple IRRs). " + ", ".join(_pct(r) for r in info["irrs"]) + " all make the NPV zero, because "
                  + info["reason"] + ". No single IRR describes this project; compare it on NPV at the required rate."]
     else:
         if info["status"] == "none" and sign_changes(cfs) > 1:
@@ -406,7 +406,7 @@ async def _xnpv(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         roots = all_roots(lambda r: _npv_robust(r, cfs, times))
         if len(roots) > 1:
             data = {"xirr": None, "xirr_status": "multiple", "xirrs": roots}
-            lines = ["XIRR: not unique. " + ", ".join(_pct(r) for r in roots) + " all make the XNPV zero; compare the "
+            lines = ["XIRR: not unique (multiple IRRs). " + ", ".join(_pct(r) for r in roots) + " all make the XNPV zero; compare the "
                      "cash flows on XNPV at the required rate instead."]
         else:
             rate_irr = roots[0] if roots else None
