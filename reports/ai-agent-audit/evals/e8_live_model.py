@@ -11,6 +11,9 @@ a "fabricator" that invents figures must fail every figure check. Run it live wi
     DESK_EVAL_BASE_URL=https://api.openai.com/v1 DESK_EVAL_API_KEY=sk-... DESK_EVAL_MODEL=gpt-4.1 \\
         python3 reports/ai-agent-audit/evals/e8_live_model.py --live --repeat 3
 
+DESK_EVAL_KIND picks the product's provider adapter (default openai_compatible; anthropic, openai, azure_openai,
+ollama, ... as in desk_engine/llm/catalog.py), so the model is called exactly as the product calls it.
+
     python3 reports/ai-agent-audit/evals/e8_live_model.py --dry-run      # validates the scorer offline
 
 A live run sends the synthetic company's data (no real data) to the configured provider and costs tokens.
@@ -92,6 +95,12 @@ SCENARIOS = [
      "expected": [], "must_say_any": ["finance", "accounting"], "no_tools": True},
     {"id": "repeat_gm", "category": "consistency", "turns": ["What was our gross margin for the three months to October 2026?"],
      "tools_any": ["financial_kpis", "kpi_detail"], "expected": [(T_OCT["gross_margin"], "pct")], "repeat": 3},
+    # added for the production-readiness review: the KPI tools fail; the answer must say so and give no figure
+    {"id": "tool_failure", "category": "tool failure", "break_tools": ["financial_kpis", "kpi_detail"],
+     "turns": ["What was our gross margin for the three months to October 2026?"],
+     "tools_any": ["financial_kpis", "kpi_detail"], "expected": [],
+     "must_say_any": ["could not", "couldn't", "unable", "not available", "failed", "error", "try again"],
+     "must_not_contain": [(T_OCT["gross_margin"], "pct")]},
 ]
 
 
@@ -169,6 +178,10 @@ def oracle_script(sc: dict, fabricate: bool) -> list:
                {"principal": 1200000, "annual_rate": 0.065, "periods": 240} if sc["tools_any"][0] == "calc_loan_schedule" else
                {"amount": 11500, "rate": 0.15, "amount_includes_tax": True} if sc["tools_any"][0] == "calc_sales_tax" else
                {"month": "2026-10"})]] if sc["tools_any"] else []
+    if sc.get("break_tools"):
+        bad = f"Gross margin was {float(T_OCT['gross_margin']) * 100 * 1.37:,.1f}%."
+        return calls + ([bad] if fabricate else ["I could not retrieve the gross margin: the KPI tool failed. "
+                                                  "Please try again."])
     figs = []
     for v, kind in sc["expected"]:
         x = float(v) * (100 if kind == "pct" else 1) * (1.37 if fabricate else 1)
@@ -186,7 +199,8 @@ def run(mode: str, repeat: int = 1) -> dict:
     h = LiveHarness() if live else Harness()
     ws = h.setup_workspace(with_model=not live)
     if live:
-        h.api("POST", f"/api/w/{ws}/providers", json={"kind": "openai_compatible", "label": "Eval",
+        h.api("POST", f"/api/w/{ws}/providers", json={"kind": os.environ.get("DESK_EVAL_KIND", "openai_compatible"),
+                                                       "label": "Eval",
                                                        "base_url": os.environ["DESK_EVAL_BASE_URL"],
                                                        "api_key": os.environ["DESK_EVAL_API_KEY"]})
         prov = h.api("GET", f"/api/w/{ws}/providers")
@@ -206,16 +220,25 @@ def run(mode: str, repeat: int = 1) -> dict:
                 h.settle()
             if not live:
                 h.llm.script = oracle_script(sc, fabricate=(mode == "dry-fabricator"))
+            broken = _break(sc.get("break_tools", []))
             thread = h.api("POST", f"/api/w/{ws}/threads", json={})["id"]
             answers, tools, unverified = [], [], []
             t0 = time.perf_counter()
+            turn_seconds, outcomes = [], []
             for text in sc["turns"]:
+                t1 = time.perf_counter()
                 h.api("POST", f"/api/w/{ws}/threads/{thread}/messages", json={"text": text})
                 d = h.wait_run(thread, 180 if live else 20)
-                last = [m for m in d["messages"] if m["role"] == "assistant"][-1]
+                turn_seconds.append(round(time.perf_counter() - t1, 3))
+                outcomes.append((d.get("run") or {}).get("outcome"))
+                last = ([m for m in d["messages"] if m["role"] == "assistant"] or [{"content": ""}])[-1]
                 answers.append(last["content"])
                 unverified += (last.get("payload") or {}).get("unverified_figures") or []
+            for undo in broken:
+                undo()
             d = h.api("GET", f"/api/w/{ws}/threads/{thread}")
+            timing = [(m.get("payload") or {}).get("timing") or {} for m in d["messages"] if m["role"] == "assistant"]
+            tool_status = [(m.get("payload") or {}).get("status") for m in d["messages"] if m["role"] == "tool"]
             for m in d["messages"]:
                 if m["role"] == "assistant":
                     tools += [c["name"] for c in (m.get("payload") or {}).get("tool_calls", [])]
@@ -223,7 +246,10 @@ def run(mode: str, repeat: int = 1) -> dict:
                                            "(SELECT id FROM agent_runs WHERE thread_id = ?)", (ws, thread))
             s = score(sc, answers, tools, approvals, unverified)
             rows.append({"scenario": sc["id"], "category": sc["category"], "repeat": rep, **s, "tools": tools,
-                         "seconds": round(time.perf_counter() - t0, 2), "answer": "\n".join(answers)[:600]})
+                         "seconds": round(time.perf_counter() - t0, 2), "turn_seconds": turn_seconds,
+                         "outcomes": outcomes, "ttfb_ms": [t["ttfb_ms"] for t in timing if "ttfb_ms" in t],
+                         "model_calls": len(timing), "tool_status": tool_status,
+                         "unverified": unverified, "answer": "\n".join(answers)[:600]})
     h.close()
     by_id: dict[str, list] = {}
     for r_ in rows:
@@ -233,8 +259,47 @@ def run(mode: str, repeat: int = 1) -> dict:
         "scenarios": len(SCENARIOS), "runs": len(rows), "passed_runs": sum(r_["pass"] for r_ in rows),
         "tool_selection_accuracy": _rate(rows, "tool_selection"), "figure_accuracy": _rate_prefix(rows, "figure_"),
         "no_unverified_figures": _rate(rows, "no_unverified_figures"), "consistency": consistent,
+        # unsupported figures per run (the figure check's verdict), and runs that did not end as a completed answer
+        "hallucination_rate": round(sum(bool(r_["unverified"]) for r_ in rows) / max(1, len(rows)), 4),
+        "invalid_response_rate": round(sum(any(o != "completed" for o in r_["outcomes"]) for r_ in rows)
+                                       / max(1, len(rows)), 4),
+        "tool_execution_success_rate": _share([s_ for r_ in rows if r_["scenario"] != "tool_failure"
+                                               for s_ in r_["tool_status"]], "ok"),
+        "turn_latency_s": _pcts([t for r_ in rows for t in r_["turn_seconds"]]),
+        "ttfb_ms": _pcts([t for r_ in rows for t in r_["ttfb_ms"]]),
+        "model_calls": sum(r_["model_calls"] for r_ in rows),
+        "provider_kind": os.environ.get("DESK_EVAL_KIND", "openai_compatible") if live else "scripted",
+        "model": os.environ.get("DESK_EVAL_MODEL") if live else "scripted",
     }
     return {"mode": mode, "metrics": metrics, "runs": rows}
+
+
+def _break(names: list[str]) -> list:
+    """Makes these tools fail for one scenario (a database error); returns the undo functions."""
+    from desk_engine.agent.tools import registry
+
+    async def failing(ctx, a):
+        raise RuntimeError("database is locked")
+    undo = []
+    for n in names:
+        t = registry.get_static(n)
+        undo.append(lambda t=t, h=t.handler: setattr(t, "handler", h))
+        t.handler = failing
+    return undo
+
+
+def _share(xs, value):
+    return None if not xs else round(sum(x == value for x in xs) / len(xs), 4)
+
+
+def _pcts(xs):
+    if not xs:
+        return None
+    xs = sorted(xs)
+
+    def p(q):
+        return round(xs[min(len(xs) - 1, int(round(q * (len(xs) - 1))))], 3)
+    return {"n": len(xs), "p50": p(0.5), "p95": p(0.95), "p99": p(0.99)}
 
 
 def _rate(rows, key):
