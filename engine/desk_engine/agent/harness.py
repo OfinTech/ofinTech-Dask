@@ -19,7 +19,7 @@ from ..db import dumps, loads, new_id, now
 from ..errors import AppError, Conflict, NotFound
 from ..llm.base import ChatMessage, ToolCall, Usage
 from ..llm.registry import build_model, resolve_choice
-from ..skills.loader import enabled_index, get_skill
+from ..skills.loader import enabled_index, get_enabled_skill
 from .context import available_groups, choose_tools, compact, select_groups
 from .prompts import system_parts
 from .tools import Tool, ToolContext, ToolOutput
@@ -280,10 +280,15 @@ class Agent:
         skills = enabled_index(engine, workspace["id"])
         pinned = []
         for name in loads(thread["skills"], []):
-            try:
-                pinned.append(get_skill(engine, workspace["id"], name))
-            except AppError:
+            # deny by default: only a skill that is enabled in this workspace right now reaches the instructions; a
+            # disabled, unapproved, deleted or unknown one is left out and the refusal is recorded
+            skill = get_enabled_skill(engine, workspace["id"], str(name))
+            if skill is None:
+                engine.audit(workspace["id"], run["user_id"], "skill.pin_refused", str(name)[:120],
+                             {"thread_id": thread["id"]}, resource_type="skill", decision="denied", result="refused",
+                             request_id=run["id"])
                 continue
+            pinned.append(skill)
         from ..data.store import list_datasets
 
         connections = engine.db.all("SELECT id, provider, label FROM connections WHERE workspace_id = ? AND "

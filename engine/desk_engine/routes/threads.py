@@ -50,6 +50,20 @@ class ThreadIn(BaseModel):
     visibility: Literal["workspace", "private"] = "workspace"
 
 
+def _check_pins(ctx: Ctx, names: list[str]) -> list[str]:
+    """Only skills enabled in this workspace can be pinned (the run checks again at every turn, so a skill switched
+    off later is dropped then). Refuses rather than silently dropping, so the person sees why."""
+    from ..skills.loader import enabled_index
+
+    enabled = {s["name"] for s in enabled_index(ctx.engine, ctx.ws_id)}
+    refused = [n for n in names if n not in enabled]
+    if refused:
+        ctx.audit("skill.pin_refused", ", ".join(refused)[:200], {"names": refused[:10]})
+        raise Invalid("These skills are not enabled in this workspace and cannot be pinned: " + ", ".join(refused[:10]),
+                      code="skill_not_enabled")
+    return list(dict.fromkeys(names))
+
+
 @router.post("/api/w/{ws}/threads", role="viewer", body=ThreadIn)
 async def create_thread(ctx: Ctx) -> dict[str, Any]:
     b: ThreadIn = ctx.body
@@ -60,7 +74,8 @@ async def create_thread(ctx: Ctx) -> dict[str, Any]:
     ts = now()
     ctx.engine.db.insert("threads", {"id": tid, "workspace_id": ctx.ws_id, "title": (b.title or "New conversation").strip(),
                                      "created_by": ctx.user_id, "visibility": b.visibility, "provider_id": b.provider_id,
-                                     "model": b.model, "skills": dumps(b.skills), "created_at": ts, "updated_at": ts})
+                                     "model": b.model, "skills": dumps(_check_pins(ctx, b.skills)), "created_at": ts,
+                                     "updated_at": ts})
     return _thread_out(thread_for(ctx, tid))
 
 
@@ -96,7 +111,7 @@ async def patch_thread(ctx: Ctx) -> dict[str, Any]:
         ctx.require("editor")
     values = {k: v for k, v in ctx.body.model_dump(exclude_unset=True).items()}
     if "skills" in values:
-        values["skills"] = dumps(values["skills"] or [])
+        values["skills"] = dumps(_check_pins(ctx, values["skills"] or []))
     if values.get("provider_id") and not ctx.engine.db.one(
             "SELECT 1 FROM llm_providers WHERE id = ? AND workspace_id = ?", (values["provider_id"], ctx.ws_id)):
         raise NotFound("Model provider not found.")
