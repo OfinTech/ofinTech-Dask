@@ -88,6 +88,10 @@ async def get_thread(ctx: Ctx) -> dict[str, Any]:
         m["payload"] = loads(m["payload"], {})
     run = ctx.engine.db.one("SELECT id, status, error FROM agent_runs WHERE thread_id = ? ORDER BY created_at DESC LIMIT 1",
                             (t["id"],))
+    if run:
+        # additive: how the run ended (completed, incomplete, failed, timed_out, cancelled) and why, for the app
+        full = ctx.engine.agent.run_out(run["id"])
+        run.update(outcome=full["outcome"], error_code=full["error_code"], final_text=full["final_text"])
     approvals = []
     if run:
         approvals = [ctx.engine.agent.approval_out(a["id"]) for a in ctx.engine.db.all(

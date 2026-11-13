@@ -221,6 +221,12 @@ class Tool:
             return ToolOutput(f"Error: {exc.message}")
         except (ValueError, TypeError, KeyError, ZeroDivisionError, ArithmeticError) as exc:
             return ToolOutput(f"Error: {type(exc).__name__}: {exc}")
+        except Exception as exc:   # noqa: BLE001 -- the turn must survive a tool's failure; cancellation still passes
+            # an unexpected failure (a locked database, a broken connector, a bug) goes back to the model as a tool
+            # error so the conversation continues; the details stay in the server log, not in the conversation
+            log.exception("tool %s failed (run %s)", self.name, ctx.run_id)
+            return ToolOutput(f"Error: {self.name} failed unexpectedly ({type(exc).__name__}). The details are in the "
+                              "server log; tell the user the step could not be completed.")
 
 
 def schema(properties: dict[str, Any], required: list[str] | None = None) -> dict[str, Any]:

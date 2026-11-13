@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
+import random
 import re
+import time
 from typing import TYPE_CHECKING, Any
 
 from ..db import dumps, loads, new_id, now
@@ -31,6 +34,36 @@ log = logging.getLogger("desk.agent")
 
 MAX_STEPS = 16
 HISTORY_MESSAGES = 60
+
+# Model calls that failed for a reason that may pass are tried again, a bounded number of times, and only while
+# nothing of the answer has been shown yet (a partial answer is never replayed). Tools are never retried here.
+TRANSIENT_MODEL_ERRORS = {"llm_rate_limited", "llm_unavailable", "llm_timeout", "llm_network", "llm_incomplete",
+                          "llm_malformed"}
+
+
+def _env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, default))
+    except ValueError:
+        return default
+
+
+def model_retries() -> int:
+    return max(0, min(5, int(_env_float("DESK_LLM_RETRIES", 2))))
+
+
+def retry_delay(attempt: int, retry_after: float | None) -> float:
+    """Exponential backoff with full jitter, or the provider's Retry-After, never above the cap."""
+    cap = _env_float("DESK_LLM_RETRY_MAX_WAIT_S", 20.0)
+    if retry_after is not None:
+        return min(retry_after, cap)
+    base = _env_float("DESK_LLM_RETRY_BASE_S", 1.0)
+    return min(cap, random.uniform(0, base * (2 ** attempt)))  # noqa: S311 -- backoff jitter, not a secret
+
+
+# How a run ended; stored in the run's state as ``outcome`` (the status column keeps its existing values)
+OUTCOME_FOR_CODE = {"llm_timeout": "timed_out", "too_many_steps": "failed", "answer_incomplete": "incomplete",
+                    "answer_empty": "failed"}
 
 
 # --- figure check -----------------------------------------------------------------------------
@@ -226,10 +259,13 @@ class Agent:
         try:
             await self._run(run)
         except AppError as exc:
-            self._fail(run, exc.message)
+            self._fail(run, exc.message, code=exc.code)
+        except asyncio.CancelledError:
+            self._set_outcome(run_id, "cancelled")
+            raise
         except Exception as exc:  # pragma: no cover - logged
             log.exception("agent run %s failed", run_id)
-            self._fail(run, f"Unexpected error: {type(exc).__name__}")
+            self._fail(run, f"Unexpected error: {type(exc).__name__}", code="internal")
         finally:
             self.engine.events.publish(thread_id, {"type": "run", "run": self.run_out(run_id)})
             self.engine.events.end_run(thread_id)
@@ -244,16 +280,31 @@ class Agent:
         r["usage"] = loads(r["usage"], {})
         state = loads(r.pop("state"), {})
         r["final_text"] = state.get("final_text")
+        r["outcome"] = state.get("outcome") or {"done": "completed", "error": "failed"}.get(r["status"])
+        r["error_code"] = state.get("error_code")
         return r
 
-    def _fail(self, run: dict[str, Any], message: str) -> None:
+    def _set_outcome(self, run_id: str, outcome: str, code: str | None = None) -> None:
+        row = self.engine.db.one("SELECT state FROM agent_runs WHERE id = ?", (run_id,))
+        if row is None:
+            return
+        state = loads(row["state"], {})
+        state["outcome"] = outcome
+        if code:
+            state["error_code"] = code
+        self.engine.db.execute("UPDATE agent_runs SET state = ? WHERE id = ?", (dumps(state), run_id))
+
+    def _fail(self, run: dict[str, Any], message: str, code: str | None = None) -> None:
         ts = now()
         msg_id = new_id("m_")
+        outcome = OUTCOME_FOR_CODE.get(code or "", "failed")
         with self.engine.db.tx() as c:
             c.execute("UPDATE agent_runs SET status = 'error', error = ?, updated_at = ? WHERE id = ?",
                       (message, ts, run["id"]))
             c.execute("INSERT INTO messages (id, thread_id, role, content, payload, created_at) VALUES (?,?,?,?,?,?)",
-                      (msg_id, run["thread_id"], "event", message, dumps({"kind": "error", "run_id": run["id"]}), ts))
+                      (msg_id, run["thread_id"], "event", message,
+                       dumps({"kind": "error", "run_id": run["id"], "code": code, "outcome": outcome}), ts))
+        self._set_outcome(run["id"], outcome, code)
         self.engine.events.publish(run["thread_id"], {"type": "message", "message": self._message_out(msg_id)})
 
     async def _run(self, run: dict[str, Any]) -> None:
@@ -317,19 +368,27 @@ class Agent:
             note = ("\n\nMore tool groups can be loaded with more_tools: " + ", ".join(more) + ".") if more else ""
             messages = [ChatMessage("system", system), ChatMessage("system", dynamic + note), *compact(past)]
             msg_id = new_id("m_")
-            engine.events.publish(thread["id"], {"type": "assistant_start", "message_id": msg_id, "model": model_name})
-            result = None
-            async for ev in model.stream(messages, specs):
-                if ev.type == "text":
-                    engine.events.publish(thread["id"], {"type": "delta", "message_id": msg_id, "text": ev.delta})
-                else:
-                    result = ev.result
-            assert result is not None
+            result, timing = await self._call_model(model, messages, specs, thread["id"], msg_id, model_name)
             usage.add(result.usage)
             engine.record_usage(workspace["id"], provider_id, model_name, result.usage, "chat")
             payload: dict[str, Any] = {"run_id": run["id"], "model": model_name, "provider_id": provider_id,
                                        "tool_calls": [{"id": c.id, "name": c.name, "arguments": c.arguments}
-                                                      for c in result.tool_calls]}
+                                                      for c in result.tool_calls],
+                                       "timing": timing, "finish": result.finish_reason}
+            if not result.tool_calls and not result.text.strip():
+                raise AppError("The model returned an empty answer. Nothing was stored as an answer; try again.",
+                               code="answer_empty")
+            if not result.tool_calls and result.finish_reason in ("length", "content_filter"):
+                # the text is kept for reference, marked incomplete, and the run does not end as a finished answer
+                payload.update(incomplete=True)
+                engine.db.insert("messages", {"id": msg_id, "thread_id": thread["id"], "role": "assistant",
+                                              "author_id": None, "content": result.text, "payload": dumps(payload),
+                                              "created_at": now()})
+                engine.events.publish(thread["id"], {"type": "message", "message": self._message_out(msg_id)})
+                why = ("was cut off by the model's output limit" if result.finish_reason == "length"
+                       else "was stopped by the provider's content filter")
+                raise AppError(f"The answer {why} before it was finished. It is kept above, marked incomplete; do not "
+                               "rely on it. Ask for a shorter answer or split the question.", code="answer_incomplete")
             if not result.tool_calls:
                 evidence = [m.content for m in past if m.role in ("tool", "user")] + [m["content"] for m in memories]
                 payload["unverified_figures"] = unverified_figures(result.text, evidence)
@@ -343,7 +402,7 @@ class Agent:
             engine.events.publish(thread["id"], {"type": "message", "message": self._message_out(msg_id)})
 
             if not result.tool_calls:
-                state.update(step=step, final_text=result.text, pending=[])
+                state.update(step=step, final_text=result.text, pending=[], outcome="completed")
                 engine.db.execute("UPDATE agent_runs SET status = 'done', state = ?, usage = ?, updated_at = ? "
                                   "WHERE id = ?", (dumps(state), dumps(usage.__dict__), now(), run["id"]))
                 engine.db.execute("UPDATE threads SET updated_at = ? WHERE id = ?", (now(), thread["id"]))
@@ -374,6 +433,42 @@ class Agent:
 
         raise AppError(f"Stopped after {MAX_STEPS} steps without a final answer. Try a narrower request.",
                        code="too_many_steps")
+
+    async def _call_model(self, model: Any, messages: list[ChatMessage], specs: list[Any], thread_id: str, msg_id: str,
+                          model_name: str) -> tuple[Any, dict[str, Any]]:
+        """One model call, streamed to the thread. A transient failure before any text was shown is retried with
+        backoff (``model_retries()`` times at most); after text was shown, or for a permanent error, it is raised.
+        Returns the result and its timing (milliseconds to the first event and to the end, and attempts)."""
+        attempts = 0
+        started = time.perf_counter()
+        while True:
+            attempts += 1
+            shown = False
+            first: float | None = None
+            result = None
+            self.engine.events.publish(thread_id, {"type": "assistant_start", "message_id": msg_id, "model": model_name})
+            try:
+                async for ev in model.stream(messages, specs):
+                    if first is None:
+                        first = time.perf_counter()
+                    if ev.type == "text":
+                        shown = True
+                        self.engine.events.publish(thread_id, {"type": "delta", "message_id": msg_id, "text": ev.delta})
+                    else:
+                        result = ev.result
+            except AppError as exc:
+                if exc.code in TRANSIENT_MODEL_ERRORS and not shown and attempts <= model_retries():
+                    wait = retry_delay(attempts - 1, (exc.details or {}).get("retry_after")
+                                       if isinstance(exc.details, dict) else None)
+                    log.warning("model call failed (%s), retry %d in %.1fs", exc.code, attempts, wait)
+                    await asyncio.sleep(wait)
+                    continue
+                raise
+            if result is None:
+                raise AppError("The model's response ended without a result.", code="llm_incomplete")
+            end = time.perf_counter()
+            return result, {"ttfb_ms": round(((first or end) - started) * 1000, 1),
+                            "total_ms": round((end - started) * 1000, 1), "attempts": attempts}
 
     def _knowledge_note(self, ws_id: str) -> str | None:
         n = self.engine.db.scalar("SELECT COUNT(*) FROM documents WHERE workspace_id = ? AND status = 'indexed'", (ws_id,))
