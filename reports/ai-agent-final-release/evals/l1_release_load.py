@@ -14,6 +14,7 @@ E  failure recovery: model 503 burst, model timeouts, network errors, tool timeo
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import random
@@ -98,21 +99,30 @@ def main() -> None:
     h.llm.script = model
     os.environ.update(DESK_LLM_RETRY_BASE_S="0.05", DESK_LLM_RETRY_MAX_WAIT_S="0.2")
     db = h.engine.db
+    loop = h.client.portal.call(asyncio.get_running_loop)
 
     def run_turn(tid: str, text: str) -> tuple[float, str]:
         t0 = time.perf_counter()
         r = h.client.post(f"/api/w/{ws}/threads/{tid}/messages", json={"text": text})
         if r.status_code != 200:
             return time.perf_counter() - t0, f"http_{r.status_code}"
-        deadline = t0 + 60
-        while time.perf_counter() < deadline:
+        # wait for the run's task to finish (a done-callback on the engine's loop), not by polling the database:
+        # polling from 100+ client threads in the same process would load the engine with the harness's own reads
+        done = threading.Event()
+        task = h.engine.agent.tasks.get(tid)
+        if task is not None:
+            loop.call_soon_threadsafe(task.add_done_callback, lambda _t: done.set())
+            done.wait(60)
+        row = db.one("SELECT status, state FROM agent_runs WHERE thread_id = ? ORDER BY created_at DESC LIMIT 1",
+                     (tid,))
+        while row and row["status"] not in ("done", "error") and time.perf_counter() - t0 < 60:
+            time.sleep(0.05)                     # the task was gone before we looked: rare, poll briefly
             row = db.one("SELECT status, state FROM agent_runs WHERE thread_id = ? ORDER BY created_at DESC LIMIT 1",
                          (tid,))
-            if row and row["status"] in ("done", "error"):
-                code = json.loads(row["state"] or "{}").get("error_code") if row["status"] == "error" else "ok"
-                return time.perf_counter() - t0, code or "error"
-            time.sleep(0.005)
-        return time.perf_counter() - t0, "client_timeout"
+        if not row or row["status"] not in ("done", "error"):
+            return time.perf_counter() - t0, "client_timeout"
+        code = json.loads(row["state"] or "{}").get("error_code") if row["status"] == "error" else "ok"
+        return time.perf_counter() - t0, code or "error"
 
     def one_action(rnd: random.Random, tid: str) -> tuple[str, float, str]:
         kind = rnd.choices(["question", "kpi", "calc", "dashboard", "insights"], [30, 30, 20, 15, 5])[0]
