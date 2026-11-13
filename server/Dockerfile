@@ -8,7 +8,7 @@ RUN npm ci --no-audit --no-fund
 COPY ui/ ./
 RUN node build.mjs
 
-FROM python:3.12-slim AS runtime
+FROM python:3.15-slim AS runtime
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
 # apt is upgraded before anything else is installed, and the base image's other packages with it, so the image
 # ships with the operating-system fixes Debian has already published rather than whichever ones its base layer
