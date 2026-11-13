@@ -140,6 +140,8 @@ const d: Record<string, string> = {
   "Chart": "رسم بياني",
   "Chat apps": "تطبيقات المحادثة",
   "Check before relying on:": "تحقق قبل الاعتماد على:",
+  "This answer is incomplete and must not be relied on.": "هذه الإجابة غير مكتملة ولا يجوز الاعتماد عليها.",
+  "From your messages, not checked against the books:": "من رسائلك، ولم تُطابَق مع الدفاتر:",
   "Check now": "افحص الآن",
   "Checking the invitation…": "جارٍ التحقق من الدعوة…",
   "Checks": "الفحوصات",

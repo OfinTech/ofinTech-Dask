@@ -10,7 +10,7 @@ import httpx2 as httpx
 
 from ..errors import UpstreamError
 from .base import ChatMessage, LLMResult, StreamEvent, ToolCall, ToolSpec, Usage
-from .openai_compat import safe_tool_name, upstream_error
+from .openai_compat import incomplete_error, safe_tool_name, transport_error, upstream_error
 
 API_VERSION = "2023-06-01"
 
@@ -111,42 +111,54 @@ class AnthropicModel:
         blocks: dict[int, dict[str, Any]] = {}
         usage = Usage()
         finish = "stop"
-        async with self._client() as client:
-            async with client.stream("POST", f"{self.base_url}/messages", headers=self._headers(), json=body) as resp:
-                if resp.status_code >= 400:
-                    raise upstream_error(self.label, resp.status_code, (await resp.aread()).decode(errors="replace"))
-                async for line in resp.aiter_lines():
-                    line = line.strip()
-                    if not line.startswith("data:"):
-                        continue
-                    try:
-                        event = json.loads(line[5:].strip())
-                    except json.JSONDecodeError:
-                        continue
-                    etype = event.get("type")
-                    if etype == "message_start":
-                        u = event.get("message", {}).get("usage", {})
-                        usage.cache_read = int(u.get("cache_read_input_tokens") or 0)
-                        usage.cache_write = int(u.get("cache_creation_input_tokens") or 0)
-                        usage.input_tokens = int(u.get("input_tokens") or 0) + usage.cache_read + usage.cache_write
-                    elif etype == "content_block_start":
-                        cb = event.get("content_block", {})
-                        blocks[event["index"]] = {"type": cb.get("type"), "id": cb.get("id"), "name": cb.get("name"),
-                                                  "json": ""}
-                    elif etype == "content_block_delta":
-                        delta = event.get("delta", {})
-                        if delta.get("type") == "text_delta":
-                            text_parts.append(delta.get("text", ""))
-                            yield StreamEvent("text", delta=delta.get("text", ""))
-                        elif delta.get("type") == "input_json_delta":
-                            blocks.setdefault(event["index"], {"type": "tool_use", "json": ""})
-                            blocks[event["index"]]["json"] += delta.get("partial_json", "")
-                    elif etype == "message_delta":
-                        u = event.get("usage", {})
-                        usage.output_tokens = int(u.get("output_tokens") or usage.output_tokens)
-                        finish = event.get("delta", {}).get("stop_reason") or finish
-                    elif etype == "error":
-                        raise UpstreamError(f"{self.label}: {str(event.get('error'))[:300]}", code="llm_error")
+        ended = False      # completion evidence: message_stop (or a stop_reason); a stream that just stops is incomplete
+        malformed = 0
+        try:
+            async with self._client() as client:
+                async with client.stream("POST", f"{self.base_url}/messages", headers=self._headers(), json=body) as resp:
+                    if resp.status_code >= 400:
+                        raise upstream_error(self.label, resp.status_code, (await resp.aread()).decode(errors="replace"),
+                                             resp.headers.get("retry-after"))
+                    async for line in resp.aiter_lines():
+                        line = line.strip()
+                        if not line.startswith("data:"):
+                            continue
+                        try:
+                            event = json.loads(line[5:].strip())
+                        except json.JSONDecodeError:
+                            malformed += 1
+                            continue
+                        etype = event.get("type")
+                        if etype == "message_start":
+                            u = event.get("message", {}).get("usage", {})
+                            usage.cache_read = int(u.get("cache_read_input_tokens") or 0)
+                            usage.cache_write = int(u.get("cache_creation_input_tokens") or 0)
+                            usage.input_tokens = int(u.get("input_tokens") or 0) + usage.cache_read + usage.cache_write
+                        elif etype == "content_block_start":
+                            cb = event.get("content_block", {})
+                            blocks[event["index"]] = {"type": cb.get("type"), "id": cb.get("id"), "name": cb.get("name"),
+                                                      "json": ""}
+                        elif etype == "content_block_delta":
+                            delta = event.get("delta", {})
+                            if delta.get("type") == "text_delta":
+                                text_parts.append(delta.get("text", ""))
+                                yield StreamEvent("text", delta=delta.get("text", ""))
+                            elif delta.get("type") == "input_json_delta":
+                                blocks.setdefault(event["index"], {"type": "tool_use", "json": ""})
+                                blocks[event["index"]]["json"] += delta.get("partial_json", "")
+                        elif etype == "message_delta":
+                            u = event.get("usage", {})
+                            usage.output_tokens = int(u.get("output_tokens") or usage.output_tokens)
+                            finish = event.get("delta", {}).get("stop_reason") or finish
+                            ended = ended or bool(event.get("delta", {}).get("stop_reason"))
+                        elif etype == "message_stop":
+                            ended = True
+                        elif etype == "error":
+                            raise UpstreamError(f"{self.label}: {str(event.get('error'))[:300]}", code="llm_error")
+        except httpx.TransportError as exc:
+            raise transport_error(self.label, exc) from exc
+        if malformed or not ended:
+            raise incomplete_error(self.label, malformed)
 
         calls = []
         for index in sorted(blocks):
@@ -159,5 +171,6 @@ class AnthropicModel:
                 args = {"_invalid_json": b["json"][:2000]}
             calls.append(ToolCall(b.get("id") or f"toolu_{index}", name_map.get(b.get("name") or "", b.get("name") or ""),
                                   args))
-        yield StreamEvent("done", result=LLMResult("".join(text_parts), calls, usage,
-                                                   "tool_calls" if finish == "tool_use" else finish))
+        # one vocabulary for the loop: tool_use -> tool_calls, max_tokens -> length (cut by the output limit)
+        finish = {"tool_use": "tool_calls", "max_tokens": "length", "end_turn": "stop"}.get(finish, finish)
+        yield StreamEvent("done", result=LLMResult("".join(text_parts), calls, usage, finish))

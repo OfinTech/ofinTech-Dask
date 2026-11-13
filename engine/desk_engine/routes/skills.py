@@ -72,7 +72,11 @@ async def update_skill(ctx: Ctx) -> dict[str, Any]:
         from ..db import loads
 
         files = loads(row["files"], {})
-    skill = save_custom(ctx.engine, ctx.ws_id, _parse(ctx.body), files, user_id=ctx.user_id, skill_id=sid)
+    was = ctx.engine.db.one("SELECT enabled FROM skills WHERE id = ? AND workspace_id = ?", (sid, ctx.ws_id))
+    skill = save_custom(ctx.engine, ctx.ws_id, _parse(ctx.body), files, user_id=ctx.user_id, skill_id=sid,
+                        enable=_may_enable(ctx))
+    if was and was["enabled"] and not skill["enabled"]:
+        ctx.audit("skill.awaiting_approval", skill["name"], {"reason": "edited_by_non_admin"})
     ctx.audit("skill.update", skill["name"])
     return skill
 
