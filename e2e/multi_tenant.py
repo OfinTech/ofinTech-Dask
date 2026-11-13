@@ -336,7 +336,7 @@ def main() -> int:
             if sa != "processing" and sb != "processing":
                 break
             time.sleep(0.2)
-        fp_a0, fp_b0 = fingerprint(db_path, A), fingerprint(db_path, B)
+        fp_b0 = fingerprint(db_path, B)  # A is re-baselined as fp_a1 just before its own checks
 
         # ---- 2. each organisation reads its own dashboard / overview --------------------------------------------
         for who, c, ws, needle in (("Alice", alice, A, "1,234.56"), ("Bob", bob, B, "987.65"), ("Vic", vic, A, "1,234.56"), ("Vera", vera, B, "987.65")):

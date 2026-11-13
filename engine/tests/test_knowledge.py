@@ -2,7 +2,6 @@ import hashlib
 import io
 import json
 import re
-import time
 import unittest
 
 import httpx2 as httpx

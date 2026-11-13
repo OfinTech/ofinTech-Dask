@@ -16,7 +16,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from ..db import dumps, loads, new_id, now
-from ..errors import AppError, Conflict, Forbidden, NotFound
+from ..errors import AppError, Conflict, NotFound
 from ..llm.base import ChatMessage, ToolCall, Usage
 from ..llm.registry import build_model, resolve_choice
 from ..skills.loader import enabled_index, get_skill

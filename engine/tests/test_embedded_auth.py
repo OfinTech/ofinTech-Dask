@@ -7,7 +7,6 @@ import unittest
 
 from desk_engine.db import now
 from tests.embedded_helpers import ORIGIN, audit_actions, issue_session, make_org, new_harness, run_input, signup, stream
-from tests.helpers import FakeLLM
 
 
 class Registration(unittest.TestCase):

@@ -23,7 +23,7 @@ from ..web import Ctx, Router, parse_body
 from . import agui
 from .agents import AGENTS, CAPABILITIES
 from .auth import EmbeddedPrincipal, cors_headers
-from .model import DEFAULT_LIMITS, SESSION_TTL_DEFAULT, SESSION_TTL_MAX, SESSION_TTL_MIN, integration_out
+from .model import DEFAULT_LIMITS, SESSION_TTL_MAX, SESSION_TTL_MIN, integration_out
 
 if TYPE_CHECKING:
     from ..app import Engine
