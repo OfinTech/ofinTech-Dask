@@ -80,7 +80,7 @@ def fmt(v: float | None, unit: str) -> str:
                schema({"month": {"type": "string"},
                        "category": {"type": "string", "enum": ["growth_profitability", "liquidity", "working_capital",
                                                                "leverage", "cash_flow", "cost_control"]}}),
-               category="analysis", available=_has_ledger)
+               category="analysis", available=_has_ledger, offload=True)
 async def _kpis(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         r = await ctx.engine.analysis.scorecard(ctx.ws_id, a.get("month"))
@@ -110,7 +110,7 @@ async def _kpis(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"kpi": {"type": "string", "description": "the KPI id, in English whatever the user's language: "
                                + ", ".join(KPI_IDS)},
                        "month": {"type": "string", "description": "YYYY-MM; the latest month when left out"}}, ["kpi"]),
-               category="analysis", available=_has_ledger)
+               category="analysis", available=_has_ledger, offload=True)
 async def _detail(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         sc = await ctx.engine.analysis.scorecard(ctx.ws_id)
@@ -137,7 +137,7 @@ async def _detail(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "assumptions per line, projected revenue, net profit and cash, the lowest cash month, the statistical "
                "reference and, for approved forecasts, accuracy against actuals. Without a name, lists the forecasts.",
                schema({"forecast": {"type": "string", "description": "name or id"}}),
-               category="analysis", available=_has_ledger)
+               category="analysis", available=_has_ledger, offload=True)
 async def _forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     items = ctx.engine.analysis.list_forecasts(ctx.ws_id)
     if not items:

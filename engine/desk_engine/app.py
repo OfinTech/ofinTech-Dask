@@ -32,6 +32,7 @@ from .config import VERSION, Settings
 from .costcentres import CostCentres
 from .db import Database, dumps, new_id, now
 from .events import EventHub
+from .metrics import Metrics, watch_event_loop
 from .health import CACHE_SECONDS, log_line, readiness, response_body
 from .files.service import Files
 from .knowledge.base import Knowledge
@@ -61,6 +62,7 @@ class Engine:
         self.db = Database(settings.db_path)
         self.secrets = SecretStore(self.db, SecretBox(settings.master_key))
         self.events = EventHub()
+        self.metrics = Metrics()
         self.tools = registry
         if settings.sealed:   # nothing leaves the private network, whatever code asks (egress.py)
             # internal addresses are what a sealed server talks to, and checking a public name would be a DNS lookup
@@ -141,6 +143,7 @@ class Engine:
         await self.workflows.resume_interrupted()
         await self.knowledge.resume()
         self._background.append(asyncio.get_running_loop().create_task(self._scheduler()))
+        self._background.append(asyncio.get_running_loop().create_task(watch_event_loop(self.metrics)))
 
     async def stop_background(self) -> None:
         for t in self._background:

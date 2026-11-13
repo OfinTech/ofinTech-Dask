@@ -157,6 +157,10 @@ class Tool:
     # Pure computation (no database, no network, no engine state): runs in a worker thread, so heavy arithmetic cannot
     # stall other conversations and the timeout holds even if the handler never yields.
     pure: bool = False
+    # Read-only and local (the database and files, no network client, no events): runs in a worker thread with its own
+    # event loop, so a slow query cannot stall other conversations and the timeout holds (audit AI-10). The thread
+    # gets its own SQLite connection (Database keeps one per thread); writes stay on the loop and approval-bound.
+    offload: bool = False
 
     def spec(self) -> ToolSpec:
         return ToolSpec(self.name, self.description, self.parameters)
@@ -217,7 +221,7 @@ class Tool:
             return ToolOutput("Error: the arguments do not match the tool's schema. " + " ".join(problems[:6]))
         import asyncio
         try:
-            if self.pure:
+            if self.pure or self.offload:
                 handler = self.handler
 
                 async def call() -> ToolOutput:
@@ -263,10 +267,12 @@ class ToolRegistry:
              category: str = "finance", summarize: Callable[[dict[str, Any]], str] | None = None,
              available: Callable[[ToolContext], bool] | None = None,
              timeout: float = DEFAULT_TOOL_TIMEOUT, min_role: str = "viewer",
-             pure: bool = False) -> Callable[[Handler], Handler]:
+             pure: bool = False, offload: bool = False) -> Callable[[Handler], Handler]:
+        if offload and effect != "read":
+            raise ValueError(f"{name}: only read tools run off the event loop")
         def deco(fn: Handler) -> Handler:
             self.add(Tool(name, description, parameters, fn, effect, category, summarize, available, timeout=timeout,
-                          min_role=min_role, pure=pure))
+                          min_role=min_role, pure=pure, offload=offload))
             return fn
         return deco
 

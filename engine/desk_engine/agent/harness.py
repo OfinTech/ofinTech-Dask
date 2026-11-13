@@ -19,6 +19,7 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from ..db import dumps, loads, new_id, now
+from ..metrics import tool_label
 from ..errors import AppError, Conflict, NotFound
 from ..llm.base import ChatMessage, ToolCall, Usage
 from ..llm.registry import build_model, resolve_choice
@@ -34,9 +35,14 @@ log = logging.getLogger("desk.agent")
 
 MAX_STEPS = 16
 HISTORY_MESSAGES = 60
-EARLIER_USER_MESSAGES = 20      # user messages older than the window, carried as one note
+EARLIER_USER_MESSAGES = 20      # user messages older than the window, carried as one note: the first few (where a
+EARLIER_USER_FIRST = 5          # conversation's standing facts are usually given) and the most recent
 EARLIER_USER_CHARS = 300        # of each
-EARLIER_NOTE_CHARS = 3000       # of the note in all
+EARLIER_NOTE_CHARS = 3000       # of the user part of the note in all
+EARLIER_ANSWERS_FIRST, EARLIER_ANSWERS_LAST = 2, 4   # the assistant's own earlier answers, shortened
+EARLIER_ANSWER_CHARS = 240
+HISTORY_TOKENS = 30_000         # the history's share of a request, in tokens (DESK_LLM_HISTORY_TOKENS)
+CHARS_PER_TOKEN = 4             # a deliberately rough estimate; it errs towards sending less
 REPEAT_LIMIT = 2                # identical read-tool calls served from the run's own earlier result after this many
 
 # Model calls that failed for a reason that may pass are tried again, a bounded number of times, and only while
@@ -106,10 +112,75 @@ def unverified_figures(answer: str, evidence: list[str]) -> list[str]:
 # --- conversation <-> storage -----------------------------------------------------------------
 
 
+def history_budget_chars() -> int:
+    """Characters of conversation history one request may carry. A fixed message window alone does not bound size:
+    60 messages of 20,000 characters exceed most models' context (audit AI-11)."""
+    tokens = int(_env_float("DESK_LLM_HISTORY_TOKENS", HISTORY_TOKENS))
+    return max(4_000, tokens) * CHARS_PER_TOKEN
+
+
+def _row_chars(r: dict[str, Any]) -> int:
+    n = len(r["content"] or "")
+    if r["role"] == "tool":
+        from .context import MAX_TOOL_CHARS
+        return min(n, MAX_TOOL_CHARS + 100)       # compact() never sends more than this of one result
+    if r["role"] == "assistant":
+        n += sum(len(dumps(c.get("arguments") or {})) for c in loads(r["payload"], {}).get("tool_calls", []))
+    return n
+
+
+def _ends(rows: list[dict[str, Any]], first: int, last: int) -> list[dict[str, Any]]:
+    return rows if len(rows) <= first + last else rows[:first] + rows[-last:]
+
+
+def _earlier_note(engine: Engine, thread_id: str, before: float) -> str | None:
+    """What fell out of the request, in one user-role note: the user's own messages (their facts and constraints) and
+    a shortened trace of the assistant's earlier answers, labelled as not re-checked. Tool results are not carried:
+    the model calls the tool again when it needs a figure (and only then is the figure verified)."""
+    q = ("SELECT content, payload FROM messages WHERE thread_id = ? AND role = ? AND created_at < ? "
+         "ORDER BY created_at {} LIMIT ?")
+    first = engine.db.all(q.format("ASC"), (thread_id, "user", before, EARLIER_USER_FIRST))
+    recent = engine.db.all(q.format("DESC"), (thread_id, "user", before, EARLIER_USER_MESSAGES - EARLIER_USER_FIRST))
+    seen, users = set(), []
+    for r in first + list(reversed(recent)):
+        key = id(r) if r["content"] is None else (r["content"], r["payload"])
+        if key not in seen:
+            seen.add(key)
+            users.append(" ".join((r["content"] or "").split())[:EARLIER_USER_CHARS])
+    while users and sum(len(u) for u in users) > EARLIER_NOTE_CHARS:
+        users.pop(min(EARLIER_USER_FIRST, len(users) - 1))      # keep the first ones, drop the oldest of the recent
+    replies = [r for r in engine.db.all(q.format("ASC"), (thread_id, "assistant", before, 200))
+               if (r["content"] or "").strip() and not loads(r["payload"], {}).get("tool_calls")]
+    answers = [" ".join(r["content"].split())[:EARLIER_ANSWER_CHARS]
+               for r in _ends(replies, EARLIER_ANSWERS_FIRST, EARLIER_ANSWERS_LAST)]
+    if not users and not answers:
+        return None
+    parts = ["[Earlier in this conversation, no longer sent in full. Oldest first.]"]
+    if users:
+        parts.append("The user's own messages (what the user said, not new requests):\n"
+                     + "\n".join(f"- {u}" for u in users))
+    if answers:
+        parts.append("The assistant's earlier answers, shortened and not re-checked against the books (call the "
+                     "tools again before relying on any figure in them):\n" + "\n".join(f"- {a}" for a in answers))
+    return "\n".join(parts)
+
+
 def history(engine: Engine, thread_id: str) -> list[ChatMessage]:
     rows = engine.db.all(
         "SELECT * FROM (SELECT * FROM messages WHERE thread_id = ? AND role IN ('user','assistant','tool') "
         "ORDER BY created_at DESC LIMIT ?) ORDER BY created_at", (thread_id, HISTORY_MESSAGES))
+    windowed = len(rows) >= HISTORY_MESSAGES
+    # the size budget: newest first; the current turn (from the latest user message on) is always kept whole
+    users = [i for i, r in enumerate(rows) if r["role"] == "user"]
+    floor = users[-1] if users else 0
+    budget, used, cut = history_budget_chars(), 0, 0
+    for i in range(len(rows) - 1, -1, -1):
+        used += _row_chars(rows[i])
+        if used > budget and i < floor:
+            cut = i + 1
+            break
+    dropped = windowed or cut > 0
+    rows = rows[cut:]
     msgs: list[ChatMessage] = []
     for r in rows:
         payload = loads(r["payload"], {})
@@ -124,23 +195,10 @@ def history(engine: Engine, thread_id: str) -> list[ChatMessage]:
     # drop leading tool results whose assistant call fell outside the window
     while msgs and msgs[0].role == "tool":
         msgs.pop(0)
-    # what the user said before the window still matters (a fiscal year end, a unit, a constraint): their own earlier
-    # messages are carried in one short note instead of being dropped; tool results and answers are not
-    if rows and len(rows) >= HISTORY_MESSAGES:
-        older = engine.db.all("SELECT content FROM messages WHERE thread_id = ? AND role = 'user' AND created_at < ? "
-                              "ORDER BY created_at DESC LIMIT ?", (thread_id, rows[0]["created_at"], EARLIER_USER_MESSAGES))
-        if older:
-            lines, used = [], 0
-            for r in reversed(older):
-                text = " ".join((r["content"] or "").split())[:EARLIER_USER_CHARS]
-                if used + len(text) > EARLIER_NOTE_CHARS:
-                    break
-                lines.append(f"- {text}")
-                used += len(text)
-            if lines:
-                msgs.insert(0, ChatMessage("user", "[Earlier in this conversation: the user's own messages that no longer "
-                                                   "fit, oldest first. They are what the user said, not new requests.]\n"
-                                           + "\n".join(lines)))
+    if dropped and rows:
+        note = _earlier_note(engine, thread_id, rows[0]["created_at"])
+        if note:
+            msgs.insert(0, ChatMessage("user", note))
     # every tool call must have a result (the model APIs require it)
     answered = {m.tool_call_id for m in msgs if m.role == "tool"}
     fixed: list[ChatMessage] = []
@@ -300,6 +358,7 @@ class Agent:
             return
         state = loads(row["state"], {})
         state["outcome"] = outcome
+        self.engine.metrics.inc("desk_agent_runs_total", outcome=outcome)
         if code:
             state["error_code"] = code
         self.engine.db.execute("UPDATE agent_runs SET state = ? WHERE id = ?", (dumps(state), run_id))
@@ -420,6 +479,7 @@ class Agent:
 
             if not result.tool_calls:
                 state.update(step=step, final_text=result.text, pending=[], outcome="completed")
+                engine.metrics.inc("desk_agent_runs_total", outcome="completed")
                 engine.db.execute("UPDATE agent_runs SET status = 'done', state = ?, usage = ?, updated_at = ? "
                                   "WHERE id = ?", (dumps(state), dumps(usage.__dict__), now(), run["id"]))
                 engine.db.execute("UPDATE threads SET updated_at = ? WHERE id = ?", (now(), thread["id"]))
@@ -438,7 +498,9 @@ class Agent:
                         self._tool_message(ctx, call, ToolOutput(
                             f"Same call with the same arguments as before in this turn (call {seen[key]}); the result is "
                             "unchanged and repeated below. Use it, or answer, instead of calling it again.\n\n" + prev.text,
-                            prev.blocks, prev.data), "ok")
+                            prev.blocks, prev.data), "ok", ms=0.0)
+                        engine.metrics.inc("desk_tool_calls_total", status="reused",
+                                           tool=tool_label(tool.name, tool.category))
                         continue
                 if tool is None:
                     engine.audit(ctx.ws_id, ctx.user_id, "tool.denied", call.name[:120], {"reason": "unknown_or_not_offered"},
@@ -489,15 +551,21 @@ class Agent:
                         result = ev.result
             except AppError as exc:
                 if exc.code in TRANSIENT_MODEL_ERRORS and not shown and attempts <= model_retries():
+                    self.engine.metrics.inc("desk_llm_retries_total", code=exc.code or "llm_error")
                     wait = retry_delay(attempts - 1, (exc.details or {}).get("retry_after")
                                        if isinstance(exc.details, dict) else None)
                     log.warning("model call failed (%s), retry %d in %.1fs", exc.code, attempts, wait)
                     await asyncio.sleep(wait)
                     continue
+                self.engine.metrics.inc("desk_llm_calls_total", outcome=exc.code or "llm_error")
                 raise
             if result is None:
                 raise AppError("The model's response ended without a result.", code="llm_incomplete")
             end = time.perf_counter()
+            m = self.engine.metrics
+            m.inc("desk_llm_calls_total", outcome="ok")
+            m.observe("desk_llm_call_seconds", end - started)
+            m.observe("desk_llm_ttfb_seconds", (first or end) - started)
             return result, {"ttfb_ms": round(((first or end) - started) * 1000, 1),
                             "total_ms": round((end - started) * 1000, 1), "attempts": attempts}
 
@@ -562,22 +630,30 @@ class Agent:
     async def _execute(self, ctx: ToolContext, tool: Tool, call: ToolCall, approval_id: str | None = None) -> ToolOutput:
         self.engine.events.publish(ctx.thread_id or "", {"type": "tool_start", "call": {"id": call.id, "name": call.name,
                                                                                         "arguments": call.arguments}})
+        started = time.perf_counter()
         output = await tool.run(ctx, call.arguments)
+        took = time.perf_counter() - started
         refused = output.text.startswith("Refused:")
         status = "error" if output.text.startswith("Error:") else ("refused" if refused else "ok")
+        label = tool_label(tool.name, tool.category)
+        self.engine.metrics.inc("desk_tool_calls_total", status=status, tool=label)
+        self.engine.metrics.observe("desk_tool_seconds", took, tool=label)
         self.engine.audit(ctx.ws_id, ctx.user_id, "tool.denied" if refused else "tool.run", call.name,
                           {"source": ctx.source, "effect": "write" if tool.needs_approval() else "read",
                            "min_role": tool.min_role, "error": output.text[:200] if status != "ok" else None},
                           resource_type="tool", decision="denied" if refused else ("approved" if approval_id else "allowed"),
                           approval_id=approval_id, result=status, request_id=ctx.run_id)
-        self._tool_message(ctx, call, output, status, approval_id=approval_id)
+        self._tool_message(ctx, call, output, status, approval_id=approval_id, ms=round(took * 1000, 1))
         return output
 
     def _tool_message(self, ctx: ToolContext, call: ToolCall, output: ToolOutput, status: str,
-                      approval_id: str | None = None) -> None:
+                      approval_id: str | None = None, ms: float | None = None) -> None:
         msg_id = new_id("m_")
-        payload = {"tool_call_id": call.id, "name": call.name, "arguments": call.arguments, "blocks": output.blocks,
-                   "status": status, "approval_id": approval_id, "run_id": ctx.run_id}
+        payload: dict[str, Any] = {"tool_call_id": call.id, "name": call.name, "arguments": call.arguments,
+                                   "blocks": output.blocks, "status": status, "approval_id": approval_id,
+                                   "run_id": ctx.run_id}
+        if ms is not None:
+            payload["ms"] = ms
         self.engine.db.insert("messages", {"id": msg_id, "thread_id": ctx.thread_id, "role": "tool", "author_id": None,
                                            "content": output.for_model(), "payload": dumps(payload, ),
                                            "created_at": now()})
