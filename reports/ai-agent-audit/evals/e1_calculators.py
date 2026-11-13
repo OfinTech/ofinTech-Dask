@@ -137,11 +137,15 @@ def main() -> None:
         rate = round(rng.uniform(0.01, 0.2), 4)
         o = T("calc_xnpv_xirr", {"cashflows": cfs, "dates": [d.isoformat() for d in ds], "discount_rate": rate})
         exp = xnpv_gt(rate, cfs, ds)
-        rs = roots(lambda r: float(xnpv_gt(r, cfs, ds)), -0.99, 10, 4000)
+        # one sign change: exactly one XIRR in (-100%, inf); found with 60-digit arithmetic over (-99.9999%, 1e8%).
+        # (The audited version scanned only up to 1,000% and so took a real XIRR above that for "none".)
+        years = [D((d_ - ds[0]).days) / D(365) for d_ in ds]
+        exp_r = unique_root(lambda r: sum((D(str(c)) / (1 + D(str(r))) ** y for c, y in zip(cfs, years)), D(0)))
         got = o.data.get("xirr")
         ok = abs(D(str(o.data["xnpv"])) - exp) <= D("0.01") and (
-            (not rs and got is None) or (rs and got is not None and abs(got - rs[0]) < 1e-6))
-        record("calc_xnpv_xirr", f"#{i}", ok, {"xnpv": float(q2(exp)), "xirr": rs[0] if rs else None},
+            (exp_r is None and got is None) or (exp_r is not None and got is not None
+                                                and abs(got - exp_r) <= 1e-6 * max(1.0, abs(exp_r))))
+        record("calc_xnpv_xirr", f"#{i}", ok, {"xnpv": float(q2(exp)), "xirr": exp_r},
                {"xnpv": o.data.get("xnpv"), "xirr": got})
     # XIRR above 1000% (fast payback): the bisection bracket stops at 10 (1000%)
     o = T("calc_xnpv_xirr", {"cashflows": [-100, 200], "dates": ["2026-01-01", "2026-02-01"]})
@@ -251,7 +255,7 @@ def main() -> None:
         ok = all(D(str(o.data[k])) == v for k, v in exp.items()) and D(str(o.data["net"])) + D(str(o.data["tax"])) == D(str(o.data["gross"]))
         record("calc_sales_tax", f"{'inclusive' if inc else 'exclusive'}#{i}", ok, {k: float(v) for k, v in exp.items()}, o.data)
     o = T("calc_sales_tax", {"amount": 100, "rate": 15, "amount_includes_tax": False})
-    record("calc_sales_tax", "rate_given_as_percent", "rate" in o.text.lower() and o.data["gross"] < 1000,
+    record("calc_sales_tax", "rate_given_as_percent", "rate" in o.text.lower() and (o.data is None or o.data["gross"] < 1000),
            "a question or refusal for rate=15 (likely 15%)", o.data, "rate 15 is taken as 1,500% (gross 1,600)")
 
     # Break-even

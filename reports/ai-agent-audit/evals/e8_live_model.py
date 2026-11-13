@@ -46,7 +46,8 @@ SCENARIOS = [
     {"id": "dso", "category": "KPI", "turns": ["How many days does it take us to collect receivables (DSO) as of October 2026?"],
      "tools_any": ["kpi_detail", "financial_kpis"], "expected": [(T_OCT["dso"], "num")]},
     {"id": "nm_compare", "category": "comparison", "turns": ["Compare our net margin in March 2026 with October 2026."],
-     "tools_any": ["financial_kpis", "kpi_detail"], "expected": [(T_MAR["net_margin"], "pct"), (T_OCT["net_margin"], "pct")]},
+     "tools_any": ["financial_kpis", "kpi_detail"], "expected": [(T_MAR["net_margin"], "pct"), (T_OCT["net_margin"], "pct")],
+     "oracle_calls": [("financial_kpis", {"month": "2026-03"}), ("financial_kpis", {"month": "2026-10"})]},
     {"id": "growth", "category": "financial question", "turns": ["What was revenue growth year on year in October 2026?"],
      "tools_any": ["financial_kpis", "kpi_detail"], "expected": [(T_OCT["revenue_growth"], "pct")]},
     {"id": "wc_march", "category": "financial question", "turns": ["What was our working capital at the end of March 2026?"],
@@ -157,7 +158,9 @@ class LiveHarness(Harness):
 
 def oracle_script(sc: dict, fabricate: bool) -> list:
     """What a perfect (or a lying) model would do for this scenario, as a script for the fake model."""
-    if sc.get("oracle_call"):
+    if sc.get("oracle_calls"):          # both months asked about are fetched; one of them is not enough evidence
+        calls = [list(sc["oracle_calls"])]
+    elif sc.get("oracle_call"):
         calls = [[sc["oracle_call"]]]
     else:
         calls = [[(sc["tools_any"][0], {"kpi": "dso"} if sc["tools_any"][0] == "kpi_detail" else

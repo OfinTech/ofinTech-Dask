@@ -49,21 +49,135 @@ def irr(cashflows: list[float], guess: float = 0.1) -> float | None:
         if abs(nxt - r) < 1e-10:
             return nxt
         r = nxt
-    # bisection fallback over a wide bracket
-    lo, hi = -0.9999, 10.0
-    flo, fhi = f(lo), f(hi)
-    if flo * fhi > 0:
+    # bisection fallback over a bracket widened as far as needed (up to RATE_CEILING), on the robust NPV
+    def g(r: float) -> float:
+        return _npv_robust(r, cashflows)
+    bracket = _bracket_up(g)
+    if bracket is None:
         return None
+    lo, hi = bracket
+    flo = g(lo)
     for _ in range(300):
         mid = (lo + hi) / 2
-        fm = f(mid)
+        fm = g(mid)
         if abs(fm) < 1e-9:
             return mid
         if flo * fm < 0:
-            hi, fhi = mid, fm
+            hi = mid
         else:
             lo, flo = mid, fm
     return (lo + hi) / 2
+
+
+RATE_CEILING = 1e6   # 100,000,000% a period: above this a "rate" carries no financial meaning
+
+
+def sign_changes(cashflows: list[float]) -> int:
+    """How many times the non-zero cash flows change sign. By Descartes' rule of signs a single change means exactly
+    one IRR above -100%; more than one change means there may be several (or none)."""
+    signs = [c > 0 for c in cashflows if c != 0]
+    return sum(1 for a, b in zip(signs, signs[1:]) if a != b)
+
+
+def _npv_robust(rate: float, cashflows: list[float], times: list[float] | None = None) -> float:
+    """NPV for root finding only: each term as cf * exp(-t * log(1 + r)) with the exponent clamped, so a long series
+    or an extreme rate gives a very large or very small number of the right sign instead of an overflow or a division
+    by zero. The NPV reported to the user is always ``npv``/``xnpv``."""
+    import math as _m
+    lg = _m.log1p(rate)
+    total = 0.0
+    for i, cf in enumerate(cashflows):
+        e = -(times[i] if times is not None else i) * lg
+        if e < -745:
+            continue
+        total += cf * _m.exp(min(e, 700.0))
+    return total
+
+
+def _safe(f, x: float) -> float | None:
+    """f(x), or None where it cannot be evaluated in floating point (a long series near -100% underflows)."""
+    try:
+        v = f(x)
+    except (ZeroDivisionError, OverflowError):
+        return None
+    return v if v == v and abs(v) != float("inf") else None
+
+
+def _bracket_up(f, lo: float = -0.9999, hi: float = 10.0) -> tuple[float, float] | None:
+    """Widen [lo, hi] upwards until f changes sign, up to RATE_CEILING. None when it never does."""
+    flo = None
+    for start in (lo, -0.999, -0.99, -0.9, -0.5):
+        flo = _safe(f, start)
+        if flo is not None:
+            lo = start
+            break
+    if flo is None:
+        return None
+    while hi <= RATE_CEILING:
+        fhi = _safe(f, hi)
+        if fhi is None:
+            return None
+        if flo * fhi <= 0:
+            return lo, hi
+        hi *= 4
+    return None
+
+
+def _bisect(f, lo: float, hi: float, steps: int = 400) -> float:
+    flo = f(lo)
+    for _ in range(steps):
+        mid = (lo + hi) / 2
+        fm = f(mid)
+        if fm == 0 or (hi - lo) <= 1e-12 * max(1.0, abs(mid)):
+            return mid
+        if flo * fm < 0:
+            hi = mid
+        else:
+            lo, flo = mid, fm
+    return (lo + hi) / 2
+
+
+def all_roots(f, lo: float = -0.9999, hi: float = 100.0, points: int = 4000) -> list[float]:
+    """Every rate in (lo, hi] where f changes sign, found on a grid that is fine near zero and coarse far away
+    (uniform in log(1 + r)), each refined by bisection. Used only when there may be more than one IRR."""
+    import math as _m
+    a, b = _m.log1p(lo), _m.log1p(hi)
+    xs = [_m.expm1(a + (b - a) * i / points) for i in range(points + 1)]
+    roots: list[float] = []
+    prev_x, prev_f = xs[0], _safe(f, xs[0])
+    for x in xs[1:]:
+        fx = _safe(f, x)
+        if fx is None or prev_f is None:
+            prev_x, prev_f = x, fx
+            continue
+        if prev_f == 0:
+            roots.append(prev_x)
+        elif prev_f * fx < 0:
+            roots.append(_bisect(f, prev_x, x))
+        prev_x, prev_f = x, fx
+    out: list[float] = []
+    for r in roots:
+        if not out or abs(r - out[-1]) > 1e-7:
+            out.append(r)
+    return out
+
+
+def irr_analysis(cashflows: list[float]) -> dict[str, Any]:
+    """The IRR with what is known about it: status unique | multiple | none | invalid, and every root found when
+    there can be more than one. A single IRR is only reported when it is the only one."""
+    if not (any(c > 0 for c in cashflows) and any(c < 0 for c in cashflows)):
+        return {"status": "none", "irr": None, "irrs": [], "reason": "the cash flows never change sign"}
+    if sign_changes(cashflows) == 1:
+        value = irr(cashflows)
+        return {"status": "unique" if value is not None else "none", "irr": value, "irrs": [value] if value is not None else [],
+                "reason": None if value is not None else "no rate up to the ceiling makes the NPV zero"}
+    roots = all_roots(lambda r: _npv_robust(r, cashflows))
+    if len(roots) == 1:
+        return {"status": "unique", "irr": roots[0], "irrs": roots, "reason": None}
+    if not roots:
+        return {"status": "none", "irr": None, "irrs": [], "reason": "no rate between -99.99% and 10,000% makes the NPV zero"}
+    return {"status": "multiple", "irr": None, "irrs": roots,
+            "reason": f"the cash flows change sign {sign_changes(cashflows)} times and {len(roots)} rates make the NPV zero"}
 
 
 def xnpv(rate: float, cashflows: list[float], dates: list[date]) -> float:
@@ -74,11 +188,15 @@ def xnpv(rate: float, cashflows: list[float], dates: list[date]) -> float:
 def xirr(cashflows: list[float], dates: list[date]) -> float | None:
     if not (any(c > 0 for c in cashflows) and any(c < 0 for c in cashflows)):
         return None
-    lo, hi = -0.9999, 10.0
-    flo = xnpv(lo, cashflows, dates)
-    fhi = xnpv(hi, cashflows, dates)
-    if flo * fhi > 0:
+    times = [(dt - dates[0]).days / 365.0 for dt in dates]
+
+    def xnpv(r: float, *_: Any) -> float:  # noqa: F811 -- robust form for the root search only
+        return _npv_robust(r, cashflows, times)
+    bracket = _bracket_up(xnpv)
+    if bracket is None:
         return None
+    lo, hi = bracket
+    flo = xnpv(lo, cashflows, dates)
     for _ in range(300):
         mid = (lo + hi) / 2
         fm = xnpv(mid, cashflows, dates)
@@ -224,6 +342,20 @@ def tax_split(amount: float, rate: float, inclusive: bool) -> dict[str, Decimal]
 # --- tool wrappers ---------------------------------------------------------------------------
 
 
+def _rate_problem(value: Any, name: str, allow_negative: bool = True) -> str | None:
+    """Rates are decimal fractions (0.15 for 15%). A value of 1 or more is refused rather than read as 100% or more,
+    because 15 for 15% is the common mistake and 1,500% is never the intent of a tax, loan or discount rate."""
+    r = float(value)
+    if r >= 1:
+        return (f"{name} must be a decimal fraction: 0.15 for 15%. {value} would mean {r * 100:,.0f}%. If you meant "
+                f"{r:g}%, call the tool again with {r / 100:g}.")
+    if r < 0 and not allow_negative:
+        return f"{name} cannot be negative."
+    if r <= -1:
+        return f"{name} must be greater than -1 (-100%)."
+    return None
+
+
 def _pct(x: float | None) -> str:
     return "n/a" if x is None else f"{x * 100:.2f}%"
 
@@ -231,11 +363,21 @@ def _pct(x: float | None) -> str:
 @registry.tool("calc_npv_irr", "Net present value and internal rate of return for periodic cash flows "
                "(first value is at time 0, usually negative).",
                schema({"cashflows": NUMS, "discount_rate": {**NUM, "description": "e.g. 0.1 for 10%"}},
-                      ["cashflows"]))
+                      ["cashflows"]), pure=True)
 async def _npv_irr(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cfs = [float(x) for x in a["cashflows"]]
-    result = {"irr": irr(cfs)}
-    lines = [f"IRR: {_pct(result['irr'])}"]
+    if a.get("discount_rate") is not None and (bad := _rate_problem(a["discount_rate"], "discount_rate")):
+        return ToolOutput(bad)
+    info = irr_analysis(cfs)
+    result: dict[str, Any] = {"irr": info["irr"]}
+    if info["status"] == "multiple":
+        result.update(irr_status="multiple", irrs=info["irrs"])
+        lines = ["IRR: not unique (multiple IRRs). " + ", ".join(_pct(r) for r in info["irrs"]) + " all make the NPV zero, because "
+                 + info["reason"] + ". No single IRR describes this project; compare it on NPV at the required rate."]
+    else:
+        if info["status"] == "none" and sign_changes(cfs) > 1:
+            result.update(irr_status="none")
+        lines = [f"IRR: {_pct(result['irr'])}"]
     items = [{"label": "IRR", "value": result["irr"], "format": "percent"}]
     if a.get("discount_rate") is not None:
         rate = float(a["discount_rate"])
@@ -250,15 +392,30 @@ async def _npv_irr(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("calc_xnpv_xirr", "NPV and IRR for cash flows on specific dates (like Excel XNPV/XIRR).",
                schema({"cashflows": NUMS, "dates": {"type": "array", "items": {"type": "string",
                                                                                 "description": "YYYY-MM-DD"}},
-                       "discount_rate": NUM}, ["cashflows", "dates"]))
+                       "discount_rate": NUM}, ["cashflows", "dates"]), pure=True)
 async def _xnpv(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cfs = [float(x) for x in a["cashflows"]]
     dates = [date.fromisoformat(s) for s in a["dates"]]
     if len(cfs) != len(dates):
         return ToolOutput("cashflows and dates must have the same length.")
-    rate_irr = xirr(cfs, dates)
-    lines = [f"XIRR: {_pct(rate_irr)}"]
-    data: dict[str, Any] = {"xirr": rate_irr}
+    if a.get("discount_rate") is not None and (bad := _rate_problem(a["discount_rate"], "discount_rate")):
+        return ToolOutput(bad)
+    data: dict[str, Any]
+    if sign_changes(cfs) > 1:
+        times = [(d_ - dates[0]).days / 365.0 for d_ in dates]
+        roots = all_roots(lambda r: _npv_robust(r, cfs, times))
+        if len(roots) > 1:
+            data = {"xirr": None, "xirr_status": "multiple", "xirrs": roots}
+            lines = ["XIRR: not unique (multiple IRRs). " + ", ".join(_pct(r) for r in roots) + " all make the XNPV zero; compare the "
+                     "cash flows on XNPV at the required rate instead."]
+        else:
+            rate_irr = roots[0] if roots else None
+            data = {"xirr": rate_irr} if roots else {"xirr": None, "xirr_status": "none"}
+            lines = [f"XIRR: {_pct(rate_irr)}"]
+    else:
+        rate_irr = xirr(cfs, dates)
+        lines = [f"XIRR: {_pct(rate_irr)}"]
+        data = {"xirr": rate_irr}
     if a.get("discount_rate") is not None:
         data["xnpv"] = xnpv(float(a["discount_rate"]), cfs, dates)
         lines.insert(0, f"XNPV: {data['xnpv']:,.2f}")
@@ -269,8 +426,12 @@ async def _xnpv(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"principal": NUM, "annual_rate": {**NUM, "description": "e.g. 0.065"},
                        "periods": {"type": "integer", "description": "number of payments"},
                        "payments_per_year": {"type": "integer", "default": 12}},
-                      ["principal", "annual_rate", "periods"]))
+                      ["principal", "annual_rate", "periods"]), pure=True)
 async def _loan(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    if bad := _rate_problem(a["annual_rate"], "annual_rate", allow_negative=False):
+        return ToolOutput(bad)
+    if float(a["principal"]) <= 0:
+        return ToolOutput("principal must be greater than zero.")
     per_year = int(a.get("payments_per_year") or 12)
     periods = int(a["periods"])
     if not 1 <= periods <= 1200:
@@ -297,11 +458,19 @@ async def _loan(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("calc_depreciation", "Depreciation schedule: straight_line, double_declining or sum_of_years.",
                schema({"cost": NUM, "salvage_value": NUM, "useful_life_years": {"type": "integer"},
                        "method": {"type": "string", "enum": ["straight_line", "double_declining", "sum_of_years"]}},
-                      ["cost", "useful_life_years"]))
+                      ["cost", "useful_life_years"]), pure=True)
 async def _dep(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     life = int(a["useful_life_years"])
     if not 1 <= life <= 100:
         return ToolOutput("useful_life_years must be between 1 and 100.")
+    cost, salvage = float(a["cost"]), float(a.get("salvage_value") or 0)
+    if cost <= 0:
+        return ToolOutput("cost must be greater than zero.")
+    if salvage < 0:
+        return ToolOutput("salvage_value cannot be negative.")
+    if salvage > cost:
+        return ToolOutput(f"salvage_value ({salvage:,.2f}) is higher than the cost ({cost:,.2f}), so there is nothing to "
+                          "depreciate. Check the two figures.")
     rows = depreciation(float(a["cost"]), float(a.get("salvage_value") or 0), life, a.get("method") or "straight_line")
     cols = [{"key": "year", "label": "Year", "format": "number"},
             {"key": "depreciation", "label": "Depreciation", "format": "money"},
@@ -316,10 +485,10 @@ async def _dep(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({k: NUM for k in ["revenue", "cogs", "operating_income", "net_income", "total_assets",
                                         "total_equity", "current_assets", "current_liabilities", "inventory",
                                         "receivables", "payables", "cash", "total_debt", "interest_expense"]}
-                      | {"days_in_period": {"type": "integer", "default": 365}}))
+                      | {"days_in_period": {"type": "integer", "default": 365}}), pure=True)
 async def _ratios(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
-    days = int(a.pop("days_in_period", 365) or 365)
-    rows = ratios({k: float(v) for k, v in a.items() if v is not None}, days)
+    days = int(a.get("days_in_period", 365) or 365)     # read, never removed: the stored call keeps every argument
+    rows = ratios({k: float(v) for k, v in a.items() if v is not None and k != "days_in_period"}, days)
     if not rows:
         return ToolOutput("Not enough figures to compute any ratio.")
     cols = [{"key": "group", "label": "Group", "format": "text"}, {"key": "label", "label": "Ratio", "format": "text"},
@@ -340,7 +509,7 @@ async def _ratios(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"lines": {"type": "array", "items": {"type": "object", "properties": {
                    "name": {"type": "string"}, "actual": NUM, "budget": NUM,
                    "higher_is_better": {"type": "boolean", "description": "true for revenue, false for costs"}},
-                   "required": ["name", "actual", "budget"]}}}, ["lines"]))
+                   "required": ["name", "actual", "budget"]}}}, ["lines"]), pure=True)
 async def _variance(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     cols = [{"key": "name", "label": "Line", "format": "text"}, {"key": "actual", "label": "Actual", "format": "money"},
             {"key": "budget", "label": "Budget", "format": "money"},
@@ -360,8 +529,10 @@ async def _variance(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_sales_tax", "Split an amount into net, tax and gross for any VAT, GST or sales tax rate.",
                schema({"amount": NUM, "rate": {**NUM, "description": "e.g. 0.2 for 20%"},
-                       "amount_includes_tax": {"type": "boolean"}}, ["amount", "rate", "amount_includes_tax"]))
+                       "amount_includes_tax": {"type": "boolean"}}, ["amount", "rate", "amount_includes_tax"]), pure=True)
 async def _tax(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    if bad := _rate_problem(a["rate"], "rate", allow_negative=False):
+        return ToolOutput(bad)
     r = tax_split(float(a["amount"]), float(a["rate"]), bool(a["amount_includes_tax"]))
     return ToolOutput(f"Net {r['net']:,}, tax {r['tax']:,}, gross {r['gross']:,}",
                       [{"type": "kpis", "items": [{"label": k.title(), "value": float(v), "format": "money"}
@@ -371,7 +542,7 @@ async def _tax(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_breakeven", "Break-even units and revenue.",
                schema({"fixed_costs": NUM, "unit_price": NUM, "unit_variable_cost": NUM},
-                      ["fixed_costs", "unit_price", "unit_variable_cost"]))
+                      ["fixed_costs", "unit_price", "unit_variable_cost"]), pure=True)
 async def _breakeven(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     margin = float(a["unit_price"]) - float(a["unit_variable_cost"])
     if margin <= 0:
@@ -387,18 +558,28 @@ async def _breakeven(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("calc_growth", "Compound annual growth rate and period-over-period growth.",
                schema({"values": {**NUMS, "description": "values in time order"},
-                       "years": {**NUM, "description": "years between first and last value, for CAGR"}}, ["values"]))
+                       "years": {**NUM, "description": "years between first and last value, for CAGR"}}, ["values"]), pure=True)
 async def _growth(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     vals = [float(x) for x in a["values"]]
     if len(vals) < 2:
         return ToolOutput("Give at least two values.")
-    changes = [None if vals[i - 1] == 0 else vals[i] / vals[i - 1] - 1 for i in range(1, len(vals))]
+    # change against the size of the previous value: a loss shrinking from -100 to -50 is +50%, not -50%; from zero
+    # there is no percentage at all
+    changes = [None if vals[i - 1] == 0 else (vals[i] - vals[i - 1]) / abs(vals[i - 1]) for i in range(1, len(vals))]
     data: dict[str, Any] = {"changes": changes}
     lines = ["Period changes: " + ", ".join(_pct(c) for c in changes)]
+    if any(v < 0 for v in vals[:-1]):
+        data["negative_base"] = True
+        lines.append("Some values are negative: a change is measured against the size of the previous value, so a "
+                     "positive change means an improvement (a smaller loss counts as growth).")
+    if any(v == 0 for v in vals[:-1]):
+        lines.append("A change from zero has no percentage (n/a).")
     years = float(a.get("years") or len(vals) - 1)
     if vals[0] > 0 and vals[-1] > 0 and years > 0:
         data["cagr"] = (vals[-1] / vals[0]) ** (1 / years) - 1
         lines.insert(0, f"CAGR over {years:g} years: {_pct(data['cagr'])}")
+    elif years > 0:
+        lines.insert(0, "CAGR: not meaningful, because the first or the last value is zero or negative.")
     return ToolOutput("\n".join(lines), [], data)
 
 
@@ -406,7 +587,7 @@ async def _growth(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "(the app has no live FX feed; always state the rate and its date).",
                schema({"amounts": NUMS, "rate": {**NUM, "description": "units of target currency per 1 source"},
                        "from_currency": {"type": "string"}, "to_currency": {"type": "string"},
-                       "rate_date": {"type": "string"}}, ["amounts", "rate", "from_currency", "to_currency"]))
+                       "rate_date": {"type": "string"}}, ["amounts", "rate", "from_currency", "to_currency"]), pure=True)
 async def _fx(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     rate = d(a["rate"])
     out = [float(q2(d(x) * rate)) for x in a["amounts"]]

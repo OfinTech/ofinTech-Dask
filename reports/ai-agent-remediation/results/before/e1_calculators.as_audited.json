@@ -1,0 +1,454 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-13 23:37:11 +0300"
+ },
+ "seed": 20261113,
+ "cases": 1385,
+ "passed": 1359,
+ "by_tool": {
+  "calc_npv_irr": {
+   "cases": 230,
+   "passed": 208
+  },
+  "calc_xnpv_xirr": {
+   "cases": 101,
+   "passed": 100
+  },
+  "calc_loan_schedule": {
+   "cases": 150,
+   "passed": 150
+  },
+  "calc_depreciation": {
+   "cases": 151,
+   "passed": 150
+  },
+  "calc_financial_ratios": {
+   "cases": 151,
+   "passed": 151
+  },
+  "calc_variance": {
+   "cases": 100,
+   "passed": 100
+  },
+  "calc_sales_tax": {
+   "cases": 201,
+   "passed": 200
+  },
+  "calc_breakeven": {
+   "cases": 100,
+   "passed": 100
+  },
+  "calc_growth": {
+   "cases": 101,
+   "passed": 100
+  },
+  "calc_currency_convert": {
+   "cases": 100,
+   "passed": 100
+  }
+ },
+ "failed": [
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#0",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     0.1,
+     0.2,
+     0.30000000000000004
+    ]
+   },
+   "got": {
+    "irr": 0.10000000000001513,
+    "text": "NPV at 10.00%: 0.00 | IRR: 10.00% | Undiscounted total: 6.00"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#1",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.382178572403037,
+     4.694844648576641
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 764.87 | IRR: n/a | Undiscounted total: 749.52"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#3",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.3471628324938695,
+     1.7676222979814775
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 469.72 | IRR: n/a | Undiscounted total: 467.72"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#4",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.4201261920760496,
+     4.284548732526115
+    ]
+   },
+   "got": {
+    "irr": 4.284548732526114,
+    "text": "NPV at 10.00%: 773.75 | IRR: 428.45% | Undiscounted total: 774.31"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#5",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     0.13610908410666772,
+     1.0888746934561713
+    ]
+   },
+   "got": {
+    "irr": 0.1361090841066673,
+    "text": "NPV at 10.00%: -24.10 | IRR: 13.61% | Undiscounted total: -121.05"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#6",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.3289478673566961,
+     1.3708803312699573
+    ]
+   },
+   "got": {
+    "irr": -0.3289478673566962,
+    "text": "NPV at 10.00%: 413.87 | IRR: -32.89% | Undiscounted total: 414.25"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#7",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.45852375501123777,
+     2.3235869151985407
+    ]
+   },
+   "got": {
+    "irr": 2.32358691519854,
+    "text": "NPV at 10.00%: 754.02 | IRR: 232.36% | Undiscounted total: 782.70"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#8",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.4578800866958521,
+     4.874751080802618
+    ]
+   },
+   "got": {
+    "irr": 4.874751080802619,
+    "text": "NPV at 10.00%: 1,023.54 | IRR: 487.48% | Undiscounted total: 1,037.77"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#9",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.09310851927802832,
+     6.50770538591922
+    ]
+   },
+   "got": {
+    "irr": -0.09310851927802848,
+    "text": "NPV at 10.00%: 267.62 | IRR: -9.31% | Undiscounted total: 158.57"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#10",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     0.284394543283211,
+     0.5486966324954985
+    ]
+   },
+   "got": {
+    "irr": 0.2843945432832101,
+    "text": "NPV at 10.00%: -49.41 | IRR: 28.44% | Undiscounted total: -112.77"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#11",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.0586168322644926,
+     3.822891417545402
+    ]
+   },
+   "got": {
+    "irr": -0.058616832264492845,
+    "text": "NPV at 10.00%: 212.99 | IRR: -5.86% | Undiscounted total: 97.80"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#13",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.08195133330505142,
+     5.919156271947301
+    ]
+   },
+   "got": {
+    "irr": -0.08195133330505136,
+    "text": "NPV at 10.00%: 233.17 | IRR: -8.20% | Undiscounted total: 129.26"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#14",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.5241919912755832,
+     8.080956418900936
+    ]
+   },
+   "got": {
+    "irr": 8.080956418900938,
+    "text": "NPV at 10.00%: 1,131.45 | IRR: 808.10% | Undiscounted total: 1,164.13"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#15",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.4595402252195889,
+     1.472188271709706
+    ]
+   },
+   "got": {
+    "irr": 1.4721882717097057,
+    "text": "NPV at 10.00%: 631.13 | IRR: 147.22% | Undiscounted total: 672.89"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#19",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.5392322885820899,
+     3.4530593317534173
+    ]
+   },
+   "got": {
+    "irr": 3.4530593317534177,
+    "text": "NPV at 10.00%: 1,043.85 | IRR: 345.31% | Undiscounted total: 1,097.24"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#20",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.1896411773063798,
+     1.1766780330914006
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 236.99 | IRR: n/a | Undiscounted total: 205.19"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#22",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.4171308878681619,
+     2.6586079986372173
+    ]
+   },
+   "got": {
+    "irr": 2.658607998637217,
+    "text": "NPV at 10.00%: 767.24 | IRR: 265.86% | Undiscounted total: 778.11"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#23",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.18393797748333907,
+     8.217975384074848
+    ]
+   },
+   "got": {
+    "irr": -0.18393797748333898,
+    "text": "NPV at 10.00%: 441.02 | IRR: -18.39% | Undiscounted total: 349.95"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#24",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.24273128545501865,
+     4.578735999656551
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 430.56 | IRR: n/a | Undiscounted total: 377.21"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#25",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.49136969235801,
+     3.9510734388325046
+    ]
+   },
+   "got": {
+    "irr": 3.951073438832503,
+    "text": "NPV at 10.00%: 847.52 | IRR: 395.11% | Undiscounted total: 874.21"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#27",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.24656496538215578,
+     1.4610269748797813
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 249.55 | IRR: n/a | Undiscounted total: 230.61"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_npv_irr",
+   "case": "non_conventional#29",
+   "pass": false,
+   "expected": {
+    "irrs": [
+     -0.2808811772357177,
+     2.6144113363067003
+    ]
+   },
+   "got": {
+    "irr": null,
+    "text": "NPV at 10.00%: 442.33 | IRR: n/a | Undiscounted total: 410.40"
+   },
+   "note": "several IRRs exist; the tool reports one without saying so"
+  },
+  {
+   "tool": "calc_xnpv_xirr",
+   "case": "xirr_above_1000pct",
+   "pass": false,
+   "expected": {
+    "xirr": 3501.5587837229205
+   },
+   "got": {
+    "xirr": null,
+    "text": "XIRR: n/a"
+   },
+   "note": "XIRR above 1,000% is reported as n/a"
+  },
+  {
+   "tool": "calc_depreciation",
+   "case": "salvage_above_cost",
+   "pass": false,
+   "expected": "a refusal or a warning",
+   "got": "5 | 0 | 0 | 1,000.00",
+   "note": "salvage above cost gives a schedule of zeros without a word"
+  },
+  {
+   "tool": "calc_sales_tax",
+   "case": "rate_given_as_percent",
+   "pass": false,
+   "expected": "a question or refusal for rate=15 (likely 15%)",
+   "got": {
+    "net": 100.0,
+    "tax": 1500.0,
+    "gross": 1600.0
+   },
+   "note": "rate 15 is taken as 1,500% (gross 1,600)"
+  },
+  {
+   "tool": "calc_growth",
+   "case": "negative_base",
+   "pass": false,
+   "expected": "an improvement from -100 to -50 is not a -50% decline",
+   "got": {
+    "change": -0.5,
+    "text": "Period changes: -50.00%"
+   },
+   "note": "a loss shrinking from -100 to -50 is reported as -50.00% growth"
+  }
+ ],
+ "failed_total": 26
+}
