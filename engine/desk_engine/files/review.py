@@ -14,7 +14,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from ..agent.tools import ToolContext, ToolOutput
-from ..llm.base import ChatMessage, ToolSpec, Usage
+from ..llm.base import ChatMessage, ToolSpec, Usage, require_complete
 from ..llm.registry import build_model, resolve_choice
 from .resolve import fmt_value
 
@@ -213,9 +213,10 @@ async def llm_review(engine: Engine, workspace: dict[str, Any], model: dict[str,
         async for ev in llm.stream(messages, specs):
             if ev.type == "done":
                 result = ev.result
-        assert result is not None
-        usage.add(result.usage)
-        engine.record_usage(workspace["id"], provider_id, model_name, result.usage, "review")
+        if result is not None:
+            usage.add(result.usage)
+            engine.record_usage(workspace["id"], provider_id, model_name, result.usage, "review")
+        result = require_complete(result, "review")
         if not result.tool_calls:
             summary = result.text.strip()
             break

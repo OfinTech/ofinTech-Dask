@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from starlette.responses import Response
 
 from ..db import dumps, new_id, now
-from ..errors import Conflict, Invalid, NotFound
+from ..errors import AppError, Conflict, Invalid, NotFound
 from ..knowledge.embed import Embedder
 from ..web import Ctx, Router
 
@@ -264,5 +264,12 @@ async def workspace_search(ctx: Ctx) -> dict[str, Any]:
     results = await search_all(ctx.engine, ctx.workspace, ctx.user_id, b.query, sources=b.sources)  # type: ignore[arg-type]
     out: dict[str, Any] = {"query": b.query, "results": results}
     if b.answer:
-        out["answer"] = await answer(ctx.engine, ctx.workspace, ctx.user_id, b.query, results)  # type: ignore[arg-type]
+        try:
+            out["answer"] = await answer(ctx.engine, ctx.workspace, ctx.user_id, b.query,
+                                         results)  # type: ignore[arg-type]
+        except AppError as exc:
+            if exc.code not in {"answer_incomplete", "answer_empty", "llm_incomplete"}:
+                raise
+            # the search results stand on their own; a cut or empty answer is reported, never shown as an answer
+            out["answer"] = {"text": "", "sources": [], "code": exc.code, "error": exc.message}
     return out
