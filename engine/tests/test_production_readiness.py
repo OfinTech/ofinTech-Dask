@@ -340,3 +340,42 @@ class RedTeamProbes(unittest.TestCase):
         from desk_engine.metrics import tool_label
         self.assertEqual(tool_label("acme_crm__export_all_customers", "mcp"), "mcp")
         self.assertEqual(tool_label("calc_growth", "finance"), "calc_growth")
+
+
+class BankMatching(unittest.TestCase):
+    """The close's bank reconciliation: every pair that can be matched under the rule (same amount to the cent, dates
+    at most five days apart) is matched, so no false exceptions are reported."""
+
+    @staticmethod
+    def rec(stmt, ledger):
+        from desk_engine.close.statement import reconcile
+        lines = [{"row": i, "date": d, "debit": max(a, 0), "credit": max(-a, 0), "entry": f"E{i}", "description": ""}
+                 for i, d, a in ledger]
+        st = {"lines": [{"id": f"s{i}", "date": d, "amount": a, "description": ""} for i, d, a in stmt]}
+        return reconcile(st, lines, month="2026-10", month_end="2026-10-31", account={"code": "1000"},
+                         book_balance=0.0, closing_balance=None)
+
+    def test_nearest_first_does_not_cost_a_match(self) -> None:
+        r = self.rec([(1, "2026-10-03", -100.0), (2, "2026-10-08", -100.0)],
+                     [(1, "2026-10-01", -100.0), (2, "2026-10-04", -100.0)])
+        self.assertEqual(r["matched"], 2)
+        self.assertEqual((r["statement_only"], r["ledger_only"]), ([], []))
+        pairs = {m["statement"]["id"]: m["ledger"]["id"] for m in r["matched_pairs"]}
+        self.assertEqual(pairs, {"s1": "l1", "s2": "l2"})
+
+    def test_the_rule_itself_is_unchanged(self) -> None:
+        r = self.rec([(1, "2026-10-10", -50.0), (2, "2026-10-10", -70.0), (3, "2026-10-20", 30.0)],
+                     [(1, "2026-10-12", -50.0), (2, "2026-10-03", -70.0), (3, "2026-10-20", 30.01),
+                      (4, "2026-10-11", -50.0)])
+        pairs = {m["statement"]["id"]: m["ledger"]["id"] for m in r["matched_pairs"]}
+        self.assertEqual(pairs, {"s1": "l4"})          # nearest date wins; 7 days and one cent never match
+        self.assertEqual(sorted(s["id"] for s in r["statement_only"]), ["s2", "s3"])
+        self.assertEqual(sorted(b["id"] for b in r["ledger_only"]), ["l1", "l2", "l3"])
+
+    def test_many_equal_amounts(self) -> None:
+        stmt = [(i, f"2026-10-{1 + i % 28:02d}", -9.99) for i in range(3000)]
+        ledger = [(i, f"2026-10-{1 + (i + 1) % 28:02d}", -9.99) for i in range(3000)]
+        started = time.perf_counter()
+        r = self.rec(stmt, ledger)
+        self.assertEqual(r["matched"], 3000)
+        self.assertLess(time.perf_counter() - started, 20)
