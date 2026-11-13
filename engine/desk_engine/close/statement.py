@@ -22,7 +22,14 @@ DATE_WORDS = ["date", "value date", "posting date", "transaction date", "booking
               "تاريخ القيد", "تاريخ العملية", "fecha", "fecha valor", "date operation", "date valeur", "date de valeur"]
 DESC_WORDS = ["description", "details", "narrative", "narration", "memo", "reference", "particulars", "transaction",
               "البيان", "الوصف", "التفاصيل", "المرجع", "concepto", "descripcion", "detalle", "libelle", "libelle operation"]
-AMOUNT_WORDS = ["amount", "net amount", "المبلغ", "القيمة", "importe", "montant"]
+# One column for both sides, which is how a statement writes the amount when the sign is carried in the figure
+# ("1,234.00-", "1,234.00 CR") rather than in the column. Only the joined headings belong here: a column headed
+# plainly "Debit" is one side of a pair and is read below, and a reader that took that for the amount would
+# halve every statement in the world.
+AMOUNT_WORDS = ["amount", "net amount", "المبلغ", "القيمة", "importe", "montant",
+                "credit/debit", "debit/credit", "credit / debit", "debit / credit",
+                "مدين/دائن", "دائن/مدين", "مدين / دائن", "دائن / مدين",
+                "debe/haber", "haber/debe", "debit/credit euros"]
 OUT_WORDS = ["debit", "debits", "withdrawal", "withdrawals", "money out", "paid out", "payments", "مدين", "سحب",
              "مسحوبات", "cargo", "cargos", "retiros", "debit euros"]
 IN_WORDS = ["credit", "credits", "deposit", "deposits", "money in", "paid in", "receipts", "دائن", "ايداع", "ايداعات",
@@ -73,6 +80,11 @@ def read_statement(data: bytes, filename: str) -> dict[str, Any]:
             for n, raw in enumerate(table.raw[hi + 1:], start=hi + 2):
                 raw = list(raw) + [None] * len(header)
                 d = parse_date(raw[c_date]) if raw[c_date] not in (None, "") else None
+                if isinstance(d, date) and d.year < 1800:
+                    # 1447-05-03 is a Hijri date, which the general reader is happy to read as the year 1447. A
+                    # month is reconciled and closed in this calendar, so the line is left out rather than dated
+                    # eight hundred years ago.
+                    d = None
                 if not isinstance(d, date):
                     continue
                 if c_amt is not None:

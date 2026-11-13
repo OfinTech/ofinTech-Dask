@@ -1,0 +1,14 @@
+{
+  "about": "One column for both sides (مدين/دائن), figures in Arabic-Indic digits with ٬ and ٫, money out written with the sign after it and once as DR in front, dates with the year first, and a letterhead above the header.",
+  "country": "sa",
+  "bank": "Al Waha Bank (invented)",
+  "file": "statement.csv",
+  "invented": true,
+  "expect": {
+    "lines": 6,
+    "first_date": "2026-01-05",
+    "last_date": "2026-01-31",
+    "total": -105864.75,
+    "closing": { "date": "2026-01-31", "amount": 194135.25 }
+  }
+}
