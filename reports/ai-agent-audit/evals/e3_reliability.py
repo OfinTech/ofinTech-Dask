@@ -252,10 +252,22 @@ def sloop(h):
 
 @scenario("repeated_identical_tool_calls", "the same tool call with the same arguments in one run is not executed again and again")
 def srepeat(h):
-    h.llm.script = [[("calc_growth", {"values": [1, 2]})]] * 6 + ["done"]
-    d = turn(h, "growth")
+    # counts executions of the tool itself; every call still gets a result message, so messages are not executions
+    from desk_engine.agent.tools import registry
+    tool = registry.get_static("calc_growth")
+    real, runs = tool.handler, []
+
+    async def counting(ctx, a):
+        runs.append(1)
+        return await real(ctx, a)
+    tool.handler = counting
+    try:
+        h.llm.script = [[("calc_growth", {"values": [1, 2]})]] * 6 + ["done"]
+        d = turn(h, "growth")
+    finally:
+        tool.handler = real
     n = sum(1 for m in d["messages"] if m["role"] == "tool")
-    return n <= 2, {"identical_executions": n}
+    return len(runs) <= 2, {"identical_executions": len(runs), "tool_result_messages": n}
 
 
 # --- conversation size ----------------------------------------------------------------------------

@@ -60,6 +60,11 @@ def main() -> None:
         h.llm.script = ["ok"]
         before = len(h.llm.calls)
         t = client.post(f"/api/w/{ws}/threads", json={"skills": skills}, headers=ORIGIN)
+        if t.status_code == 422 and "skill_not_enabled" in t.text:
+            # refused at the API (the first layer); pin it in the database anyway to test the second layer, the run
+            api_refusals.append(skills)
+            t = client.post(f"/api/w/{ws}/threads", json={}, headers=ORIGIN)
+            h.engine.db.execute("UPDATE threads SET skills = ? WHERE id = ?", (json.dumps(skills), t.json()["id"]))
         assert t.status_code == 200, t.text
         tid = t.json()["id"]
         r = client.post(f"/api/w/{ws}/threads/{tid}/messages", json={"text": "Help me with the close."}, headers=ORIGIN)
@@ -74,6 +79,7 @@ def main() -> None:
         return "\n".join(m["content"] for m in msgs if m["role"] == "system")
 
     results = []
+    api_refusals: list[list[str]] = []
 
     # P1: owner creates and enables a skill; the editor rewrites it
     body = {"name": "close-guide", "description": "How we run the close", "body": "Follow the close checklist.", "tags": []}
@@ -124,7 +130,7 @@ def main() -> None:
     h.close()
     for p in patches:
         p.stop()
-    save("e7_instruction_surfaces", {"results": results, **sizes})
+    save("e7_instruction_surfaces", {"results": results, "pins_refused_at_the_api": api_refusals, **sizes})
     for x in results:
         print(("PASS " if x["pass"] else "FAIL ") + json.dumps(x))
 

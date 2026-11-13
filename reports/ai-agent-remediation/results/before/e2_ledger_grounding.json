@@ -1,0 +1,620 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-13 23:37:12 +0300"
+ },
+ "seed": 7031,
+ "journal_lines": 867,
+ "checks": 86,
+ "passed": 85,
+ "results": [
+  {
+   "month": "2026-10",
+   "kpi": "gross_margin",
+   "expected": 0.4500000410215683,
+   "got": 0.4500000410215684,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "operating_margin",
+   "expected": 0.23279150336664012,
+   "got": 0.23279150336664012,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "ebitda_margin",
+   "expected": 0.24509797386269752,
+   "got": 0.24509797386269755,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "net_margin",
+   "expected": 0.22317707329159525,
+   "got": 0.22317707329159525,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "current_ratio",
+   "expected": 3.015488990357693,
+   "got": 3.0154889903576927,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "quick_ratio",
+   "expected": 3.015488990357693,
+   "got": 3.0154889903576927,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "cash_ratio",
+   "expected": 2.626990787861922,
+   "got": 2.626990787861922,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "working_capital",
+   "expected": 442952.42,
+   "got": 442952.42000000004,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "dso",
+   "expected": 39.95037024785642,
+   "got": 39.95037024785645,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "dio",
+   "expected": 0.0,
+   "got": -3.0949429925750846e-15,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "dpo",
+   "expected": 30.458369518551304,
+   "got": 30.4583695185513,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "debt_to_equity",
+   "expected": 0.2678434493607943,
+   "got": 0.26784344936079424,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "equity_ratio",
+   "expected": 0.5386496859109099,
+   "got": 0.5386496859109099,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "revenue_growth",
+   "expected": 0.5854647648187229,
+   "got": 0.5854647648187228,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "interest_cover",
+   "expected": 21.555725333333335,
+   "got": 21.55572533333334,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "text_has_gross_margin",
+   "expected": "45.0%",
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "gross_margin",
+   "expected": 0.4472610151537759,
+   "got": 0.4472610151537759,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "operating_margin",
+   "expected": 0.15435309790067844,
+   "got": 0.15435309790067847,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "ebitda_margin",
+   "expected": 0.17048414653982286,
+   "got": 0.17048414653982288,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "net_margin",
+   "expected": 0.14175071615134688,
+   "got": 0.1417507161513469,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "current_ratio",
+   "expected": 3.170154635552119,
+   "got": 3.1701546355521195,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "quick_ratio",
+   "expected": 3.170154763350096,
+   "got": 3.1701547633500966,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "cash_ratio",
+   "expected": 2.6029192252886637,
+   "got": 2.602919225288664,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "working_capital",
+   "expected": 339622.69,
+   "got": 339622.69000000006,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "dso",
+   "expected": 54.44445827905908,
+   "got": 54.44445827905911,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "dio",
+   "expected": -2.219188183266762e-05,
+   "got": -2.219188182911534e-05,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "dpo",
+   "expected": 43.68195071407404,
+   "got": 43.68195071407404,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "debt_to_equity",
+   "expected": 0.362814832117051,
+   "got": 0.36281483211705096,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "equity_ratio",
+   "expected": 0.5179712293675883,
+   "got": 0.5179712293675884,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "revenue_growth",
+   "expected": 0.6983899655001619,
+   "got": 0.6983899655001617,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "interest_cover",
+   "expected": 16.545681333333334,
+   "got": 16.545681333333334,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "text_has_gross_margin",
+   "expected": "44.7%",
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "gross_margin",
+   "expected": 0.449999969796183,
+   "got": 0.449999969796183,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "operating_margin",
+   "expected": 0.20992059196845358,
+   "got": 0.2099205919684536,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "ebitda_margin",
+   "expected": 0.22310043938865498,
+   "got": 0.223100439388655,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "net_margin",
+   "expected": 0.19962383617142127,
+   "got": 0.1996238361714213,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "current_ratio",
+   "expected": 3.2297379056858833,
+   "got": 3.2297379056858837,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "quick_ratio",
+   "expected": 3.2297379762175638,
+   "got": 3.229737976217564,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "cash_ratio",
+   "expected": 2.46905267348219,
+   "got": 2.46905267348219,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "working_capital",
+   "expected": 316132.82,
+   "got": 316132.82000000007,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "dso",
+   "expected": 54.04466232928871,
+   "got": 54.04466232928874,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "dio",
+   "expected": -9.1110682655152e-06,
+   "got": -9.111068270685957e-06,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "dpo",
+   "expected": 42.89411190290046,
+   "got": 42.89411190290046,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "debt_to_equity",
+   "expected": 0.39287664356997265,
+   "got": 0.39287664356997254,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "equity_ratio",
+   "expected": 0.5128472938895747,
+   "got": 0.5128472938895747,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "revenue_growth",
+   "expected": null,
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "interest_cover",
+   "expected": 14.937709333333334,
+   "got": 14.937709333333334,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "text_has_gross_margin",
+   "expected": "45.0%",
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "gross_margin",
+   "expected": 0.4476606017263833,
+   "got": 0.4476606017263833,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "operating_margin",
+   "expected": 0.18571090104749288,
+   "got": 0.1857109010474929,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "ebitda_margin",
+   "expected": 0.20068257090520464,
+   "got": 0.20068257090520467,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "net_margin",
+   "expected": 0.1740142839711556,
+   "got": 0.17401428397115562,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "current_ratio",
+   "expected": 4.083010084846798,
+   "got": 4.083010084846799,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "quick_ratio",
+   "expected": 4.083010084846798,
+   "got": 4.083010084846799,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "cash_ratio",
+   "expected": 3.00575111395023,
+   "got": 3.0057511139502306,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "working_capital",
+   "expected": 243725.05,
+   "got": 243725.05000000005,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "dso",
+   "expected": 48.47716517794204,
+   "got": 48.47716517794205,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "dio",
+   "expected": 0.0,
+   "got": 3.749263945937221e-15,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "dpo",
+   "expected": 38.26649073604217,
+   "got": 38.26649073604217,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "debt_to_equity",
+   "expected": 0.5349737769228897,
+   "got": 0.5349737769228895,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "equity_ratio",
+   "expected": 0.5107530671816685,
+   "got": 0.5107530671816686,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "revenue_growth",
+   "expected": null,
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "interest_cover",
+   "expected": null,
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "text_has_gross_margin",
+   "expected": "44.8%",
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "2025-04",
+   "kpi": "kpi_detail.dso",
+   "expected": 51.024137966671795,
+   "got": 51.024137966671795,
+   "pass": true
+  },
+  {
+   "month": "2025-05",
+   "kpi": "kpi_detail.dso",
+   "expected": 44.861650723129344,
+   "got": 44.86165072312936,
+   "pass": true
+  },
+  {
+   "month": "2025-06",
+   "kpi": "kpi_detail.dso",
+   "expected": 48.47716517794204,
+   "got": 48.47716517794205,
+   "pass": true
+  },
+  {
+   "month": "2025-07",
+   "kpi": "kpi_detail.dso",
+   "expected": 48.119996596708916,
+   "got": 48.119996596708916,
+   "pass": true
+  },
+  {
+   "month": "2025-08",
+   "kpi": "kpi_detail.dso",
+   "expected": 44.606853385934386,
+   "got": 44.60685338593439,
+   "pass": true
+  },
+  {
+   "month": "2025-09",
+   "kpi": "kpi_detail.dso",
+   "expected": 33.80257820001671,
+   "got": 33.802578200016725,
+   "pass": true
+  },
+  {
+   "month": "2025-10",
+   "kpi": "kpi_detail.dso",
+   "expected": 35.41536904427072,
+   "got": 35.41536904427074,
+   "pass": true
+  },
+  {
+   "month": "2025-11",
+   "kpi": "kpi_detail.dso",
+   "expected": 56.68102276839963,
+   "got": 56.68102276839965,
+   "pass": true
+  },
+  {
+   "month": "2025-12",
+   "kpi": "kpi_detail.dso",
+   "expected": 54.04466232928871,
+   "got": 54.04466232928874,
+   "pass": true
+  },
+  {
+   "month": "2026-01",
+   "kpi": "kpi_detail.dso",
+   "expected": 35.09186625250782,
+   "got": 35.091866252507835,
+   "pass": true
+  },
+  {
+   "month": "2026-02",
+   "kpi": "kpi_detail.dso",
+   "expected": 32.410996512605976,
+   "got": 32.410996512606,
+   "pass": true
+  },
+  {
+   "month": "2026-03",
+   "kpi": "kpi_detail.dso",
+   "expected": 54.44445827905908,
+   "got": 54.44445827905911,
+   "pass": true
+  },
+  {
+   "month": "2026-04",
+   "kpi": "kpi_detail.dso",
+   "expected": 44.705386531889,
+   "got": 44.705386531889026,
+   "pass": true
+  },
+  {
+   "month": "2026-05",
+   "kpi": "kpi_detail.dso",
+   "expected": 32.80888689598448,
+   "got": 32.80888689598451,
+   "pass": true
+  },
+  {
+   "month": "2026-06",
+   "kpi": "kpi_detail.dso",
+   "expected": 55.624457974706175,
+   "got": 55.62445797470619,
+   "pass": true
+  },
+  {
+   "month": "2026-07",
+   "kpi": "kpi_detail.dso",
+   "expected": 56.31282154241979,
+   "got": 56.312821542419805,
+   "pass": true
+  },
+  {
+   "month": "2026-08",
+   "kpi": "kpi_detail.dso",
+   "expected": 42.294267327117254,
+   "got": 42.29426732711727,
+   "pass": true
+  },
+  {
+   "month": "2026-09",
+   "kpi": "kpi_detail.dso",
+   "expected": 37.273831893844104,
+   "got": 37.27383189384412,
+   "pass": true
+  },
+  {
+   "month": "2026-10",
+   "kpi": "kpi_detail.dso",
+   "expected": 39.95037024785642,
+   "got": 39.95037024785645,
+   "pass": true
+  },
+  {
+   "month": "2027-06",
+   "kpi": "future_month_not_invented",
+   "expected": "no figures or a refusal",
+   "got": "Ledger “ERP · General ledger”, month 2026-10, lines from 2025-01-01 to 2026-10-31. Account roles confirmed: 0 of 14.\nKPI | Value | Previous month | Target | Status | Formula\n--------------------------",
+   "pass": false
+  },
+  {
+   "month": "-",
+   "kpi": "tenant_b_has_no_ledger_tools",
+   "expected": null,
+   "got": null,
+   "pass": true
+  },
+  {
+   "month": "-",
+   "kpi": "unbalanced_ledger_is_flagged",
+   "expected": "warning in the text",
+   "got": [
+    "Ledger “ERP · General ledger”, month 2025-11, lines from 2025-01-01 to 2025-11-22. Account roles confirmed: 0 of 14.",
+    "Warning: the ledger does not balance (difference 21,653.57)."
+   ],
+   "pass": true
+  }
+ ]
+}

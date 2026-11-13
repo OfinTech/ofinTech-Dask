@@ -1,0 +1,180 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-14 00:11:29 +0300"
+ },
+ "model": "scripted, zero latency (engine overhead only)",
+ "turns_per_scenario": 300,
+ "end_to_end_turn": {
+  "answer_only": {
+   "n": 300,
+   "p50_ms": 6.4,
+   "p95_ms": 9.0,
+   "p99_ms": 14.5,
+   "max_ms": 18.5,
+   "mean_ms": 6.7
+  },
+  "one_calculator_call": {
+   "n": 300,
+   "p50_ms": 10.1,
+   "p95_ms": 14.7,
+   "p99_ms": 20.4,
+   "max_ms": 25.0,
+   "mean_ms": 10.9
+  },
+  "kpi_scorecard_call": {
+   "n": 300,
+   "p50_ms": 17.1,
+   "p95_ms": 25.2,
+   "p99_ms": 30.6,
+   "max_ms": 168.2,
+   "mean_ms": 18.9
+  },
+  "document_search_call": {
+   "n": 300,
+   "p50_ms": 14.6,
+   "p95_ms": 23.8,
+   "p99_ms": 30.6,
+   "max_ms": 245.0,
+   "mean_ms": 16.7
+  },
+  "three_tool_calls": {
+   "n": 300,
+   "p50_ms": 22.9,
+   "p95_ms": 34.8,
+   "p99_ms": 52.4,
+   "max_ms": 364.1,
+   "mean_ms": 26.8
+  }
+ },
+ "model_calls": 2700,
+ "request_size_chars": {
+  "p50": 29697.0,
+  "max": 36973,
+  "tools_sent_p50": 25.5,
+  "approx_tokens_p50": 7424
+ },
+ "rss_mb_after_turns": 481.3,
+ "long_thread": {
+  "first_10": {
+   "n": 10,
+   "p50_ms": 13.8,
+   "p95_ms": 15.7,
+   "p99_ms": 15.8,
+   "max_ms": 15.8,
+   "mean_ms": 13.7
+  },
+  "last_10": {
+   "n": 10,
+   "p50_ms": 17.4,
+   "p95_ms": 22.3,
+   "p99_ms": 23.9,
+   "max_ms": 24.3,
+   "mean_ms": 18.2
+  }
+ },
+ "concurrency": {
+  "5": {
+   "wall_s": 0.092,
+   "turns_per_s": 54.47
+  },
+  "20": {
+   "wall_s": 0.302,
+   "turns_per_s": 66.31
+  }
+ },
+ "tool_latency_by_ledger_lines": {
+  "2000": {
+   "ingest_s": 0.03,
+   "financial_kpis_cold_ms": 36.5,
+   "financial_kpis_warm": {
+    "n": 30,
+    "p50_ms": 5.9,
+    "p95_ms": 8.8,
+    "p99_ms": 9.2,
+    "max_ms": 9.3,
+    "mean_ms": 6.5
+   },
+   "query_dataset_group_by": {
+    "n": 30,
+    "p50_ms": 2.3,
+    "p95_ms": 3.3,
+    "p99_ms": 3.6,
+    "max_ms": 3.7,
+    "mean_ms": 2.5
+   }
+  },
+  "20000": {
+   "ingest_s": 0.6,
+   "financial_kpis_cold_ms": 81.5,
+   "financial_kpis_warm": {
+    "n": 30,
+    "p50_ms": 7.4,
+    "p95_ms": 9.2,
+    "p99_ms": 16.1,
+    "max_ms": 18.9,
+    "mean_ms": 7.5
+   },
+   "query_dataset_group_by": {
+    "n": 30,
+    "p50_ms": 3.8,
+    "p95_ms": 4.3,
+    "p99_ms": 5.1,
+    "max_ms": 5.4,
+    "mean_ms": 3.9
+   }
+  },
+  "100000": {
+   "ingest_s": 1.45,
+   "financial_kpis_cold_ms": 86.7,
+   "financial_kpis_warm": {
+    "n": 30,
+    "p50_ms": 6.2,
+    "p95_ms": 8.5,
+    "p99_ms": 9.3,
+    "max_ms": 9.5,
+    "mean_ms": 6.3
+   },
+   "query_dataset_group_by": {
+    "n": 30,
+    "p50_ms": 4.4,
+    "p95_ms": 4.7,
+    "p99_ms": 5.0,
+    "max_ms": 5.0,
+    "mean_ms": 4.3
+   }
+  }
+ },
+ "retrieval_latency_by_documents": {
+  "20": {
+   "n": 30,
+   "p50_ms": 1.7,
+   "p95_ms": 1.8,
+   "p99_ms": 2.4,
+   "max_ms": 2.6,
+   "mean_ms": 1.7
+  },
+  "200": {
+   "n": 30,
+   "p50_ms": 3.1,
+   "p95_ms": 4.8,
+   "p99_ms": 5.8,
+   "max_ms": 6.2,
+   "mean_ms": 3.5
+  }
+ },
+ "rss_mb": {
+  "start": 75.7,
+  "end": 563.0
+ },
+ "not_measured": [
+  "time to first token",
+  "model inference latency",
+  "tokens per second",
+  "GPU utilisation",
+  "multi-process / multi-host throughput"
+ ]
+}

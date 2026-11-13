@@ -1,0 +1,154 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-13 23:37:21 +0300"
+ },
+ "seed": 99,
+ "answers_per_class": 2000,
+ "classes": {
+  "copied": {
+   "n": 2000,
+   "flagged": 0,
+   "rate": 0.0,
+   "metric": "false-positive rate"
+  },
+  "reformatted": {
+   "n": 2000,
+   "flagged": 1,
+   "rate": 0.0005,
+   "metric": "false-positive rate"
+  },
+  "fabricated": {
+   "n": 2000,
+   "flagged": 2000,
+   "rate": 1.0,
+   "metric": "detection rate"
+  },
+  "near_miss": {
+   "n": 2000,
+   "flagged": 0,
+   "rate": 0.0,
+   "metric": "detection rate"
+  },
+  "small_count": {
+   "n": 2000,
+   "flagged": 0,
+   "rate": 0.0,
+   "metric": "detection rate"
+  },
+  "user_echo": {
+   "n": 2000,
+   "flagged": 0,
+   "rate": 0.0,
+   "metric": "detection rate"
+  },
+  "fabricated_pct_vs_scorecard": {
+   "n": 2000,
+   "flagged": 1731,
+   "rate": 0.8655,
+   "metric": "detection rate",
+   "evidence_numbers": 124
+  },
+  "fabricated_amount_vs_scorecard": {
+   "n": 2000,
+   "flagged": 1996,
+   "rate": 0.998,
+   "metric": "detection rate"
+  }
+ },
+ "examples": {
+  "copied": [
+   {
+    "answer": "Revenue was 3,502,740.51 this month.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 762,230.39 this month.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 991,201.40 this month.",
+    "flagged": []
+   }
+  ],
+  "reformatted": [
+   {
+    "answer": "Revenue was 3,502,741.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 762.2k.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 991,201.",
+    "flagged": []
+   }
+  ],
+  "fabricated": [
+   {
+    "answer": "Revenue was 2,108,774.82.",
+    "flagged": [
+     "2,108,774.82"
+    ]
+   },
+   {
+    "answer": "Revenue was 1,582,577.35.",
+    "flagged": [
+     "1,582,577.35"
+    ]
+   },
+   {
+    "answer": "Revenue was 3,301,837.96.",
+    "flagged": [
+     "3,301,837.96"
+    ]
+   }
+  ],
+  "near_miss": [
+   {
+    "answer": "Revenue was 3,489,520.65.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 760,749.45.",
+    "flagged": []
+   },
+   {
+    "answer": "Revenue was 989,829.31.",
+    "flagged": []
+   }
+  ],
+  "small_count": [
+   {
+    "answer": "DSO is 67 days and 26 invoices are overdue.",
+    "flagged": []
+   },
+   {
+    "answer": "DSO is 20 days and 29 invoices are overdue.",
+    "flagged": []
+   },
+   {
+    "answer": "DSO is 41 days and 32 invoices are overdue.",
+    "flagged": []
+   }
+  ],
+  "user_echo": [
+   {
+    "answer": "As you said, revenue was 4,307,599.50.",
+    "flagged": []
+   },
+   {
+    "answer": "As you said, revenue was 1,019,618.29.",
+    "flagged": []
+   },
+   {
+    "answer": "As you said, revenue was 2,095,696.50.",
+    "flagged": []
+   }
+  ]
+ }
+}

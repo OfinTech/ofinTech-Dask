@@ -1,0 +1,38 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-14 00:09:53 +0300"
+ },
+ "results": [
+  {
+   "probe": "P1 editor edits an admin-enabled skill",
+   "editor_update_status": 200,
+   "skill_still_enabled_after_edit": true,
+   "editor_text_in_system_prompt": true,
+   "pass": false
+  },
+  {
+   "probe": "P2 disabled skill pinned by a viewer",
+   "disabled_text_in_system_prompt": true,
+   "pass": false
+  },
+  {
+   "probe": "P3 editor's unapproved skill pinned by a viewer",
+   "created_enabled": false,
+   "unapproved_text_in_system_prompt": true,
+   "pass": false
+  },
+  {
+   "probe": "P4 file name of an imported dataset",
+   "upload_status": 200,
+   "name_in_system_prompt": true,
+   "pass": false,
+   "note": "dataset names are listed in the stable system prompt (agent/prompts.py system_parts)"
+  }
+ ],
+ "pins_refused_at_the_api": [],
+ "system_prompt_chars": 7866
+}
