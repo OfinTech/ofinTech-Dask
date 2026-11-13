@@ -29,7 +29,7 @@ In scope: the engine, the web UI, the desktop shell, the Team Server image and i
 documented APIs (including `/mcp`, the Open Accounting Connector and workflow webhooks).
 
 Out of scope: the security of third-party services you connect (model providers, accounting systems, Google, Meta,
-PipesHub, S3 stores), findings that need an already compromised computer or administrator account, and missing
+S3 stores), findings that need an already compromised computer or administrator account, and missing
 hardening that the deployment guide asks the operator to provide (TLS in front of the server, backups, firewalling).
 
 How the product protects data is described in [docs/SECURITY.md](docs/SECURITY.md).
