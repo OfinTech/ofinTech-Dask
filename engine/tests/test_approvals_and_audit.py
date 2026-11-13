@@ -18,7 +18,6 @@ from starlette.testclient import TestClient
 
 from desk_engine import approvals as ap
 from desk_engine.db import now
-from desk_engine.errors import AppError
 
 from .helpers import FakeLLM, Harness
 from .test_ai_financial_assurance import fingerprint

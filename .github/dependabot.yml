@@ -16,7 +16,7 @@ updates:
         update-types: [minor, patch]
 
   - package-ecosystem: npm
-    directories: [/ui, /desktop]
+    directories: [/ui, /desktop, /sdk/embedded-agent]
     schedule: { interval: weekly, day: monday }
     open-pull-requests-limit: 10
     groups:
@@ -29,7 +29,8 @@ updates:
         update-types: [minor, patch]
 
   - package-ecosystem: docker
-    directories: [/server, /landing]
+    # the public website moved from landing/ to site/; the old path made Dependabot skip its nginx base image
+    directories: [/server, /site]
     schedule: { interval: weekly, day: monday }
     groups:
       docker-images:

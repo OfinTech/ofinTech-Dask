@@ -4,7 +4,6 @@ and the golden financial figures through the gateway (threats T3, T4, T7, T8, T9
 
 from __future__ import annotations
 
-import asyncio
 import json
 import unittest
 from pathlib import Path

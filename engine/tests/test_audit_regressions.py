@@ -531,7 +531,6 @@ class OB06ParserLimits(unittest.TestCase):
         return buf.getvalue()
 
     def test_office_zip_bombs_are_refused_everywhere(self) -> None:
-        from desk_engine import files
         from desk_engine.errors import Invalid
         from desk_engine.files import limits
 
