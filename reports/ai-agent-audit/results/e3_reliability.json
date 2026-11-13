@@ -1,0 +1,193 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-13 22:56:39 +0300"
+ },
+ "scenarios": 17,
+ "passed": 7,
+ "results": [
+  {
+   "scenario": "model_429_rate_limited",
+   "expected": "a transient 429 is retried (with backoff) or the run fails with a clear, honest message",
+   "pass": true,
+   "observed": {
+    "status": "error",
+    "model_calls": 1,
+    "retried": false,
+    "message": "Fake is rate limiting requests or the account has no credit left."
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "model_500_then_ok",
+   "expected": "one transient 500 is retried and the turn still completes",
+   "pass": false,
+   "observed": {
+    "status": "error",
+    "model_calls": 1,
+    "error": "Fake returned HTTP 500: upstream exploded"
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "model_timeout",
+   "expected": "a model timeout ends the run with a clear message (no hang, no partial answer)",
+   "pass": false,
+   "observed": {
+    "status": "error",
+    "message": "Unexpected error: ReadTimeout"
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "stream_cut_before_done",
+   "expected": "a stream that ends without [DONE] or a finish_reason is not stored as a complete answer",
+   "pass": false,
+   "observed": {
+    "status": "done",
+    "stored_answer": "Revenue for October was 120,450.00 and the margin",
+    "marked_incomplete": false
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "finish_reason_length",
+   "expected": "an answer cut by the output-token limit is marked as incomplete",
+   "pass": false,
+   "observed": {
+    "status": "done",
+    "stored_answer": "The three largest variances are rent at",
+    "flagged": false
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "malformed_sse_chunk",
+   "expected": "a chunk that is not valid JSON is reported, not silently dropped from the answer",
+   "pass": false,
+   "observed": {
+    "status": "done",
+    "stored_answer": "Net profit was 45,000.00 in Q3."
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "empty_model_reply",
+   "expected": "an empty reply (no text, no tool call) is not stored as the answer",
+   "pass": false,
+   "observed": {
+    "status": "done",
+    "stored_answer": "''"
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "invalid_json_arguments",
+   "expected": "invalid tool arguments go back to the model as an error and the run recovers",
+   "pass": true,
+   "observed": {
+    "status": "done",
+    "tool_result_seen_by_model": "The arguments were not valid JSON. Call the tool again with a JSON object."
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "unknown_tool",
+   "expected": "a call to a tool that does not exist is refused, audited and the run continues",
+   "pass": true,
+   "observed": {
+    "status": "done",
+    "audited_denials": 1
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "schema_violation",
+   "expected": "arguments of the wrong type are refused before the tool runs",
+   "pass": true,
+   "observed": {
+    "tool_result": "Error: the arguments do not match the tool's schema. principal must be of type number."
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "tool_raises_unexpected_exception",
+   "expected": "a tool that raises (e.g. RuntimeError, database locked) returns an error to the model; the turn is not lost",
+   "pass": false,
+   "observed": {
+    "status": "error",
+    "error": "Unexpected error: OperationalError",
+    "answer": ""
+   },
+   "seconds": 0.02
+  },
+  {
+   "scenario": "tool_timeout_async",
+   "expected": "a slow (async) tool is stopped at its timeout and the run continues",
+   "pass": true,
+   "observed": {
+    "turn_seconds": 0.53,
+    "tool_result": "Error: calc_growth did not finish within 0 seconds and was stopped."
+   },
+   "seconds": 0.55
+  },
+  {
+   "scenario": "tool_blocking_sync_work",
+   "expected": "a tool doing blocking work cannot stall other conversations beyond its timeout",
+   "pass": false,
+   "observed": {
+    "other_request_seconds_while_tool_runs": 1.81,
+    "tool_result": "done",
+    "timeout_enforced": false
+   },
+   "seconds": 2.02
+  },
+  {
+   "scenario": "runaway_loop",
+   "expected": "a model that never stops calling tools is stopped after MAX_STEPS",
+   "pass": true,
+   "observed": {
+    "model_calls": 16,
+    "error": "Stopped after 16 steps without a final answer. Try a narrower request."
+   },
+   "seconds": 0.06
+  },
+  {
+   "scenario": "repeated_identical_tool_calls",
+   "expected": "the same tool call with the same arguments in one run is not executed again and again",
+   "pass": false,
+   "observed": {
+    "identical_executions": 6
+   },
+   "seconds": 0.03
+  },
+  {
+   "scenario": "long_conversation_80_turns",
+   "expected": "request size stays bounded and every request keeps call/result pairing valid",
+   "pass": true,
+   "observed": {
+    "requests": 160,
+    "first_request_chars": 18004,
+    "max_request_chars": 47704,
+    "last_request_chars": 47704,
+    "max_messages": 61,
+    "orphan_tool_results": 0
+   },
+   "seconds": 1.64
+  },
+  {
+   "scenario": "early_fact_retained",
+   "expected": "a fact the user stated early in a long conversation still reaches the model later (or is kept by summary/memory)",
+   "pass": false,
+   "observed": {
+    "fact_in_last_request": false,
+    "first_request_without_it": 30,
+    "requests": 61
+   },
+   "seconds": 0.34
+  }
+ ]
+}
