@@ -44,6 +44,21 @@ def _has_ledger(ctx: ToolContext) -> bool:
         return False
 
 
+def _month_problem(r: dict[str, Any], asked: str | None) -> str | None:
+    """A month the ledger does not cover is said so, before any figure: never answered with another month's figures."""
+    if not asked:
+        return None
+    import re as _re
+    if not _re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", asked):
+        return f"“{asked}” is not a month; use YYYY-MM, for example 2026-10."
+    months = r.get("months") or []
+    if asked not in months:
+        span = f"{months[0]} to {months[-1]}" if months else "no months yet"
+        return (f"No ledger data for {asked}: the ledger covers {span}. No figures are given for {asked}; ask about a "
+                "month inside that range, or import or sync the missing period first.")
+    return None
+
+
 def fmt(v: float | None, unit: str) -> str:
     if v is None:
         return "—"
@@ -71,6 +86,8 @@ async def _kpis(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         r = await ctx.engine.analysis.scorecard(ctx.ws_id, a.get("month"))
     except (Invalid, NotFound) as exc:
         return ToolOutput(exc.message)
+    if problem := _month_problem(r, a.get("month")):
+        return ToolOutput(problem, [], {"month": a.get("month"), "available": False})
     cards = [k for k in r["kpis"] if not a.get("category") or k["category"] == a["category"]]
     cols = [{"key": k, "label": label, "format": "text"} for k, label in (
         ("name", "KPI"), ("value", "Value"), ("previous", "Previous month"), ("target", "Target"), ("status", "Status"),
@@ -97,6 +114,8 @@ async def _kpis(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 async def _detail(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         sc = await ctx.engine.analysis.scorecard(ctx.ws_id)
+        if problem := _month_problem(sc, a.get("month")):
+            return ToolOutput(problem, [], {"month": a.get("month"), "available": False})
         k = match_kpi(sc["kpis"], a["kpi"])
         if k is None:
             return ToolOutput(f"No KPI matches “{a['kpi']}”. Ids: " + ", ".join(x["id"] for x in sc["kpis"]))
