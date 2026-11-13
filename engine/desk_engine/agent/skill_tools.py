@@ -9,7 +9,8 @@ from .tools import ToolContext, ToolOutput, registry, schema
 
 
 @registry.tool("load_skill", "Read the full instructions of a skill from the skill index. Load the skill before "
-               "doing a task it covers.", schema({"name": {"type": "string"}}, ["name"]), category="skills")
+               "doing a task it covers.", schema({"name": {"type": "string"}}, ["name"]), category="skills",
+               offload=True)
 async def _load(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     skill = get_enabled_skill(ctx.engine, ctx.ws_id, a["name"])
     if skill is None:
@@ -24,7 +25,7 @@ async def _load(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("read_skill_file", "Read a reference file that belongs to a skill.",
                schema({"skill": {"type": "string"}, "file": {"type": "string"}}, ["skill", "file"]),
-               category="skills")
+               category="skills", offload=True)
 async def _file(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     skill = get_enabled_skill(ctx.engine, ctx.ws_id, a["skill"])
     if skill is None:

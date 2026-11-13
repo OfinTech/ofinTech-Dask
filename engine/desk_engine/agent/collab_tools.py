@@ -14,7 +14,7 @@ def _has_workflows(ctx: ToolContext) -> bool:
 
 
 @registry.tool("list_workflows", "List the workspace's workflows (id, name, trigger).", schema({}),
-               category="workflows", available=_has_workflows)
+               category="workflows", available=_has_workflows, offload=True)
 async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     rows = ctx.engine.db.all("SELECT id, name, description, definition FROM workflows WHERE workspace_id = ? AND "
                              "enabled = 1 ORDER BY name", (ctx.ws_id,))

@@ -108,6 +108,37 @@ class ThreadPatch(BaseModel):
     visibility: Literal["workspace", "private"] | None = None
 
 
+@router.get("/api/w/{ws}/threads/{tid}/trace", role="viewer")
+async def run_trace(ctx: Ctx) -> dict[str, Any]:
+    """The steps of a run (the latest, or ``?run=``), in order: each model call with its timing, attempts and finish
+    reason, and each tool call with its status and duration (audit AI-12). Arguments and results are not repeated
+    here; they are in the conversation, under the same access rules."""
+    t = thread_for(ctx, ctx.request.path_params["tid"])
+    run_id = ctx.request.query_params.get("run")
+    run = ctx.engine.db.one("SELECT id, created_at FROM agent_runs WHERE thread_id = ? "
+                            + ("AND id = ? " if run_id else "") + "ORDER BY created_at DESC LIMIT 1",
+                            (t["id"], run_id) if run_id else (t["id"],))
+    if run is None:
+        raise NotFound("Run not found.")
+    steps: list[dict[str, Any]] = []
+    for m in ctx.engine.db.all("SELECT role, content, payload, created_at FROM messages WHERE thread_id = ? AND "
+                               "role IN ('assistant', 'tool') AND created_at >= ? ORDER BY created_at LIMIT 2000",
+                               (t["id"], run["created_at"])):
+        p = loads(m["payload"], {})
+        if p.get("run_id") != run["id"]:
+            continue
+        if m["role"] == "assistant":
+            steps.append({"kind": "model", "at": m["created_at"], "model": p.get("model"),
+                          "tool_calls": [c["name"] for c in p.get("tool_calls", [])],
+                          "finish": p.get("finish"), "incomplete": bool(p.get("incomplete")),
+                          **(p.get("timing") or {})})
+        else:
+            reused = (m["content"] or "").startswith("Same call with the same arguments")
+            steps.append({"kind": "tool", "at": m["created_at"], "tool": p.get("name"),
+                          "status": "reused" if reused else p.get("status"), "ms": p.get("ms")})
+    return {"run": ctx.engine.agent.run_out(run["id"]), "steps": steps}
+
+
 @router.patch("/api/w/{ws}/threads/{tid}", role="viewer", body=ThreadPatch)
 async def patch_thread(ctx: Ctx) -> dict[str, Any]:
     t = thread_for(ctx, ctx.request.path_params["tid"])

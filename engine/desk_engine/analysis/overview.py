@@ -425,7 +425,7 @@ class Overview:
     async def ai_insights(self, ws_id: str, workspace: dict[str, Any], month: str | None, language: str) -> dict[str, Any]:
         """Three to five short observations written by the workspace's model from the overview figures only.
         Always labelled as an estimate; never stored as a figure."""
-        from ..llm.base import ChatMessage
+        from ..llm.base import ChatMessage, require_complete
         from ..llm.registry import build_model, resolve_choice
 
         ov = await self.get(ws_id, workspace, month)
@@ -440,8 +440,9 @@ class Overview:
                                     ChatMessage("user", "Figures (JSON):\n" + _json(payload))], []):
             if ev.type == "done":
                 result = ev.result
-        assert result is not None
-        self.engine.record_usage(ws_id, pid, model_name, result.usage, "overview")
+        if result is not None:
+            self.engine.record_usage(ws_id, pid, model_name, result.usage, "overview")
+        result = require_complete(result, "insights")
         text = result.text.strip()
         items = [ln.lstrip("-•* ").strip() for ln in text.splitlines() if ln.strip()]
         items = [x for x in items if len(x) > 8][:5]

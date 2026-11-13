@@ -125,7 +125,7 @@ async def _report(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 @registry.tool("get_file_review", "Read the open findings (automatic checks and the independent reviewer) of a file "
                "created with create_workbook or create_report, to fix them in a new version.",
-               schema({"file_id": {"type": "string"}}, ["file_id"]), category="files")
+               schema({"file_id": {"type": "string"}}, ["file_id"]), category="files", offload=True)
 async def _review(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     out = ctx.engine.files.get(ctx.ws_id, a["file_id"])
     f = out["file"]

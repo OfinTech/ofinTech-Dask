@@ -18,7 +18,7 @@ def _money(v: Any) -> str:
 
 @registry.tool("list_cost_centres", "List the workspace's cost centres (projects, departments) with cost to date, "
                "budget, share used and when the budget runs out at the current pace.", schema({}),
-               category="costcentres", available=_has)
+               category="costcentres", available=_has, offload=True)
 async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     items = await ctx.engine.costcentres.summaries(ctx.ws_id)
     cols = [{"key": k, "label": label, "format": f} for k, label, f in (
@@ -39,7 +39,7 @@ async def _list(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "the budget runs out at the current pace. Optional as_of (YYYY-MM-DD).",
                schema({"cost_centre": {"type": "string", "description": "name, code or id"},
                        "as_of": {"type": "string"}}, ["cost_centre"]),
-               category="costcentres", available=_has)
+               category="costcentres", available=_has, offload=True)
 async def _report(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         r = await ctx.engine.costcentres.report(ctx.ws_id, a["cost_centre"], a.get("as_of"))
@@ -102,7 +102,7 @@ async def _report(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                schema({"cost_centre": {"type": "string"},
                        "kind": {"type": "string", "enum": ["matched", "possibly_missing", "unassigned_bank"]},
                        "limit": {"type": "integer"}}, ["cost_centre"]),
-               category="costcentres", available=_has)
+               category="costcentres", available=_has, offload=True)
 async def _lines(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         r = await ctx.engine.costcentres.matched(ctx.ws_id, a["cost_centre"], a.get("kind") or "matched",
