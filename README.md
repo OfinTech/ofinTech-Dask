@@ -29,6 +29,23 @@ model: a cloud provider with your own key, or a local model.
 *Built for finance teams in any country: it works with any ledger through open connectors, any AI model you choose,
 and your company's own chart of accounts, currency and fiscal year.*
 
+## Demo
+
+<p align="center">
+  <a href="docs/demo/ofintech-desk-tour.mp4">
+    <img alt="Watch the 2½-minute tour of OfinTech Desk" src="docs/demo/ofintech-desk-tour.jpg" width="800">
+  </a>
+</p>
+
+**[Watch the 2½-minute tour](docs/demo/ofintech-desk-tour.mp4)**: how to use OfinTech Desk, from creating a
+workspace to the month-end close. It covers connecting a model, importing the general ledger, the executive
+overview, statements and KPIs, the assistant (with approvals and cited sources), evidence-linked workbooks,
+dashboards, cost centres, the close, workflows, connections, memory, search and permissions.
+
+It was recorded on version 1.3.0 with the [Harbor Line Logistics demo company](examples/demo-company/README.md), so you
+can follow along on the same books. The assistant's replies come from the test model in `e2e/`; every figure,
+search, approval and workbook comes from the product itself.
+
 ## What it does
 
 | Area | What you get |
