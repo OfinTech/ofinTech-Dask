@@ -212,3 +212,68 @@ class MetricsAndTrace(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EveryModelReplyIsCheckedForCompleteness(unittest.TestCase):
+    """AI-03 beyond the agent loop: the documents answer, the dashboard insights and the file reviewer also call the
+    model, and a reply cut by the output limit or an empty one must not reach anyone as a complete answer."""
+
+    def setUp(self) -> None:
+        self.h = Harness()
+        self.addCleanup(self.h.close)
+        self.ws = self.h.setup_workspace()
+
+    def cut(self, text: str, finish: str = "length"):
+        from desk_engine.llm.base import LLMResult, StreamEvent, Usage
+
+        class Cut:
+            async def stream(self, messages, tools, **kw):
+                yield StreamEvent("text", text)
+                yield StreamEvent("done", result=LLMResult(text, [], Usage(), finish_reason=finish))
+        return Cut()
+
+    def test_a_cut_dashboard_insight_is_refused(self) -> None:
+        model = self.cut("- Revenue rose 12% to 1.2m, mainly because")
+        with mock.patch("desk_engine.llm.registry.build_model", return_value=model), \
+                mock.patch.object(type(self.h.engine.overview), "get", new=mock.AsyncMock(return_value={
+                    "month": "2026-10", "currency": "GBP", "health": {}, "headline": {}, "kpis": [], "risks": [],
+                    "insights": [], "provenance": {"kind": "ledger"}})):
+            err = self.h.api("POST", f"/api/w/{self.ws}/overview/insights?month=2026-10&lang=en", json={}, expect=502)
+        self.assertEqual(err["error"], "answer_incomplete")
+
+    def test_a_cut_documents_answer_is_refused(self) -> None:
+        model = self.cut("According to the policy [1], the limit is")
+        with mock.patch("desk_engine.llm.registry.build_model", return_value=model):
+            from desk_engine.knowledge.search import answer
+            ws = self.h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (self.ws,))
+            with self.assertRaises(Exception) as caught:
+                asyncio.run(answer(self.h.engine, ws, "u", "What is the limit?",
+                                   {"documents": [{"title": "Policy", "snippet": "The limit is 5,000.", "page": 1}]}))
+        self.assertEqual(getattr(caught.exception, "code", None), "answer_incomplete")
+
+    def test_an_empty_documents_answer_is_refused(self) -> None:
+        with mock.patch("desk_engine.llm.registry.build_model", return_value=self.cut("", "stop")):
+            from desk_engine.knowledge.search import answer
+            ws = self.h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (self.ws,))
+            with self.assertRaises(Exception) as caught:
+                asyncio.run(answer(self.h.engine, ws, "u", "What is the limit?",
+                                   {"documents": [{"title": "Policy", "snippet": "The limit is 5,000.", "page": 1}]}))
+        self.assertEqual(getattr(caught.exception, "code", None), "answer_empty")
+
+    def test_the_search_route_keeps_its_results_when_the_answer_is_cut(self) -> None:
+        with mock.patch("desk_engine.llm.registry.build_model", return_value=self.cut("The limit is")), \
+                mock.patch("desk_engine.knowledge.search.search_all", new=mock.AsyncMock(return_value={
+                    "documents": [{"title": "Policy", "snippet": "The limit is 5,000.", "page": 1}]})):
+            out = self.h.api("POST", f"/api/w/{self.ws}/search", json={"query": "limit", "answer": True})
+        self.assertEqual(out["answer"]["code"], "answer_incomplete")
+        self.assertEqual(out["answer"]["text"], "")
+        self.assertTrue(out["results"]["documents"])
+
+    def test_a_cut_review_is_not_recorded_as_done(self) -> None:
+        from desk_engine.files.review import llm_review
+        ws = self.h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (self.ws,))
+        with mock.patch("desk_engine.files.review.build_model", return_value=self.cut("The workbook looks")), \
+                mock.patch("desk_engine.files.review.review_text", return_value="FILE: Budget (workbook)"):
+            with self.assertRaises(Exception) as caught:
+                asyncio.run(llm_review(self.h.engine, ws, {"sheets": []}, [], "u"))
+        self.assertEqual(getattr(caught.exception, "code", None), "answer_incomplete")

@@ -105,7 +105,7 @@ async def search_all(engine: Engine, workspace: dict[str, Any], user_id: str, qu
 async def answer(engine: Engine, workspace: dict[str, Any], user_id: str, query: str,
                  results: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
     """A short cited answer over the top results (a few hundred tokens of context, one model call)."""
-    from ..llm.base import ChatMessage
+    from ..llm.base import ChatMessage, require_complete
     from ..llm.registry import build_model, resolve_choice
 
     numbered: list[dict[str, Any]] = []
@@ -123,8 +123,9 @@ async def answer(engine: Engine, workspace: dict[str, Any], user_id: str, query:
                                 ChatMessage("user", f"Question: {query}\n\nSources:\n{ctx}")], []):
         if ev.type == "done":
             result = ev.result
-    assert result is not None
-    engine.record_usage(workspace["id"], pid, model_name, result.usage, "search")
+    if result is not None:
+        engine.record_usage(workspace["id"], pid, model_name, result.usage, "search")
+    result = require_complete(result, "answer")
     cited = sorted({int(n) for n in re.findall(r"\[(\d+)\]", result.text) if 0 < int(n) <= len(numbered)})
     return {"text": result.text.strip(), "model": model_name,
             "sources": [{k: r.get(k) for k in ("n", "kind", "title", "page", "link", "snippet")} for r in numbered
