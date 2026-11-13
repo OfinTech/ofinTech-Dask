@@ -12,4 +12,10 @@ __pycache__/
 dev-master.key
 backups/
 release-cloud/
+# local test output and tooling
+e2e-output/
+build-engine.log
+.venv/
+.ruff_cache/
+.DS_Store
 

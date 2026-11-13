@@ -17,7 +17,7 @@ from collections import defaultdict
 from typing import Any
 
 from ..costcentres.rules import norm
-from .roles import ASSET_ROLES, BALANCE_ROLES, INCOME_ROLES, LIABILITY_ROLES, PL_ROLES, account_key, suggest
+from .roles import ASSET_ROLES, BALANCE_ROLES, INCOME_ROLES, PL_ROLES, account_key, suggest
 
 DEBT_ROLES = {"short_term_debt", "long_term_debt"}
 

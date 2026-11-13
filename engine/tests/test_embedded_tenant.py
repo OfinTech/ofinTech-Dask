@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import unittest
 
-from tests.embedded_helpers import (ORIGIN, assert_valid_sequence, audit_actions, issue_session, last, make_org, new_harness,
+from tests.embedded_helpers import (assert_valid_sequence, audit_actions, issue_session, last, make_org, new_harness,
                                     run_input, stream)
 
 
