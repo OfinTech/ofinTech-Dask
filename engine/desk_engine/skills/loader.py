@@ -149,7 +149,31 @@ def enabled_index(engine: Engine, ws_id: str) -> list[dict[str, Any]]:
     return list(seen.values())
 
 
+def get_enabled_skill(engine: Engine, ws_id: str, name: str) -> dict[str, Any] | None:
+    """The skill the assistant may use under ``name`` in this workspace, or None.
+
+    This is the only lookup that may feed the assistant (its instructions, ``load_skill``, ``read_skill_file``):
+    deny by default. A skill qualifies only if it is in ``enabled_index`` *at this moment* -- a built-in switched off
+    in ``skill_settings``, a custom skill an admin has not approved or has switched off, a deleted skill, a name from
+    another workspace and an unknown name all give None. Nothing is cached, so a change takes effect on the next
+    model call. Which entry wins for a name follows ``enabled_index`` (a built-in is never shadowed)."""
+    entry = next((s for s in enabled_index(engine, ws_id) if s["name"] == name), None)
+    if entry is None:
+        return None
+    if entry["source"] == "builtin":
+        builtin = builtin_skills().get(name)
+        return {**builtin, "id": entry["id"], "enabled": True} if builtin else None
+    row = engine.db.one("SELECT * FROM skills WHERE id = ? AND workspace_id = ? AND enabled = 1", (entry["id"], ws_id))
+    if row is None:
+        return None
+    return {"name": row["name"], "description": row["description"], "body": row["body"],
+            "tags": loads(row["tags"], []), "version": row["version"], "files": loads(row["files"], {}),
+            "source": "custom", "id": row["id"], "enabled": True}
+
+
 def get_skill(engine: Engine, ws_id: str, name: str) -> dict[str, Any]:
+    """Any skill of the workspace by name, enabled or not -- for the Skills page and export only. The assistant must
+    use ``get_enabled_skill``."""
     row = engine.db.one("SELECT * FROM skills WHERE workspace_id = ? AND name = ?", (ws_id, name))
     if row:
         return {"name": row["name"], "description": row["description"], "body": row["body"],
@@ -165,7 +189,9 @@ def save_custom(engine: Engine, ws_id: str, skill: dict[str, Any], files: dict[s
                 user_id: str, skill_id: str | None = None, enable: bool = True) -> dict[str, Any]:
     """Saves a custom skill. A skill's text goes into the assistant's instructions, so a new one is switched on
     only when ``enable`` is true (the caller passes whether the author is an admin); otherwise an admin turns it on
-    from the Skills page. A built-in's name cannot be taken, so no custom text can stand in for a built-in."""
+    from the Skills page. The same holds for an edit: with ``enable`` false an edited skill is switched off until an
+    admin approves the new text; with ``enable`` true its state is left as it was (an admin's edit never switches on
+    a skill another admin switched off). A built-in's name cannot be taken, so no custom text can stand in for a built-in."""
     size = len(skill["body"]) + sum(len(v) for v in (files or {}).values())
     if size > MAX_SKILL_BYTES:
         raise Invalid("Skill is larger than 1 MB.", code="bad_skill")
@@ -176,6 +202,10 @@ def save_custom(engine: Engine, ws_id: str, skill: dict[str, Any], files: dict[s
               "tags": dumps(skill.get("tags", [])), "version": skill.get("version", "1.0.0"),
               "files": dumps(files or {}), "updated_at": now()}
     clash = engine.db.one("SELECT id FROM skills WHERE workspace_id = ? AND name = ?", (ws_id, skill["name"]))
+    if skill_id and not enable:
+        # an edit by someone who may not enable skills goes back to an admin: the text that reaches the assistant's
+        # instructions must be text an admin approved, not merely a skill that was approved once
+        values["enabled"] = 0
     if skill_id:
         if clash and clash["id"] != skill_id:
             raise Conflict(f"Another skill is already called '{skill['name']}'.")
