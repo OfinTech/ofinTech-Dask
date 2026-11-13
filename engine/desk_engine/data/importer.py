@@ -25,19 +25,49 @@ _MONTHS = {m: i for i, m in enumerate(
 _MONTH_HEADER = re.compile(r"^(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s\-/']*(\d{2,4})?$", re.I)
 
 
+# Arabic-Indic digits and the separators printed with them. A Gulf bank writes ١٢٣٤٫٥٠, and `parse_date` has
+# always read ١٧/١٠/٢٠٢٦ -- so a statement in these digits kept its dates and lost every amount, which is the
+# worst shape a defect can take: the rows vanish and the file still looks like it was read.
+_ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
+_ARABIC_MARKS = {"\u066b": ".", "\u066c": ",", "\u060c": ",", "\u066a": "%"}
+# The side written as a word instead of a sign, on either hand of the figure: a statement prints "3,967.74 DR",
+# and a right-to-left page gives it back as "DR 3,967.74".
+_SIDE = re.compile(r"^(?P<side>CR|DR|C/R|D/R)\.?\s*(?P<num>[-(]?[\d.,\s]+\)?)$"
+                   r"|^(?P<num2>[-(]?[\d.,\s]+\)?)\s*(?P<side2>CR|DR|C/R|D/R)\.?$", re.I)
+# The sign after the figure, with or without a space: "1,234.50-" and "2,383.31 -" are the same statement.
+_TRAIL_SIGN = re.compile(r"^(?P<num>[\d\s.,]*\d)\s*(?P<sign>[-+])$")
+
+
+def _arabic_digits(s: str) -> str:
+    if s.isascii():
+        return s
+    s = s.translate(_ARABIC_DIGITS)
+    for mark, plain in _ARABIC_MARKS.items():
+        s = s.replace(mark, plain)
+    return s
+
+
 def parse_number(value: Any, decimal_comma: bool = False) -> float | None:
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
         return float(value)
-    s = str(value).strip()
+    s = _arabic_digits(str(value).strip())
     if not s or s in {"-", "–", "—"}:
         return None
     negative = False
+    side = _SIDE.match(s)
+    if side:                       # read only where what is left is a figure, so an account called "Q1 DR" stays text
+        s = (side.group("num") or side.group("num2") or "").strip()
+        if (side.group("side") or side.group("side2") or "").upper().startswith("D"):
+            negative = True
     if s.startswith("(") and s.endswith(")"):
         negative, s = True, s[1:-1]
-    if s.endswith("-") and s[:-1].replace(",", "").replace(".", "").isdigit():
-        negative, s = True, s[:-1]  # trailing minus used by some ledgers
+    trailing = _TRAIL_SIGN.match(s)
+    if trailing:                   # the sign written after the figure, which some ledgers and many banks do
+        negative, s = trailing.group("sign") == "-", trailing.group("num")
+    elif s.startswith("+"):
+        s = s[1:]
     s = _CURRENCY.sub("", s).strip()
     percent = s.endswith("%")
     if percent:
@@ -71,6 +101,18 @@ def parse_date(value: Any, order: str = "auto") -> date | None:
     m = re.match(r"^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T].*)?$", s)
     if m:
         return _safe_date(int(m[1]), int(m[2]), int(m[3]))
+    # A four-digit year first, with slashes or dots. Unambiguous, and printed by banks on three continents.
+    # Bounded, because a year outside it is another calendar: 1447/05/03 is a Hijri date, and reading it as the
+    # year 1447 puts a wrong date on a real amount.
+    m = re.match(r"^(\d{4})[/.](\d{1,2})[/.](\d{1,2})$", s)
+    if m and 1900 <= int(m[1]) <= 2200:
+        return _safe_date(int(m[1]), int(m[2]), int(m[3]))
+    # A named-month date that came back out of a right-to-left page with its parts turned round: "01-Jan-2025"
+    # arrives as "Jan-2025-01". A month name and a four-digit year leave nothing to guess, and refusing it loses
+    # every line of the statement rather than one field of it.
+    m = re.match(r"^([A-Za-z]{3,9})[\s\-](\d{4})[\s\-,]+(\d{1,2})$", s)
+    if m and m[1][:3].lower() in _MONTHS:
+        return _safe_date(int(m[2]), _MONTHS[m[1][:3].lower()], int(m[3]))
     m = re.match(r"^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2,4})$", s)
     if m:
         a, b, y = int(m[1]), int(m[2]), int(m[3])
