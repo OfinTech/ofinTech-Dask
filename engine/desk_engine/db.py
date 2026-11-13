@@ -12,7 +12,7 @@ import sqlite3
 import threading
 import time
 import uuid
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -881,6 +881,12 @@ class Database:
         self._local = threading.local()
         self._write_lock = threading.RLock()
         self._all: list[sqlite3.Connection] = []
+        # set by the engine: called with ("read" | "write", seconds) after each call (metrics; never the SQL)
+        self.observer: Callable[[str, float], None] | None = None
+
+    def _seen(self, kind: str, started: float) -> None:
+        if self.observer is not None:
+            self.observer(kind, time.perf_counter() - started)
 
     # -- connections ---------------------------------------------------------------------
     def _connect(self) -> sqlite3.Connection:
@@ -914,6 +920,7 @@ class Database:
     @contextmanager
     def tx(self) -> Iterator[sqlite3.Connection]:
         """A write transaction (serialised inside this process)."""
+        started = time.perf_counter()
         with self._write_lock:
             conn = self.conn
             conn.execute("BEGIN IMMEDIATE")
@@ -924,17 +931,26 @@ class Database:
                 raise
             else:
                 conn.execute("COMMIT")
+            finally:
+                self._seen("write", started)
 
     # -- helpers -------------------------------------------------------------------------
     def one(self, sql: str, params: Sequence[Any] = ()) -> dict[str, Any] | None:
+        started = time.perf_counter()
         row = self.conn.execute(sql, params).fetchone()
+        self._seen("read", started)
         return dict(row) if row else None
 
     def all(self, sql: str, params: Sequence[Any] = ()) -> list[dict[str, Any]]:
-        return [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+        started = time.perf_counter()
+        rows = [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+        self._seen("read", started)
+        return rows
 
     def scalar(self, sql: str, params: Sequence[Any] = ()) -> Any:
+        started = time.perf_counter()
         row = self.conn.execute(sql, params).fetchone()
+        self._seen("read", started)
         return row[0] if row else None
 
     def execute(self, sql: str, params: Sequence[Any] = ()) -> int:

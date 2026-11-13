@@ -1,0 +1,157 @@
+# Alerts for OfinTech Desk. Thresholds come from the measured baselines in reports/ai-agent-final-release/05 and the
+# proposed SLOs in 04; each alert needs traffic (a minimum count) so a quiet instance does not page on one failure.
+# Messages use only exported labels (route templates, tool names, codes): no workspace, user, prompt or amount.
+groups:
+  - name: ofintech-desk-availability
+    rules:
+      - alert: DeskServiceDown
+        expr: up{job="ofintech-desk"} == 0
+        for: 2m
+        labels: { severity: critical, service: ofintech-desk }
+        annotations:
+          summary: "The engine has not answered a scrape for 2 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#service-down"
+      - alert: DeskApi5xxHigh
+        expr: |
+          sum(rate(desk_http_requests_total{code="5xx"}[10m])) / sum(rate(desk_http_requests_total[10m])) > 0.02
+          and sum(increase(desk_http_requests_total[10m])) > 50
+        for: 10m
+        labels: { severity: critical, service: ofintech-desk }
+        annotations:
+          summary: "More than 2% of API requests failed with a server error over 10 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#api-errors"
+      - alert: DeskEventLoopLag
+        expr: histogram_quantile(0.99, sum(rate(desk_event_loop_lag_seconds_bucket[5m])) by (le)) > 0.5
+        for: 10m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "The event loop is blocked for more than 0.5 s at P99: every conversation is waiting."
+          runbook: "10_OPERATIONS_RUNBOOK.md#slow-or-blocked"
+
+  - name: ofintech-desk-agent
+    rules:
+      - alert: DeskAgentErrorRate
+        expr: |
+          sum(rate(desk_agent_runs_total{outcome!~"completed|cancelled"}[15m]))
+            / sum(rate(desk_agent_runs_total{outcome!="cancelled"}[15m])) > 0.05
+          and sum(increase(desk_agent_runs_total[15m])) > 20
+        for: 15m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "More than 5% of assistant runs did not complete over 15 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#agent-errors"
+      - alert: DeskAgentLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(desk_agent_run_seconds_bucket{outcome="completed"}[15m])) by (le)) > 30
+        for: 15m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Assistant answers take more than 30 s at P95 (end to end, model included)."
+          runbook: "10_OPERATIONS_RUNBOOK.md#slow-or-blocked"
+      - alert: DeskModelUnavailable
+        expr: |
+          sum(rate(desk_llm_calls_total{outcome=~"llm_unavailable|llm_network|llm_auth|llm_not_found"}[5m]))
+            / sum(rate(desk_llm_calls_total[5m])) > 0.5
+          and sum(increase(desk_llm_calls_total[5m])) > 5
+        for: 5m
+        labels: { severity: critical, service: ofintech-desk }
+        annotations:
+          summary: "Most model calls fail (provider down, network, key or model name) after retries."
+          runbook: "10_OPERATIONS_RUNBOOK.md#model-outage"
+      - alert: DeskModelTimeouts
+        expr: sum(increase(desk_llm_calls_total{outcome="llm_timeout"}[15m])) > 5
+        for: 5m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "More than 5 model calls timed out (after retries) in 15 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#model-outage"
+      - alert: DeskToolFailures
+        expr: |
+          sum by (tool) (rate(desk_tool_calls_total{status="error"}[15m]))
+            / sum by (tool) (rate(desk_tool_calls_total[15m])) > 0.2
+          and sum by (tool) (increase(desk_tool_calls_total{status="error"}[15m])) >= 5
+        for: 10m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Tool {{ $labels.tool }} fails in more than 20% of calls."
+          runbook: "10_OPERATIONS_RUNBOOK.md#tool-failures"
+
+  - name: ofintech-desk-financial
+    rules:
+      - alert: DeskFinancialCalculationFailures
+        expr: |
+          sum(increase(desk_tool_calls_total{status="error",
+            tool=~"calc_.*|financial_kpis|kpi_detail|forecast_report|cost_centre_.*|query_dataset|month_end_close"}[30m])) > 3
+        for: 0m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Financial tools failed more than 3 times in 30 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#tool-failures"
+      - alert: DeskUnsupportedFiguresHigh
+        expr: |
+          sum(increase(desk_answers_total{figures="unsupported"}[1h])) / sum(increase(desk_answers_total[1h])) > 0.10
+          and sum(increase(desk_answers_total[1h])) > 20
+        for: 30m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "More than 10% of answers contain figures no tool returned (check the model in use)."
+          runbook: "10_OPERATIONS_RUNBOOK.md#unsupported-figures"
+      - alert: DeskReconciliationExceptionSpike
+        expr: |
+          sum(increase(desk_reconciliation_lines_total{result!="matched"}[6h]))
+            / sum(increase(desk_reconciliation_lines_total[6h])) > 0.5
+          and sum(increase(desk_reconciliation_lines_total[6h])) > 50
+        for: 0m
+        labels: { severity: info, service: ofintech-desk }
+        annotations:
+          summary: "More than half of reconciled bank lines are exceptions (a statement format or account mapping problem?)."
+          runbook: "10_OPERATIONS_RUNBOOK.md#reconciliation"
+
+  - name: ofintech-desk-resources
+    rules:
+      - alert: DeskDatabaseSaturated
+        expr: |
+          histogram_quantile(0.95, sum(rate(desk_db_query_seconds_bucket{kind="write"}[10m])) by (le)) > 0.5
+          or desk_db_connections > 64
+        for: 10m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Database writes wait more than 0.5 s at P95, or connections exceed 64 (SQLite has one per thread)."
+          runbook: "10_OPERATIONS_RUNBOOK.md#database"
+      - alert: DeskMemoryGrowth
+        expr: delta(desk_process_resident_memory_bytes[6h]) > 512e6 and desk_process_resident_memory_bytes > 1e9
+        for: 30m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Engine memory grew by more than 512 MB in 6 hours and is above 1 GB."
+          runbook: "10_OPERATIONS_RUNBOOK.md#memory"
+      - alert: DeskBackgroundJobFailures
+        expr: sum by (kind) (increase(desk_background_failures_total[1h])) > 3
+        for: 0m
+        labels: { severity: info, service: ofintech-desk }
+        annotations:
+          summary: "Background {{ $labels.kind }} jobs failed more than 3 times in an hour."
+          runbook: "10_OPERATIONS_RUNBOOK.md#background-jobs"
+
+  - name: ofintech-desk-security
+    rules:
+      - alert: DeskPaymentOrSealedRefusals
+        expr: sum by (reason) (increase(desk_tool_refusals_total{reason=~"payment|sealed"}[15m])) > 0
+        for: 0m
+        labels: { severity: critical, service: ofintech-desk }
+        annotations:
+          summary: "A guard refused a {{ $labels.reason }} action: something tried to move money or send data from a sealed workspace."
+          runbook: "10_OPERATIONS_RUNBOOK.md#security-events"
+      - alert: DeskCrossWorkspaceAttempts
+        expr: sum(increase(desk_workspace_rejections_total[10m])) > 20
+        for: 0m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "More than 20 requests for workspaces the caller is not a member of in 10 minutes."
+          runbook: "10_OPERATIONS_RUNBOOK.md#security-events"
+      - alert: DeskAuthFailureSpike
+        expr: sum(increase(desk_auth_failures_total[5m])) > 100 or sum(increase(desk_access_denied_total[5m])) > 50
+        for: 5m
+        labels: { severity: warning, service: ofintech-desk }
+        annotations:
+          summary: "Unusually many refused sign-ins or permission checks (password guessing or a broken client)."
+          runbook: "10_OPERATIONS_RUNBOOK.md#security-events"

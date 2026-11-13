@@ -195,6 +195,7 @@ class Tool:
 
         Recording must never change the outcome. If the write fails the refusal still stands.
         """
+        ctx.engine.metrics.inc("desk_tool_refusals_total", reason=reason)
         try:
             ctx.engine.audit(ctx.ws_id, ctx.user_id, "tool.refused", self.name,
                              {"reason": reason, "source": ctx.source, "run_id": ctx.run_id},

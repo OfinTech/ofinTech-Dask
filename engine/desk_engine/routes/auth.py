@@ -288,12 +288,17 @@ async def sign_out_everywhere(ctx: Ctx) -> dict[str, Any]:
     return {"revoked": n}
 
 
-@router.get("/api/admin/metrics")
+@router.get("/api/admin/metrics", auth=False)
 async def admin_metrics(ctx: Ctx) -> Response:
-    """Process metrics in the Prometheus text format, for the instance administrator only. Labels name outcomes and
-    built-in tools, never a workspace, user or conversation (audit AI-12)."""
-    if not is_instance_admin(ctx):
-        raise Forbidden("Only the instance administrator can do this.")
+    """Process metrics in the Prometheus text format, for the instance administrator, or for a Prometheus server
+    presenting DESK_METRICS_TOKEN (that token opens this route and nothing else). Labels name outcomes, route
+    templates and built-in tools, never a workspace, user or conversation (audit AI-12)."""
+    from ..metrics import scrape_token_ok
+    if not scrape_token_ok(ctx.request.headers.get("authorization")):
+        if ctx.user is None:
+            raise Unauthorized("Not signed in.")
+        if not is_instance_admin(ctx):
+            raise Forbidden("Only the instance administrator can do this.")
     return Response(ctx.engine.metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
