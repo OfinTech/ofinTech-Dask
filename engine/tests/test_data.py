@@ -35,6 +35,20 @@ class Parsing(unittest.TestCase):
         self.assertIsNone(p("n/a"))
         self.assertIsNone(p("—"))
 
+    def test_numbers_as_a_statement_writes_them(self) -> None:
+        """Four notations banks use for the same figure. Each of them used to come back as nothing, which in a
+        statement means the row is skipped: the file reads, the dates are right, and the money is gone."""
+        p = importer.parse_number
+        self.assertEqual(p("١٢٣٤٫٥٠"), 1234.50, "Arabic-Indic digits, as a Gulf bank prints them")
+        self.assertEqual(p("١٢٣٬٤٥٦٫٧٨"), 123456.78)
+        self.assertEqual(p("2,383.31 -"), -2383.31, "the sign after the figure, with a space")
+        self.assertEqual(p("4,148.82 +"), 4148.82)
+        self.assertEqual(p("137.25 DR"), -137.25, "the side as a word")
+        self.assertEqual(p("137.25 CR"), 137.25)
+        self.assertEqual(p("DR 3,967.74"), -3967.74, "and in front of the figure, as a right-to-left page gives it")
+        self.assertIsNone(p("Q1 DR"), "an account's name is not a figure with a side")
+        self.assertIsNone(p("DR"))
+
     def test_dates(self) -> None:
         d = importer.parse_date
         self.assertEqual(d("2026-03-31"), date(2026, 3, 31))
@@ -46,6 +60,13 @@ class Parsing(unittest.TestCase):
         self.assertEqual(d("31 Mar 26"), date(2026, 3, 31))
         self.assertEqual(d("March 5, 2026"), date(2026, 3, 5))
         self.assertIsNone(d("not a date"))
+
+    def test_dates_a_statement_writes_and_a_calendar_it_is_not(self) -> None:
+        d = importer.parse_date
+        self.assertEqual(d("2026/03/31"), date(2026, 3, 31), "a four-digit year first, with slashes")
+        self.assertEqual(d("2026.03.31"), date(2026, 3, 31))
+        self.assertEqual(d("Mar-2026-31"), date(2026, 3, 31), "31-Mar-2026, turned round by a right-to-left page")
+        self.assertIsNone(d("1447/05/03"), "a Hijri date is not the year 1447 in this calendar")
 
     def test_header_detection_and_types(self) -> None:
         raw = [["Acme Ltd - Expenses export"], [], ["Date", "Account", "Amount", "Memo"],
