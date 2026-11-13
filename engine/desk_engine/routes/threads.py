@@ -115,13 +115,15 @@ async def run_trace(ctx: Ctx) -> dict[str, Any]:
     here; they are in the conversation, under the same access rules."""
     t = thread_for(ctx, ctx.request.path_params["tid"])
     run_id = ctx.request.query_params.get("run")
-    run = ctx.engine.db.one("SELECT id FROM agent_runs WHERE thread_id = ? " + ("AND id = ? " if run_id else "")
-                            + "ORDER BY created_at DESC LIMIT 1", (t["id"], run_id) if run_id else (t["id"],))
+    run = ctx.engine.db.one("SELECT id, created_at FROM agent_runs WHERE thread_id = ? "
+                            + ("AND id = ? " if run_id else "") + "ORDER BY created_at DESC LIMIT 1",
+                            (t["id"], run_id) if run_id else (t["id"],))
     if run is None:
         raise NotFound("Run not found.")
     steps: list[dict[str, Any]] = []
     for m in ctx.engine.db.all("SELECT role, content, payload, created_at FROM messages WHERE thread_id = ? AND "
-                               "role IN ('assistant', 'tool') ORDER BY created_at", (t["id"],)):
+                               "role IN ('assistant', 'tool') AND created_at >= ? ORDER BY created_at LIMIT 2000",
+                               (t["id"], run["created_at"])):
         p = loads(m["payload"], {})
         if p.get("run_id") != run["id"]:
             continue
