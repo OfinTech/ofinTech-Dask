@@ -277,3 +277,66 @@ class EveryModelReplyIsCheckedForCompleteness(unittest.TestCase):
             with self.assertRaises(Exception) as caught:
                 asyncio.run(llm_review(self.h.engine, ws, {"sheets": []}, [], "u"))
         self.assertEqual(getattr(caught.exception, "code", None), "answer_incomplete")
+
+
+class RedTeamProbes(unittest.TestCase):
+    """Phase 6 probes for what this change set adds, and gaps the existing security suites do not cover. The model
+    is scripted to do whatever an attacker wants (a fully compromised model): the controls must hold anyway."""
+
+    def setUp(self) -> None:
+        self.h = Harness()
+        self.addCleanup(self.h.close)
+        self.ws = self.h.setup_workspace()
+
+    def test_the_audit_log_is_append_only(self) -> None:
+        import sqlite3
+        self.h.api("GET", f"/api/w/{self.ws}/threads")
+        self.h.engine.audit(self.ws, None, "probe", None, {})
+        for sql in ("UPDATE audit_log SET action = 'x'", "DELETE FROM audit_log"):
+            with self.assertRaises(sqlite3.DatabaseError):
+                self.h.engine.db.execute(sql)
+
+    def test_trace_of_another_workspace_is_not_found(self) -> None:
+        tid = self.h.api("POST", f"/api/w/{self.ws}/threads", json={})["id"]
+        self.h.llm.script = ["Hello."]
+        self.h.api("POST", f"/api/w/{self.ws}/threads/{tid}/messages", json={"text": "hi"})
+        self.h.wait_run(tid, 20)
+        other = self.h.api("POST", "/api/workspaces", json={"name": "Other Ltd", "base_currency": "USD"})["id"]
+        self.h.api("GET", f"/api/w/{other}/threads/{tid}/trace", expect=404)
+        self.h.api("GET", f"/api/w/{self.ws}/threads/{tid}/trace?run=r_not_mine", expect=404)
+
+    def test_no_read_tool_reveals_a_provider_key(self) -> None:
+        secret = "sk-test"                                    # the provider key set by setup_workspace
+        ctx = _ctx(self.h, self.ws)
+        tools = asyncio.run(self.h.engine.tools.for_context(ctx))
+        seen = []
+        for t in tools.values():
+            if t.needs_approval():
+                continue
+            out = asyncio.run(t.run(ctx, {}))
+            seen.append(t.name)
+            self.assertNotIn(secret, out.text + json.dumps(out.data, default=str), t.name)
+        self.assertGreaterEqual(len(seen), 15)
+
+    def test_offloaded_tools_never_mix_tenants_under_concurrency(self) -> None:
+        from tests.test_financial_analysis import ledger_xlsx
+        other = self.h.api("POST", "/api/workspaces", json={"name": "Beta Ltd", "base_currency": "USD"})["id"]
+        for ws, name in ((self.ws, "alpha-ledger"), (other, "beta-ledger")):
+            self.h.api("POST", f"/api/w/{ws}/cost-centres/ledger/upload",
+                       files={"file": (f"{name}.xlsx", ledger_xlsx())})
+        tool = registry.get_static("list_datasets")
+        ctxs = {self.ws: _ctx(self.h, self.ws), other: _ctx(self.h, other)}
+
+        async def many():
+            calls = [(ws, tool.run(ctxs[ws], {})) for _ in range(20) for ws in ctxs]
+            outs = await asyncio.gather(*(c for _, c in calls))
+            return list(zip([w for w, _ in calls], outs, strict=True))
+        for ws, out in asyncio.run(many()):
+            mine, theirs = ("alpha", "beta") if ws == self.ws else ("beta", "alpha")
+            self.assertIn(mine, out.text)
+            self.assertNotIn(theirs, out.text)
+
+    def test_metric_labels_stay_bounded(self) -> None:
+        from desk_engine.metrics import tool_label
+        self.assertEqual(tool_label("acme_crm__export_all_customers", "mcp"), "mcp")
+        self.assertEqual(tool_label("calc_growth", "finance"), "calc_growth")
