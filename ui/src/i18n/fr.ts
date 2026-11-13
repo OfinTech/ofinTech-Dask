@@ -140,6 +140,7 @@ const d: Record<string, string> = {
   "Chart": "Graphique",
   "Chat apps": "Messageries",
   "Check before relying on:": "À vérifier avant de s’y fier :",
+  "The model's answer was cut off or empty, so none is shown. The matches below are unaffected; ask again for an answer.": "La réponse du modèle a été coupée ou est vide ; elle n'est donc pas affichée. Les résultats ci-dessous ne sont pas concernés ; reposez la question pour obtenir une réponse.",
   "This answer is incomplete and must not be relied on.": "Cette réponse est incomplète et ne doit pas être utilisée.",
   "From your messages, not checked against the books:": "Tirés de vos messages, non vérifiés dans la comptabilité :",
   "Check now": "Vérifier maintenant",

@@ -69,7 +69,9 @@ export function SearchPage(): ReactNode {
       {asking && <p className="muted small" role="status">{tr("Reading the best matches…")}</p>}
       {answer && (
         <section className="panel panel-pad answer-box" aria-label={tr("Answer")}>
-          <p style={{ margin: 0, lineHeight: 1.6 }}>{answer.text}</p>
+          {answer.code
+            ? <p className="muted" role="status" style={{ margin: 0 }}>{tr("The model's answer was cut off or empty, so none is shown. The matches below are unaffected; ask again for an answer.")}</p>
+            : <p style={{ margin: 0, lineHeight: 1.6 }}>{answer.text}</p>}
           {answer.sources.length > 0 && <ol className="sources" style={{ marginTop: 10 }}>{answer.sources.map((s: any) => (
             <li key={s.n} value={s.n}><button className="linklike" onClick={() => s.link && (/^https?:/.test(s.link) ? window.open(s.link) : go(s.link))}>
               {s.title}{s.page ? `, page ${s.page}` : ""}</button> <span className="xs muted">{s.kind}</span></li>))}</ol>}
