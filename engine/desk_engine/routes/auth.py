@@ -9,7 +9,7 @@ from collections import defaultdict, deque
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 from ..config import VERSION
 from ..db import dumps, loads, new_id, now
@@ -286,6 +286,15 @@ async def sign_out_everywhere(ctx: Ctx) -> dict[str, Any]:
     ctx.engine.audit(None, ctx.user_id, "session.revoked", None, {"by": "self", "count": n}, resource_type="session",
                      decision="allowed", result="signed_out")
     return {"revoked": n}
+
+
+@router.get("/api/admin/metrics")
+async def admin_metrics(ctx: Ctx) -> Response:
+    """Process metrics in the Prometheus text format, for the instance administrator only. Labels name outcomes and
+    built-in tools, never a workspace, user or conversation (audit AI-12)."""
+    if not is_instance_admin(ctx):
+        raise Forbidden("Only the instance administrator can do this.")
+    return Response(ctx.engine.metrics.render(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 @router.post("/api/admin/users/{user_id}/sign-out", fresh=True)

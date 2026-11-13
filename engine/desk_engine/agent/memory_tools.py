@@ -37,7 +37,7 @@ async def _propose(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 
 
 @registry.tool("search_memory", "Search the saved memory of this workspace (and the user's personal memory).",
-               schema({"query": {"type": "string"}}, ["query"]), category="memory")
+               schema({"query": {"type": "string"}}, ["query"]), category="memory", offload=True)
 async def _search(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     rows = ctx.engine.memory.list(ctx.ws_id, ctx.user_id, "active", a["query"])[:15]
     if not rows:

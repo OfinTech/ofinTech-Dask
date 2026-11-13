@@ -1,0 +1,55 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-14 01:07:50 +0300"
+ },
+ "points": [
+  {
+   "conversations": 250,
+   "rss_mb": 106.8,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  },
+  {
+   "conversations": 500,
+   "rss_mb": 107.6,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  },
+  {
+   "conversations": 750,
+   "rss_mb": 108.1,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  },
+  {
+   "conversations": 1000,
+   "rss_mb": 108.1,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  },
+  {
+   "conversations": 1250,
+   "rss_mb": 108.1,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  },
+  {
+   "conversations": 1500,
+   "rss_mb": 108.1,
+   "agent_tasks_kept": 0,
+   "event_channels": 0,
+   "harness_records_kept": 0
+  }
+ ],
+ "kb_per_conversation_after_warmup": 0.5,
+ "note": "the test model's and the mock transport's request records are cleared after every conversation"
+}

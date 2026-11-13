@@ -23,7 +23,8 @@ def _view(ctx: ToolContext, a: dict[str, Any]) -> dict[str, Any] | None:
 @registry.tool("month_end_close", "Where the month-end close stands: readiness, the checklist, proposed entries "
                "(missing accruals, depreciation, bank charges) with their status, large variances and their "
                "explanations, customers not invoiced and the bank reconciliation. Optional month (YYYY-MM); the latest "
-               "close when omitted.", schema({"month": {"type": "string"}}), category="analysis", available=_has_ledger)
+               "close when omitted.", schema({"month": {"type": "string"}}), category="analysis", available=_has_ledger,
+               offload=True)
 async def _status(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     try:
         view = _view(ctx, a)

@@ -101,3 +101,24 @@ async def complete(model: ChatModel, messages: list[ChatMessage], tools: list[To
             result = event.result
     assert result is not None
     return result
+
+
+INCOMPLETE_FINISH = {"length", "content_filter"}
+
+
+def require_complete(result: LLMResult | None, what: str) -> LLMResult:
+    """A reply is complete only when the stream gave a result, the model finished on its own (not cut by the output
+    limit or a content filter), and it said something. Every caller that shows or stores a model's reply uses this,
+    so a truncated or empty reply never reaches anyone as a finished answer (audit AI-03)."""
+    from ..errors import AppError
+
+    if result is None:
+        raise AppError(f"The model's {what} ended without a result. Nothing was kept; try again.",
+                       code="llm_incomplete", status=502)
+    if result.finish_reason in INCOMPLETE_FINISH:
+        raise AppError(f"The model's {what} was cut off ({result.finish_reason}). Nothing was kept as complete; "
+                       "try again.", code="answer_incomplete", status=502)
+    if not result.text.strip() and not result.tool_calls:
+        raise AppError(f"The model returned an empty {what}. Nothing was kept; try again.", code="answer_empty",
+                       status=502)
+    return result

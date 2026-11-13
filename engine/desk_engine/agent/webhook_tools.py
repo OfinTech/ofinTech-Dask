@@ -19,7 +19,7 @@ def _has_incoming(ctx: ToolContext) -> bool:
                "payload. Use it to answer what another system sent.",
                schema({"webhook": {"type": "string", "description": "webhook name or id; all when omitted"},
                        "limit": {"type": "integer", "description": "1–50, default 10"}}),
-               category="workflows", available=_has_incoming)
+               category="workflows", available=_has_incoming, offload=True)
 async def _events(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     limit = min(max(int(a.get("limit") or 10), 1), 50)
     want = (a.get("webhook") or "").strip().lower()

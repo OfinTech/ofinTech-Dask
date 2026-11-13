@@ -1,0 +1,32 @@
+{
+ "cases": 211,
+ "passed": 210,
+ "pair_recall": 0.9996,
+ "false_matches": 1,
+ "exception_recall": 1.0,
+ "reconciliation_identity": {
+  "difference": 0.0,
+  "expected": 0.0,
+  "pass": true
+ },
+ "failures": [
+  {
+   "case": "nearest-first must not cost a match",
+   "pass": false,
+   "false_matches": 1,
+   "expected": {
+    "s1": "l1",
+    "s2": "l2"
+   },
+   "got": {
+    "s1": "l2"
+   },
+   "statement_only": [
+    "s2"
+   ],
+   "ledger_only": [
+    "l1"
+   ]
+  }
+ ]
+}
