@@ -51,7 +51,7 @@ release (for example with `syft`) and include the notices with the installers.
 
 ## Third-party services
 
-PipesHub (Apache-2.0, run separately by you or PipesHub Cloud, used through its HTTP API), Odoo (its external API, under the customer's Odoo licence), language model providers, Intuit, Zoho, Xero, Google, Telegram and Meta are used under their own terms. Customers
+Odoo (its external API, under the customer's Odoo licence), language model providers, Intuit, Zoho, Xero, Google, Telegram and Meta are used under their own terms. Customers
 connect their own accounts. Review each provider's developer terms and data-processing terms before launch, including
 where model providers process prompts. Names and trademarks belong to their owners. Their use here describes
 compatibility only and implies no endorsement.
