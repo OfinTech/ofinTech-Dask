@@ -24,7 +24,7 @@ from ..llm.base import ChatMessage, ToolCall, Usage
 from ..llm.registry import build_model, resolve_choice
 from ..skills.loader import enabled_index, get_enabled_skill
 from .context import available_groups, choose_tools, compact, select_groups
-from .prompts import system_parts
+from .prompts import system_parts, workspace_context
 from .tools import Tool, ToolContext, ToolOutput
 
 if TYPE_CHECKING:
@@ -359,6 +359,9 @@ class Agent:
                                      datasets=datasets,
                                      extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
                                      language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
+        context = workspace_context(connections=connections, datasets=datasets, collections=[
+            r["name"] for r in engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? ORDER BY name",
+                                             (workspace["id"],))])
         recent = [r["content"] or "" for r in engine.db.all(
             "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
             (thread["id"],))]
@@ -378,7 +381,8 @@ class Agent:
             specs = [t.spec() for t in chosen]
             more = available_groups(tools, groups)
             note = ("\n\nMore tool groups can be loaded with more_tools: " + ", ".join(more) + ".") if more else ""
-            messages = [ChatMessage("system", system), ChatMessage("system", dynamic + note), *compact(past)]
+            messages = [ChatMessage("system", system), ChatMessage("system", dynamic + note),
+                        *([ChatMessage("user", context)] if context else []), *compact(past)]
             msg_id = new_id("m_")
             result, timing = await self._call_model(model, messages, specs, thread["id"], msg_id, model_name)
             usage.add(result.usage)
@@ -501,11 +505,10 @@ class Agent:
         n = self.engine.db.scalar("SELECT COUNT(*) FROM documents WHERE workspace_id = ? AND status = 'indexed'", (ws_id,))
         if not n:
             return None
-        colls = [r["name"] for r in self.engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? "
-                                                       "ORDER BY name", (ws_id,))]
+        colls = self.engine.db.scalar("SELECT COUNT(*) FROM doc_collections WHERE workspace_id = ?", (ws_id,))
         note = f"Knowledge base: {n} indexed documents"
         if colls:
-            note += " in collections: " + ", ".join(colls[:30])
+            note += f" in {colls} collections (named in the workspace context message)"
         return note + ". Use search_documents for anything written in them."
 
     async def _resolve_pending(self, ctx: ToolContext, run: dict[str, Any], state: dict[str, Any],
