@@ -227,7 +227,7 @@ class ApprovalRace(unittest.TestCase):
             # resumed and consumed it); the other is refused as already decided
             self.assertEqual(sum(r in ("approved", "rejected", "executing", "executed") for r in results), 1, results)
             self.assertIn("approval_decided", results)
-            final = h.api("GET", f"/api/w/{ws}/approvals", params={"status": "all"})
+            h.api("GET", f"/api/w/{ws}/approvals", params={"status": "all"})
             self.assertIn(h.engine.db.scalar("SELECT status FROM approvals WHERE id = ?", (appr["id"],)),
                           ("approved", "executing", "executed"))
         finally:

@@ -487,7 +487,7 @@ def run_steps(pg, base, out, xlsx):
     pg.screenshot(path=str(out / "forecast.png"))
     pg.set_viewport_size({"width": 1360, "height": 860})
     # month-end close: a ledger uploaded, September prepared, the statement matched, entries decided
-    from tests.test_close import ledger_xlsx as close_ledger, statement_csv, BOOK
+    from tests.test_close import ledger_xlsx as close_ledger, statement_csv
 
     (out / "Close GL.xlsx").write_bytes(close_ledger())
     (out / "september-statement.csv").write_bytes(statement_csv(None))

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import threading
-import time
 import unittest
 
 from desk_engine.embedded import agui, components
@@ -103,7 +102,6 @@ class Lifecycle(unittest.TestCase):
         # a model that never answers: the client gives up and the engine must stop the run. The stream generator is
         # driven directly (what the ASGI server does on an http.disconnect), so the check does not depend on the test
         # client's disconnect timing.
-        import asyncio
 
         import httpx2 as httpx
         from desk_engine.embedded import agui

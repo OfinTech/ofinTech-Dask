@@ -45,6 +45,8 @@ jobs:
           # S101 (assert) and S608 (string-built SQL) were reviewed: every S608 site interpolates engine identifiers
           # or "?" placeholders only. S110/S603/S314 are accepted and listed in the roadmap with an expiry.
           ruff check --select S --ignore S101,S110,S314,S603,S608 desk_engine
+      - name: Undefined names, unused imports and unused variables (ruff F)
+        run: ruff check --select F engine e2e
       - name: Known vulnerabilities in Python dependencies (pip-audit)
         working-directory: engine
         run: |
@@ -114,6 +116,24 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npx tsc --noEmit -p tsconfig.json
+          npm test
+
+  sdk:
+    # The embedded-agent SDK has its own tests (registry, rendering, no raw HTML, no outside calls) that no job ran.
+    # It has no lockfile yet, so this installs from package.json; generate one and switch to `npm ci` later.
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: sdk/embedded-agent
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: "24" }
+      - name: Install, typecheck, build and test the SDK
+        run: |
+          npm install --no-audit --no-fund
+          npm run typecheck
+          npm run build
           npm test
 
   desktop:
