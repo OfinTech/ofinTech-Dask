@@ -1,0 +1,56 @@
+{
+ "environment": {
+  "python": "3.13.18",
+  "platform": "Linux-6.18.44-fc-v445-x86_64-with-glibc2.39",
+  "cpus": 2,
+  "processor": "x86_64",
+  "when": "2026-11-14 01:14:49 +0300"
+ },
+ "seed": 20261113,
+ "cases": 1385,
+ "passed": 1385,
+ "by_tool": {
+  "calc_npv_irr": {
+   "cases": 230,
+   "passed": 230
+  },
+  "calc_xnpv_xirr": {
+   "cases": 101,
+   "passed": 101
+  },
+  "calc_loan_schedule": {
+   "cases": 150,
+   "passed": 150
+  },
+  "calc_depreciation": {
+   "cases": 151,
+   "passed": 151
+  },
+  "calc_financial_ratios": {
+   "cases": 151,
+   "passed": 151
+  },
+  "calc_variance": {
+   "cases": 100,
+   "passed": 100
+  },
+  "calc_sales_tax": {
+   "cases": 201,
+   "passed": 201
+  },
+  "calc_breakeven": {
+   "cases": 100,
+   "passed": 100
+  },
+  "calc_growth": {
+   "cases": 101,
+   "passed": 101
+  },
+  "calc_currency_convert": {
+   "cases": 100,
+   "passed": 100
+  }
+ },
+ "failed": [],
+ "failed_total": 0
+}
