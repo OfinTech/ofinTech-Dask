@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+import functools
+import os
 import contextlib
 import getpass
 import logging
 import re
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -48,6 +51,10 @@ from .workflows.engine import Workflows
 
 log = logging.getLogger("desk")
 
+READ_POOL_THREADS = 8
+T = TypeVar("T")
+SHUTDOWN_DRAIN_SECONDS = 10.0   # how long a shutdown waits for work running in threads before closing the database
+
 
 async def _mcp_tools(ctx: ToolContext) -> list[Any]:
     return await ctx.engine.mcp.tools_for(ctx)
@@ -63,6 +70,10 @@ class Engine:
         self.secrets = SecretStore(self.db, SecretBox(settings.master_key))
         self.events = EventHub()
         self.metrics = Metrics()
+        # Database reads the agent loop hands off (context, history, tool availability) get their own small pool, so
+        # slow or hung tools in the default pool cannot starve every other conversation's preparation.
+        self.read_pool = ThreadPoolExecutor(max_workers=READ_POOL_THREADS, thread_name_prefix="desk-read")
+        self.offload_reads = os.environ.get("DESK_AGENT_OFFLOAD_READS", "1").strip().lower() not in {"0", "false", "no"}
         self.tools = registry
         if settings.sealed:   # nothing leaves the private network, whatever code asks (egress.py)
             # internal addresses are what a sealed server talks to, and checking a public name would be a DNS lookup
@@ -84,6 +95,7 @@ class Engine:
         from .approvals import Approvals
         self.approvals = Approvals(self)
         self.agent = Agent(self)
+        self._observe_process()
         self.workflows = Workflows(self)
         self.channels = Channels(self)
         self.mcp = MCPManager(self)
@@ -137,6 +149,28 @@ class Engine:
         self.db.execute("UPDATE agent_runs SET status = 'error', error = 'Interrupted by a restart.' "
                         "WHERE status = 'running'")
 
+    def _observe_process(self) -> None:
+        from .metrics import process_cpu_seconds, process_rss_bytes
+        m, started = self.metrics, time.time()
+        m.gauge("desk_up", lambda: 1)
+        m.gauge("desk_process_start_time_seconds", lambda: started)
+        m.gauge("desk_process_resident_memory_bytes", process_rss_bytes)
+        m.gauge("desk_process_cpu_seconds_total", process_cpu_seconds)
+        m.gauge("desk_db_connections", lambda: len(self.db._all))
+        m.gauge("desk_agent_runs_active", lambda: sum(1 for t in self.agent.tasks.values() if not t.done()))
+        self.db.observer = lambda kind, seconds: m.observe("desk_db_query_seconds", seconds, kind=kind)
+
+    async def read(self, fn: Callable[..., T], *args: Any) -> T:
+        """Runs a blocking database read in the engine's read pool and returns its result. DESK_AGENT_OFFLOAD_READS=0
+        runs it on the event loop instead (the previous behaviour: a little less CPU per turn on a fast disk, but a
+        slow database then stalls every conversation)."""
+        if not self.offload_reads:
+            return fn(*args)
+        return await asyncio.get_running_loop().run_in_executor(self.read_pool, functools.partial(fn, *args))
+
+    def background_failed(self, kind: str) -> None:
+        self.metrics.inc("desk_background_failures_total", kind=kind)
+
     async def start_background(self) -> None:
         info = await self.storage.check()
         log.info("file storage: %s %s", self.storage.describe(), info)
@@ -152,6 +186,21 @@ class Engine:
             with contextlib.suppress(BaseException):
                 await t
         await self.mcp.shutdown()
+        # Work handed to threads (database reads of the agent loop and of offloaded tools) may still be running.
+        # Closing a SQLite connection that another thread is using crashes the process, so let that work finish
+        # first; if it does not finish in time, leave the connections to the process exit rather than risk it.
+        try:
+            # the timeout is applied outside: shutdown_default_executor(timeout=...) only warns and carries on
+            loop = asyncio.get_running_loop()
+
+            async def drain() -> None:
+                await loop.run_in_executor(None, functools.partial(self.read_pool.shutdown, wait=True))
+                await loop.shutdown_default_executor()
+            await asyncio.wait_for(asyncio.shield(drain()), SHUTDOWN_DRAIN_SECONDS)
+        except Exception:  # noqa: BLE001 -- a shutdown must always get as far as it can
+            log.warning("worker threads still busy after %ss; database connections left to the process exit",
+                        SHUTDOWN_DRAIN_SECONDS, exc_info=True)
+            return
         self.db.close()
 
     async def _scheduler(self) -> None:
@@ -175,6 +224,7 @@ class Engine:
                 raise
             except Exception:  # pragma: no cover - keep the scheduler alive
                 log.exception("scheduler tick failed")
+                self.background_failed("scheduler")
             tick += 1
             await asyncio.sleep(3)
 
@@ -188,6 +238,7 @@ class Engine:
                     await sync_connection(self, conn)
                 except Exception:  # pragma: no cover
                     log.exception("scheduled sync failed for %s", conn["id"])
+                    self.background_failed("accounting_sync")
 
     # -- shared services -----------------------------------------------------------------------
     def audit(self, workspace_id: str | None, user_id: str | None, action: str, target: str | None = None,
@@ -207,6 +258,7 @@ class Engine:
             self.webhooks.emit(workspace_id, user_id, action, target, clean)
         except Exception:  # pragma: no cover - a webhook must never break the action that was audited
             log.exception("outgoing webhook could not be queued")
+            self.background_failed("webhook_queue")
         return event_id
 
     def record_usage(self, ws_id: str, provider_id: str, model: str, usage: Usage, source: str) -> None:

@@ -1,0 +1,88 @@
+{
+ "refuses_to_start_without_master_key": true,
+ "config_check": {
+  "exit_code": 0,
+  "output_tail": [
+   "mode=server data_dir=/tmp/tmprxd8gcfp/data public_url=http://127.0.0.1:34867"
+  ]
+ },
+ "first_start": {
+  "seconds_to_health": 1.02,
+  "ready_status": 200,
+  "ready_body": {
+   "status": "ready",
+   "checks": {
+    "migrations": {
+     "status": "ok"
+    },
+    "database": {
+     "status": "ok"
+    },
+    "disk": {
+     "status": "ok"
+    },
+    "storage": {
+     "status": "ok"
+    },
+    "scheduler": {
+     "status": "ok"
+    }
+   }
+  }
+ },
+ "scrape_with_token": {
+  "status": 200,
+  "desk_up": true,
+  "series": 40
+ },
+ "scrape_without_token": 401,
+ "scrape_wrong_token": 401,
+ "data_created": {
+  "signup": 200,
+  "workspace": 200
+ },
+ "shutdown_1": {
+  "exit_code": -15,
+  "seconds": 0.26,
+  "traceback_in_log": false,
+  "application_shutdown_complete": true,
+  "graceful": true
+ },
+ "after_restart": {
+  "seconds_to_health": 1.11,
+  "scrape_status": 200,
+  "desk_up": true,
+  "start_time_changed": true,
+  "ready_status": 200
+ },
+ "shutdown_2": {
+  "exit_code": -15,
+  "seconds": 0.21,
+  "traceback_in_log": false,
+  "application_shutdown_complete": true,
+  "graceful": true
+ },
+ "backup": {
+  "backup_exit": 0,
+  "check_exit": 0,
+  "restore_exit": 0,
+  "check_tail": [
+   "backup opens and passes the integrity check: schema 23, workspaces 1, users 1, datasets 0, documents 0, messages 0"
+  ],
+  "restore_tail": [
+   "restored to /tmp/tmprxd8gcfp/restored/desk.sqlite3: schema 23, 1 workspaces. Start the engine with the same DESK_MASTER_KEY the backup was taken under."
+  ]
+ },
+ "restored_instance": {
+  "health": true,
+  "ready_status": 200,
+  "workspaces_restored": null
+ },
+ "shutdown_3": {
+  "exit_code": -15,
+  "seconds": 0.16,
+  "traceback_in_log": false,
+  "application_shutdown_complete": true,
+  "graceful": true
+ }
+}

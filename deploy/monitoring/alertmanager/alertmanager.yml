@@ -1,0 +1,37 @@
+# Routing. The receiver is a webhook whose URL is read from a file you provide (secrets/alert_webhook_url): a chat
+# incoming webhook, an on-call service's webhook or an internal relay. No address is committed here. Replace or add
+# receivers (email, PagerDuty, ...) with your own configuration; keep secrets in files, not in this file.
+route:
+  receiver: default
+  group_by: [alertname, severity]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers: [severity="critical"]
+      receiver: default
+      group_wait: 10s
+      repeat_interval: 1h
+    - matchers: [severity="info"]
+      receiver: default
+      repeat_interval: 24h
+
+inhibit_rules:
+  # when the engine is down, everything derived from its metrics is noise
+  - source_matchers: [alertname="DeskServiceDown"]
+    target_matchers: [service="ofintech-desk"]
+    equal: [service]
+  # a model outage explains agent errors, latency and timeouts
+  - source_matchers: [alertname="DeskModelUnavailable"]
+    target_matchers: [alertname=~"DeskAgentErrorRate|DeskAgentLatencyHigh|DeskModelTimeouts|DeskAgentSuccessBudgetBurn"]
+  # a critical alert silences its own warning
+  - source_matchers: [severity="critical"]
+    target_matchers: [severity="warning"]
+    equal: [alertname]
+
+receivers:
+  - name: default
+    webhook_configs:
+      - url_file: /etc/alertmanager/secrets/alert_webhook_url
+        send_resolved: true
+        max_alerts: 20

@@ -1,0 +1,48 @@
+{
+ "turns": 20,
+ "loop_db_calls_total": 980,
+ "agent_loop_db_calls_per_turn": 22.0,
+ "agent_loop_db_ms_per_turn": 2.42,
+ "top_sites": [
+  {
+   "site": "agent/harness.py:_run",
+   "calls_per_turn": 7.0,
+   "ms_per_turn": 0.798
+  },
+  {
+   "site": "agent/harness.py:_message_out",
+   "calls_per_turn": 4.0,
+   "ms_per_turn": 0.279
+  },
+  {
+   "site": "agent/harness.py:run_out",
+   "calls_per_turn": 3.0,
+   "ms_per_turn": 0.188
+  },
+  {
+   "site": "skills/loader.py:list_skills",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.115
+  },
+  {
+   "site": "agent/harness.py:_run_safely",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.473
+  },
+  {
+   "site": "app.py:record_usage",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.361
+  },
+  {
+   "site": "agent/harness.py:thread_busy",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.06
+  },
+  {
+   "site": "agent/harness.py:_tool_message",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.144
+  }
+ ]
+}
