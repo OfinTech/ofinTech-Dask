@@ -16,6 +16,6 @@ scrape_configs:
     scheme: http                       # inside the compose network; the engine is not published (Caddy fronts it)
     authorization:
       type: Bearer
-      credentials_file: /etc/prometheus/secrets/metrics_token
+      credentials_file: /run/secrets/metrics_token
     sample_limit: 20000                # a second cardinality guard behind the engine's own per-family cap
     static_configs: [{ targets: ["engine:8700"] }]
