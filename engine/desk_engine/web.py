@@ -8,6 +8,7 @@ import inspect
 import re
 import json
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, Any
@@ -86,6 +87,12 @@ def role_at_least(role: str, required: str) -> bool:
 _ID_SHAPE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
 
 
+def _observe_request(engine: Engine, path: str, method: str, status: int, started: float) -> None:
+    """Route template (never the concrete path: no workspace or thread ids), method and status class only."""
+    engine.metrics.inc("desk_http_requests_total", route=path, method=method, code=f"{status // 100}xx")
+    engine.metrics.observe("desk_http_request_seconds", time.perf_counter() - started, route=path)
+
+
 def _audit_denied(engine: Engine, request: Request, user: dict[str, Any] | None, role: str | None,
                   exc: AppError) -> None:
     """A 403 on any route: recorded against the workspace in the path when its id looks like one (a made-up id is
@@ -161,6 +168,7 @@ class Router:
                 from .audit import current_request_id, new_request_id
 
                 engine: Engine = request.app.state.engine
+                started = time.perf_counter()
                 request_id = new_request_id()
                 request.state.request_id = request_id
                 reset = current_request_id.set(request_id)
@@ -181,9 +189,14 @@ class Router:
                     if exc.status == 403:
                         # every refusal of a protected operation is a security event: who, where, what, why
                         _audit_denied(engine, request, user, role, exc)
+                        engine.metrics.inc("desk_access_denied_total", reason=str(exc.code or "forbidden")[:40])
+                    elif exc.status == 401:
+                        engine.metrics.inc("desk_auth_failures_total", route=path)
+                    _observe_request(engine, path, method, exc.status, started)
                     return JSONResponse(exc.to_dict(), status_code=exc.status)
                 except Exception:  # pragma: no cover - logged, generic message to the client
                     log.exception("unhandled error on %s %s", method, path)
+                    _observe_request(engine, path, method, 500, started)
                     return JSONResponse({"error": "internal", "message": "Something went wrong. "
                                          "The details are in the engine log."}, status_code=500)
                 finally:
@@ -195,6 +208,7 @@ class Router:
                 else:
                     resp = JSONResponse(result)
                 resp.headers["x-request-id"] = request_id
+                _observe_request(engine, path, method, resp.status_code, started)
                 return resp
 
             endpoint.__name__ = fn.__name__
@@ -375,6 +389,7 @@ def load_workspace(ctx: Ctx, ws_id: str, role: str) -> None:
             # a real workspace the caller is not a member of: a cross-tenant attempt, recorded against that tenant
             ctx.engine.audit(ws_id, ctx.user["id"], "access.denied", f"{ctx.request.method} {ctx.request.url.path}"[:200],
                              {"reason": "not_a_member"}, resource_type="workspace", decision="denied", result="refused")
+            ctx.engine.metrics.inc("desk_workspace_rejections_total")
         raise NotFound("Workspace not found.")
     ctx.role = row.pop("member_role")
     ctx.workspace = row

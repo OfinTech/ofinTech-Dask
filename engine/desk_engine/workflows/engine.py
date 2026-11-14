@@ -309,6 +309,7 @@ class Workflows:
                 self._finish(run, "failed", exc.message)
         except Exception as exc:  # pragma: no cover
             log.exception("workflow run %s failed", run_id)
+            self.engine.background_failed("workflow")
             run = self.engine.db.one("SELECT * FROM workflow_runs WHERE id = ?", (run_id,))
             if run:
                 self._finish(run, "failed", f"Unexpected error: {type(exc).__name__}")

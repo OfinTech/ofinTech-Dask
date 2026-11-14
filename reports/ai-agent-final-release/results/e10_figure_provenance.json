@@ -1,0 +1,190 @@
+{
+ "seed": 1113,
+ "answers": 24000,
+ "evidence_figures": {
+  "amount": 79,
+  "percent": 28,
+  "ratio": 16,
+  "days": 12
+ },
+ "by_class": {
+  "valid: amount copied": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 1.0,
+   "new_failures": []
+  },
+  "valid: amount rounded / k / m": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.87,
+   "new_failures": []
+  },
+  "valid: percentage copied": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 1.0,
+   "new_failures": []
+  },
+  "valid: ratio copied": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 1.0,
+   "new_failures": []
+  },
+  "valid: day count copied": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 1.0,
+   "new_failures": []
+  },
+  "valid: derived from stated figures": {
+   "expected": "pass",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.3713,
+   "new_failures": []
+  },
+  "user's own figure": {
+   "expected": "user",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 1.0,
+   "new_failures": []
+  },
+  "unsupported: fabricated amount": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.9247,
+   "new_failures": []
+  },
+  "unsupported: amount mis-copied by 0.01%-0.45%": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.0,
+   "new_failures": []
+  },
+  "unsupported: fabricated percentage": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.414,
+   "new_failures": []
+  },
+  "unsupported: cross-unit percentage (ratio x 100)": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.0,
+   "new_failures": []
+  },
+  "unsupported: cross-unit percentage (day count)": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.0,
+   "new_failures": []
+  },
+  "unsupported: wrong day count": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 0.9847,
+   "old_correct_rate": 0.0,
+   "new_failures": [
+    {
+     "answer": "DSO is 91 days.",
+     "got": "pass",
+     "report": {
+      "unverified_figures": [],
+      "user_figures": [],
+      "figure_provenance": [
+       {
+        "figure": "91 days",
+        "kind": "count",
+        "source": "tool"
+       }
+      ]
+     }
+    },
+    {
+     "answer": "DSO is 91 days.",
+     "got": "pass",
+     "report": {
+      "unverified_figures": [],
+      "user_figures": [],
+      "figure_provenance": [
+       {
+        "figure": "91 days",
+        "kind": "count",
+        "source": "tool"
+       }
+      ]
+     }
+    },
+    {
+     "answer": "DSO is 91 days.",
+     "got": "pass",
+     "report": {
+      "unverified_figures": [],
+      "user_figures": [],
+      "figure_provenance": [
+       {
+        "figure": "91 days",
+        "kind": "count",
+        "source": "tool"
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "unsupported: user-asserted figure repeated": {
+   "expected": "user-not-verified",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.0,
+   "new_failures": []
+  },
+  "unsupported: wrong arithmetic on stated figures": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.5833,
+   "new_failures": []
+  },
+  "unsupported: result of figures the answer does not state": {
+   "expected": "flag",
+   "n": 1500,
+   "new_correct_rate": 1.0,
+   "old_correct_rate": 0.75,
+   "new_failures": []
+  }
+ },
+ "new": {
+  "true_positives": 13477,
+  "false_negatives": 23,
+  "false_positives": 0,
+  "true_negatives": 9000,
+  "precision": 1.0,
+  "recall": 0.9983,
+  "false_positive_rate": 0.0,
+  "false_negative_rate": 0.0017
+ },
+ "old": {
+  "true_positives": 4008,
+  "false_negatives": 9492,
+  "false_positives": 1138,
+  "true_negatives": 7862,
+  "precision": 0.7789,
+  "recall": 0.2969,
+  "false_positive_rate": 0.1264,
+  "false_negative_rate": 0.7031
+ }
+}
