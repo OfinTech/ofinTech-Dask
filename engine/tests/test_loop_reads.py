@@ -81,3 +81,50 @@ class LoopReads(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HungToolsDoNotStarveOthers(unittest.TestCase):
+    """Slow tools fill the default thread pool; another conversation's context and history reads must not queue
+    behind them (found by the release load test: tool-timeout stage 9.6 -> 2.5 turns/s)."""
+
+    def test_a_plain_question_is_answered_while_tools_hang(self) -> None:
+        from desk_engine.agent.tools import registry
+        h = Harness()
+        self.addCleanup(h.close)
+        ws = h.setup_workspace()
+        tool = registry.get_static("calc_growth")
+        real, old_timeout = tool.handler, tool.timeout
+
+        async def hang(ctx, a):
+            time.sleep(3)
+            return await real(ctx, a)
+        tool.handler, tool.timeout = hang, 1.0
+        self.addCleanup(setattr, tool, "handler", real)
+        self.addCleanup(setattr, tool, "timeout", old_timeout)
+
+        class Responder:
+            def __bool__(self):
+                return True
+
+            def pop(self, _i=0):
+                msgs = h.llm.calls[-1]["messages"]
+                if msgs[-1]["role"] == "tool":
+                    return "It timed out."
+                if "plain" in msgs[-1]["content"]:
+                    return "Plain answer."
+                return [("calc_growth", {"values": [1, 2]})]
+        h.llm.script = Responder()
+        busy = [h.api("POST", f"/api/w/{ws}/threads", json={})["id"] for _ in range(12)]
+        for t in busy:                                   # 12 hung tool calls: twice the default pool on 2 CPUs
+            h.api("POST", f"/api/w/{ws}/threads/{t}/messages", json={"text": "growth"})
+        time.sleep(0.3)
+        t = h.api("POST", f"/api/w/{ws}/threads", json={})["id"]
+        started = time.perf_counter()
+        h.api("POST", f"/api/w/{ws}/threads/{t}/messages", json={"text": "a plain question"})
+        while h.engine.agent.thread_busy(t) and time.perf_counter() - started < 20:
+            time.sleep(0.02)
+        took = time.perf_counter() - started
+        self.assertLess(took, 1.0, f"a plain question took {took:.2f}s behind hung tools")
+        for b in busy:                                   # let the hung calls finish before shutdown
+            while h.engine.agent.thread_busy(b) and time.perf_counter() - started < 30:
+                time.sleep(0.05)

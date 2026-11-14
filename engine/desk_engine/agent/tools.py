@@ -310,7 +310,7 @@ class ToolRegistry:
 
         # about thirty availability reads per call: off the event loop, so a slow database does not stall every
         # conversation (MCP providers below stay on the loop: they use its network clients)
-        tools = await asyncio.to_thread(self._static_for, ctx)
+        tools = await ctx.engine.read(self._static_for, ctx)
         for provider in self._providers:
             for t in await provider(ctx):
                 if t.policy == "off" or is_payment_tool(t.name, t.description, acts=True):   # never trust a server's read-only claim
