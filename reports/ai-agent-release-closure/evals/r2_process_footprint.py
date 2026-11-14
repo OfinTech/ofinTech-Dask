@@ -100,8 +100,8 @@ def main():
         base = f"http://127.0.0.1:{port}"
         env = {k: v for k, v in os.environ.items() if not k.startswith("DESK_")}
         env.update(DESK_MODE="server", DESK_DATA_DIR=str(Path(tmp) / "d"), DESK_PORT=str(port), DESK_HOST="127.0.0.1",
-                   DESK_PUBLIC_URL=base, DESK_ALLOW_HTTP="1", DESK_MASTER_KEY=key, DESK_ALLOW_PRIVATE_URLS="1",
-                   DESK_LOG_LEVEL="warning")
+                   DESK_PUBLIC_URL=base, DESK_ALLOW_HTTP="1", DESK_ALLOW_PRIVATE_URLS="1", DESK_LOG_LEVEL="warning")
+        env["DESK_MASTER_KEY"] = key           # generated above by `keygen` for this throwaway run
         p = subprocess.Popen([sys.executable, "-m", "desk_engine", "serve"], env=env, stdout=subprocess.DEVNULL,
                              stderr=subprocess.DEVNULL)
         try:

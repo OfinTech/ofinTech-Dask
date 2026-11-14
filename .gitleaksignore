@@ -1,0 +1,5 @@
+# Findings gitleaks reports in the history that are not secrets. Add an entry only with the reason next to it.
+# r2_process_footprint.py: `DESK_MASTER_KEY=key` passed a variable holding a key that `python -m desk_engine keygen`
+# generates at run time for a throwaway test server; no key value is in the file. The line was rewritten in a later
+# commit; this entry covers the commit that still contains it (history is not rewritten).
+a4449cde55cb3c22358c9c624ce444f6591491f1:reports/ai-agent-release-closure/evals/r2_process_footprint.py:generic-api-key:103
