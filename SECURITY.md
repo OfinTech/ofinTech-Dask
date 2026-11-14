@@ -33,3 +33,22 @@ S3 stores), findings that need an already compromised computer or administrator 
 hardening that the deployment guide asks the operator to provide (TLS in front of the server, backups, firewalling).
 
 How the product protects data is described in [docs/SECURITY.md](docs/SECURITY.md).
+
+## Review of the AI agent, November 2026
+
+The agent loop, its tools, the instructions it receives and the data it can reach were reviewed in November
+2026, with reproducible evaluations and a re-run of the agent's own security suites. Twenty-three findings were
+raised.
+
+- **Every HIGH finding is closed and re-verified.** A skill pinned to a conversation can no longer reach the
+  model's instructions while it is disabled or waiting for an admin; an editor's change to an approved skill
+  now waits for approval again; and an incomplete answer from a model is no longer stored as a complete one.
+- **Names that come from imported data — file names, connection labels, the workspace name — are no longer
+  placed among the system instructions.** They are passed as data, marked as data.
+- **One thing was not measured and is not claimed:** how far a given model provider's model can be talked into
+  something. What was measured is what the engine allows, which is what the engine can be held to: every write
+  needs an approval, and no tool can move money.
+
+The evidence — findings, reproductions, fixes and verification — is kept with the release record rather than
+published, because a reproduction is as useful to an attacker as to a reviewer. It is shared in full with a
+customer under an agreement; ask through the address in this policy.

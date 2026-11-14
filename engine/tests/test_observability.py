@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
 class AlertSignals(unittest.TestCase):
     """Each alert's signal moves when its failure is injected (the rule evaluation itself needs Prometheus, which this
-    test does not run; see reports/ai-agent-final-release/03_ALERTING_VALIDATION.md)."""
+    test does not run; the alerting validation is part of the release record)."""
 
     URL = "https://llm.test/v1/chat/completions"
 

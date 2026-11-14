@@ -1,4 +1,4 @@
-"""The provenance-aware figure check (audit finding AI-05). The classes measured in reports/ai-agent-audit E4, each
+"""The provenance-aware figure check (audit finding AI-05). The classes measured in the agent audit's E4 evaluation, each
 pinned here with a deterministic example, plus the agent loop storing what the app shows."""
 
 from __future__ import annotations

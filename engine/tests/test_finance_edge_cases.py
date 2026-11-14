@@ -1,4 +1,4 @@
-"""Calculator edge cases found by the AI agent audit (reports/ai-agent-audit, E1 and E2), with answers that are known
+"""Calculator edge cases found by the AI agent audit (its E1 and E2 evaluations), with answers that are known
 independently of the code under test.
 
 - Several IRRs: -1,000 / 3,600 / -4,310 / 1,716 has IRRs of exactly 10%, 20% and 30%. With x = 1 + r,

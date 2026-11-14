@@ -1,4 +1,4 @@
-# Alerts for OfinTech Desk. Thresholds come from the measured baselines in reports/ai-agent-final-release/05 and the
+# Alerts for OfinTech Desk. Thresholds come from the measured baselines of the agent release record and the
 # proposed SLOs in 04; each alert needs traffic (a minimum count) so a quiet instance does not page on one failure.
 # Messages use only exported labels (route templates, tool names, codes): no workspace, user, prompt or amount.
 groups:
