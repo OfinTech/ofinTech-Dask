@@ -406,7 +406,7 @@ class Agent:
         provider_id, model_name = resolve_choice(engine, workspace, thread["provider_id"], thread["model"])
         model = build_model(engine, workspace["id"], provider_id, model_name)
         # the prompt's context (skills, connections, datasets, memories) is a dozen reads: built in a worker thread
-        system, dynamic, context, datasets, memories = await asyncio.to_thread(
+        system, dynamic, context, datasets, memories = await engine.read(
             self._prompt_context, run, thread, workspace, state)
 
         step = int(state.get("step", 0))
@@ -414,7 +414,7 @@ class Agent:
         last_output: dict[tuple[str, str], ToolOutput] = {}
         while step < MAX_STEPS:
             step += 1
-            past = await asyncio.to_thread(history, engine, thread["id"])
+            past = await engine.read(history, engine, thread["id"])
             groups = select_groups(past, tools, has_datasets=bool(datasets), extra=state.get("extra_instructions") or "")
             chosen = choose_tools(tools, groups)
             specs = [t.spec() for t in chosen]
