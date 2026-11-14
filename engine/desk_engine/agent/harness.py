@@ -405,44 +405,16 @@ class Agent:
 
         provider_id, model_name = resolve_choice(engine, workspace, thread["provider_id"], thread["model"])
         model = build_model(engine, workspace["id"], provider_id, model_name)
-        skills = enabled_index(engine, workspace["id"])
-        pinned = []
-        for name in loads(thread["skills"], []):
-            # deny by default: only a skill that is enabled in this workspace right now reaches the instructions; a
-            # disabled, unapproved, deleted or unknown one is left out and the refusal is recorded
-            skill = get_enabled_skill(engine, workspace["id"], str(name))
-            if skill is None:
-                engine.audit(workspace["id"], run["user_id"], "skill.pin_refused", str(name)[:120],
-                             {"thread_id": thread["id"]}, resource_type="skill", decision="denied", result="refused",
-                             request_id=run["id"])
-                continue
-            pinned.append(skill)
-        from ..data.store import list_datasets
-
-        connections = engine.db.all("SELECT id, provider, label FROM connections WHERE workspace_id = ? AND "
-                                    "status = 'connected'", (workspace["id"],))
-        datasets = list_datasets(engine, workspace["id"])
-        system, dynamic = system_parts(workspace, skills=skills, pinned=pinned, connections=connections,
-                                     datasets=datasets,
-                                     extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
-                                     language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
-        context = workspace_context(connections=connections, datasets=datasets, collections=[
-            r["name"] for r in engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? ORDER BY name",
-                                             (workspace["id"],))])
-        recent = [r["content"] or "" for r in engine.db.all(
-            "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
-            (thread["id"],))]
-        memories = engine.memory.relevant(workspace["id"], run["user_id"], recent)
-        mem_block = engine.memory.prompt_block(memories)
-        if mem_block:
-            dynamic += "\n\n" + mem_block
+        # the prompt's context (skills, connections, datasets, memories) is a dozen reads: built in a worker thread
+        system, dynamic, context, datasets, memories = await asyncio.to_thread(
+            self._prompt_context, run, thread, workspace, state)
 
         step = int(state.get("step", 0))
         seen: dict[tuple[str, str], int] = {}          # identical read calls in this run segment
         last_output: dict[tuple[str, str], ToolOutput] = {}
         while step < MAX_STEPS:
             step += 1
-            past = history(engine, thread["id"])
+            past = await asyncio.to_thread(history, engine, thread["id"])
             groups = select_groups(past, tools, has_datasets=bool(datasets), extra=state.get("extra_instructions") or "")
             chosen = choose_tools(tools, groups)
             specs = [t.spec() for t in chosen]
@@ -579,6 +551,44 @@ class Agent:
             m.observe("desk_llm_ttfb_seconds", (first or end) - started)
             return result, {"ttfb_ms": round(((first or end) - started) * 1000, 1),
                             "total_ms": round((end - started) * 1000, 1), "attempts": attempts}
+
+    def _prompt_context(self, run: dict[str, Any], thread: dict[str, Any], workspace: dict[str, Any],
+                        state: dict[str, Any]) -> tuple[str, str, Any, list[dict[str, Any]], list[dict[str, Any]]]:
+        """The run's instructions and workspace context. Read-only apart from auditing refused pins; it runs in a
+        worker thread (with that thread's own SQLite connection), so it must not touch the event loop or publish."""
+        engine = self.engine
+        skills = enabled_index(engine, workspace["id"])
+        pinned = []
+        for name in loads(thread["skills"], []):
+            # deny by default: only a skill that is enabled in this workspace right now reaches the instructions; a
+            # disabled, unapproved, deleted or unknown one is left out and the refusal is recorded
+            skill = get_enabled_skill(engine, workspace["id"], str(name))
+            if skill is None:
+                engine.audit(workspace["id"], run["user_id"], "skill.pin_refused", str(name)[:120],
+                             {"thread_id": thread["id"]}, resource_type="skill", decision="denied", result="refused",
+                             request_id=run["id"])
+                continue
+            pinned.append(skill)
+        from ..data.store import list_datasets
+
+        connections = engine.db.all("SELECT id, provider, label FROM connections WHERE workspace_id = ? AND "
+                                    "status = 'connected'", (workspace["id"],))
+        datasets = list_datasets(engine, workspace["id"])
+        system, dynamic = system_parts(workspace, skills=skills, pinned=pinned, connections=connections,
+                                     datasets=datasets,
+                                     extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
+                                     language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
+        context = workspace_context(connections=connections, datasets=datasets, collections=[
+            r["name"] for r in engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? ORDER BY name",
+                                             (workspace["id"],))])
+        recent = [r["content"] or "" for r in engine.db.all(
+            "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
+            (thread["id"],))]
+        memories = engine.memory.relevant(workspace["id"], run["user_id"], recent)
+        mem_block = engine.memory.prompt_block(memories)
+        if mem_block:
+            dynamic += "\n\n" + mem_block
+        return system, dynamic, context, datasets, memories
 
     def _observe_call(self, messages: list[ChatMessage], past: list[ChatMessage], result: Any) -> None:
         """Tokens, finish reason and context use of one model call (counts and sizes only, never content)."""
