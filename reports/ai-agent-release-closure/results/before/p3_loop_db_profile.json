@@ -1,0 +1,98 @@
+{
+ "turns": 20,
+ "loop_db_calls_total": 1740,
+ "agent_loop_db_calls_per_turn": 60.0,
+ "agent_loop_db_ms_per_turn": 3.94,
+ "top_sites": [
+  {
+   "site": "agent/connector_tools.py:check",
+   "calls_per_turn": 12.0,
+   "ms_per_turn": 0.375
+  },
+  {
+   "site": "agent/harness.py:_run",
+   "calls_per_turn": 11.0,
+   "ms_per_turn": 0.796
+  },
+  {
+   "site": "data/store.py:list_datasets",
+   "calls_per_turn": 6.0,
+   "ms_per_turn": 0.272
+  },
+  {
+   "site": "skills/loader.py:list_skills",
+   "calls_per_turn": 4.0,
+   "ms_per_turn": 0.168
+  },
+  {
+   "site": "agent/harness.py:_message_out",
+   "calls_per_turn": 4.0,
+   "ms_per_turn": 0.228
+  },
+  {
+   "site": "agent/costcentre_tools.py:_has",
+   "calls_per_turn": 3.0,
+   "ms_per_turn": 0.083
+  },
+  {
+   "site": "agent/knowledge_tools.py:_has_docs",
+   "calls_per_turn": 3.0,
+   "ms_per_turn": 0.089
+  },
+  {
+   "site": "agent/harness.py:run_out",
+   "calls_per_turn": 3.0,
+   "ms_per_turn": 0.511
+  },
+  {
+   "site": "agent/harness.py:_run_safely",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.417
+  },
+  {
+   "site": "agent/collab_tools.py:_has_workflows",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.076
+  },
+  {
+   "site": "agent/harness.py:history",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.291
+  },
+  {
+   "site": "app.py:record_usage",
+   "calls_per_turn": 2.0,
+   "ms_per_turn": 0.312
+  },
+  {
+   "site": "agent/harness.py:thread_busy",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.051
+  },
+  {
+   "site": "agent/webhook_tools.py:_has_incoming",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.031
+  },
+  {
+   "site": "agent/tools.py:role",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.035
+  },
+  {
+   "site": "agent/harness.py:_knowledge_note",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.034
+  },
+  {
+   "site": "memory.py:relevant",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.051
+  },
+  {
+   "site": "agent/harness.py:_tool_message",
+   "calls_per_turn": 1.0,
+   "ms_per_turn": 0.115
+  }
+ ]
+}

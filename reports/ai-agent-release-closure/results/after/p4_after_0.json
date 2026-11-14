@@ -1,0 +1,29 @@
+{
+ "delay_s_per_read": 0.0,
+ "users": 20,
+ "seconds": 15.2,
+ "turns": 1249,
+ "turns_per_s": 82.4,
+ "turn_ms": {
+  "p50": 197.0,
+  "p95": 245.1,
+  "p99": 285.2
+ },
+ "health_ms": {
+  "n": 225,
+  "p50": 46.0,
+  "p95": 70.4,
+  "p99": 78.2,
+  "max": 131.7
+ },
+ "cpu_cores": 1.07,
+ "db_connections": 10,
+ "event_loop_lag": [
+  "desk_event_loop_lag_seconds_sum 1.522842",
+  "desk_event_loop_lag_seconds_count 54"
+ ],
+ "runs_by_status": {
+  "done": 1249
+ },
+ "cpus": 2
+}

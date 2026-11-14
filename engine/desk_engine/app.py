@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import functools
+import os
 import contextlib
 import getpass
 import logging
@@ -72,6 +73,7 @@ class Engine:
         # Database reads the agent loop hands off (context, history, tool availability) get their own small pool, so
         # slow or hung tools in the default pool cannot starve every other conversation's preparation.
         self.read_pool = ThreadPoolExecutor(max_workers=READ_POOL_THREADS, thread_name_prefix="desk-read")
+        self.offload_reads = os.environ.get("DESK_AGENT_OFFLOAD_READS", "1").strip().lower() not in {"0", "false", "no"}
         self.tools = registry
         if settings.sealed:   # nothing leaves the private network, whatever code asks (egress.py)
             # internal addresses are what a sealed server talks to, and checking a public name would be a DNS lookup
@@ -159,7 +161,11 @@ class Engine:
         self.db.observer = lambda kind, seconds: m.observe("desk_db_query_seconds", seconds, kind=kind)
 
     async def read(self, fn: Callable[..., T], *args: Any) -> T:
-        """Runs a blocking database read in the engine's read pool and returns its result."""
+        """Runs a blocking database read in the engine's read pool and returns its result. DESK_AGENT_OFFLOAD_READS=0
+        runs it on the event loop instead (the previous behaviour: a little less CPU per turn on a fast disk, but a
+        slow database then stalls every conversation)."""
+        if not self.offload_reads:
+            return fn(*args)
         return await asyncio.get_running_loop().run_in_executor(self.read_pool, functools.partial(fn, *args))
 
     def background_failed(self, kind: str) -> None:

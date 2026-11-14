@@ -128,3 +128,17 @@ class HungToolsDoNotStarveOthers(unittest.TestCase):
         for b in busy:                                   # let the hung calls finish before shutdown
             while h.engine.agent.thread_busy(b) and time.perf_counter() - started < 30:
                 time.sleep(0.05)
+
+
+class OffloadSwitch(unittest.TestCase):
+    def test_reads_can_be_kept_on_the_loop(self) -> None:
+        import os
+        with mock.patch.dict(os.environ, {"DESK_AGENT_OFFLOAD_READS": "0"}):
+            h = Harness()
+        self.addCleanup(h.close)
+        self.assertFalse(h.engine.offload_reads)
+        ws = h.setup_workspace()
+        t = h.api("POST", f"/api/w/{ws}/threads", json={})["id"]
+        h.llm.script = [[("calc_growth", {"values": [1, 2]})], "Done."]
+        h.api("POST", f"/api/w/{ws}/threads/{t}/messages", json={"text": "g"})
+        self.assertEqual(h.wait_run(t, 20)["run"]["status"], "done")

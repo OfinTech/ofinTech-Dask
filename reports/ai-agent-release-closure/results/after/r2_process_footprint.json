@@ -1,0 +1,49 @@
+{
+ "model": "scripted OpenAI-compatible server on 127.0.0.1 (zero latency)",
+ "stages": {
+  "10": {
+   "turns": 523,
+   "turns_per_s": 25.8,
+   "errors": 0,
+   "p50_ms": 362.2,
+   "p95_ms": 457.0,
+   "p99_ms": 492.2,
+   "engine_peak_rss_mb": 144.0,
+   "engine_peak_threads": 10,
+   "engine_cpu_cores": 0.99
+  },
+  "50": {
+   "turns": 499,
+   "turns_per_s": 22.6,
+   "errors": 0,
+   "p50_ms": 1737.7,
+   "p95_ms": 3041.4,
+   "p99_ms": 3815.2,
+   "engine_peak_rss_mb": 203.2,
+   "engine_peak_threads": 11,
+   "engine_cpu_cores": 0.95
+  },
+  "100": {
+   "turns": 495,
+   "turns_per_s": 21.1,
+   "errors": 0,
+   "p50_ms": 3949.0,
+   "p95_ms": 6094.6,
+   "p99_ms": 6198.0,
+   "engine_peak_rss_mb": 273.9,
+   "engine_peak_threads": 11,
+   "engine_cpu_cores": 0.95
+  }
+ },
+ "idle": {
+  "VmRSS": 142472,
+  "Threads": 1,
+  "cpu_s": 0.91
+ },
+ "after": {
+  "VmRSS": 280520,
+  "Threads": 11,
+  "cpu_s": 64.36
+ },
+ "exit_code": -15
+}

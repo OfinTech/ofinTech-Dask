@@ -1,0 +1,593 @@
+{
+ "environment": {
+  "cpus": 2,
+  "quick": false,
+  "stage_seconds": 20,
+  "model": "scripted, zero latency (engine and API overhead only)",
+  "dataset": "HarborLine demo general ledger (synthetic)"
+ },
+ "scenarios": {
+  "A_normal_25": {
+   "users": 25,
+   "seconds": 20.2,
+   "actions": 1479,
+   "actions_per_s": 73.1,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.06,
+   "rss_mb_end": 185.1,
+   "rss_mb_delta": 75.0,
+   "active_runs_peak": 20,
+   "latency_ms": {
+    "dashboard": {
+     "n": 234,
+     "p50": 117.9,
+     "p95": 220.8,
+     "p99": 252.8
+    },
+    "insights": {
+     "n": 77,
+     "p50": 113.7,
+     "p95": 151.5,
+     "p99": 229.1
+    },
+    "question": {
+     "n": 446,
+     "p50": 237.7,
+     "p95": 322.8,
+     "p99": 364.5
+    },
+    "calc": {
+     "n": 277,
+     "p50": 312.3,
+     "p95": 402.6,
+     "p99": 468.8
+    },
+    "kpi": {
+     "n": 445,
+     "p50": 335.5,
+     "p95": 439.7,
+     "p99": 473.5
+    }
+   },
+   "all_ms": {
+    "p50": 280.0,
+    "p95": 394.5,
+    "p99": 460.1
+   }
+  },
+  "B_users_10": {
+   "users": 10,
+   "seconds": 20.1,
+   "actions": 1437,
+   "actions_per_s": 71.5,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.07,
+   "rss_mb_end": 188.5,
+   "rss_mb_delta": 3.4,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "dashboard": {
+     "n": 213,
+     "p50": 46.7,
+     "p95": 71.8,
+     "p99": 133.3
+    },
+    "insights": {
+     "n": 80,
+     "p50": 53.9,
+     "p95": 133.9,
+     "p99": 143.9
+    },
+    "question": {
+     "n": 444,
+     "p50": 93.6,
+     "p95": 159.3,
+     "p99": 197.4
+    },
+    "calc": {
+     "n": 262,
+     "p50": 125.1,
+     "p95": 216.8,
+     "p99": 238.3
+    },
+    "kpi": {
+     "n": 438,
+     "p50": 140.3,
+     "p95": 227.6,
+     "p99": 254.2
+    }
+   },
+   "all_ms": {
+    "p50": 111.2,
+    "p95": 196.5,
+    "p99": 241.9
+   }
+  },
+  "B_users_25": {
+   "users": 25,
+   "seconds": 20.3,
+   "actions": 1445,
+   "actions_per_s": 71.3,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.07,
+   "rss_mb_end": 207.2,
+   "rss_mb_delta": 18.8,
+   "active_runs_peak": 18,
+   "latency_ms": {
+    "dashboard": {
+     "n": 231,
+     "p50": 122.4,
+     "p95": 183.7,
+     "p99": 266.6
+    },
+    "insights": {
+     "n": 76,
+     "p50": 128.6,
+     "p95": 237.2,
+     "p99": 252.5
+    },
+    "question": {
+     "n": 436,
+     "p50": 240.5,
+     "p95": 335.6,
+     "p99": 381.4
+    },
+    "calc": {
+     "n": 268,
+     "p50": 320.0,
+     "p95": 432.1,
+     "p99": 475.9
+    },
+    "kpi": {
+     "n": 434,
+     "p50": 341.8,
+     "p95": 472.6,
+     "p99": 500.5
+    }
+   },
+   "all_ms": {
+    "p50": 285.8,
+    "p95": 411.7,
+    "p99": 477.4
+   }
+  },
+  "B_users_50": {
+   "users": 50,
+   "seconds": 20.5,
+   "actions": 1411,
+   "actions_per_s": 68.7,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.08,
+   "rss_mb_end": 265.5,
+   "rss_mb_delta": 58.3,
+   "active_runs_peak": 42,
+   "latency_ms": {
+    "dashboard": {
+     "n": 200,
+     "p50": 252.5,
+     "p95": 351.3,
+     "p99": 424.6
+    },
+    "insights": {
+     "n": 80,
+     "p50": 261.8,
+     "p95": 370.6,
+     "p99": 415.4
+    },
+    "question": {
+     "n": 451,
+     "p50": 512.7,
+     "p95": 632.5,
+     "p99": 669.9
+    },
+    "kpi": {
+     "n": 392,
+     "p50": 694.6,
+     "p95": 812.3,
+     "p99": 865.9
+    },
+    "calc": {
+     "n": 288,
+     "p50": 686.9,
+     "p95": 816.4,
+     "p99": 847.9
+    }
+   },
+   "all_ms": {
+    "p50": 593.8,
+    "p95": 784.0,
+    "p99": 845.8
+   }
+  },
+  "B_users_100": {
+   "users": 100,
+   "seconds": 21.3,
+   "actions": 1363,
+   "actions_per_s": 64.1,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.09,
+   "rss_mb_end": 396.0,
+   "rss_mb_delta": 130.5,
+   "active_runs_peak": 84,
+   "latency_ms": {
+    "dashboard": {
+     "n": 193,
+     "p50": 520.9,
+     "p95": 684.8,
+     "p99": 730.9
+    },
+    "insights": {
+     "n": 77,
+     "p50": 542.3,
+     "p95": 686.9,
+     "p99": 706.7
+    },
+    "question": {
+     "n": 415,
+     "p50": 1108.8,
+     "p95": 1250.7,
+     "p99": 1328.8
+    },
+    "calc": {
+     "n": 252,
+     "p50": 1472.9,
+     "p95": 1623.2,
+     "p99": 1682.5
+    },
+    "kpi": {
+     "n": 426,
+     "p50": 1484.2,
+     "p95": 1636.0,
+     "p99": 1679.7
+    }
+   },
+   "all_ms": {
+    "p50": 1239.9,
+    "p95": 1606.4,
+    "p99": 1658.5
+   }
+  },
+  "C_peak_200": {
+   "users": 200,
+   "seconds": 22.3,
+   "actions": 1393,
+   "actions_per_s": 62.4,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.1,
+   "rss_mb_end": 623.8,
+   "rss_mb_delta": 227.8,
+   "active_runs_peak": 158,
+   "latency_ms": {
+    "dashboard": {
+     "n": 218,
+     "p50": 1115.6,
+     "p95": 1341.4,
+     "p99": 1411.8
+    },
+    "insights": {
+     "n": 73,
+     "p50": 1104.8,
+     "p95": 1261.4,
+     "p99": 1405.0
+    },
+    "question": {
+     "n": 406,
+     "p50": 2256.5,
+     "p95": 2573.8,
+     "p99": 2713.6
+    },
+    "kpi": {
+     "n": 430,
+     "p50": 3034.9,
+     "p95": 3317.2,
+     "p99": 3371.5
+    },
+    "calc": {
+     "n": 266,
+     "p50": 3045.1,
+     "p95": 3290.2,
+     "p99": 3352.4
+    }
+   },
+   "all_ms": {
+    "p50": 2467.0,
+    "p95": 3241.1,
+    "p99": 3346.0
+   }
+  },
+  "D_long_10x60": {
+   "users": 10,
+   "seconds": 5.7,
+   "actions": 600,
+   "actions_per_s": 105.5,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.18,
+   "rss_mb_end": 623.8,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 600,
+     "p50": 91.5,
+     "p95": 122.6,
+     "p99": 175.7
+    }
+   },
+   "all_ms": {
+    "p50": 91.5,
+    "p95": 122.6,
+    "p99": 175.7
+   },
+   "request_chars_max_last_200": 10755,
+   "rss_mb_growth": 0.0
+  },
+  "E_model_503": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 713,
+   "actions_per_s": 70.4,
+   "errors": 713,
+   "error_rate": 1.0,
+   "error_codes": [
+    "llm_unavailable"
+   ],
+   "cpu_cores_used": 1.06,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.7,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 713,
+     "p50": 128.9,
+     "p95": 196.5,
+     "p99": 237.8
+    }
+   },
+   "all_ms": {
+    "p50": 128.9,
+    "p95": 196.5,
+    "p99": 237.8
+   }
+  },
+  "E_model_503_recovery": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 1005,
+   "actions_per_s": 99.9,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.15,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 1005,
+     "p50": 77.0,
+     "p95": 97.3,
+     "p99": 138.1
+    }
+   },
+   "all_ms": {
+    "p50": 77.0,
+    "p95": 97.3,
+    "p99": 138.1
+   }
+  },
+  "E_model_timeout": {
+   "users": 10,
+   "seconds": 10.2,
+   "actions": 713,
+   "actions_per_s": 70.2,
+   "errors": 713,
+   "error_rate": 1.0,
+   "error_codes": [
+    "llm_timeout"
+   ],
+   "cpu_cores_used": 1.07,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 713,
+     "p50": 131.0,
+     "p95": 197.1,
+     "p99": 230.5
+    }
+   },
+   "all_ms": {
+    "p50": 131.0,
+    "p95": 197.1,
+    "p99": 230.5
+   }
+  },
+  "E_model_timeout_recovery": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 924,
+   "actions_per_s": 91.6,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.15,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 924,
+     "p50": 83.8,
+     "p95": 111.7,
+     "p99": 134.3
+    }
+   },
+   "all_ms": {
+    "p50": 83.8,
+    "p95": 111.7,
+    "p99": 134.3
+   }
+  },
+  "E_model_network": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 660,
+   "actions_per_s": 65.0,
+   "errors": 660,
+   "error_rate": 1.0,
+   "error_codes": [
+    "llm_network"
+   ],
+   "cpu_cores_used": 1.1,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 660,
+     "p50": 139.6,
+     "p95": 207.2,
+     "p99": 253.0
+    }
+   },
+   "all_ms": {
+    "p50": 139.6,
+    "p95": 207.2,
+    "p99": 253.0
+   }
+  },
+  "E_model_network_recovery": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 850,
+   "actions_per_s": 84.4,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.16,
+   "rss_mb_end": 624.5,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 850,
+     "p50": 90.7,
+     "p95": 122.5,
+     "p99": 166.8
+    }
+   },
+   "all_ms": {
+    "p50": 90.7,
+    "p95": 122.5,
+    "p99": 166.8
+   }
+  },
+  "E_tool_timeouts": {
+   "users": 10,
+   "seconds": 10.8,
+   "actions": 100,
+   "actions_per_s": 9.2,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 0.19,
+   "rss_mb_end": 624.6,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 100,
+     "p50": 1042.9,
+     "p95": 1125.0,
+     "p99": 1147.9
+    }
+   },
+   "all_ms": {
+    "p50": 1042.9,
+    "p95": 1125.0,
+    "p99": 1147.9
+   }
+  },
+  "E_db_delay_2ms_per_read": {
+   "users": 10,
+   "seconds": 10.3,
+   "actions": 139,
+   "actions_per_s": 13.5,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 0.46,
+   "rss_mb_end": 624.6,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 139,
+     "p50": 559.1,
+     "p95": 1429.5,
+     "p99": 1518.4
+    }
+   },
+   "all_ms": {
+    "p50": 559.1,
+    "p95": 1429.5,
+    "p99": 1518.4
+   }
+  },
+  "E_db_recovery": {
+   "users": 10,
+   "seconds": 10.1,
+   "actions": 399,
+   "actions_per_s": 39.4,
+   "errors": 0,
+   "error_rate": 0.0,
+   "error_codes": [],
+   "cpu_cores_used": 1.1,
+   "rss_mb_end": 624.6,
+   "rss_mb_delta": 0.0,
+   "active_runs_peak": 9,
+   "latency_ms": {
+    "turn": {
+     "n": 399,
+     "p50": 198.1,
+     "p95": 307.3,
+     "p99": 373.3
+    }
+   },
+   "all_ms": {
+    "p50": 198.1,
+    "p95": 307.3,
+    "p99": 373.3
+   }
+  }
+ },
+ "metrics_after": {
+  "desk_agent_runs_total{outcome=\"completed\"}": "10793",
+  "desk_agent_runs_total{outcome=\"failed\"}": "1373",
+  "desk_agent_runs_total{outcome=\"timed_out\"}": "713",
+  "desk_db_connections": "28",
+  "desk_llm_calls_total{outcome=\"llm_network\"}": "660",
+  "desk_llm_calls_total{outcome=\"llm_timeout\"}": "713",
+  "desk_llm_calls_total{outcome=\"llm_unavailable\"}": "713",
+  "desk_llm_calls_total{outcome=\"ok\"}": "15609",
+  "desk_llm_retries_total{code=\"llm_network\"}": "1320",
+  "desk_llm_retries_total{code=\"llm_timeout\"}": "1426",
+  "desk_llm_retries_total{code=\"llm_unavailable\"}": "1426",
+  "desk_tool_calls_total{status=\"error\",tool=\"financial_kpis\"}": "100"
+ }
+}
