@@ -19,7 +19,7 @@ services:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
       - --storage.tsdb.path=/prometheus
-      - --web.enable-lifecycle=false
+      # the lifecycle API (--web.enable-lifecycle) stays off by default; "=false" is rejected by Prometheus v3
     volumes:
       - ../deploy/monitoring/prometheus:/etc/prometheus:ro
       # Secrets go under /run/secrets, outside the read-only config mount: a file mounted inside a read-only bind
