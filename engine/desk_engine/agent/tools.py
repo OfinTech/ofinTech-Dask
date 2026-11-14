@@ -296,14 +296,21 @@ class ToolRegistry:
     def provider(self, fn: Callable[[ToolContext], Awaitable[list[Tool]]]) -> None:
         self._providers.append(fn)
 
-    async def for_context(self, ctx: ToolContext, *, categories: set[str] | None = None) -> dict[str, Tool]:
-        from ..egress import is_payment_tool, tool_sends_out, workspace_sealed
-
+    def _static_for(self, ctx: ToolContext) -> dict[str, Tool]:
+        """Built-in tools available to this caller: each check is a database read, so this runs in a worker thread."""
         tools = {n: t for n, t in self._tools.items() if t.available is None or t.available(ctx)}
         if any(t.min_role != "viewer" for t in tools.values()):
             role = ctx.role
             from ..web import role_at_least
             tools = {n: t for n, t in tools.items() if role_at_least(role, t.min_role)}
+        return tools
+
+    async def for_context(self, ctx: ToolContext, *, categories: set[str] | None = None) -> dict[str, Tool]:
+        from ..egress import is_payment_tool, tool_sends_out, workspace_sealed
+
+        # about thirty availability reads per call: off the event loop, so a slow database does not stall every
+        # conversation (MCP providers below stay on the loop: they use its network clients)
+        tools = await ctx.engine.read(self._static_for, ctx)
         for provider in self._providers:
             for t in await provider(ctx):
                 if t.policy == "off" or is_payment_tool(t.name, t.description, acts=True):   # never trust a server's read-only claim
