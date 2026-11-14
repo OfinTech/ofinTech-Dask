@@ -138,6 +138,12 @@ class Close:
                                  account={"key": acc["key"], "code": acc["code"], "name": acc["name"]},
                                  book_balance=book, closing_balance=stmt.get("closing_balance"))
                 entries, review = statement_proposals(bank, accts, res["month_end"])
+                m = self.engine.metrics
+                m.inc("desk_reconciliation_lines_total", bank["matched"], result="matched")
+                m.inc("desk_reconciliation_lines_total", len(bank["statement_only"]), result="statement_only")
+                m.inc("desk_reconciliation_lines_total", len(bank["ledger_only"]), result="ledger_only")
+                m.inc("desk_reconciliations_total", result="no_closing_balance" if bank["difference"] is None else
+                      ("agreed" if abs(bank["difference"]) < 0.005 else "difference"))
                 fresh.extend(entries)
                 fresh.extend(review)
         self._merge(ws_id, run["id"], fresh)

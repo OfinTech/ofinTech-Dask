@@ -43,6 +43,8 @@ EARLIER_ANSWERS_FIRST, EARLIER_ANSWERS_LAST = 2, 4   # the assistant's own earli
 EARLIER_ANSWER_CHARS = 240
 HISTORY_TOKENS = 30_000         # the history's share of a request, in tokens (DESK_LLM_HISTORY_TOKENS)
 CHARS_PER_TOKEN = 4             # a deliberately rough estimate; it errs towards sending less
+CHAR_BUCKETS = (5_000, 10_000, 20_000, 40_000, 80_000, 120_000, 160_000, 240_000, 400_000)
+RATIO_BUCKETS = (0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.25)
 REPEAT_LIMIT = 2                # identical read-tool calls served from the run's own earlier result after this many
 
 # Model calls that failed for a reason that may pass are tried again, a bounded number of times, and only while
@@ -324,6 +326,8 @@ class Agent:
         if run is None:
             return
         thread_id = run["thread_id"]
+        started = time.perf_counter()
+        self.engine.metrics.inc("desk_agent_runs_started_total")
         try:
             await self._run(run)
         except AppError as exc:
@@ -335,7 +339,10 @@ class Agent:
             log.exception("agent run %s failed", run_id)
             self._fail(run, f"Unexpected error: {type(exc).__name__}", code="internal")
         finally:
-            self.engine.events.publish(thread_id, {"type": "run", "run": self.run_out(run_id)})
+            out = self.run_out(run_id)
+            self.engine.metrics.observe("desk_agent_run_seconds", time.perf_counter() - started,
+                                        outcome=str(out.get("outcome") or out.get("status")))
+            self.engine.events.publish(thread_id, {"type": "run", "run": out})
             self.engine.events.end_run(thread_id)
             final = self.engine.db.one("SELECT * FROM agent_runs WHERE id = ?", (run_id,))
             if final:
@@ -367,6 +374,7 @@ class Agent:
         ts = now()
         msg_id = new_id("m_")
         outcome = OUTCOME_FOR_CODE.get(code or "", "failed")
+        self.engine.metrics.inc("desk_agent_run_errors_total", code=str(code or "error")[:40])
         with self.engine.db.tx() as c:
             c.execute("UPDATE agent_runs SET status = 'error', error = ?, updated_at = ? WHERE id = ?",
                       (message, ts, run["id"]))
@@ -397,44 +405,16 @@ class Agent:
 
         provider_id, model_name = resolve_choice(engine, workspace, thread["provider_id"], thread["model"])
         model = build_model(engine, workspace["id"], provider_id, model_name)
-        skills = enabled_index(engine, workspace["id"])
-        pinned = []
-        for name in loads(thread["skills"], []):
-            # deny by default: only a skill that is enabled in this workspace right now reaches the instructions; a
-            # disabled, unapproved, deleted or unknown one is left out and the refusal is recorded
-            skill = get_enabled_skill(engine, workspace["id"], str(name))
-            if skill is None:
-                engine.audit(workspace["id"], run["user_id"], "skill.pin_refused", str(name)[:120],
-                             {"thread_id": thread["id"]}, resource_type="skill", decision="denied", result="refused",
-                             request_id=run["id"])
-                continue
-            pinned.append(skill)
-        from ..data.store import list_datasets
-
-        connections = engine.db.all("SELECT id, provider, label FROM connections WHERE workspace_id = ? AND "
-                                    "status = 'connected'", (workspace["id"],))
-        datasets = list_datasets(engine, workspace["id"])
-        system, dynamic = system_parts(workspace, skills=skills, pinned=pinned, connections=connections,
-                                     datasets=datasets,
-                                     extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
-                                     language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
-        context = workspace_context(connections=connections, datasets=datasets, collections=[
-            r["name"] for r in engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? ORDER BY name",
-                                             (workspace["id"],))])
-        recent = [r["content"] or "" for r in engine.db.all(
-            "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
-            (thread["id"],))]
-        memories = engine.memory.relevant(workspace["id"], run["user_id"], recent)
-        mem_block = engine.memory.prompt_block(memories)
-        if mem_block:
-            dynamic += "\n\n" + mem_block
+        # the prompt's context (skills, connections, datasets, memories) is a dozen reads: built in a worker thread
+        system, dynamic, context, datasets, memories = await engine.read(
+            self._prompt_context, run, thread, workspace, state)
 
         step = int(state.get("step", 0))
         seen: dict[tuple[str, str], int] = {}          # identical read calls in this run segment
         last_output: dict[tuple[str, str], ToolOutput] = {}
         while step < MAX_STEPS:
             step += 1
-            past = history(engine, thread["id"])
+            past = await engine.read(history, engine, thread["id"])
             groups = select_groups(past, tools, has_datasets=bool(datasets), extra=state.get("extra_instructions") or "")
             chosen = choose_tools(tools, groups)
             specs = [t.spec() for t in chosen]
@@ -446,6 +426,7 @@ class Agent:
             result, timing = await self._call_model(model, messages, specs, thread["id"], msg_id, model_name)
             usage.add(result.usage)
             engine.record_usage(workspace["id"], provider_id, model_name, result.usage, "chat")
+            self._observe_call(messages, past, result)
             payload: dict[str, Any] = {"run_id": run["id"], "model": model_name, "provider_id": provider_id,
                                        "tool_calls": [{"id": c.id, "name": c.name, "arguments": c.arguments}
                                                       for c in result.tool_calls],
@@ -468,6 +449,7 @@ class Agent:
                 from .figures import report
                 payload.update(report(result.text, [m.content for m in past if m.role == "tool"],
                                       [m.content for m in past if m.role == "user"], [m["content"] for m in memories]))
+                self._observe_figures(payload)
                 if memories:
                     payload["memories"] = [{"id": m["id"], "content": m["content"], "scope": m["scope"]} for m in memories]
                     engine.memory.mark_used([m["id"] for m in memories])
@@ -503,6 +485,7 @@ class Agent:
                                            tool=tool_label(tool.name, tool.category))
                         continue
                 if tool is None:
+                    engine.metrics.inc("desk_tool_refusals_total", reason="unknown_or_not_offered")
                     engine.audit(ctx.ws_id, ctx.user_id, "tool.denied", call.name[:120], {"reason": "unknown_or_not_offered"},
                                  resource_type="tool", decision="denied", result="refused", request_id=ctx.run_id)
                     self._tool_message(ctx, call, ToolOutput(f"Unknown tool '{call.name}'."), "error")
@@ -568,6 +551,64 @@ class Agent:
             m.observe("desk_llm_ttfb_seconds", (first or end) - started)
             return result, {"ttfb_ms": round(((first or end) - started) * 1000, 1),
                             "total_ms": round((end - started) * 1000, 1), "attempts": attempts}
+
+    def _prompt_context(self, run: dict[str, Any], thread: dict[str, Any], workspace: dict[str, Any],
+                        state: dict[str, Any]) -> tuple[str, str, Any, list[dict[str, Any]], list[dict[str, Any]]]:
+        """The run's instructions and workspace context. Read-only apart from auditing refused pins; it runs in a
+        worker thread (with that thread's own SQLite connection), so it must not touch the event loop or publish."""
+        engine = self.engine
+        skills = enabled_index(engine, workspace["id"])
+        pinned = []
+        for name in loads(thread["skills"], []):
+            # deny by default: only a skill that is enabled in this workspace right now reaches the instructions; a
+            # disabled, unapproved, deleted or unknown one is left out and the refusal is recorded
+            skill = get_enabled_skill(engine, workspace["id"], str(name))
+            if skill is None:
+                engine.audit(workspace["id"], run["user_id"], "skill.pin_refused", str(name)[:120],
+                             {"thread_id": thread["id"]}, resource_type="skill", decision="denied", result="refused",
+                             request_id=run["id"])
+                continue
+            pinned.append(skill)
+        from ..data.store import list_datasets
+
+        connections = engine.db.all("SELECT id, provider, label FROM connections WHERE workspace_id = ? AND "
+                                    "status = 'connected'", (workspace["id"],))
+        datasets = list_datasets(engine, workspace["id"])
+        system, dynamic = system_parts(workspace, skills=skills, pinned=pinned, connections=connections,
+                                     datasets=datasets,
+                                     extra=state.get("extra_instructions"), knowledge=self._knowledge_note(workspace["id"]),
+                                     language=engine.db.scalar("SELECT language FROM users WHERE id = ?", (run["user_id"],)))
+        context = workspace_context(connections=connections, datasets=datasets, collections=[
+            r["name"] for r in engine.db.all("SELECT name FROM doc_collections WHERE workspace_id = ? ORDER BY name",
+                                             (workspace["id"],))])
+        recent = [r["content"] or "" for r in engine.db.all(
+            "SELECT content FROM messages WHERE thread_id = ? AND role = 'user' ORDER BY created_at DESC LIMIT 3",
+            (thread["id"],))]
+        memories = engine.memory.relevant(workspace["id"], run["user_id"], recent)
+        mem_block = engine.memory.prompt_block(memories)
+        if mem_block:
+            dynamic += "\n\n" + mem_block
+        return system, dynamic, context, datasets, memories
+
+    def _observe_call(self, messages: list[ChatMessage], past: list[ChatMessage], result: Any) -> None:
+        """Tokens, finish reason and context use of one model call (counts and sizes only, never content)."""
+        m = self.engine.metrics
+        for kind in ("input_tokens", "output_tokens", "cache_read", "cache_write"):
+            n = getattr(result.usage, kind, 0) or 0
+            if n:
+                m.inc("desk_llm_tokens_total", n, kind=kind.replace("_tokens", ""))
+        m.inc("desk_llm_finish_total", reason=str(result.finish_reason or "unknown")[:20])
+        m.observe("desk_llm_request_chars", sum(len(x.content) for x in messages), CHAR_BUCKETS)
+        m.observe("desk_llm_history_budget_ratio", sum(len(x.content) for x in past) / history_budget_chars(),
+                  RATIO_BUCKETS)
+
+    def _observe_figures(self, payload: dict[str, Any]) -> None:
+        m = self.engine.metrics
+        prov = payload.get("figure_provenance") or []
+        for f in prov:
+            m.inc("desk_figures_total", provenance=str(f.get("source"))[:12])
+        m.inc("desk_answers_total", figures="no_figures" if not prov else
+              ("unsupported" if payload.get("unverified_figures") else "verified"))
 
     def _knowledge_note(self, ws_id: str) -> str | None:
         n = self.engine.db.scalar("SELECT COUNT(*) FROM documents WHERE workspace_id = ? AND status = 'indexed'", (ws_id,))

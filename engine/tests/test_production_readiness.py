@@ -401,3 +401,25 @@ class OffloadResources(unittest.TestCase):
         before = len(h.engine.db._all)
         h.client.portal.call(calls, 60)
         self.assertLessEqual(len(h.engine.db._all) - before, 12)
+
+
+class ConnectionsOfEndedThreads(unittest.TestCase):
+    """A thread that used the database and ended leaves no open connection behind (found by the release load test:
+    497 connections kept after 200 client threads came and went)."""
+
+    def test_closed_when_the_thread_ends(self) -> None:
+        import threading
+        h = Harness()
+        self.addCleanup(h.close)
+        h.setup_workspace()
+        before = len(h.engine.db._all)
+        threads = [threading.Thread(target=h.engine.db.scalar, args=("SELECT COUNT(*) FROM workspaces",))
+                   for _ in range(50)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        import gc
+        gc.collect()
+        self.assertLessEqual(len(h.engine.db._all) - before, 2)
+        self.assertEqual(h.engine.db.scalar("SELECT COUNT(*) FROM workspaces"), 1)      # this thread still works

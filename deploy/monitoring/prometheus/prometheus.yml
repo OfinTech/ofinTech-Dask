@@ -1,0 +1,21 @@
+# Scrapes the engine's /api/admin/metrics with DESK_METRICS_TOKEN (a token that opens that route and nothing else).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels: { service: ofintech-desk }
+
+rule_files: [/etc/prometheus/alerts.yml, /etc/prometheus/slo.yml]
+
+alerting:
+  alertmanagers:
+    - static_configs: [{ targets: ["alertmanager:9093"] }]
+
+scrape_configs:
+  - job_name: ofintech-desk
+    metrics_path: /api/admin/metrics
+    scheme: http                       # inside the compose network; the engine is not published (Caddy fronts it)
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/metrics_token
+    sample_limit: 20000                # a second cardinality guard behind the engine's own per-family cap
+    static_configs: [{ targets: ["engine:8700"] }]
