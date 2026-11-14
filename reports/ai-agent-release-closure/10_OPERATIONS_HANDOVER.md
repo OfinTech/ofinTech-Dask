@@ -54,6 +54,9 @@ Unchanged; see the runbook. One addition: if the engine logs `worker threads sti
 
 ## E8 execution
 
+The open-source edition ships no model. E8 is the operator's acceptance test for the model they configure, run
+before relying on it for financial answers, and again whenever the model or provider changes.
+
 Use `02_E8_LIVE_MODEL_RESULTS.md`. Run it in a non-production environment with an evaluation key from the secret manager, and record the model id, the date and the `sha256sum` of the evaluation scripts with the result.
 
 ## Rollback

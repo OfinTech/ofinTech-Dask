@@ -1,11 +1,12 @@
 # 09 · Final scorecard
 
-The method and weights are unchanged from the audit. Only new evidence moves a score. Model accuracy stays
-**unscored** because E8 has not run.
+The method and weights are unchanged from the audit. Only new evidence moves a score. Model accuracy is
+**not scored**: the open-source engine ships no model, so answer accuracy belongs to whichever model a deployment
+configures (corrected 14 Nov 2026, see 11).
 
 | Category | Weight | 62 audit | 78 remediation | 82 readiness | 83 release gates | **Now** | Evidence for the change |
 |---|---:|---:|---:|---:|---:|---:|---|
-| Accuracy (real model) | 20 | — | — | — | — | **not scored** | E8 blocked |
+| Accuracy (real model) | 20 | — | — | — | — | **not scored** | not applicable: no model ships with the open-source edition |
 | Financial grounding | 15 | 70 | 85 | 86 | 86 | **86** | re-runs only |
 | Security | 15 | 68 | 84 | 84 | 84 | **84** | re-runs only; model-level injection untested |
 | Reliability | 15 | 45 | 78 | 83 | 84 | **86** | + a slow database no longer stalls other users (P4 2.3× throughput); hung tools isolated; shutdown crash found and guarded by a subprocess test |
@@ -30,5 +31,5 @@ The method and weights are unchanged from the audit. Only new evidence moves a s
 | **Current, verified** | **83 (provisional)** |
 
 The score is unchanged. This branch improved resilience and lowered raw engine throughput. The remaining blockers
-are about evidence (model access, monitoring runtime, approvals), not code, so they cannot move the score from here.
+are about evidence (monitoring runtime, alert receiver, approvals), not code, so they cannot move the score from here.
 The decision is 08: **NO-GO**.
