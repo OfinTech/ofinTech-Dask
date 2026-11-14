@@ -48,6 +48,8 @@ from .workflows.engine import Workflows
 
 log = logging.getLogger("desk")
 
+SHUTDOWN_DRAIN_SECONDS = 10.0   # how long a shutdown waits for work running in threads before closing the database
+
 
 async def _mcp_tools(ctx: ToolContext) -> list[Any]:
     return await ctx.engine.mcp.tools_for(ctx)
@@ -167,6 +169,17 @@ class Engine:
             with contextlib.suppress(BaseException):
                 await t
         await self.mcp.shutdown()
+        # Work handed to threads (database reads of the agent loop and of offloaded tools) may still be running.
+        # Closing a SQLite connection that another thread is using crashes the process, so let that work finish
+        # first; if it does not finish in time, leave the connections to the process exit rather than risk it.
+        try:
+            # the timeout is applied outside: shutdown_default_executor(timeout=...) only warns and carries on
+            await asyncio.wait_for(asyncio.shield(asyncio.get_running_loop().shutdown_default_executor()),
+                                   SHUTDOWN_DRAIN_SECONDS)
+        except Exception:  # noqa: BLE001 -- a shutdown must always get as far as it can
+            log.warning("worker threads still busy after %ss; database connections left to the process exit",
+                        SHUTDOWN_DRAIN_SECONDS, exc_info=True)
+            return
         self.db.close()
 
     async def _scheduler(self) -> None:
