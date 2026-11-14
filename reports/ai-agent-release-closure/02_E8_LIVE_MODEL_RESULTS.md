@@ -1,6 +1,16 @@
 # 02 · Live model E8
 
-## Result: BLOCKED. No real model inference was run.
+## Result for the open-source release: NOT APPLICABLE (corrected 14 Nov 2026)
+
+OfinTech Desk open source ships no model (owner's decision, 11 Nov 2026: "no learned weights, no model"; the trained
+Ofin model, SystemOne, is a paid part and is never opened). There is no product model to evaluate, so E8 cannot be a
+release gate of this repository. It is:
+
+- **For operators:** the acceptance test to run against the model they configure, before relying on it for financial answers.
+- **For the paid edition:** the test to run against SystemOne, in that edition's own repository and process. Not here.
+
+No real model inference was run in this review. The text below (written when E8 was treated as a gate) still
+describes the integration and how to run E8.
 
 ## Integration (verified in code, unchanged since PR #71's analysis)
 

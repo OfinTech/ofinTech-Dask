@@ -6,6 +6,10 @@ No owner approval is documented. The targets below are the exact proposals from
 `reports/ai-agent-final-release/04_PERFORMANCE_SLOS.md`, unchanged, laid out for a decision. Writing them into
 `deploy/monitoring/prometheus/slo.yml` does not approve them.
 
+**Correction (14 Nov 2026):** the open-source edition ships no model. SLOs **3, 3b and 5** depend on the model a
+deployment configures, so they are **per-deployment SLOs** for each operator to set after running E8 with their model.
+They are not release SLOs of this repository. The release SLOs are 1, 2, 4, 6, 7 and 8.
+
 ## Approval-ready table
 
 **Window:** 30 days rolling.

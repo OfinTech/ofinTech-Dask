@@ -2,18 +2,21 @@
 
 ## NO-GO
 
-**Score:** 83 / 100 (provisional); model accuracy is unscored.
+> **Correction (14 Nov 2026, owner):** OfinTech Desk open source **ships no model**. Each deployment brings its own provider and model; the trained Ofin model (SystemOne) belongs to the paid edition and is never opened. E8 is therefore **not a release gate of this repository**. It is the acceptance test each operator runs against the model they choose. See [11_CORRECTION_NO_MODEL_IN_OPEN_SOURCE.md](11_CORRECTION_NO_MODEL_IN_OPEN_SOURCE.md).
+
+**Score:** 83 / 100 (provisional). Model accuracy is not scored: the open-source engine has no model of its own.
 
 **Branch:** `fix/ai-agent-release-blockers`, on PR #72's head (`ff0413c`).
 
-**PR state:**
+**PR state (updated 14 Nov 2026):**
 - PR #71 is merged into `main`.
-- PR #72 is open. Its base is `fix/ai-agent-production-readiness`; retargeting it to `main` is now possible.
-- Nothing was merged by this work.
+- PR #73 (this work, which also carried PR #72's commits) is merged into `main` by the owner.
+- PR #74 adds no change beyond `main`.
+- Nothing was merged by Claude.
 
 | Blocker | Result here | What it still needs |
 |---|---|---|
-| Live E8 | **BLOCKED** | an authorised model endpoint and credentials (`DESK_EVAL_*`) |
+| Live E8 | **NOT APPLICABLE** to the open-source release (no model ships) | each operator runs it against their chosen model (02) |
 | Alertmanager delivery | **BLOCKED** | a container runtime (or permission to run the upstream binaries) and an authorised test receiver URL |
 | SLO approval | **PENDING** | the owner's decision on 04 (approval-ready) |
 | Event loop | **FIXED** (with a documented trade-off) | — |
@@ -31,7 +34,7 @@
   2. Thread-pool starvation behind hung tools: a plain question waited 2.7 s.
 - **Resource limits.** Engine: 2 CPUs, 2 GB, 512 MB reserved, 512 pids, 30 s stop grace. Caddy and the monitoring stack have limits too. They are sized from a real-process measurement: 274 MB and 11 threads at 100 users. The configuration is validated by `docker compose config`.
 - **Monitoring.** Prometheus and Alertmanager could not be run: there is no Docker daemon, and running the downloaded upstream binaries was refused by the environment's permission system.
-- **E8.** No credentials and no configured model. The evaluation and its scorer are ready (oracle 21/21, fabricator 4/21).
+- **E8.** The open-source edition ships no model, so there is nothing of the product's to evaluate. The evaluation and its scorer are ready for operators (oracle 21/21, fabricator 4/21).
 
 ## Regression
 
@@ -51,11 +54,11 @@
 
 ## To reach GO
 
-1. Run E8 with the approved model, with credentials from your secret manager, and approve its thresholds (02).
+1. ~~Run E8~~: not a release gate (no model ships). Document in the release notes that answer quality depends on the configured model, and that operators should run E8 against theirs (02).
 2. In staging, follow 03's procedure with an authorised receiver, and keep the payloads.
 3. Approve, or change, the SLOs in 04.
 4. After deploying, check the limits with `docker inspect` (06).
-5. CI green on the PRs, then merge #72 and this PR in order.
+5. ~~CI green on the PRs, then merge in order~~: done (#73 merged by the owner).
 
 ## Reports
 
@@ -70,3 +73,4 @@
 | [08](08_RELEASE_GATE_MATRIX.md) | Release gate matrix |
 | [09](09_FINAL_SCORECARD.md) | Final scorecard |
 | [10](10_OPERATIONS_HANDOVER.md) | Operations handover |
+| [11](11_CORRECTION_NO_MODEL_IN_OPEN_SOURCE.md) | Correction: no model ships with the open-source edition |
