@@ -279,6 +279,7 @@ class Knowledge:
             return
         except Exception as exc:  # pragma: no cover - logged
             log.exception("processing %s failed", doc_id)
+            self.engine.background_failed("document_processing")
             db.execute("UPDATE documents SET status = 'failed', error = ?, updated_at = ? WHERE id = ?",
                        (f"Could not process the file ({type(exc).__name__}).", now(), doc_id))
             return

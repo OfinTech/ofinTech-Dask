@@ -12,7 +12,8 @@ import sqlite3
 import threading
 import time
 import uuid
-from collections.abc import Iterator, Sequence
+import weakref
+from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
@@ -880,7 +881,13 @@ class Database:
         path.parent.mkdir(parents=True, exist_ok=True)
         self._local = threading.local()
         self._write_lock = threading.RLock()
-        self._all: list[sqlite3.Connection] = []
+        self._all: dict[int, sqlite3.Connection] = {}    # every open connection, for close() and the metrics
+        # set by the engine: called with ("read" | "write", seconds) after each call (metrics; never the SQL)
+        self.observer: Callable[[str, float], None] | None = None
+
+    def _seen(self, kind: str, started: float) -> None:
+        if self.observer is not None:
+            self.observer(kind, time.perf_counter() - started)
 
     # -- connections ---------------------------------------------------------------------
     def _connect(self) -> sqlite3.Connection:
@@ -894,13 +901,24 @@ class Database:
 
     @property
     def conn(self) -> sqlite3.Connection:
-        conn = getattr(self._local, "conn", None)
-        if conn is None:
-            conn = self._connect()
-            self._local.conn = conn
+        held = getattr(self._local, "held", None)
+        if held is None:
+            held = _Held(self._connect())
+            self._local.held = held
             with self._write_lock:
-                self._all.append(conn)
-        return conn
+                self._all[id(held.conn)] = held.conn
+            # the thread's local storage is freed when the thread ends; its connection is closed with it, so threads
+            # that come and go do not leave connections (and their page caches) behind
+            weakref.finalize(held, self._forget, held.conn)
+        return held.conn
+
+    def _forget(self, conn: sqlite3.Connection) -> None:
+        with self._write_lock:
+            self._all.pop(id(conn), None)
+        try:
+            conn.close()
+        except sqlite3.Error:  # pragma: no cover
+            pass
 
     def migrate(self) -> int:
         with self._write_lock:
@@ -914,6 +932,7 @@ class Database:
     @contextmanager
     def tx(self) -> Iterator[sqlite3.Connection]:
         """A write transaction (serialised inside this process)."""
+        started = time.perf_counter()
         with self._write_lock:
             conn = self.conn
             conn.execute("BEGIN IMMEDIATE")
@@ -924,17 +943,26 @@ class Database:
                 raise
             else:
                 conn.execute("COMMIT")
+            finally:
+                self._seen("write", started)
 
     # -- helpers -------------------------------------------------------------------------
     def one(self, sql: str, params: Sequence[Any] = ()) -> dict[str, Any] | None:
+        started = time.perf_counter()
         row = self.conn.execute(sql, params).fetchone()
+        self._seen("read", started)
         return dict(row) if row else None
 
     def all(self, sql: str, params: Sequence[Any] = ()) -> list[dict[str, Any]]:
-        return [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+        started = time.perf_counter()
+        rows = [dict(r) for r in self.conn.execute(sql, params).fetchall()]
+        self._seen("read", started)
+        return rows
 
     def scalar(self, sql: str, params: Sequence[Any] = ()) -> Any:
+        started = time.perf_counter()
         row = self.conn.execute(sql, params).fetchone()
+        self._seen("read", started)
         return row[0] if row else None
 
     def execute(self, sql: str, params: Sequence[Any] = ()) -> int:
@@ -978,13 +1006,22 @@ class Database:
     def close(self) -> None:
         """Closes every connection opened by any thread (call at shutdown)."""
         with self._write_lock:
-            for conn in self._all:
+            for conn in list(self._all.values()):
                 try:
                     conn.close()
                 except sqlite3.Error:  # pragma: no cover
                     pass
             self._all.clear()
         self._local = threading.local()
+
+
+class _Held:
+    """Holds one thread's connection in its local storage (a connection itself cannot be weakly referenced)."""
+
+    __slots__ = ("conn", "__weakref__")
+
+    def __init__(self, conn: sqlite3.Connection) -> None:
+        self.conn = conn
 
 
 def _check_identifier(name: str) -> None:

@@ -84,6 +84,7 @@ class Engine:
         from .approvals import Approvals
         self.approvals = Approvals(self)
         self.agent = Agent(self)
+        self._observe_process()
         self.workflows = Workflows(self)
         self.channels = Channels(self)
         self.mcp = MCPManager(self)
@@ -137,6 +138,20 @@ class Engine:
         self.db.execute("UPDATE agent_runs SET status = 'error', error = 'Interrupted by a restart.' "
                         "WHERE status = 'running'")
 
+    def _observe_process(self) -> None:
+        from .metrics import process_cpu_seconds, process_rss_bytes
+        m, started = self.metrics, time.time()
+        m.gauge("desk_up", lambda: 1)
+        m.gauge("desk_process_start_time_seconds", lambda: started)
+        m.gauge("desk_process_resident_memory_bytes", process_rss_bytes)
+        m.gauge("desk_process_cpu_seconds_total", process_cpu_seconds)
+        m.gauge("desk_db_connections", lambda: len(self.db._all))
+        m.gauge("desk_agent_runs_active", lambda: sum(1 for t in self.agent.tasks.values() if not t.done()))
+        self.db.observer = lambda kind, seconds: m.observe("desk_db_query_seconds", seconds, kind=kind)
+
+    def background_failed(self, kind: str) -> None:
+        self.metrics.inc("desk_background_failures_total", kind=kind)
+
     async def start_background(self) -> None:
         info = await self.storage.check()
         log.info("file storage: %s %s", self.storage.describe(), info)
@@ -175,6 +190,7 @@ class Engine:
                 raise
             except Exception:  # pragma: no cover - keep the scheduler alive
                 log.exception("scheduler tick failed")
+                self.background_failed("scheduler")
             tick += 1
             await asyncio.sleep(3)
 
@@ -188,6 +204,7 @@ class Engine:
                     await sync_connection(self, conn)
                 except Exception:  # pragma: no cover
                     log.exception("scheduled sync failed for %s", conn["id"])
+                    self.background_failed("accounting_sync")
 
     # -- shared services -----------------------------------------------------------------------
     def audit(self, workspace_id: str | None, user_id: str | None, action: str, target: str | None = None,
@@ -207,6 +224,7 @@ class Engine:
             self.webhooks.emit(workspace_id, user_id, action, target, clean)
         except Exception:  # pragma: no cover - a webhook must never break the action that was audited
             log.exception("outgoing webhook could not be queued")
+            self.background_failed("webhook_queue")
         return event_id
 
     def record_usage(self, ws_id: str, provider_id: str, model: str, usage: Usage, source: str) -> None:

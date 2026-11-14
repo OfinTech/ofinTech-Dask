@@ -361,6 +361,7 @@ class Files:
                                    (exc.message, file_id))
         except Exception as exc:  # pragma: no cover - logged
             log.exception("review of %s failed", file_id)
+            self.engine.background_failed("file_review")
             self.engine.db.execute("UPDATE files SET review_status = 'error', review_error = ? WHERE id = ?",
                                    (f"The review failed ({type(exc).__name__}).", file_id))
 
