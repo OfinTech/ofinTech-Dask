@@ -9,7 +9,7 @@
 #       -f deploy/monitoring/docker-compose.monitoring.yml up -d
 #
 # Grafana listens on 127.0.0.1:3000 only (reach it through SSH or your VPN). Prometheus and Alertmanager have no
-# published ports. Retention: 30 days of metrics. See reports/ai-agent-final-release/10_OPERATIONS_RUNBOOK.md.
+# published ports. Retention: 30 days of metrics. The operations runbook is part of the release record.
 
 services:
   prometheus:

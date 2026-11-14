@@ -1,4 +1,4 @@
-# SLIs as recording rules and multi-window burn-rate alerts (reports/ai-agent-final-release/04_PERFORMANCE_SLOS.md).
+# SLIs as recording rules and multi-window burn-rate alerts (the performance SLOs of the agent release record).
 # The targets are PROPOSED, not approved. Windows: 30 days. Burn-rate pairs follow the usual 1h/5m (14.4x) and
 # 6h/30m (6x) scheme.
 groups:

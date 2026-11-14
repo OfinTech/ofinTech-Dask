@@ -19,7 +19,7 @@ services:
     security_opt: [no-new-privileges:true]
     expose: ["8700"]
     logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
-    # Resources (reports/ai-agent-release-closure/06_RESOURCE_LIMITS.md). One engine process uses about one core when
+    # Resources, from the measured limits of the agent release record. One engine process uses about one core when
     # busy (Python); 2 CPUs leave room for the worker threads. Peak RSS measured under 200 concurrent users was about
     # 620 MB with the load generator in the same process; 2 GB is about 3x that. Raise both for large ledgers.
     cpus: 2.0
