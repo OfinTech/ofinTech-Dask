@@ -71,13 +71,22 @@ quietly on its own.
 Without signing the app works, but macOS blocks it on first open (*Control-click → Open*, or *System Settings →
 Privacy & Security → Open Anyway*) and Windows SmartScreen warns (*More info → Run anyway*).
 
+**Signing a Mac app is not enough on its own: it must also be notarised**, or macOS refuses it on first launch
+exactly as if it had never been signed. Both workflows ask for notarisation whenever the three Apple
+credentials are present, and a build with them set fails rather than quietly shipping an app that will not
+open.
+
 | Platform | You need | Repository secrets |
 |---|---|---|
 | macOS | Apple Developer Program membership; a *Developer ID Application* certificate exported as .p12; an app-specific password | `CSC_LINK` (base64 of the .p12), `CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` (signing and notarisation) |
 | Windows | A code-signing certificate (OV or EV) from a certificate authority, as .pfx, or a cloud signing service | `WIN_CSC_LINK` (base64 of the .pfx), `WIN_CSC_KEY_PASSWORD`; `CSC_LINK` alone also signs Windows, so these are for a separate Windows certificate |
 
-EV certificates and cloud signing services usually keep the key in hardware; signing then needs the vendor's
-tooling in the workflow instead of a .pfx. Base64 of a file: `base64 -i cert.p12 | pbcopy` (macOS) or
+**A .pfx is no longer the normal Windows path.** Since June 2023 a publicly trusted code-signing key must be
+generated and held in certified hardware — a token or a cloud HSM — so a certificate authority will not hand
+over an exportable .pfx for a new OV or EV certificate. `WIN_CSC_LINK` therefore only suits a certificate
+issued before that, or a private one. For a new certificate, either sign with the vendor's cloud-HSM tooling in
+the workflow, or use a signing service with a GitHub Actions integration; in both cases the step replaces the
+`WIN_CSC_*` variables rather than filling them. Base64 of a file: `base64 -i cert.p12 | pbcopy` (macOS) or
 `[Convert]::ToBase64String([IO.File]::ReadAllBytes("cert.pfx"))` (PowerShell).
 
 ## Distributing

@@ -49,10 +49,25 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'macOS' && secrets.CSC_LINK != '' }}
         run: |
           case "$SERVER" in https://*) ;; *) echo "The server must be an https:// address"; exit 1;; esac
+          # An empty secret is an empty string, not an absent variable, and electron-builder reads it as a
+          # credential it has. Unset them together, so a build without Apple credentials does not try to
+          # notarise with blank ones.
+          if [ -z "$APPLE_ID" ]; then unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; fi
+          # Only macOS looks for a signing identity, and only when it has no certificate of its own.
+          if [ "$RUNNER_OS" = "macOS" ] && [ -z "${CSC_LINK:-}" ]; then
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+          fi
+          args=()
+          # Notarisation: electron-builder 26 skips it unless the option is set, while the 27 documentation
+          # says credentials alone are enough. Passing it exactly when the credentials exist is right under
+          # either, and asks for a build that fails rather than one that quietly ships un-notarised. Without
+          # this the cloud client was signed and not notarised, which macOS refuses to open on first launch
+          # as surely as if it had not been signed at all -- the one thing signing is bought for.
+          if [ -n "${APPLE_ID:-}" ]; then args+=(-c.mac.notarize=true); fi
           npm ci --no-audit --no-fund
           npm run build
           npx electron-builder --config electron-builder.cloud.yml ${{ matrix.target }} --publish never \
-            -c.extraMetadata.deskEdition.defaultServer="$SERVER"
+            -c.extraMetadata.deskEdition.defaultServer="$SERVER" "${args[@]}"
       - uses: actions/upload-artifact@v7
         with:
           name: ofintech-desk-${{ runner.os }}
