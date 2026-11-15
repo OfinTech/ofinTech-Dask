@@ -14,7 +14,7 @@ file is being written, so it is not pasted here to avoid a wrong value).
 | SDK | `sdk/embedded-agent/` — `@ofintech/embedded-agent` (TypeScript, React 19 peer, esbuild): `OfinTechAgentProvider`, `OfinTechFinancialCopilot`, `useOfinTechAgent`, `AgUiClient`, registry with 10 components and v1 schemas, ar/en, RTL. 1 083 lines. |
 | Example | `examples/copilotkit-embedded/` — partner backend that mints sessions, SDK panel and CopilotKit `HttpAgent` side by side. |
 | Docs | 14 developer guides in `docs/embedded/guides/`, OpenAPI `docs/openapi/embedded-gateway.json`, CHANGELOG entry. |
-| Evidence | `docs/audit/evidence/embedded/report.md` + screenshot from the browser verification. |
+| Evidence | `e2e-output/embedded/report.md` + screenshot from the browser verification, kept with the release record. |
 
 ## Verification record
 
@@ -53,8 +53,9 @@ file is being written, so it is not pasted here to avoid a wrong value).
 ## Limitations and honest notes
 
 1. **Not production-ready by this work alone.** No load test, no independent penetration test of the new surface, a
-   single-process engine; see the residual risks in `SECURITY-THREAT-MODEL.md` and the open items in
-   `docs/audit/OPEN-RISKS.md`. Nothing here claims PDPL, SAMA, ZATCA or any certification.
+   single-process engine; see the residual risks in `SECURITY-THREAT-MODEL.md`, and the open items in the
+   security review kept with the release record (`SECURITY.md`), which is not published. Nothing here claims
+   PDPL, SAMA, ZATCA or any certification.
 2. **Approvals never occur in this release** because no embedded agent has a write tool; the interrupt path is proven
    only with a test-only write agent.
 3. **No Desk UI page for integrations** — the admin API is complete, the settings screen is not built.

@@ -65,5 +65,5 @@ packaging step greps for key patterns before zipping).
 ## Verification record
 
 Engine: 370 passed, 0 failed (`python -m pytest engine/tests`; 54 new tests). SDK: 12 passed (`node --test`). Browser:
-9 of 9 checks passed (`e2e/embedded_browser.py`; evidence in `docs/audit/evidence/embedded/`). `tsc --noEmit` for the
+9 of 9 checks passed (`e2e/embedded_browser.py`; evidence in `e2e-output/embedded/`). `tsc --noEmit` for the
 SDK was not run in the build environment (no `@types/react` offline). Details and limitations: `FINAL-REPORT.md`.

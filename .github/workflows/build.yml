@@ -23,8 +23,9 @@ permissions:
 
 jobs:
   security:
-    # Security gates (docs/audit/09-SECURITY-TEST-RESULTS.md): every step blocks the build when it finds something.
-    # Accepted exceptions are listed in docs/audit/08-REMEDIATION-ROADMAP.md with an owner and an expiry date.
+    # Security gates: every step blocks the build when it finds something. Accepted exceptions are listed in the
+    # security review kept with the release record, which is not published (SECURITY.md), each with an owner and an
+    # expiry date.
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7

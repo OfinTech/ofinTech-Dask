@@ -2,7 +2,7 @@
 through its own backend, asks the agent a question and receives streamed text plus a generative-UI component; a page
 on an origin that is not allowed is refused. Real engine process, real Chromium (Playwright), fake model.
 
-    python e2e/embedded_browser.py            # writes docs/audit/evidence/embedded/{report.md,*.png}
+    python e2e/embedded_browser.py            # writes e2e-output/embedded/{report.md,*.png}
 
 Needs: the SDK built (sdk/embedded-agent/dist), React resolvable for the test bundle (node_modules or NODE_PATH),
 esbuild, and Playwright with Chromium.
@@ -26,7 +26,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "docs" / "audit" / "evidence" / "embedded"
+OUT = ROOT / "e2e-output" / "embedded"
 PW = "Str0ngPassw0rd!"
 
 

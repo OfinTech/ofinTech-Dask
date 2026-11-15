@@ -1,4 +1,4 @@
-"""Regression tests for the findings of the enterprise audit (docs/audit/02-SECURITY-AUDIT.md).
+"""Regression tests for the findings of the enterprise audit (kept with the release record; see SECURITY.md).
 
 One test per finding, named after it, so a reader of the audit can find the proof that each fix holds. The
 tests repeat the attempt that was possible before the fix and expect it to be refused; where the fix is a

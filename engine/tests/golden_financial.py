@@ -3,7 +3,7 @@ close journal, with every output recorded in tests/fixtures/financial_golden.jso
 
 The recorded file was produced by the pre-audit engine (commit e8de370) and is byte-identical to the current
 engine's output. Any difference the test reports is a change in financial behaviour and must be explained in
-docs/audit/08-REMEDIATION-ROADMAP.md before the file is regenerated with:
+the security review kept with the release record (SECURITY.md) before the file is regenerated with:
 
     cd engine && python -m tests.golden_financial --update
 """

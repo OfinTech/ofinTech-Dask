@@ -9,7 +9,7 @@ scenario records the HTTP status, the authorization decision, the audit event it
 admin audit API) and a fingerprint of the authoritative tables of both workspaces taken from the database file
 before and after. Nothing here is mocked in-process; the only simulated component is the language model.
 
-Exit code 0 when every scenario passes. The evidence file is what docs/audit/MULTI-TENANT-INTEGRATION-RESULTS.md
+Exit code 0 when every scenario passes. The evidence file is what the multi-tenant integration record
 reproduces."""
 
 from __future__ import annotations

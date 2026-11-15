@@ -120,8 +120,8 @@ docker compose up -d --build engine</code></pre>
       <li data-en="The audit log records who asked, what was approved, what ran and what came back, and the application cannot change or delete an entry.">سجلّ التدقيق يسجّل مَن سأل وما اعتُمد وما نُفِّذ وما عاد، ولا يستطيع التطبيق تعديل أي مُدخل أو حذفه.</li>
       <li data-en="Payments cannot exist: a tool that moves money or changes a beneficiary is refused at registration and again at the call.">المدفوعات لا يمكن أن توجد: أي أداة تحرّك أموالاً أو تغيّر مستفيداً تُرفض عند التسجيل وعند الاستدعاء معاً.</li>
     </ul>
-    <p data-en="The repository carries the full security review, the threat model and the register of accepted risks under docs/audit. Read them before a regulated deployment.">
-      يحتوي المستودع على المراجعة الأمنية الكاملة ونموذج التهديد وسجلّ المخاطر المقبولة في <code>docs/audit</code>. اقرأها قبل أي نشر في جهة خاضعة للرقابة.
+    <p data-en="The full security review, the threat model and the register of accepted risks are kept with the release record rather than published, because a reproduction is as useful to an attacker as to a reviewer. They are shared under an agreement; ask through the address in the security policy.">
+      المراجعة الأمنية الكاملة ونموذج التهديد وسجلّ المخاطر المقبولة محفوظة مع سجلّ الإصدار ولا تُنشر، لأن إعادة إنتاج الثغرة تفيد المهاجم كما تفيد المراجع. تُشارَك باتفاق؛ اطلبها من العنوان المذكور في سياسة الأمان.
     </p>
 
     <h2 id="backups" data-en="Backups">النسخ الاحتياطي</h2>
@@ -163,7 +163,7 @@ python -m desk_engine backup-check &lt;file&gt; --key-file backup.key   # restor
         </tr>
         <tr>
           <td data-en="Compliance">الامتثال</td>
-          <td data-en="A gap assessment exists for PDPL and SAMA CSF. Nothing here is certified, and the product makes no e-invoicing claim.">يوجد تقييم فجوات لنظام حماية البيانات وإطار ساما. لا شيء هنا معتمد، ولا يدّعي المنتج أي امتثال للفوترة الإلكترونية.</td>
+          <td data-en="Nothing here is certified. The product makes no claim of compliance with PDPL, SAMA CSF, ZATCA e-invoicing or any other regulator.">لا شيء هنا معتمد. ولا يدّعي المنتج أي امتثال لنظام حماية البيانات أو إطار ساما أو الفوترة الإلكترونية أو أي جهة رقابية أخرى.</td>
         </tr>
         <tr>
           <td data-en="Model answers">إجابات النموذج</td>

@@ -7,7 +7,7 @@ its own process with the built UI (`ui/dist`), and drives Chromium through Playw
 sides without waiting: the page's clock (`page.clock`) is moved forward so its timers and `Date.now()` advance,
 and the session's `last_seen` in the engine's database is moved back by the same amount — which is exactly what
 the engine compares against its own clock. Every scenario records what was expected, what happened, a screenshot
-and the log; the summary is written as JSON and reproduced in docs/audit/OP-12-BROWSER-SESSION-VERIFICATION.md.
+and the log; the summary is written as JSON and kept with the release record (SECURITY.md).
 
 Needs: Python Playwright with Chromium, and a built UI in ui/dist (CI builds it; locally download the `ui-dist`
 artifact of a CI run).

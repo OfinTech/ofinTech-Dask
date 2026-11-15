@@ -1,6 +1,7 @@
-# Runs the browser session tests (OP-12) against a real engine with the built UI and commits the evidence
-# (JSON summary and screenshots) under docs/audit/evidence/session/, so the audit report can point at files in
-# the repository rather than at an expiring CI artifact. Run it by hand from the Actions tab or with
+# Runs the browser session tests (OP-12) against a real engine with the built UI and uploads the evidence
+# (JSON summary and screenshots) as a workflow artifact. The evidence belongs to the release record, which is not
+# published, because a reproduction is as useful to an attacker as to a reviewer (SECURITY.md). Run it by hand
+# from the Actions tab or with
 # `gh workflow run session-evidence.yml`. The same tests also gate every push (build.yml).
 name: session-evidence
 
@@ -8,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   evidence:
@@ -29,13 +30,9 @@ jobs:
           pip install -r engine/requirements.txt playwright==1.63.0
           python -m playwright install --with-deps chromium
           python e2e/session_browser.py e2e-output
-      - name: Commit the evidence
-        run: |
-          mkdir -p docs/audit/evidence/session
-          rm -f docs/audit/evidence/session/*
-          cp e2e-output/session/* docs/audit/evidence/session/
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/audit/evidence/session
-          git diff --cached --quiet || git commit -m "Record the browser session test evidence (OP-12) for $(git rev-parse --short HEAD)"
-          git push
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: session-evidence
+          path: e2e-output/session
+          retention-days: 30

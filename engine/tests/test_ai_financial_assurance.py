@@ -1,4 +1,4 @@
-"""AI agent financial security assurance (docs/audit/FINAL-AI-AGENT-SECURITY-ASSURANCE.md).
+"""AI agent financial security assurance (the review kept with the release record; see SECURITY.md).
 
 Two tenants on one Team Server with synthetic ledgers; users with different roles; the model is a script that
 behaves as badly as an attacker could wish. Every denied operation is checked against a snapshot of the
