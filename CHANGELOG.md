@@ -284,7 +284,7 @@ migrations are applied automatically on start-up and are never rewritten once re
   unverified) are part of the design system. The website's product screenshots show the new identity, with the
   executive overview of the demo company as the opening image.
 
-### Security (enterprise audit, docs/audit/)
+### Security (enterprise audit)
 
 - The Zoho sign-in callback accepts only Zoho's own accounts servers and API hosts, matched exactly.
 - The CSRF guard compares the whole request origin with the server's, never a prefix.

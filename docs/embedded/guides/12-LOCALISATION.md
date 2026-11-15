@@ -9,7 +9,7 @@
   column headers) come from Desk's tools and follow the workspace language.
 * Component props carry both languages where the engine knows them (`name: {en, ar}` on agents).
 * The browser verification (`e2e/embedded_browser.py`) runs the panel in Arabic and checks `dir`, strings and a
-  streamed answer; screenshot in `docs/audit/evidence/embedded/`.
+  streamed answer; screenshot in `e2e-output/embedded/`.
 
 Bidi tip: when you place the panel inside an LTR page, wrap it in an element with `dir="auto"` or give it
 `unicode-bidi: isolate` so mixed-direction text around it does not shift.

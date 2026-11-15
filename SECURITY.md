@@ -34,6 +34,15 @@ hardening that the deployment guide asks the operator to provide (TLS in front o
 
 How the product protects data is described in [docs/SECURITY.md](docs/SECURITY.md).
 
+## The audit record
+
+The engineering and security audit of the platform (1.1.0) and the review of the AI agent below produced
+findings, reproductions, fixes, verification runs and a register of accepted risks. That record is kept with the
+release rather than published, for the same reason as below: a reproduction, and a list of what is still open,
+is as useful to an attacker as to a reviewer. It is shared in full with a customer or an assessor under an
+agreement — ask through the address in this policy. What the product does to protect data is described in
+[docs/SECURITY.md](docs/SECURITY.md), and what is not claimed is listed in the README.
+
 ## Review of the AI agent, November 2026
 
 The agent loop, its tools, the instructions it receives and the data it can reach were reviewed in November

@@ -156,8 +156,9 @@ requirements are in [docs/CONNECTORS.md](docs/CONNECTORS.md).
   person's approval.
 
 Report vulnerabilities as described in [SECURITY.md](SECURITY.md). Design details: [docs/SECURITY.md](docs/SECURITY.md).
-An engineering and security audit of 1.1.0, with its findings, fixes and production-readiness checklist, is in
-[docs/audit/](docs/audit/).
+An engineering and security audit of 1.1.0 was carried out, with findings, fixes and a production-readiness
+checklist; the record is kept with the release rather than published, and is shared under an agreement — see
+[SECURITY.md](SECURITY.md).
 
 ## What is not claimed
 

@@ -14,7 +14,7 @@ it, and the parts of the existing security architecture that the gateway reuses 
 
 | Area | Finding (file) |
 |---|---|
-| Framework | Starlette ASGI app with a single SQLite database (WAL, foreign keys on) — `engine/desk_engine/app.py`, `db.py`. One engine process per deployment (accepted risk AR-1 in `docs/audit/OPEN-RISKS.md`). |
+| Framework | Starlette ASGI app with a single SQLite database (WAL, foreign keys on) — `engine/desk_engine/app.py`, `db.py`. One engine process per deployment; an accepted risk in the security review kept with the release record. |
 | Routing | `web.Router.route(method, path, *, auth, role, body, fresh)` wraps every handler: generates a request id (`audit.current_request_id`), authenticates, loads the workspace and role when the path has `{ws}`, enforces step-up re-authentication (`fresh`), parses a Pydantic body (2 MB cap), maps `AppError` to JSON and audits every 403 (`_audit_denied`). |
 | Authentication | `web.authenticate()`: desktop mode compares a bearer with `settings.local_token`; server mode accepts a bearer or the `desk_session` cookie, looks up `sessions` by `token_hash(token)` (SHA-256), enforces idle and absolute lifetimes, and runs the CSRF origin check for cookie writes. |
 | Authorization | `web.load_workspace(ctx, ws_id, role)` joins `workspaces` and `members`; a non-member gets 404 plus an `access.denied` audit entry. Roles are `viewer < editor < admin < owner` (`web.ROLES`, `role_at_least`). |

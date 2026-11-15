@@ -1,4 +1,4 @@
-"""AI and agent security suite (docs/audit/06-AI-SECURITY-TESTING.md).
+"""AI and agent security suite (the review kept with the release record; see SECURITY.md).
 
 Every case drives the real agent loop with the scripted fake model from helpers.py: the "model" is told exactly
 which tool calls to make, so each test shows what the engine does when a model has been talked into something,
