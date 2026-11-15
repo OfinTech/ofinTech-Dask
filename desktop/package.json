@@ -18,9 +18,8 @@
     "test": "npm run build && node --test \"test/*.test.mjs\""
   },
   "overrides": {
-    "@electron/universal": {
-      "minimatch": "^11.0.1"
-    }
+    "minimatch@^9": "^11.0.1",
+    "minimatch@^10": "^11.0.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
