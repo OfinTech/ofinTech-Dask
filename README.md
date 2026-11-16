@@ -37,7 +37,7 @@ and your company's own chart of accounts, currency and fiscal year.*
 </p>
 
 The tour above plays right here, step by step. The full-resolution video is on
-**[YouTube](https://youtu.be/jfSBOAi2N0U)**. It shows how to use OfinTech Desk, from creating a
+**[YouTube](https://www.youtube.com/watch?v=kAX4ZPZ1NFk)**. It shows how to use OfinTech Desk, from creating a
 workspace to the month-end close. It covers connecting a model, importing the general ledger, the executive
 overview, statements and KPIs, the assistant (with approvals and cited sources), evidence-linked workbooks,
 dashboards, cost centres, the close, workflows, connections, memory, search and permissions.
