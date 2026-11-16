@@ -15,6 +15,7 @@
 <p align="center">
   <a href="LICENSE">Apache-2.0</a> ·
   <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="ROADMAP.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="SECURITY.md">Security policy</a> ·
   <a href="https://discord.gg/hbzN6udBM">Discord</a>
@@ -190,6 +191,14 @@ docs/        Architecture, security, deployment, connectors, accounting API, fil
 
 Tests: `cd engine && python -m unittest discover -s tests -t .`; UI: `cd ui && npx tsc --noEmit && npm run
 i18n:check`; browser: `python e2e/ui_smoke.py`. What was run for this release is in [docs/TESTING.md](docs/TESTING.md).
+
+## Helping
+
+[ROADMAP.md](ROADMAP.md) says where the work is and what is deliberately not planned. [docs/WANTED.md](docs/WANTED.md)
+is the list of named gaps — a bank statement shape or a chart of accounts from your country needs no code and no
+real data, and is the most useful thing this project can receive. [CONTRIBUTING.md](CONTRIBUTING.md) says how to run
+it and what a pull request is checked against; an issue or a pull request written in Arabic is as welcome as one in
+English.
 
 ## Licence
 

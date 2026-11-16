@@ -3,6 +3,11 @@
 Thank you for helping. This project handles other people's financial data, so changes are judged first on whether
 they keep that data safe and every figure traceable, and then on everything else.
 
+**Looking for something to pick up?** [docs/WANTED.md](docs/WANTED.md) names the gaps and the folder each one goes
+in; [ROADMAP.md](ROADMAP.md) says where the work is and what is deliberately not planned. The two labels worth
+filtering by are [`good first issue`](https://github.com/OfinTech/ofinTech-Dask/labels/good%20first%20issue) and
+[`help wanted`](https://github.com/OfinTech/ofinTech-Dask/labels/help%20wanted).
+
 ## Ground rules
 
 - **No secrets or real data** in commits, issues or test fixtures: no API keys, tokens, passwords, certificates,
