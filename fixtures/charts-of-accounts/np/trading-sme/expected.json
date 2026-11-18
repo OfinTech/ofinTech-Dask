@@ -1,0 +1,10 @@
+{
+  "about": "Standard Nepali SME trading chart of accounts using Tally-style Sundry Debtors/Creditors, VAT (13%), and TDS tax accounts.",
+  "country": "np",
+  "source": "Invented, reflecting typical Nepali SME accounting ledgers.",
+  "invented": true,
+  "gaps": {
+    "classes": [],
+    "roles": []
+  }
+}
