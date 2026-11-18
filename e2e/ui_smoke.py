@@ -22,12 +22,18 @@ TOKEN = "e2e" + "k" * 40
 PORT = 47822
 
 
-def wait_line(proc: subprocess.Popen, needle: str, timeout: float = 60) -> None:
+def wait_line(proc: subprocess.Popen, needle: str, timeout: float = 60) -> str:
+    """The line itself, because the engine says more than "ready": `DESK_READY <port>` names the port it bound,
+    which in desktop mode is not always the one asked for. If the engine exits instead, its own output is the
+    error -- a timeout with nothing in it says only that something went wrong somewhere."""
     end = time.time() + timeout
     while time.time() < end:
         line = proc.stdout.readline().decode()
         if needle in line:
-            return
+            return line
+        if not line and proc.poll() is not None:
+            rest = proc.stdout.read().decode(errors="replace") if proc.stdout else ""
+            raise RuntimeError(f"the engine exited with code {proc.returncode} before {needle}:\n{rest}")
     raise RuntimeError(f"timed out waiting for {needle}")
 
 
@@ -55,8 +61,9 @@ def main() -> int:
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     errors: list[str] = []
     try:
-        wait_line(engine, "DESK_READY")
-        base = f"http://localhost:{PORT}"
+        ready = wait_line(engine, "DESK_READY")
+        port = int(ready.split()[1]) if len(ready.split()) > 1 else PORT
+        base = f"http://localhost:{port}"
         xlsx = out / "pl.xlsx"
         sample_workbook(xlsx)
         with sync_playwright() as p:
