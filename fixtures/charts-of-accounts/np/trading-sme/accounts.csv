@@ -1,0 +1,21 @@
+Code,Account,Account class,Expected role
+1001,Cash in Hand,Cash,cash
+1010,Nabil Bank Current Account,Bank,cash
+1100,Sundry Debtors,Accounts Receivable,receivables
+1200,Closing Stock in Hand,Inventory,inventory
+1500,Office Furniture and Equipment,Fixed Assets,fixed_assets
+1590,Accumulated Depreciation,Fixed Assets,fixed_assets
+2000,Sundry Creditors,Accounts Payable,payables
+2100,VAT Payable (13%),Current Liabilities,tax
+2110,TDS Payable,Current Liabilities,tax
+2200,Bank Overdraft Facility,Current Liabilities,short_term_debt
+2500,Long Term Term Loan,Non-Current Liabilities,long_term_debt
+3000,Proprietor Capital Account,Equity,equity
+3100,Retained Earnings,Equity,equity
+4000,Local Sales Revenue,Sales,revenue
+5000,Cost of Goods Sold,Cost of Goods Sold,cogs
+6000,Staff Salaries and Allowances,Expenses,payroll
+6100,Office Rent and Utilities,Expenses,opex
+6200,Depreciation Expense,Expenses,depreciation
+6300,Bank Loan Interest Expense,Expenses,interest
+6400,Corporate Income Tax Expense,Expenses,tax
