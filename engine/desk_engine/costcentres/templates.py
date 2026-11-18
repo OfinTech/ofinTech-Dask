@@ -28,7 +28,9 @@ GL_NAMES = [c["name"] for c in GL_COLUMNS]
 #
 # Two rules kept this list honest while it was written. A word goes in only where it names the *class*, not an
 # account: «مخزون» and *existencias* are inventory accounts of class Asset, and putting them here would make a class
-# column out of an account name. And a word that two classes could claim goes to the narrower reading or stays out:
+# column out of an account name. English is the exception that proves it: *Inventory* is an account **type** in Xero
+# and *Stock-in-Hand* a group in Tally, so a class column that says either is naming the class, which is why they
+# are below and their Arabic, Spanish and French cousins are not. A fixture is how that is reopened for a language. And a word that two classes could claim goes to the narrower reading or stays out:
 # bare *dettes* and *deudas* are a liability, while *dettes fournisseurs* and *proveedores* are the payables control
 # account, so they sit on different rows below.
 CLASS_WORDS: dict[str, tuple[str, ...]] = {
@@ -46,6 +48,7 @@ CLASS_WORDS: dict[str, tuple[str, ...]] = {
                 "proveedores", "acreedores", "cuentas por pagar", "cuentas a pagar",
                 "fournisseurs", "dettes fournisseurs", "comptes fournisseurs", "crediteurs"),
     "Asset": ("assets", "current assets", "non-current assets", "fixed assets", "fixed asset",
+              "inventory", "inventories", "stock", "stocks", "stock in hand", "stock-in-hand",
               "اصول", "اصول ثابتة", "اصول متداولة", "اصول غير متداولة", "موجودات",
               "activo", "activos", "activo corriente", "activo no corriente", "inmovilizado",
               "actif", "actifs", "actif circulant", "immobilisations"),
