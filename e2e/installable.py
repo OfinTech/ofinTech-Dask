@@ -53,10 +53,19 @@ def main() -> int:
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     problems: list[str] = []
     try:
+        global BASE
         deadline = time.time() + 60
         while time.time() < deadline:
-            if "DESK_READY" in engine.stdout.readline().decode():
+            line = engine.stdout.readline().decode()
+            if "DESK_READY" in line:
+                # The engine names the port it bound. In desktop mode a busy DESK_PORT is not an error: it takes
+                # a free one instead, and then the only place that number exists is this line.
+                BASE = f"http://127.0.0.1:{line.split()[1]}" if len(line.split()) > 1 else BASE
                 break
+            if not line and engine.poll() is not None:
+                rest = engine.stdout.read().decode(errors="replace")
+                print(f"the engine exited with code {engine.returncode}:\n{rest}", file=sys.stderr)
+                return 2
         else:
             print("the engine did not start", file=sys.stderr)
             return 2
