@@ -1,0 +1,17 @@
+{
+  "about": "Bank statement with 4-row letterhead, DD/MM/YYYY dates, and separate Debit/Credit columns.",
+  "country": "np",
+  "bank": "Himalayan Everest Bank Ltd. (invented)",
+  "file": "statement.csv",
+  "invented": true,
+  "expect": {
+    "lines": 7,
+    "first_date": "2026-04-03",
+    "last_date": "2026-04-28",
+    "total": 64130.5,
+    "closing": {
+      "date": "2026-04-28",
+      "amount": 114130.5
+    }
+  }
+}

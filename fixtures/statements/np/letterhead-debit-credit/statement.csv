@@ -1,0 +1,12 @@
+Himalayan Everest Bank Ltd. (Invented),Kathmandu Main Branch,,,,
+Account Holder: Aarav Sharma (Invented),Account No: 000000000000,,,,
+Opening Balance: 50000.00 NPR,Statement Period: 01/04/2026 to 28/04/2026,,,,
+,,,,,
+Date,Description,Reference,Debit,Credit,Balance
+03/04/2026,POS Purchase - Supermarket,TXN1001,2450.50,,47549.50
+07/04/2026,Salary Credit - Tech Corp,TXN1002,,65000.00,112549.50
+12/04/2026,Electricity Utility Bill,TXN1003,1820.00,,110729.50
+16/04/2026,ATM Cash Withdrawal,TXN1004,10000.00,,100729.50
+20/04/2026,Client Freelance Transfer,TXN1005,,15500.00,116229.50
+24/04/2026,Internet Service Payment,TXN1006,1599.00,,114630.50
+28/04/2026,Mobile Wallet Topup,TXN1007,500.00,,114130.50
