@@ -1,0 +1,23 @@
+Code,Account,Account class,Expected role
+1001,Cash in Hand,Cash,cash
+1010,State Bank Current Account,Bank Accounts,cash
+1100,Sundry Debtors,Sundry Debtors,receivables
+1200,Closing Stock-in-Hand,Stock-in-Hand,inventory
+1300,Input Tax Credit (GST),Current Assets,other_current_assets
+1500,Plant and Machinery,Fixed Assets,fixed_assets
+1590,Accumulated Depreciation,Fixed Assets,fixed_assets
+2000,Sundry Creditors,Sundry Creditors,payables
+2100,Output CGST Payable,Duties & Taxes,tax
+2110,Output SGST Payable,Duties & Taxes,tax
+2120,TDS Payable,Current Liabilities,tax
+2200,Cash Credit Working Capital Facility,Current Liabilities,short_term_debt
+2500,Secured Term Loan (Non-Current),Non-Current Liabilities,long_term_debt
+3000,Proprietor Capital Account,Capital,equity
+3100,Reserves and Surplus,Capital,equity
+4000,Domestic Sales Revenue,Sales,revenue
+5000,Cost of Goods Sold,Cost of Goods Sold,cogs
+6000,Salaries and Wages,Expenses,payroll
+6100,Office Rent and Electricity,Expenses,opex
+6200,Depreciation Expense,Expenses,depreciation
+6300,Bank Interest and Finance Charges,Expenses,interest
+6400,Income Tax Expense,Expenses,tax
