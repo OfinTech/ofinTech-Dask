@@ -6,6 +6,8 @@ People confirm or change the suggestion; only confirmed choices are stored. Noth
 
 from __future__ import annotations
 
+import re
+
 from typing import Any
 
 from ..costcentres.rules import norm
@@ -54,11 +56,22 @@ WORDS: dict[str, list[str]] = {
     "tax": ["income tax", "corporate tax", "corporation tax", "tax on profit", "zakat", "ضريبة الدخل", "الزكاة", "زكاة",
             "impuesto sobre beneficios", "impuesto sobre sociedades", "impot sur les societes", "impot sur le resultat"],
 }
-_NORM = {k: [norm(w) for w in v] for k, v in WORDS.items()}
+# A hyphen, a slash or an underscore between words is punctuation, not part of the word: a ledger that writes
+# *Stock-in-Hand* (Tally's own group name) or *Long-Term Loan* means the same as one that writes them with spaces,
+# and before this both sides were compared as if the hyphen were a letter. Squashed on both sides, so the word
+# lists can keep whichever spelling reads best.
+_SEPARATORS = re.compile(r"[-_/\\.]+")
+
+
+def _words(text: str) -> str:
+    return _SEPARATORS.sub(" ", norm(text)).strip()
+
+
+_NORM = {k: [_words(w) for w in v] for k, v in WORDS.items()}
 
 
 def _has(name: str, key: str) -> bool:
-    n = f" {norm(name)} "
+    n = f" {_words(name)} "
     return any(f" {w} " in n or (len(w) > 6 and w in n) for w in _NORM[key])
 
 
