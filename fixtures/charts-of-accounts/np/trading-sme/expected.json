@@ -5,6 +5,9 @@
   "invented": true,
   "gaps": {
     "classes": [],
-    "roles": []
+    "roles": [
+      { "code": "2100", "expected": "tax", "got": "other_current_liabilities", "why": "VAT payable at 13% is a tax account in Nepali practice; this product has a tax role only in the P&L, not on the balance sheet." },
+      { "code": "2110", "expected": "tax", "got": "other_current_liabilities", "why": "TDS payable is tax withheld on behalf of the authority, not an ordinary trade creditor." }
+    ]
   }
 }
