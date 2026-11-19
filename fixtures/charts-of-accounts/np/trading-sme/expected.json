@@ -1,50 +1,13 @@
 {
-  "about": "Invented chart of accounts for an Indian trading SME following standard Tally and Schedule III conventions (GST, TDS, Sundry Debtors/Creditors, and Cash Credit).",
-  "country": "in",
-  "source": "Invented, reflecting typical Indian Tally / SME ledger exports.",
+  "about": "Standard Nepali SME trading chart of accounts using Tally-style Sundry Debtors/Creditors, VAT (13%), and TDS tax accounts.",
+  "country": "np",
+  "source": "Invented, reflecting typical Nepali SME accounting ledgers.",
   "invented": true,
   "gaps": {
-    "classes": [
-      {
-        "written": "Bank Accounts",
-        "expected": "Bank",
-        "why": "Indian Tally exports use 'Bank Accounts' as the primary group for bank ledgers, which is not in CLASS_WORDS['Bank']."
-      },
-      {
-        "written": "Sundry Debtors",
-        "expected": "Receivable",
-        "why": "Indian accounting software (Tally and Schedule III) names the trade receivables group 'Sundry Debtors', whereas CLASS_WORDS only matches 'debtors' or 'trade debtors'."
-      },
-      {
-        "written": "Sundry Creditors",
-        "expected": "Payable",
-        "why": "Indian accounting software names the trade payables group 'Sundry Creditors', whereas CLASS_WORDS only matches 'creditors' or 'trade creditors'."
-      },
-      {
-        "written": "Duties & Taxes",
-        "expected": "Liability",
-        "why": "Tally groups statutory tax liabilities like CGST, SGST, and IGST under 'Duties & Taxes', which is not recognised in CLASS_WORDS."
-      }
-    ],
+    "classes": [],
     "roles": [
-      {
-        "code": "1200",
-        "expected": "inventory",
-        "got": "other_current_assets",
-        "why": "Tally names inventory accounts 'Stock-in-Hand' (hyphenated), so token matching for 'stock' misses it and falls back to other_current_assets."
-      },
-      {
-        "code": "2120",
-        "expected": "tax",
-        "got": "other_current_liabilities",
-        "why": "Balance-sheet tax liabilities like TDS Payable under Current Liabilities fall back to other_current_liabilities because tax role keywords are only checked for Expense classes."
-      },
-      {
-        "code": "2200",
-        "expected": "short_term_debt",
-        "got": "other_current_liabilities",
-        "why": "Indian working-capital overdraft facilities are standardly called 'Cash Credit' (CC), which is not in WORDS['debt'] so it falls back to other_current_liabilities."
-      }
+      { "code": "2100", "expected": "tax", "got": "other_current_liabilities", "why": "VAT payable at 13% is a tax account in Nepali practice; this product has a tax role only in the P&L, not on the balance sheet." },
+      { "code": "2110", "expected": "tax", "got": "other_current_liabilities", "why": "TDS payable is tax withheld on behalf of the authority, not an ordinary trade creditor." }
     ]
   }
 }
