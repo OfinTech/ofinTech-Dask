@@ -7,7 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ..db import dumps, loads, new_id, now
-from ..errors import Invalid, NotFound
+from ..errors import Invalid, NotFound, UpstreamError
 from ..llm.base import ChatMessage, complete
 from ..llm.catalog import CATALOG, get_kind
 from ..llm.registry import build_model, provider_row
@@ -153,15 +153,24 @@ async def refresh_models(ctx: Ctx) -> dict[str, Any]:
 
 
 class TestIn(BaseModel):
-    model: str
+    model: str = Field(min_length=1, max_length=200)
 
 
 @router.post("/api/w/{ws}/providers/{pid}/test", role="admin", body=TestIn)
 async def test_provider(ctx: Ctx) -> dict[str, Any]:
     pid = ctx.request.path_params["pid"]
-    model = build_model(ctx.engine, ctx.ws_id, pid, ctx.body.model)
-    result = await complete(model, [ChatMessage("user", "Reply with the single word OK.")], max_tokens=20)
-    ctx.engine.record_usage(ctx.ws_id, pid, ctx.body.model, result.usage, "test")
+    name = ctx.body.model.strip()
+    model = build_model(ctx.engine, ctx.ws_id, pid, name)
+    try:
+        result = await complete(model, [ChatMessage("user", "Reply with the single word OK.")], max_tokens=20)
+    except UpstreamError as exc:
+        if exc.code != "llm_not_found":
+            raise
+        # The page picks the model it tests, so "this model" tells nobody which one was asked. Name it.
+        label = provider_row(ctx.engine, ctx.ws_id, pid)["label"]
+        raise UpstreamError(f"{label} answered \u201cnot found\u201d for the model {name}. Check the model's name, then the "
+                            "provider's address.", code=exc.code, details=exc.details) from exc
+    ctx.engine.record_usage(ctx.ws_id, pid, name, result.usage, "test")
     return {"ok": True, "reply": result.text[:200], "usage": result.usage.__dict__}
 
 
