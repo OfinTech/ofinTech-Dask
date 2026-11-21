@@ -16,6 +16,18 @@ migrations are applied automatically on start-up and are never rewritten once re
   `extrapolated`. This is the computation only. The repository has no scorecard that feeds it and no record of
   verdicts yet, so no page shows a figure from it. See [docs/MEASURED_PROBABILITY.md](docs/MEASURED_PROBABILITY.md).
 
+### Fixed
+
+- **Settings → Models tested a model nobody chose, and chose one nobody asked for.** *Test* asked the first model
+  in a provider's list, whatever the workspace was using, and picking a provider in *Default provider* or *Model
+  for short jobs* silently saved that same first model. For a provider that lists two models that was a guess;
+  for one that lists a catalogue of hundreds and answers for the single model deployed on it, it was wrong every
+  time, and the error said "does not know this model" without saying which. *Test* now asks the model the
+  workspace uses with that provider (the first listed only when the provider is not in use), and says in its
+  tooltip which one that is. Picking a provider keeps the model in use if the provider lists it, takes the only
+  model if there is one, and otherwise saves nothing until the model is named. A "not found" answer names the
+  model that was asked.
+
 ## 1.3.0 — 2026-11-11
 
 ### Added

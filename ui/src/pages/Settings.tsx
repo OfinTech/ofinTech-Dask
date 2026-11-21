@@ -3,6 +3,7 @@ import { del, get, patch, post, put } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
 import { CURRENCIES, MONTHS, fmtDate, fmtDateTime, fmtMoney, fmtNumber, fmtRelative } from "../lib/format";
 import { Confirm, ErrorBox, Field, Icon, LanguagePicker, Loading, Modal, PageHead, go, useAction, useLoad, useToast } from "../components/ui";
+import { modelOnSwitch, modelToTest } from "../lib/models";
 import { openExternal } from "../lib/api";
 import { N, tr } from "../lib/i18n";
 
@@ -92,33 +93,53 @@ function Models(): ReactNode {
   const catalog = useLoad(() => get<any[]>("/api/llm/catalog"), []);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  // A provider somebody picked whose model they have not named yet. Nothing is saved while it is here: a provider
+  // that lists hundreds of models has no first one worth guessing (lib/models.ts).
+  const [staged, setStaged] = useState<{ which: "default" | "utility"; id: string } | null>(null);
   const { busy, run } = useAction();
   const toast = useToast();
   const admin = can(ws, "admin");
   if (!data.data) return <Loading />;
   const d = data.data;
+  const defaultId: string = (staged?.which === "default" ? staged.id : d.default_provider_id) || "";
+  const utilityId: string = (staged?.which === "utility" ? staged.id : d.utility_provider_id) || "";
+  const provider = (id: string) => d.providers.find((x: any) => x.id === id);
+  // The staged choice is dropped only once the save has gone through; a refused one stays for another try.
+  const save = (fn: () => Promise<unknown>, ok?: string) =>
+    run(async () => { await fn(); return true; }, ok).then((done: boolean | undefined) => { if (done) setStaged(null); data.reload(); });
+  const nameIt = tr("Type the model this provider should answer with, then leave the field.");
   return (
     <div className="stack" style={{ maxWidth: 900 }}>
       <p className="muted">{tr("Bring your own key for any provider, or run models locally with Ollama or LM Studio. Each conversation and workflow step can use a different model; this is the default.")}</p>
       {d.providers.length > 0 && (
         <div className="panel panel-pad grid2">
-          <Field label={tr("Default provider")}><select className="select" value={d.default_provider_id || ""} disabled={!admin}
-            onChange={(e) => { const p = d.providers.find((x: any) => x.id === e.target.value);
-              run(() => put(wsPath(ws, "/default-model"), { provider_id: e.target.value, model: p?.models[0] || "default" })).then(data.reload); }}>
+          <Field label={tr("Default provider")}><select className="select" value={defaultId} disabled={!admin}
+            onChange={(e) => { const id = e.target.value; const model = modelOnSwitch(provider(id), d.default_model);
+              if (id === d.default_provider_id) setStaged(null);
+              else if (model) save(() => put(wsPath(ws, "/default-model"), { provider_id: id, model }));
+              else setStaged({ which: "default", id }); }}>
             <option value="" disabled>{tr("Choose…")}</option>{d.providers.map((p: any) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></Field>
-          <Field label={tr("Default model")}><input className="input" list="def-models" disabled={!admin || !d.default_provider_id} defaultValue={d.default_model || ""}
-            key={d.default_model} onBlur={(e) => e.target.value && e.target.value !== d.default_model &&
-              run(() => put(wsPath(ws, "/default-model"), { provider_id: d.default_provider_id, model: e.target.value }), tr("Default model saved")).then(data.reload)} />
-            <datalist id="def-models">{(d.providers.find((p: any) => p.id === d.default_provider_id)?.models || []).map((m: string) => <option key={m} value={m} />)}</datalist></Field>
+          <Field label={tr("Default model")} hint={staged?.which === "default" ? nameIt : undefined}>
+            <input className="input" list="def-models" disabled={!admin || !defaultId} autoFocus={staged?.which === "default"}
+              defaultValue={staged?.which === "default" ? "" : d.default_model || ""} key={`${defaultId}:${d.default_model}`}
+              onBlur={(e) => { const model = e.target.value.trim();
+                if (model && (staged?.which === "default" || model !== d.default_model))
+                  save(() => put(wsPath(ws, "/default-model"), { provider_id: defaultId, model }), tr("Default model saved")); }} />
+            <datalist id="def-models">{(provider(defaultId)?.models || []).map((m: string) => <option key={m} value={m} />)}</datalist></Field>
           <Field label={tr("Model for short jobs")} hint={tr("A smaller, cheaper model for search answers. Leave it on the default model if unsure.")}>
-            <select className="select" value={d.utility_provider_id || ""} disabled={!admin}
-              onChange={(e) => { const p = d.providers.find((x: any) => x.id === e.target.value);
-                run(() => put(wsPath(ws, "/utility-model"), { provider_id: e.target.value || null, model: p?.models[0] || null }), tr("Saved")).then(data.reload); }}>
+            <select className="select" value={utilityId} disabled={!admin}
+              onChange={(e) => { const id = e.target.value; const model = id ? modelOnSwitch(provider(id), d.utility_model) : null;
+                if (id === (d.utility_provider_id || "")) setStaged(null);
+                else if (!id || model) save(() => put(wsPath(ws, "/utility-model"), { provider_id: id || null, model }), tr("Saved"));
+                else setStaged({ which: "utility", id }); }}>
               <option value="">{tr("Same as the default model")}</option>{d.providers.map((p: any) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></Field>
-          {d.utility_provider_id && <Field label={tr("Short-job model")}><input className="input" list="util-models" disabled={!admin} defaultValue={d.utility_model || ""}
-            key={d.utility_model} onBlur={(e) => e.target.value && e.target.value !== d.utility_model &&
-              run(() => put(wsPath(ws, "/utility-model"), { provider_id: d.utility_provider_id, model: e.target.value }), tr("Saved")).then(data.reload)} />
-            <datalist id="util-models">{(d.providers.find((p: any) => p.id === d.utility_provider_id)?.models || []).map((m: string) => <option key={m} value={m} />)}</datalist></Field>}
+          {utilityId && <Field label={tr("Short-job model")} hint={staged?.which === "utility" ? nameIt : undefined}>
+            <input className="input" list="util-models" disabled={!admin} autoFocus={staged?.which === "utility"}
+              defaultValue={staged?.which === "utility" ? "" : d.utility_model || ""} key={`${utilityId}:${d.utility_model}`}
+              onBlur={(e) => { const model = e.target.value.trim();
+                if (model && (staged?.which === "utility" || model !== d.utility_model))
+                  save(() => put(wsPath(ws, "/utility-model"), { provider_id: utilityId, model }), tr("Saved")); }} />
+            <datalist id="util-models">{(provider(utilityId)?.models || []).map((m: string) => <option key={m} value={m} />)}</datalist></Field>}
         </div>
       )}
       <ul className="list panel">
@@ -129,8 +150,9 @@ function Models(): ReactNode {
               <div className="xs muted">{p.base_url}{p.has_key ? tr(", key stored") : ""}, {p.models.length}{" "}{tr("models")}</div></div>
               {admin && <div className="row">
                 <button className="btn small" disabled={busy} onClick={() => run(() => post(wsPath(ws, `/providers/${p.id}/models/refresh`)), tr("Model list updated")).then(data.reload)}>{tr("Load models")}</button>
-                <button className="btn small" disabled={busy} onClick={() => run(() => post(wsPath(ws, `/providers/${p.id}/test`), { model: p.models[0] || d.default_model }))
-                  .then((r: any) => r && toast(tr("The model replied: {0}", { 0: r.reply })))}>{tr("Test")}</button>
+                <button className="btn small" disabled={busy || !modelToTest(p, d)} title={modelToTest(p, d) || tr("Name a model for this provider first.")}
+                  onClick={() => run(() => post(wsPath(ws, `/providers/${p.id}/test`), { model: modelToTest(p, d) }))
+                    .then((r: any) => r && toast(tr("The model replied: {0}", { 0: r.reply })))}>{tr("Test")}</button>
                 <button className="btn small" onClick={() => setEditing(p)}>{tr("Edit")}</button>
                 <button className="btn small danger" onClick={() => run(() => del(wsPath(ws, `/providers/${p.id}`))).then(data.reload)}>{tr("Remove")}</button>
               </div>}
