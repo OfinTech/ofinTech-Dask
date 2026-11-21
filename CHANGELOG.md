@@ -16,7 +16,7 @@ migrations are applied automatically on start-up and are never rewritten once re
   `http://localhost:8700` and waits until it answers:
 
   ```bash
-  curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+  curl -fsSL https://ofintech.ai/install.sh | sh
   ```
 
   That install is for one person on one machine: loopback only and plain HTTP, because a ledger does not belong

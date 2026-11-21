@@ -78,7 +78,7 @@ search, approval and workbook comes from the product itself.
 ### One line, on a machine that has Docker
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+curl -fsSL https://ofintech.ai/install.sh | sh
 ```
 
 It writes a compose file and a key into `~/ofintech-desk`, pulls the Team Server image, starts it on
@@ -87,7 +87,7 @@ it again to upgrade; it keeps the data and the key. To read it before running it
 do with any `curl | sh`:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh
+curl -fsSLO https://ofintech.ai/install.sh
 less install.sh && sh install.sh
 ```
 
