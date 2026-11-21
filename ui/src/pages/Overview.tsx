@@ -8,6 +8,7 @@ import { fmtDate, fmtDateTime, fmtFixed, fmtMoney, fmtNumber, fmtPercent } from 
 import { Chart } from "../components/charts";
 import { Empty, ErrorBox, Icon, Loading, PageHead, go, query, useAction, useLoad } from "../components/ui";
 import { N, lang, tr } from "../lib/i18n";
+import { TryDemoCompany } from "./DemoCompany";
 
 // ---- words --------------------------------------------------------------------------------------------------------
 const HEALTH: Record<string, [string, string]> = {
@@ -189,14 +190,14 @@ export function OverviewPage({ view, arg }: { view?: string; arg?: string }): Re
 
 function Executive({ month }: { month: string | null }): ReactNode {
   const { ws } = useApp();
-  const { data, error, loading } = useLoad<any>(() => get(wsPath(ws, `/overview${month ? `?month=${month}` : ""}`)), [ws.id, month]);
+  const { data, error, loading, reload } = useLoad<any>(() => get(wsPath(ws, `/overview${month ? `?month=${month}` : ""}`)), [ws.id, month]);
   const [ai, setAi] = useState<any>(null);
   const ask = useAction();
   if (loading && !data) return <Loading />;
   if (error) {
     return <div className="page"><PageHead title={tr("Overview")} />
       {error.includes("no_ledger") || /ledger/i.test(error)
-        ? <Empty title={tr("No general ledger yet")} action={<a className="btn primary" href="#/data">{tr("Import a general ledger")}</a>}>
+        ? <Empty title={tr("No general ledger yet")} action={<><TryDemoCompany onLoaded={() => reload()} /> <a className="btn" href="#/data">{tr("Import a general ledger")}</a></>}>
             {tr("Connect QuickBooks, Zoho Books, Xero or Odoo, or import a general-ledger file under Data. The overview is built from it.")}</Empty>
         : <ErrorBox error={error} />}
     </div>;

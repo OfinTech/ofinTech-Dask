@@ -171,6 +171,15 @@ jobs:
               >> "$GITHUB_STEP_SUMMARY"
           fi
           exit $code
+      - name: The bundle carries the demo company
+        # "Try it with a demo company" reads three files that are data, not code, so nothing imports them and
+        # PyInstaller takes them only because build_engine.py names them. desk_engine/demo.py looks beside the package.
+        working-directory: engine
+        shell: bash
+        run: |
+          found=$(find dist/desk-engine -path '*desk_engine/demo_company/HarborLine_General_Ledger.xlsx' | head -n 1)
+          [ -n "$found" ] || { echo "::error::the engine bundle has no desk_engine/demo_company"; exit 1; }
+          echo "$found"
       - name: Build UI
         working-directory: ui
         run: |
@@ -271,6 +280,8 @@ jobs:
       - uses: actions/checkout@v7
       - name: Build Team Server image
         run: docker build -f server/Dockerfile -t ofintech-desk:ci .
+      - name: The image carries the demo company
+        run: docker run --rm ofintech-desk:ci python -c "import sys; from desk_engine import demo; print(demo.directory()); sys.exit(0 if demo.available() else 1)"
       - name: Scan the image for known vulnerabilities (Trivy)
         # Trivy's own image, like the gitleaks step; pin the tag to a release once a maintainer has checked the
         # current one (the audit environment could not query Docker Hub).

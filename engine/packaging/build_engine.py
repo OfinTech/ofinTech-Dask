@@ -17,6 +17,8 @@ cmd = [
     "--distpath", str(root / "dist"), "--workpath", str(root / "build"), "--specpath", str(root / "build"),
     "--paths", str(root),
     "--add-data", f"{root / 'desk_engine' / 'skills' / 'builtin'}{sep}desk_engine/skills/builtin",
+    # The three invented files "Try it with a demo company" loads (desk_engine/demo.py looks for them here).
+    "--add-data", f"{root.parent / 'examples' / 'demo-company' / 'HarborLine-demo' / 'ofintech-desk'}{sep}desk_engine/demo_company",
     "--collect-submodules", "desk_engine",
     "--collect-submodules", "uvicorn",
     # not --collect-all mcp: that imports every submodule, and mcp.cli turns its missing optional extra
