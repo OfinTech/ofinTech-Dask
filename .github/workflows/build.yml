@@ -98,6 +98,8 @@ jobs:
         run: python e2e/bundle_cache.py
       - name: The app can be installed from the browser
         run: python e2e/installable.py
+      - name: The one-line installer does what it says
+        run: python e2e/install_sh.py e2e-output
       - name: Money figures stay inside their cells
         run: python e2e/figures_fit.py e2e-output
       - name: The public website (overflow, both languages, forms, error codes)
@@ -276,10 +278,26 @@ jobs:
   team-server-image:
     needs: [test, security]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write          # ghcr.io, on a tag; the step that needs it is the only one that uses the token
+    env:
+      # The `secrets` context cannot be read in a step's `if`, so the question "is Docker Hub set up?" is asked
+      # once here, as the desktop job asks about signing. The value is true or false, never the token.
+      HAVE_HUB: ${{ secrets.DOCKERHUB_TOKEN != '' && secrets.DOCKERHUB_USERNAME != '' }}
+      # Hard-coded, not a variable. The private edition's image is `ofintech0/ofintech-desk-owner`, one word
+      # away, and Docker Hub makes a repository public on its first push: a namespace that can be passed in is
+      # the one mistake here that cannot be undone, so there is nothing to pass in.
+      HUB_IMAGE: ofintech0/ofintech-desk
     steps:
       - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
       - name: Build Team Server image
-        run: docker build -f server/Dockerfile -t ofintech-desk:ci .
+        run: |
+          docker buildx build -f server/Dockerfile --platform linux/amd64 --load \
+            --cache-from type=gha --cache-to type=gha,mode=max -t ofintech-desk:ci .
       - name: The image carries the demo company
         run: docker run --rm ofintech-desk:ci python -c "import sys; from desk_engine import demo; print(demo.directory()); sys.exit(0 if demo.available() else 1)"
       - name: Scan the image for known vulnerabilities (Trivy)
@@ -288,3 +306,93 @@ jobs:
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image \
             --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --no-progress ofintech-desk:ci
+
+      # arm64 is built on every push, not only when it is published. An Apple Silicon machine runs the amd64
+      # image emulated and slowly, so arm64 is worth publishing -- but a platform whose first build is the
+      # release is a platform that breaks the release. This step is what makes the push below safe; the time it
+      # takes is in this run's log, and narrowing it to `schedule` and tags is one `if:` away.
+      - name: The image builds for arm64 too
+        run: |
+          docker buildx build -f server/Dockerfile --platform linux/arm64 --output type=cacheonly \
+            --cache-from type=gha --cache-to type=gha,mode=max .
+
+      # ---------------------------------------------------------------- publishing, on a vX.Y.Z tag only
+      - name: Sign in to the registries
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          HUB_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          HUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          if [ "$HAVE_HUB" = "true" ]; then
+            printf '%s' "$HUB_TOKEN" | docker login -u "$HUB_USER" --password-stdin
+          else
+            echo "::warning::DOCKERHUB_USERNAME / DOCKERHUB_TOKEN are not set, so this release goes to ghcr.io only."
+          fi
+
+      - name: Push the image
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -eu
+          version="${GITHUB_REF_NAME#v}"
+          ghcr="ghcr.io/$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')/ofintech-desk"
+          names="$ghcr"
+          if [ "$HAVE_HUB" = "true" ]; then names="$names $HUB_IMAGE"; fi
+
+          # `latest` and the X.Y tag move only for a plain release. v1.4.0-rc1 would otherwise hand every
+          # customer who pulls `latest` a release candidate, and park it on 1.4 as well.
+          which="$version sha-$(git rev-parse --short HEAD)"
+          case $version in
+            *[!0-9.]*|*..*) echo "::notice::$version is not a plain X.Y.Z, so latest does not move." ;;
+            *.*.*) which="$which ${version%.*} latest" ;;
+            *) echo "::error::tag $GITHUB_REF_NAME is not vX.Y.Z"; exit 1 ;;
+          esac
+
+          tags=""
+          for name in $names; do
+            for t in $which; do tags="$tags --tag $name:$t"; done
+          done
+          echo "publishing$tags"
+          # The same two platforms the steps above built and checked, from the same cache.
+          docker buildx build -f server/Dockerfile --platform linux/amd64,linux/arm64 --push \
+            --cache-from type=gha \
+            --label "org.opencontainers.image.title=OfinTech Desk Team Server" \
+            --label "org.opencontainers.image.version=$version" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.licenses=Apache-2.0" \
+            $tags .
+
+      - name: Can a stranger pull what went up, on both platforms?
+        if: startsWith(github.ref, 'refs/tags/v')
+        # This image is meant to be public, so the check is that it IS one -- the mirror of the private
+        # edition's check, which asks the same question in order to refuse. Asked with no credentials, because
+        # a customer has none. A package`s first push to ghcr.io is private until somebody makes it public, so
+        # the first release is expected to stop here, once, with the message below.
+        run: |
+          set -eu
+          version="${GITHUB_REF_NAME#v}"
+          ghcr="ghcr.io/$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')/ofintech-desk"
+          refs="$ghcr:$version"
+          if [ "$HAVE_HUB" = "true" ]; then refs="$refs $HUB_IMAGE:$version"; fi
+          docker logout ghcr.io >/dev/null 2>&1 || true
+          docker logout >/dev/null 2>&1 || true
+          failed=0
+          for ref in $refs; do
+            if ! out=$(docker buildx imagetools inspect "$ref" 2>&1); then
+              echo "::error::nobody can pull $ref without credentials, so a customer cannot install Desk"
+              echo "$out"
+              echo "On ghcr.io a package is private until it is made public once, which a first release has not"
+              echo "done yet: the repository's Packages page, ofintech-desk, Package settings, Change visibility."
+              echo "On Docker Hub it means the repository there is private."
+              failed=1
+              continue
+            fi
+            for platform in linux/amd64 linux/arm64; do
+              printf '%s' "$out" | grep -q "$platform" \
+                || { echo "::error::$ref has no $platform in its manifest"; failed=1; }
+            done
+            echo "ok: anyone can pull $ref, on both platforms"
+          done
+          exit $failed

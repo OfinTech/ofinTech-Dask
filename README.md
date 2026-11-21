@@ -75,14 +75,35 @@ search, approval and workbook comes from the product itself.
 
 ## Run it
 
+### One line, on a machine that has Docker
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+```
+
+It writes a compose file and a key into `~/ofintech-desk`, pulls the Team Server image, starts it on
+`http://localhost:8700` and waits until it answers. The first person to sign up there is the administrator. Run
+it again to upgrade; it keeps the data and the key. To read it before running it, which is the sensible thing to
+do with any `curl | sh`:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh
+less install.sh && sh install.sh
+```
+
+That install is for one person, on one machine: it listens on the loopback address and speaks plain HTTP, so
+nothing on the network can reach it. A server other people sign in to needs a domain and a certificate —
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For something you send a customer, pin the version instead of `main`:
+swap `main` in the URL for `v1.3.0`, and the script takes `OFINTECH_TAG=1.3.0`.
+
 ### Try it on books that already exist
 
 The quickest look needs nothing but the app and three files of invented books. **Harbor Line Logistics
 Ltd** is a freight company with 14 months of them in USD: 182 invoices, 98 bills, 47 journals, a project whose
 budget runs out before its planned end, a customer who pays 40–70 days late, and a payment sitting in Suspense.
 
-1. Install the desktop app from the [latest release](../../releases/latest), or set up a server by following
-   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+1. Install the desktop app from the [latest release](../../releases/latest), run the one line above, or set up a
+   server by following [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 2. In a new workspace, the overview says *No general ledger yet*. Click **Try it with a demo company**. The
    ledger, the project budget and October's bank statement are loaded as three datasets, each named
    *Harbor Line (demo) · …*, and the overview, the statements and the financial analysis are built from the
