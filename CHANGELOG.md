@@ -7,6 +7,16 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Try it with a demo company.** A new workspace said *No general ledger yet* and offered an import, so the
+  thing the product is for — a figure you can click until you reach the entry behind it — could not be seen
+  until somebody had exported their own books. The empty overview and the empty **Data** page now offer one
+  button that loads the three invented files in `examples/demo-company` (Harbor Line Logistics: a general
+  ledger, a project budget, a bank statement) through the same reader an uploaded file goes through. Each
+  dataset is named *Harbor Line (demo) · …* and marked as demo data; **Data** says so in a banner and removes
+  them, and nothing else, in one click. Loading and removing need the editor role. The server image and the
+  desktop bundle carry the files (about 100 KB); `DESK_DEMO_DIR` points at another copy, and an engine with no
+  copy does not offer the button. The budget and the statement arrive as datasets: a cost centre's budget and
+  a month's close still take their file on their own page.
 - **A probability that has a source** (`engine/desk_engine/decide/`). A scorecard's number says why a proposal
   looks good, not how often proposals that look this good are right. `fit` turns a list of (score, accepted or
   rejected) verdicts into a curve: the share of proposals scoring like this one that a person accepted. It is

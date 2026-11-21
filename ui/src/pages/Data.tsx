@@ -6,6 +6,7 @@ import { DataTable } from "../components/charts";
 import { Comments } from "../components/comments";
 import { Confirm, Empty, ErrorBox, Field, Icon, Loading, Modal, PageHead, go, useAction, useLoad } from "../components/ui";
 import { tr } from "../lib/i18n";
+import { DemoCompanyBanner, TryDemoCompany } from "./DemoCompany";
 
 const SOURCE: Record<string, string> = { excel: "Excel", csv: "CSV", quickbooks: "QuickBooks Online", zoho_books: "Zoho Books",
   xero: "Xero", gmail: "Gmail attachment", google_drive: "Google Drive" };
@@ -23,9 +24,10 @@ function DatasetList(): ReactNode {
       <PageHead title={tr("Data")} sub={tr("Spreadsheets you imported and data synced from accounting systems. The assistant and dashboards read from here; your files stay in this workspace.")}
         actions={can(ws, "editor") && <button className="btn primary" onClick={() => setImporting(true)}><Icon name="upload" />{tr("Import Excel or CSV")}</button>} />
       <ErrorBox error={list.error} />
+      <DemoCompanyBanner onRemoved={() => list.reload()} />
       {list.loading ? <Loading /> : (list.data || []).length === 0 ? (
-        <div className="panel"><Empty title={tr("No data yet")} action={can(ws, "editor") &&
-          <button className="btn primary" onClick={() => setImporting(true)}>{tr("Import a spreadsheet")}</button>}>
+        <div className="panel"><Empty title={tr("No data yet")} action={<><TryDemoCompany onLoaded={() => list.reload()} /> {can(ws, "editor") &&
+          <button className="btn" onClick={() => setImporting(true)}>{tr("Import a spreadsheet")}</button>}</>}>
           {tr("Import an .xlsx or .csv file (a ledger export, a budget, a bank statement), or connect QuickBooks Online, Zoho Books or Xero under Connections to sync profit and loss, balance sheet, invoices and bills.")}</Empty></div>
       ) : (
         <div className="table-wrap" style={{ maxHeight: "none" }}>

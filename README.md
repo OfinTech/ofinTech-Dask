@@ -83,10 +83,21 @@ budget runs out before its planned end, a customer who pays 40–70 days late, a
 
 1. Install the desktop app from the [latest release](../../releases/latest), or set up a server by following
    [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-2. From `examples/demo-company/HarborLine-demo/ofintech-desk/`:
+2. In a new workspace, the overview says *No general ledger yet*. Click **Try it with a demo company**. The
+   ledger, the project budget and October's bank statement are loaded as three datasets, each named
+   *Harbor Line (demo) · …*, and the overview, the statements and the financial analysis are built from the
+   ledger at once. Cost centres and Month-end close find the ledger too, and show their first figure when you
+   create a cost centre or prepare a month. **Data** says the workspace holds demo data and removes it, and only
+   it, in one click.
+
+   The button reads the files in `examples/demo-company/HarborLine-demo/ofintech-desk/`. To go in by the same
+   doors your own files would, use them by hand instead:
    - `HarborLine_General_Ledger.xlsx` → **Data → Import**;
    - `EWF_Project_Budget.xlsx` → **Cost centres → Read budget from a file**;
    - `HarborLine_Bank_Statement_2026-10.csv` → **Month-end close**.
+
+   The button puts the budget and the statement under **Data**; a cost centre's budget and a month's close
+   still take their file on their own page.
 3. Open the overview, then the profit and loss, then click a figure until you reach one journal entry and its
    source. Ask the assistant why the project's budget runs out, and check the figures in its answer.
 

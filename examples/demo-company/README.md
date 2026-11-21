@@ -52,7 +52,7 @@ zoho-books/                      import into Zoho Books in this order
   07_bills.csv                   Purchases → Bills → Import
   08_vendor_payments.csv         Purchases → Payments Made → Import
   09_manual_journals.csv         Accountant → Manual Journals → Import Journals
-ofintech-desk/
+ofintech-desk/                   loaded in one click by "Try it with a demo company" in a new workspace; or by hand:
   HarborLine_General_Ledger.xlsx the same transactions as journal lines, for OfinTech Desk → Data → Import
   EWF_Project_Budget.xlsx        the project budget, for Cost centres → Read budget from a file
   HarborLine_Bank_Statement_2026-10.csv  the bank's October statement, for Month-end close

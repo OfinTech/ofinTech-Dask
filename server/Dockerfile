@@ -32,6 +32,9 @@ WORKDIR /app
 COPY engine/requirements.txt ./
 RUN pip install -r requirements.txt
 COPY engine/desk_engine ./desk_engine
+# The three invented files "Try it with a demo company" loads (desk_engine/demo.py): about 100 KB, written by
+# examples/demo-company/generate.py, naming no real company or person. Leave the line out and the button is not offered.
+COPY examples/demo-company/HarborLine-demo/ofintech-desk/ ./demo/
 COPY --from=ui /ui/dist /app/ui
 ENV DESK_MODE=server DESK_HOST=0.0.0.0 DESK_PORT=8700 DESK_DATA_DIR=/var/lib/ofintech-desk DESK_UI_DIR=/app/ui
 USER desk
