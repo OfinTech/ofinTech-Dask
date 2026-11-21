@@ -43,6 +43,53 @@ the website and the app share the registrable domain. Without `DESK_SITE_URL`, f
 sign-in page and only the app's origin is accepted. The website's `form-action` content-security policy must name
 the Team Server (`site/nginx.conf`).
 
+## The published image
+
+Every `vX.Y.Z` tag publishes the Team Server image — the engine with the UI built into it — to two registries,
+for `linux/amd64` and `linux/arm64`:
+
+| Registry | Image |
+|---|---|
+| Docker Hub | `ofintech0/ofintech-desk` |
+| GitHub | `ghcr.io/ofintech/ofintech-desk` |
+
+The same image on both; use whichever is easier to reach. Docker Hub limits an unauthenticated pull to 100 every
+six hours **per IP address**, which a whole office behind one address can reach, so `ghcr.io` is the one to name
+in that case. Tags on each: the version, `X.Y`, `latest`, and `sha-<short>`. `latest` and `X.Y` move only for a
+plain release, so a `v1.4.0-rc1` tag publishes itself and nothing else.
+
+Labels carry `org.opencontainers.image.version`, `.revision`, `.source` and `.licenses`.
+
+The image runs as uid 10001, needs no Linux capability, listens on 8700 and keeps everything in
+`/var/lib/ofintech-desk`. It carries the demo company's three files at `/app/demo`, which is what makes
+*Try it with a demo company* appear in an empty workspace.
+
+### One machine, one line
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+```
+
+`scripts/install.sh` writes `~/ofintech-desk/compose.yml` and `~/ofintech-desk/.env`, pulls the image, starts it
+and waits for `/health`. Settings, all optional: `OFINTECH_DIR`, `OFINTECH_PORT` (8700), `OFINTECH_IMAGE`,
+`OFINTECH_TAG` (latest), `OFINTECH_WAIT` (90 seconds — raise it on an arm64 machine running the amd64 image
+emulated). Running it again is the upgrade: it pulls, restarts, and keeps the `.env` and the data volume as they
+are.
+
+It is for trying Desk, not for serving it. It binds `127.0.0.1` and sets `DESK_ALLOW_HTTP=1`, because a company's
+ledger has no business on a network connection without a certificate. For a server, read on.
+
+**The one file to back up is `~/ofintech-desk/.env`.** `DESK_MASTER_KEY` in it is what the stored provider keys
+and connection secrets are encrypted with; a new key cannot read them, and the installer never replaces one that
+is already there.
+
+### A server, from the published image
+
+`server/docker-compose.yml` builds from source. To run the published image instead, set `image:` to one of the
+two above with the version you want and delete the `build:` line. Everything else in this document — the domain,
+the certificate, the backups, the checklist — is unchanged. An upgrade is then a new tag and
+`docker compose pull && docker compose up -d`, with no build on the server.
+
 ## Install
 
 ```bash

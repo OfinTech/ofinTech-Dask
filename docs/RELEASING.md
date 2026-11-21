@@ -15,6 +15,22 @@ Signing (repository secrets):
 | `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` | A separate Windows certificate, which takes precedence there |
 | `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | macOS notarisation; the packaging step asks for notarisation whenever these are set |
 
+Publishing the Team Server image (repository secrets):
+
+| Secret | Purpose |
+|---|---|
+| `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | Docker Hub. Without both, a release still publishes to `ghcr.io` and the job prints a warning rather than failing |
+
+`ghcr.io` needs no secret: the job asks for `packages: write` on the run's own token. A package's **first** push
+to `ghcr.io` is private, so the first release stops at the last step — "can a stranger pull what went up?" — and
+says what to click: the repository's Packages page → `ofintech-desk` → Package settings → Change visibility. The
+image is pushed by then; only the check fails, and re-running the job passes once the package is public.
+
+Docker Hub is the opposite risk, and the reason the image name is written into the workflow rather than passed
+in: Docker Hub creates a repository that does not exist yet **as public, on the first push**. For this image
+that is what is wanted. For the paid edition's `ofintech0/ofintech-desk-owner` — one word away, same account —
+it is the mistake that cannot be undone, which is why nothing here takes a namespace as an input.
+
 Set only what you have. The packaging step passes a certificate variable on only when it holds something, because
 an empty one is read as a path and stops the build; with no macOS certificate it also stops electron-builder
 searching the runner's keychain. Without any of these the installers are built unsigned, and the release notes say
@@ -50,6 +66,8 @@ app. The desktop shell passes them to the engine. Read the distribution note in 
 3. Run the full checks (`docs/TESTING.md`) and update its *What was executed* table.
 4. Tag `vX.Y.Z` and push the tag. The `release` job in `build.yml` waits for the tests, the installers on all
    three systems and the Team Server image, then creates the GitHub release with the installers attached and the
-   notes taken from this version's section of `CHANGELOG.md`. It fails rather than publishing an empty release if
+   notes taken from this version's section of `CHANGELOG.md`. The `team-server-image` job publishes the image to
+   the two registries in the same run, after the tests, the demo-company check, the Trivy scan and the arm64
+   build have all passed, and then checks that a stranger with no credentials can pull both platforms. It fails rather than publishing an empty release if
    the changelog has no section for the tag, or if an installer is missing. Mention any new migrations or settings
    in the notes, and say so in the release if the installers are unsigned.

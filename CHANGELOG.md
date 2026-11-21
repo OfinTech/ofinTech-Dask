@@ -7,6 +7,23 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **One line installs Desk, and a release publishes the image.** Getting the Team Server up meant cloning the
+  repository, generating a key by hand with a line of Python, editing a `.env` and building the image on the
+  machine — a quarter of an hour and a Docker build for somebody who only wanted to look at it. A `vX.Y.Z` tag
+  now publishes the image to `ofintech0/ofintech-desk` and `ghcr.io/ofintech/ofintech-desk`, for `linux/amd64`
+  and `linux/arm64`, tagged with the version, `X.Y`, `latest` and `sha-<short>`; `latest` and `X.Y` move only
+  for a plain release. `scripts/install.sh` pulls it, writes a compose file and a key, starts it on
+  `http://localhost:8700` and waits until it answers:
+
+  ```bash
+  curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+  ```
+
+  That install is for one person on one machine: loopback only and plain HTTP, because a ledger does not belong
+  on a network connection without a certificate. Running it again upgrades and keeps the key and the data. A
+  server still wants a domain and a certificate — `docs/DEPLOYMENT.md`, which now also says how to point
+  `server/docker-compose.yml` at the published image instead of building on the server. The release job checks,
+  with no credentials of its own, that a stranger can pull both platforms of what it just pushed.
 - **Try it with a demo company.** A new workspace said *No general ledger yet* and offered an import, so the
   thing the product is for — a figure you can click until you reach the entry behind it — could not be seen
   until somebody had exported their own books. The empty overview and the empty **Data** page now offer one
