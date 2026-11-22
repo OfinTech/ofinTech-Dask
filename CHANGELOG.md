@@ -5,6 +5,8 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+## 1.4.0 — 2026-11-22
+
 ### Added
 
 - **The assistant reads the statements pages instead of rebuilding them, and no longer does its own sums.** The
