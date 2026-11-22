@@ -59,6 +59,13 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The Team Server image build no longer fails when a mirror drops one download.** The layer that installs the
+  operating-system packages ran entirely with apt's retries off, the mitigation for CVE-2026-109518 while the
+  apt doing the fetching is still the vulnerable one. That covered about a hundred packages, so one connection
+  reset on one of them failed the build: the arm64 build on `main` on 22 Nov 2026, on a merge that had not
+  touched the image. The layer now fetches only apt itself with retries off, stops unless apt is then at 3.0.4
+  or later, and installs the rest with the fixed apt and three retries.
+
 - **Settings → Models tested a model nobody chose, and chose one nobody asked for.** *Test* asked the first model
   in a provider's list, whatever the workspace was using, and picking a provider in *Default provider* or *Model
   for short jobs* silently saved that same first model. For a provider that lists two models that was a guess;
