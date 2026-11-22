@@ -7,6 +7,20 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **The assistant reads the statements pages instead of rebuilding them, and no longer does its own sums.** The
+  Statements, Receivables, Payables and Anomalies pages are computed from the general ledger, and the assistant
+  had no tool for any of them and no plain calculator. Asked for a month's net profit, or for what customers had
+  owed for more than 90 days, it queried the ledger lines and did the arithmetic itself, and could state a figure
+  that disagreed with the page the user had open (the figure check marked those answers "check before relying
+  on", which is how it was seen). Four read-only tools close that: `financial_statements` (profit and loss,
+  balance sheet, cash flow, by month), `ageing_report` (receivables or payables by party, aged), `ledger_anomalies`
+  and `calc_arithmetic` (add, subtract, multiply, divide, percentage, percentage change, average, in exact
+  decimals). They are offered whenever the workspace has a ledger, whatever words the question used, and the
+  rules now say to state those figures as given and never to do arithmetic unaided. What they return is checked
+  against the pages' own routes to the cent (`engine/tests/test_assistant_reads_statements.py`). Whether a given
+  model then uses them is the model's doing: a small or fine-tuned model that was never shown these tools may
+  still reach for `query_dataset`, and the figure check stays in place for that.
+
 - **One line installs Desk, and a release publishes the image.** Getting the Team Server up meant cloning the
   repository, generating a key by hand with a line of Python, editing a `.env` and building the image on the
   machine — a quarter of an hour and a Docker build for somebody who only wanted to look at it. A `vX.Y.Z` tag

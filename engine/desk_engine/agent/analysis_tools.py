@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import re
+from decimal import ROUND_HALF_UP, Decimal
 
 from ..analysis.kpis import CATALOG
 from ..errors import Invalid, NotFound
@@ -177,3 +178,180 @@ async def _forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         {"label": "Revenue", "value": s["revenue"], "format": "money"},
         {"label": "Net profit", "value": s["net_profit"], "format": "money"},
         {"label": "Ending cash", "value": s["ending_cash"], "format": "money"}]}], v)
+
+
+# --- the statements pages, read as they are ----------------------------------------------------------------------
+# The Statements, Receivables, Payables and Anomalies pages are computed in analysis/statements.py from the same
+# ledger as the KPIs. Until these tools existed the assistant could not read them: asked for net profit or for what
+# is more than 90 days old, it queried the raw ledger lines and did the arithmetic itself, and the answer disagreed
+# with the page the user had open. These tools hand it the page's own figures. They are in the core group
+# (category "finance"), so they are offered whenever the workspace has a ledger, whatever words the user chose.
+
+PL_LABELS = {"revenue": "Revenue", "cogs": "Cost of sales", "gross_profit": "Gross profit", "payroll": "Payroll",
+             "opex": "Other operating expenses", "depreciation": "Depreciation", "operating_profit": "Operating profit",
+             "other_income": "Other income", "other_expense": "Other expenses", "interest": "Interest",
+             "tax": "Tax on profit", "net_profit": "Net profit"}
+BS_LABELS = {"cash": "Bank and cash", "receivables": "Receivables", "inventory": "Inventory",
+             "other_current_assets": "Other current assets", "fixed_assets": "Fixed assets",
+             "other_non_current_assets": "Other non-current assets", "payables": "Payables",
+             "other_current_liabilities": "Other current liabilities", "short_term_debt": "Short-term debt",
+             "long_term_debt": "Long-term debt", "other_non_current_liabilities": "Other non-current liabilities",
+             "current_assets": "Total current assets", "non_current_assets": "Total non-current assets",
+             "current_liabilities": "Total current liabilities", "non_current_liabilities": "Total non-current liabilities",
+             "total_assets": "Total assets", "total_liabilities": "Total liabilities",
+             "equity": "Equity (assets less liabilities)", "working_capital": "Working capital", "net_debt": "Net debt"}
+CF_LABELS = [("opening", "Opening cash"), ("operating", "Operating cash flow"), ("investing", "Investing cash flow"),
+             ("financing", "Financing cash flow"), ("net", "Net change in cash"), ("closing", "Closing cash"),
+             ("free", "Free cash flow"), ("cash_in", "Cash received"), ("cash_out", "Cash paid")]
+BUCKET_LABELS = ["0-30 days", "31-60 days", "61-90 days", "Over 90 days"]
+
+
+def _provenance_note(r: dict[str, Any]) -> str:
+    kind = (r.get("provenance") or {}).get("kind")
+    if kind == "unverified":
+        return " The account roles are not confirmed by finance yet, so the figures are unverified."
+    return ""
+
+
+def _percent(share: float) -> str:
+    """0.0705 -> "7.1%": rounded half up, as the page rounds it (a float would give 7.0)."""
+    return f"{(Decimal(str(share)) * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)}%"
+
+
+def _statement_rows(r: dict[str, Any], statement: str) -> list[list[Any]]:
+    """The rows of one statement, in the order of the page: a label, then one value per month in r["columns"]."""
+    if statement == "profit_and_loss":
+        pl = r["profit_and_loss"]
+        rows: list[list[Any]] = []
+        costs = [0.0] * len(r["columns"])
+        for ln in pl["lines"]:
+            rows.append([PL_LABELS.get(ln["measure"], ln["measure"]), *ln["values"], ln["ytd"]])
+            if ln["kind"] == "cost":
+                costs = [c + (v or 0.0) for c, v in zip(costs, ln["values"], strict=True)]
+            if ln["measure"] in pl["margins"]:
+                rows.append([f"{PL_LABELS.get(ln['measure'], ln['measure'])}, % of revenue",
+                             *[None if m is None else _percent(m) for m in pl["margins"][ln["measure"]]], None])
+        ytd_costs = sum(ln["ytd"] or 0.0 for ln in pl["lines"] if ln["kind"] == "cost")
+        # the Overview's "Expenses": every cost line together (cost of sales, payroll, other operating expenses,
+        # depreciation, other expenses, interest and tax), so that revenue less this is net profit
+        rows.append(["Total expenses (all cost lines)", *[round(c, 2) for c in costs], round(ytd_costs, 2)])
+        return rows
+    if statement == "balance_sheet":
+        bs = r["balance_sheet"]
+        rows = []
+        for section in bs["sections"]:
+            rows += [[BS_LABELS.get(x["measure"], x["measure"]), *x["values"]] for x in section["rows"]]
+            rows.append([BS_LABELS[section["section"]], *section["total"]])
+        rows += [[BS_LABELS[k], *bs["totals"][k]] for k in ("total_assets", "total_liabilities", "equity",
+                                                              "working_capital", "net_debt")]
+        return rows
+    return [[label, *[m[key] for m in r["cash_flow"]]] for key, label in CF_LABELS]
+
+
+@registry.tool("financial_statements", "The company's monthly statements exactly as the Statements page shows them, "
+               "from the general ledger: profit_and_loss (revenue, cost of sales, gross profit, payroll, other operating "
+               "expenses, depreciation, operating profit, interest, tax, net profit, total expenses, margins, year to "
+               "date), balance_sheet (bank and cash, receivables, payables, debt, equity, working capital) or cash_flow. "
+               "Use this, not query_dataset, whenever the user asks for revenue, expenses, profit, margin, cash, "
+               "balances or any statement line for a month or several months: copy the figures as given, do not "
+               "recompute them from ledger lines.",
+               schema({"statement": {"type": "string", "enum": ["profit_and_loss", "balance_sheet", "cash_flow"]},
+                       "month": {"type": "string", "description": "the last month shown, YYYY-MM; the latest when left out"},
+                       "months": {"type": "integer", "minimum": 1, "maximum": 12,
+                                  "description": "how many months to show, ending at month; 3 when left out"}},
+                      ["statement"]),
+               available=_has_ledger, offload=True)
+async def _statements(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        periods = max(1, min(12, int(a.get("months") or 3)))
+        r = ctx.engine.statements.statements(ctx.ws_id, ctx.workspace, a.get("month"), periods)
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, a.get("month")):
+        return ToolOutput(problem, [], {"month": a.get("month"), "available": False})
+    statement = a["statement"]
+    rows = _statement_rows(r, statement)
+    cols = [{"key": "line", "label": "Line", "format": "text"}] + [
+        {"key": m, "label": m, "format": "money"} for m in r["columns"]]
+    if statement == "profit_and_loss":
+        cols.append({"key": "ytd", "label": f"Year to date (from {r['fiscal_year_start']})", "format": "money"})
+    title = {"profit_and_loss": "Profit and loss", "balance_sheet": "Balance sheet", "cash_flow": "Cash flow"}[statement]
+    note = (f"{title} from the general ledger “{r['ledger']['name']}”, {r['columns'][0]} to {r['columns'][-1]}, "
+            f"in {r.get('currency') or 'the base currency'}."
+            + {"profit_and_loss": " Costs are positive amounts.", "balance_sheet": " Balances are month-end.",
+               "cash_flow": ""}[statement] + _provenance_note(r))
+    return ToolOutput(note + "\n" + table_text(cols, rows, 60), [table_block(cols, rows, title)],
+                      {"statement": statement, "columns": r["columns"], "rows": rows, "currency": r.get("currency")})
+
+
+@registry.tool("ageing_report", "What customers owe (receivables) or what is owed to suppliers (payables) at a "
+               "month-end, by party, exactly as the Receivables and Payables pages show it: opening, raised and settled "
+               "in the month, closing balance, the balance aged from the document date into 0-30, 31-60, 61-90 and over "
+               "90 days (each payment settles the oldest open documents first), the oldest open document, and the "
+               "totals. Use this, not query_dataset, for who owes what, the largest customer or supplier balance, "
+               "overdue or old invoices and bills, and ageing: copy the figures as given.",
+               schema({"kind": {"type": "string", "enum": ["receivables", "payables"]},
+                       "month": {"type": "string", "description": "YYYY-MM; the latest month when left out"}}, ["kind"]),
+               available=_has_ledger, offload=True)
+async def _ageing(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        r = ctx.engine.statements.parties(ctx.ws_id, ctx.workspace, a["kind"], a.get("month"))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, a.get("month")):
+        return ToolOutput(problem, [], {"month": a.get("month"), "available": False})
+    who = "Customer" if r["kind"] == "receivables" else "Supplier"
+    cols = [{"key": "party", "label": who, "format": "text"}] + [
+        {"key": k, "label": label, "format": "money"} for k, label in (
+            ("opening", "Opening"), ("raised", "Invoiced in month" if r["kind"] == "receivables" else "Billed in month"),
+            ("settled", "Settled in month"), ("closing", "Closing balance"))] + [
+        {"key": f"b{n}", "label": label, "format": "money"} for n, label in enumerate(BUCKET_LABELS)] + [
+        {"key": "over30", "label": "Over 30 days", "format": "money"}, {"key": "oldest", "label": "Oldest open", "format": "date"}]
+    rows = [[x["party"], x["opening"], x["raised"], x["settled"], x["closing"], *x["buckets"], x["overdue_30"],
+             x["oldest"] or "—"] for x in r["rows"]]
+    t = r["totals"]
+    rows.append(["Total", None, t["raised"], t["settled"], t["closing"], *t["buckets"], t["overdue_30"], "—"])
+    label = "Owed by customers" if r["kind"] == "receivables" else "Owed to suppliers"
+    note = (f"{label} at {r['as_of']}: {t['closing']:,.2f} {r.get('currency') or ''}".rstrip()
+            + f" across {r['count']} parties; over 30 days {t['overdue_30']:,.2f}; over 90 days {t['buckets'][3]:,.2f}. "
+            + (f"Agrees with the ledger balance of {r['ledger_balance']:,.2f}."
+               if abs(r["difference"] or 0) < 0.005 else
+               f"The ledger balance is {r['ledger_balance']:,.2f}: {r['difference']:,.2f} is not explained by party.")
+            + " Aged from the document date, not from a due date." + _provenance_note(r))
+    return ToolOutput(note + "\n" + table_text(cols, rows, 61), [table_block(cols, rows, label)], r)
+
+
+@registry.tool("ledger_anomalies", "Postings in a month that break the pattern of the previous months, exactly as the "
+               "Anomalies page shows them: an unusual amount on an account against its recent average, an account that "
+               "is posted every month but not this month (a missing depreciation or accrual), a new account, and "
+               "possible duplicate entries. Use it when the user asks what is unusual, missing or worth reviewing "
+               "before the close.",
+               schema({"month": {"type": "string", "description": "YYYY-MM; the latest month when left out"}}),
+               available=_has_ledger, offload=True)
+async def _anomalies(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        r = ctx.engine.statements.anomalies(ctx.ws_id, ctx.workspace, a.get("month"))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, a.get("month")):
+        return ToolOutput(problem, [], {"month": a.get("month"), "available": False})
+    lines = []
+    for x in r["items"]:
+        line = PL_LABELS.get(x["measure"], x["measure"])
+        if x["kind"] == "unusual_amount":
+            change = "" if x.get("change") is None else f" ({x['change'] * 100:+.0f}%)"
+            lines.append(f"- Unusual amount, {x['account']} ({line}): {x['value']:,.2f} this month against an average of "
+                         f"{x['average']:,.2f} over the previous six months{change}.")
+        elif x["kind"] == "missing_posting":
+            lines.append(f"- Nothing posted, {x['account']} ({line}): posted every month recently (about "
+                         f"{x['average']:,.2f} a month) but nothing this month.")
+        elif x["kind"] == "new_account":
+            lines.append(f"- New account, {x['account']} ({line}): {x['value']:,.2f} this month, nothing before.")
+        else:
+            lines.append(f"- Possible duplicate, {x['account']} ({line}): {x['value']:,.2f}"
+                         + (f" to {x['party']}" if x.get("party") else "")
+                         + f" in entries {x['entries'][0]} and {x['entries'][1]} ({x['dates'][0]}, {x['dates'][1]}).")
+    head = (f"Anomalies in {r['month']}: {r['count']} found; amounts under {r['materiality']:,.2f} are ignored."
+            + _provenance_note(r))
+    return ToolOutput(head + ("\n" + "\n".join(lines) if lines else " Nothing breaks the pattern of the previous months."),
+                      [], r)
