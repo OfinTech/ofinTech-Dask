@@ -125,6 +125,47 @@ class AssistantReadsStatementsTest(unittest.TestCase):
         self.assertTrue(table[0].startswith(page["rows"][0]["party"] + " |"), "largest balance first, as on the page")
         self.assertIn(money(page["totals"]["closing"]), text)
 
+    def test_a_payment_matched_to_no_invoice_is_named_with_its_party(self) -> None:
+        # On 23 Nov 2026 the assistant was asked whether any customer had paid in advance. The page knew (it keeps
+        # an "unapplied" amount per party); the tool dropped that column, and the honest answer was "the data does
+        # not show it". A ledger of its own here: one invoice of 1,000.00, then 1,500.00 received.
+        from desk_engine.connectors.accounting import GL_COLUMNS
+        from desk_engine.data import store
+
+        h = Harness()
+        try:
+            ws = h.setup_workspace(with_model=False)
+            user = h.engine.db.one("SELECT user_id FROM members WHERE workspace_id = ?", (ws,))["user_id"]
+            rows = [["2026-10-05", "INV-1", "Invoice", "1100", "Receivables", "Receivable", 1000.0, 0.0, "", "Acme Ltd", None],
+                    ["2026-10-05", "INV-1", "Invoice", "4000", "Sales", "Income", 0.0, 1000.0, "", "Acme Ltd", None],
+                    ["2026-10-20", "RCT-1", "Receipt", "1000", "Bank", "Bank", 1500.0, 0.0, "", "Acme Ltd", None],
+                    ["2026-10-20", "RCT-1", "Receipt", "1100", "Receivables", "Receivable", 0.0, 1500.0, "", "Acme Ltd", None],
+                    ["2026-10-22", "INV-2", "Invoice", "1100", "Receivables", "Receivable", 300.0, 0.0, "", "Birch & Co", None],
+                    ["2026-10-22", "INV-2", "Invoice", "4000", "Sales", "Income", 0.0, 300.0, "", "Birch & Co", None]]
+            store.create_dataset(h.engine, ws, name="General ledger", source="excel", columns=GL_COLUMNS, rows=rows,
+                                 source_ref={"kind": "general_ledger"}, created_by=user)
+            workspace = dict(h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws,)))
+            ctx = ToolContext(h.engine, workspace, user)
+            page = h.api("GET", f"/api/w/{ws}/overview/parties/receivables")
+            acme = next(r for r in page["rows"] if r["party"] == "Acme Ltd")
+            self.assertEqual((acme["unapplied"], acme["closing"]), (500.0, -500.0), "what the page says")
+
+            async def go() -> Any:
+                tools = await registry.for_context(ctx)
+                return await tools["ageing_report"].handler(ctx, {"kind": "receivables"})
+            text = asyncio.run(go()).for_model()
+            self.assertIn("Unapplied payments", text.splitlines()[1], "a column of its own")
+            self.assertIn("received from a party and matched to no document; the closing balance is net of them): "
+                          "Acme Ltd 500.00.", text)
+            self.assertNotIn("Birch & Co 0.00", text.splitlines()[0], "a party with nothing unapplied is not listed")
+        finally:
+            h.close()
+
+    def test_no_unapplied_payment_is_said_and_not_left_to_be_guessed(self) -> None:
+        page = self.page("parties/payables")
+        self.assertEqual(page["totals"]["unapplied"], 0, "the demo's suppliers have none, or this proves nothing")
+        self.assertIn(" No unapplied payments.", self.call("ageing_report", {"kind": "payables"}).text)
+
     # -- anomalies -------------------------------------------------------------------------------------------------
     def test_anomalies_are_the_pages_anomalies(self) -> None:
         page = self.page("anomalies")

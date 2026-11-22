@@ -287,9 +287,10 @@ async def _statements(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 @registry.tool("ageing_report", "What customers owe (receivables) or what is owed to suppliers (payables) at a "
                "month-end, by party, exactly as the Receivables and Payables pages show it: opening, raised and settled "
                "in the month, closing balance, the balance aged from the document date into 0-30, 31-60, 61-90 and over "
-               "90 days (each payment settles the oldest open documents first), the oldest open document, and the "
-               "totals. Use this, not query_dataset, for who owes what, the largest customer or supplier balance, "
-               "overdue or old invoices and bills, and ageing: copy the figures as given.",
+               "90 days (each payment settles the oldest open documents first), payments not matched to any document "
+               "(advances, overpayments), the oldest open document, and the totals. Use this, not query_dataset, for "
+               "who owes what, the largest customer or supplier balance, overdue or old invoices and bills, advances "
+               "and unapplied payments, and ageing: copy the figures as given.",
                schema({"kind": {"type": "string", "enum": ["receivables", "payables"]},
                        "month": {"type": "string", "description": "YYYY-MM; the latest month when left out"}}, ["kind"]),
                available=_has_ledger, offload=True)
@@ -306,18 +307,30 @@ async def _ageing(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
             ("opening", "Opening"), ("raised", "Invoiced in month" if r["kind"] == "receivables" else "Billed in month"),
             ("settled", "Settled in month"), ("closing", "Closing balance"))] + [
         {"key": f"b{n}", "label": label, "format": "money"} for n, label in enumerate(BUCKET_LABELS)] + [
-        {"key": "over30", "label": "Over 30 days", "format": "money"}, {"key": "oldest", "label": "Oldest open", "format": "date"}]
+        {"key": "over30", "label": "Over 30 days", "format": "money"},
+        {"key": "unapplied", "label": "Unapplied payments", "format": "money"},
+        {"key": "oldest", "label": "Oldest open", "format": "date"}]
     rows = [[x["party"], x["opening"], x["raised"], x["settled"], x["closing"], *x["buckets"], x["overdue_30"],
-             x["oldest"] or "—"] for x in r["rows"]]
+             x["unapplied"], x["oldest"] or "—"] for x in r["rows"]]
     t = r["totals"]
-    rows.append(["Total", None, t["raised"], t["settled"], t["closing"], *t["buckets"], t["overdue_30"], "—"])
+    rows.append(["Total", None, t["raised"], t["settled"], t["closing"], *t["buckets"], t["overdue_30"],
+                 t["unapplied"], "—"])
+    # A payment that settled no document: an advance, an overpayment, a credit not yet matched. The page keeps it
+    # per party and the closing balance is already net of it; until 23 Nov 2026 this tool dropped the column, so
+    # the assistant, asked whether any customer had paid in advance, could only say the data did not show it.
+    advances = [x for x in r["rows"] if (x["unapplied"] or 0) > 0.005]
+    paid_by = "received from" if r["kind"] == "receivables" else "paid to"
     label = "Owed by customers" if r["kind"] == "receivables" else "Owed to suppliers"
     note = (f"{label} at {r['as_of']}: {t['closing']:,.2f} {r.get('currency') or ''}".rstrip()
             + f" across {r['count']} parties; over 30 days {t['overdue_30']:,.2f}; over 90 days {t['buckets'][3]:,.2f}. "
             + (f"Agrees with the ledger balance of {r['ledger_balance']:,.2f}."
                if abs(r["difference"] or 0) < 0.005 else
                f"The ledger balance is {r['ledger_balance']:,.2f}: {r['difference']:,.2f} is not explained by party.")
-            + " Aged from the document date, not from a due date." + _provenance_note(r))
+            + " Aged from the document date, not from a due date."
+            + (" Unapplied payments (advances or overpayments " + paid_by + " a party and matched to no document; the "
+               "closing balance is net of them): " + "; ".join(f"{x['party']} {x['unapplied']:,.2f}" for x in advances) + "."
+               if advances else " No unapplied payments.")
+            + _provenance_note(r))
     return ToolOutput(note + "\n" + table_text(cols, rows, 61), [table_block(cols, rows, label)], r)
 
 

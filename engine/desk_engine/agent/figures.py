@@ -28,12 +28,18 @@ COUNT_UNITS = ("days", "day", "months", "month", "weeks", "week", "years", "year
                "employees", "employee", "items", "item", "payments", "payment", "times", "periods", "period")
 MONTHS = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
 
+# Where a figure may start. Not inside a Latin word, an id, a date or a time ("INV-1104", "Q3", "v1.2") -- and
+# not in the middle of another figure. Two things this used to get wrong, both seen on 23 Nov 2026 in Arabic answers:
+#  * Arabic writes "and" and "by" as one letter joined to the next word, so "و79,605.55" is the figure 79,605.55
+#    with "and" in front of it. The old test was "not after any letter", which refused to start there...
+#  * ...and then started three characters later, after the comma, and reported the unknown figure "605.55".
+#    A correct answer was marked "check before relying on" for a number nobody wrote. Never start after "digit,".
 _NUM = re.compile(
-    r"(?<![\w.\-/:])"                                   # not inside a word, a date, an id or a time
+    r"(?<![A-Za-z0-9_.\-/:])(?<!\d,)"
     r"(?P<neg>[-−(])?"
     r"(?P<cur>[$€£¥]|USD|EUR|GBP|SAR|AED|QAR|KWD|BHD|OMR|EGP)?\s?"
     r"(?P<num>\d{1,3}(?:,\d{3})+|\d+)(?P<dec>\.\d+)?"
-    r"(?P<suf>\s?(?:%|percent\b|per cent\b|pct\b|bn\b|billion\b|million\b|m\b|k\b|x(?![\w])|×))?"
+    r"(?P<suf>\s?(?:%|٪|percent\b|per cent\b|pct\b|bn\b|billion\b|million\b|m\b|k\b|x(?![\w])|×))?"
     r"(?P<unit>\s+(?:" + "|".join(COUNT_UNITS) + r")\b)?"
     r"(?![\w/]|\.\d|-\d)",
     re.I)
@@ -77,7 +83,7 @@ def parse(text: str) -> list[Figure]:
         except ValueError:
             continue
         scale = {"k": 1e3, "m": 1e6, "million": 1e6, "bn": 1e9, "billion": 1e9}.get(suf, 1.0)
-        if suf in ("%", "percent", "per cent", "pct"):
+        if suf in ("%", "٪", "percent", "per cent", "pct"):
             kind = "percent"
         elif suf in ("x", "×"):
             kind = "ratio"

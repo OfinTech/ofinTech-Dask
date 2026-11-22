@@ -30,6 +30,43 @@ class Parsing(unittest.TestCase):
         self.assertEqual(figs["98,210.00"].half_unit, 0.005)
 
 
+class ArabicAnswers(unittest.TestCase):
+    """Seen on 23 Nov 2026: a correct Arabic answer marked "check before relying on: 605.55, 502.47, 216.84"."""
+
+    AGEING = ("Customer | Closing balance | 0-30 days | 31-60 days | 61-90 days | Over 90 days\n"
+              "A | 486,688.55 | 101,363.69 | 79,605.55 | 76,502.47 | 229,216.84")
+    ANSWER = ("486,688.55 USD موزعة على 101,363.69 USD (0-30 يومًا) و79,605.55 USD (31-60 يومًا) "
+              "و76,502.47 USD (61-90 يومًا) و229,216.84 USD (أكثر من 90 يومًا). أقدم فاتورة مفتوحة: 2026-05-11.")
+
+    def test_a_figure_joined_to_an_arabic_particle_is_read_whole(self) -> None:
+        self.assertEqual([f.raw for f in parse(self.ANSWER)],
+                         ["486,688.55", "101,363.69", "79,605.55", "76,502.47", "229,216.84"])
+        for particle in ("و", "بـ", "لـ", "ف", "ك"):
+            self.assertEqual([f.raw for f in parse(f"المبلغ {particle}15,000.00 ريال")], ["15,000.00"], particle)
+
+    def test_the_correct_answer_is_no_longer_marked(self) -> None:
+        r = report(self.ANSWER, [self.AGEING], [], [])
+        self.assertEqual(r["unverified_figures"], [])
+        self.assertEqual({p["source"] for p in r["figure_provenance"]}, {"tool"})
+
+    def test_a_wrong_figure_after_the_particle_is_still_caught(self) -> None:
+        r = report(self.ANSWER.replace("و79,605.55", "و79,650.55"), [self.AGEING], [], [])
+        self.assertEqual(r["unverified_figures"], ["79,650.55"], "the whole figure, not its tail")
+
+    def test_no_figure_starts_in_the_middle_of_another(self) -> None:
+        # whatever stands in front of it: a letter of any script, or nothing the pattern knows
+        for text in ("و79,605.55", "x79,605.55", "№79,605.55", "ـ79,605.55"):
+            self.assertNotIn("605.55", [f.raw for f in parse(text)], text)
+
+    def test_latin_ids_are_still_not_figures(self) -> None:
+        self.assertEqual([f.raw for f in parse("INV-1104, Q3, v1.2, item2 and x12: 1,234.50")], ["1,234.50"])
+
+    def test_the_arabic_percent_sign(self) -> None:
+        figs = parse("الهامش 45.0٪")
+        self.assertEqual([(f.raw, f.kind) for f in figs], [("45.0٪", "percent")])
+        self.assertEqual(sources("الهامش 45.0٪")["45.0٪"], "tool")
+
+
 class Provenance(unittest.TestCase):
     def test_copied_and_rounded_figures_are_verified(self) -> None:
         s = sources("Revenue was 120,450.37 (about 120k, or 0.12m), margin 45.0%, ratio 1.85x, DSO 52 days.")
