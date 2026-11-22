@@ -147,12 +147,12 @@ def main(out: Path | None) -> int:
         check("and the key is still the one from the first run", True,
               f"DESK_MASTER_KEY={key}" in env3)
 
-        # ---- the image can be pointed at the other registry
-        r4 = run(home, bin_, OFINTECH_IMAGE="ghcr.io/ofintech/ofintech-desk", OFINTECH_TAG="1.3.0")
+        # ---- the image can be pointed at a mirror, and pinned to a version
+        r4 = run(home, bin_, OFINTECH_IMAGE="mirror.example.test/ofintech0/ofintech-desk", OFINTECH_TAG="1.4.0")
         env4 = (dir_ / ".env").read_text()
         check("the registry and tag can be changed on an upgrade", [True, True, True],
-              ["OFINTECH_IMAGE=ghcr.io/ofintech/ofintech-desk" in env4, "OFINTECH_TAG=1.3.0" in env4,
-               "ghcr.io/ofintech/ofintech-desk:1.3.0" in r4.stdout])
+              ["OFINTECH_IMAGE=mirror.example.test/ofintech0/ofintech-desk" in env4, "OFINTECH_TAG=1.4.0" in env4,
+               "mirror.example.test/ofintech0/ofintech-desk:1.4.0" in r4.stdout])
 
     # ---- docker refusing to start it, and an engine that never answers, are both reported with the next step
     with tempfile.TemporaryDirectory() as tmp:

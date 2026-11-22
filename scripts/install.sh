@@ -148,8 +148,8 @@ YML
 
 say "Pulling $IMAGE:$TAG ..."
 docker compose pull --quiet 2>/dev/null || docker compose pull || die "Could not pull $IMAGE:$TAG.
-If this machine reaches Docker Hub through a proxy, set it in Docker's settings. The same image is on
-ghcr.io: run this again with OFINTECH_IMAGE=ghcr.io/ofintech/ofintech-desk"
+If this machine reaches Docker Hub through a proxy, set it in Docker's settings. If Docker Hub answers that
+too many pulls came from this address, 'docker login' with a free account and run this again."
 
 say "Starting it ..."
 docker compose up -d || die "Docker would not start it. If the message above says the port is in use, pick

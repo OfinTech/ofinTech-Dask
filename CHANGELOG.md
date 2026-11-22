@@ -26,8 +26,8 @@ migrations are applied automatically on start-up and are never rewritten once re
 - **One line installs Desk, and a release publishes the image.** Getting the Team Server up meant cloning the
   repository, generating a key by hand with a line of Python, editing a `.env` and building the image on the
   machine — a quarter of an hour and a Docker build for somebody who only wanted to look at it. A `vX.Y.Z` tag
-  now publishes the image to `ofintech0/ofintech-desk` and `ghcr.io/ofintech/ofintech-desk`, for `linux/amd64`
-  and `linux/arm64`, tagged with the version, `X.Y`, `latest` and `sha-<short>`; `latest` and `X.Y` move only
+  now publishes the image to `ofintech0/ofintech-desk` on Docker Hub, for `linux/amd64` and `linux/arm64`,
+  tagged with the version, `X.Y`, `latest` and `sha-<short>`; `latest` and `X.Y` move only
   for a plain release. `scripts/install.sh` pulls it, writes a compose file and a key, starts it on
   `http://localhost:8700` and waits until it answers:
 
