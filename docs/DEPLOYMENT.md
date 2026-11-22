@@ -45,18 +45,17 @@ the Team Server (`site/nginx.conf`).
 
 ## The published image
 
-Every `vX.Y.Z` tag publishes the Team Server image — the engine with the UI built into it — to two registries,
-for `linux/amd64` and `linux/arm64`:
+Every `vX.Y.Z` tag publishes the Team Server image — the engine with the UI built into it — to Docker Hub, for
+`linux/amd64` and `linux/arm64`:
 
 | Registry | Image |
 |---|---|
 | Docker Hub | `ofintech0/ofintech-desk` |
-| GitHub | `ghcr.io/ofintech/ofintech-desk` |
 
-The same image on both; use whichever is easier to reach. Docker Hub limits an unauthenticated pull to 100 every
-six hours **per IP address**, which a whole office behind one address can reach, so `ghcr.io` is the one to name
-in that case. Tags on each: the version, `X.Y`, `latest`, and `sha-<short>`. `latest` and `X.Y` move only for a
-plain release, so a `v1.4.0-rc1` tag publishes itself and nothing else.
+Docker Hub limits pulls made without signing in, counted **per IP address**, which a whole office behind one
+address can reach; `docker login` with a free account lifts the limit for that machine. Tags: the version, `X.Y`,
+`latest`, and `sha-<short>`. `latest` and `X.Y` move only for a plain release, so a `v1.4.0-rc1` tag publishes
+itself and nothing else.
 
 Labels carry `org.opencontainers.image.version`, `.revision`, `.source` and `.licenses`.
 

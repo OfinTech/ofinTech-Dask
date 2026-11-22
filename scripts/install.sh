@@ -14,7 +14,7 @@
 #   OFINTECH_DIR=~/ofintech-desk     where the compose file, the .env and the data volume's name live
 #   OFINTECH_PORT=8700               the port on 127.0.0.1
 #   OFINTECH_IMAGE=ofintech0/ofintech-desk
-#   OFINTECH_TAG=latest              a version is steadier for a customer: OFINTECH_TAG=1.3.0
+#   OFINTECH_TAG=latest              a version is steadier for a customer: OFINTECH_TAG=1.4.0
 #   OFINTECH_WAIT=90                 seconds to wait for it to answer; raise it on a slow or emulated machine
 set -eu
 
@@ -148,8 +148,8 @@ YML
 
 say "Pulling $IMAGE:$TAG ..."
 docker compose pull --quiet 2>/dev/null || docker compose pull || die "Could not pull $IMAGE:$TAG.
-If this machine reaches Docker Hub through a proxy, set it in Docker's settings. The same image is on
-ghcr.io: run this again with OFINTECH_IMAGE=ghcr.io/ofintech/ofintech-desk"
+If this machine reaches Docker Hub through a proxy, set it in Docker's settings. If Docker Hub answers that
+too many pulls came from this address, 'docker login' with a free account and run this again."
 
 say "Starting it ..."
 docker compose up -d || die "Docker would not start it. If the message above says the port is in use, pick
