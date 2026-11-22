@@ -67,7 +67,7 @@ The image runs as uid 10001, needs no Linux capability, listens on 8700 and keep
 ### One machine, one line
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+curl -fsSL https://ofintech.ai/install.sh | sh
 ```
 
 `scripts/install.sh` writes `~/ofintech-desk/compose.yml` and `~/ofintech-desk/.env`, pulls the image, starts it

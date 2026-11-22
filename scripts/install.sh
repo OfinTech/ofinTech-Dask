@@ -1,7 +1,7 @@
 #!/bin/sh
 # Install OfinTech Desk on this machine and start it, for one person to try.
 #
-#   curl -fsSL https://raw.githubusercontent.com/OfinTech/ofinTech-Dask/main/scripts/install.sh | sh
+#   curl -fsSL https://ofintech.ai/install.sh | sh
 #
 # What it does: writes a compose file and a .env into ~/ofintech-desk, pulls the published engine image, starts
 # it on 127.0.0.1:8700 and waits until it answers. Run it again to upgrade; it keeps the data and the key.
