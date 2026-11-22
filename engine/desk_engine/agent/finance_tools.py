@@ -594,3 +594,79 @@ async def _fx(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
     when = f" (rate dated {a['rate_date']})" if a.get("rate_date") else ""
     return ToolOutput(f"Converted {a['from_currency']}→{a['to_currency']} at {a['rate']}{when}: "
                       + ", ".join(f"{v:,.2f}" for v in out), [], out)
+
+
+# --- plain arithmetic ---------------------------------------------------------------------------
+# The rules tell the model to use the calculator tools for anything beyond trivial arithmetic, and until this one
+# there was no calculator for the commonest case: adding, subtracting and dividing figures it had just read. It did
+# the sums itself and got them wrong (a correct formula written out, and a wrong result after the equals sign).
+
+ARITHMETIC = {
+    "add": "the sum of all values",
+    "subtract": "the first value less every other value",
+    "multiply": "the product of all values",
+    "divide": "the first value divided by the second",
+    "percent_of": "the first value as a percentage of the second (margin, share)",
+    "percent_change": "the change from the second value (before) to the first (now), as a percentage of the second",
+    "average": "the mean of all values",
+}
+
+
+def arithmetic(op: str, values: list[Any]) -> Decimal:
+    """One exact step. Decimal throughout, so 0.1 + 0.2 is 0.3 and cents never drift."""
+    xs = [d(v) for v in values]
+    if op not in ARITHMETIC:
+        raise ValueError(f"unknown operation {op!r}; use one of: " + ", ".join(ARITHMETIC))
+    if not xs:
+        raise ValueError("no values")
+    if op in ("divide", "percent_of", "percent_change"):
+        if len(xs) != 2:
+            raise ValueError(f"{op} takes exactly two values")
+        if xs[1] == 0:
+            raise ValueError("division by zero")
+    if op == "add":
+        return sum(xs, Decimal(0))
+    if op == "subtract":
+        return xs[0] - sum(xs[1:], Decimal(0))
+    if op == "multiply":
+        out = Decimal(1)
+        for x in xs:
+            out *= x
+        return out
+    if op == "divide":
+        return xs[0] / xs[1]
+    if op == "percent_of":
+        return xs[0] / xs[1] * 100
+    if op == "percent_change":
+        return (xs[0] - xs[1]) / abs(xs[1]) * 100
+    return sum(xs, Decimal(0)) / len(xs)
+
+
+@registry.tool("calc_arithmetic", "Exact arithmetic on figures you already have: " +
+               "; ".join(f"{k} = {v}" for k, v in ARITHMETIC.items()) + ". Several steps in one call. Use it for every "
+               "sum, difference, ratio, percentage or average you state, however simple: never do the arithmetic "
+               "yourself. The values are figures from tool results or the user's messages, copied exactly.",
+               schema({"steps": {"type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "object", "properties": {
+                   "label": {"type": "string", "description": "what this result is, e.g. 'Net profit, October 2026'"},
+                   "operation": {"type": "string", "enum": list(ARITHMETIC)},
+                   "values": {"type": "array", "minItems": 1, "maxItems": 60, "items": NUM}},
+                   "required": ["label", "operation", "values"]}}}, ["steps"]), pure=True)
+async def _arithmetic(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    cols = [{"key": "label", "label": "Result", "format": "text"}, {"key": "value", "label": "Value", "format": "number"}]
+    rows: list[list[Any]] = []
+    lines = []
+    for step in a["steps"]:
+        op, values = step["operation"], step["values"]
+        try:
+            result = arithmetic(op, values)
+        except (ValueError, ArithmeticError) as exc:
+            lines.append(f"{step['label']}: not computed ({exc}).")
+            continue
+        percent = op in ("percent_of", "percent_change")
+        shown = f"{q2(result):,.2f}" + ("%" if percent else "")
+        if percent:
+            shown += f" ({result.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP):,.1f}% to one decimal)"
+        shown_values = ", ".join(f"{d(v):,.2f}" for v in values)
+        lines.append(f"{step['label']}: {op}({shown_values}) = {shown}")
+        rows.append([step["label"], float(q2(result))])
+    return ToolOutput("\n".join(lines), [table_block(cols, rows, "Calculation")] if rows else [], rows)
