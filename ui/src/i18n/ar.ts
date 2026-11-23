@@ -143,6 +143,8 @@ const d: Record<string, string> = {
   "The model's answer was cut off or empty, so none is shown. The matches below are unaffected; ask again for an answer.": "انقطعت إجابة النموذج أو جاءت فارغة، لذلك لا تُعرض. النتائج أدناه غير متأثرة؛ اسأل مرة أخرى للحصول على إجابة.",
   "This answer is incomplete and must not be relied on.": "هذه الإجابة غير مكتملة ولا يجوز الاعتماد عليها.",
   "From your messages, not checked against the books:": "من رسائلك، ولم تُطابَق مع الدفاتر:",
+  "A calculation in this answer used figures that were read nowhere:": "حساب في هذه الإجابة استخدم أرقامًا لم تُقرأ من أي مصدر:",
+  ". Its result is not treated as checked.": ". ولا تُعدّ نتيجته مُتحقَّقًا منها.",
   "Check now": "افحص الآن",
   "Checking the invitation…": "جارٍ التحقق من الدعوة…",
   "Checks": "الفحوصات",

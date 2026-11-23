@@ -13,6 +13,11 @@ Matching is deterministic and unit-aware, and its tolerance comes from the figur
 a percentage: "45,000.00" must agree with its source to the cent, "1.2m" to the nearest 50,000, "45.2%" to 0.05 of a
 point. A percentage is compared with percentages (or with a plain fraction, 0.452), never with a ratio ("0.45×"), a
 count of days or an amount. Counts below 100 are checked when they carry a unit (days, invoices, months, ...).
+
+A calculator's result counts as a tool result only when every number that went into it has a source of its own (a
+result of another tool, the user's messages, an approved memory, an earlier sound calculation) or is a plain
+constant of arithmetic (12 months, 100 per cent, 365 days). A rate or a base the model supplied itself makes the
+result ``unsupported``: the sum is right and what it was a sum of came from nowhere.
 """
 
 from __future__ import annotations
@@ -66,7 +71,11 @@ def _singular(unit: str) -> str:
     return unit[:-1] if unit.endswith("s") and unit not in ("times",) else unit
 
 
-def parse(text: str) -> list[Figure]:
+def parse(text: str, *, evidence: bool = False) -> list[Figure]:
+    """The figures in a text. In an answer, a bare number under 100 is a list number or a step and is left alone;
+    in evidence it is kept as kind ``small``, so that "4 items" in an answer can be traced to "4 found" in a tool
+    result (it was reported as unknown on 24 Nov 2026). A ``small`` figure supports counts only, never an amount,
+    a percentage or a ratio."""
     text = text or ""
     masked = _DATE.sub(lambda m: " " * len(m.group(0)), text)
     masked = _CITE.sub(lambda m: " " * len(m.group(0)), masked)
@@ -100,7 +109,9 @@ def parse(text: str) -> list[Figure]:
         if kind == "amount" and not dec and "," not in m.group("num") and scale == 1.0 and 1900 <= value <= 2100:
             continue                                   # a year
         if kind == "amount" and not dec and scale == 1.0 and value < 100 and not m.group("cur"):
-            continue                                   # small counts, list numbers, steps: no unit, nothing to check
+            if not evidence:
+                continue                               # small counts, list numbers, steps: no unit, nothing to check
+            kind = "small"
         sign = -1.0 if m.group("neg") else 1.0
         out.append(Figure(raw=m.group(0).strip(), value=sign * value * scale, kind=kind,
                           half_unit=0.5 * (10 ** -decimals) * scale, start=m.start(),
@@ -125,7 +136,7 @@ def matches(a: Figure, e: Figure) -> bool:
         return e.kind in ("ratio", "amount") and _close(a, e, e.value, e.half_unit)
     if a.kind == "count":
         # 5 days is not 5 customers: a count matches a plain number or a count of the same unit
-        return ((e.kind == "amount" or (e.kind == "count" and e.unit == a.unit))
+        return ((e.kind in ("amount", "small") or (e.kind == "count" and e.unit == a.unit))
                 and _close(a, e, e.value, e.half_unit))
     # an amount: amounts, counts and ratios written as plain numbers; never a percentage
     return e.kind in ("amount", "count", "ratio") and _close(a, e, e.value, e.half_unit)
@@ -150,8 +161,75 @@ def _derived(a: Figure, verified: list[Figure]) -> dict[str, Any] | None:
     return None
 
 
+# --- what went into a calculation ---------------------------------------------------------------------------------
+# Numbers that arithmetic itself supplies: small whole numbers (a count of months, a list of three), and the
+# constants of percentages, years and thousands. Anything else a calculator is given must have been read somewhere.
+CONSTANTS = {24.0, 28.0, 29.0, 30.0, 31.0, 52.0, 60.0, 90.0, 91.25, 100.0, 180.0, 360.0, 365.0, 366.0, 1000.0, 1_000_000.0}
+
+
+# The calculators that take any figures at all ("figures you already have, copied exactly"). The financial
+# calculators (NPV, loan schedules, depreciation) take parameters a person chooses, and are not held to this.
+PLAIN_CALCULATORS = {"calc_arithmetic", "calc_what_if"}
+
+
+def is_calculator(name: str) -> bool:
+    return name in PLAIN_CALCULATORS
+
+
+def _numbers(args: Any) -> list[float]:
+    """Every number among a tool call's arguments (labels and other text are not read: a year in a label is not an
+    input)."""
+    if isinstance(args, bool):
+        return []
+    if isinstance(args, (int, float)):
+        return [float(args)]
+    if isinstance(args, dict):
+        return [x for v in args.values() for x in _numbers(v)]
+    if isinstance(args, (list, tuple)):
+        return [x for v in args for x in _numbers(v)]
+    return []
+
+
+def _half(v: float) -> float:
+    """Half of the last digit the number shows: 148083.31 -> 0.005, 0.561 -> 0.0005, 38000 -> 0.5."""
+    text = repr(float(v))
+    if "e" in text or "E" in text:
+        return abs(v) * 1e-9
+    decimals = len(text.split(".")[1]) if "." in text and not text.endswith(".0") else 0
+    return 0.5 * 10 ** -decimals
+
+
+def _sourced(v: float, evidence: list[Figure]) -> bool:
+    if abs(v) in CONSTANTS or (float(v).is_integer() and abs(v) <= 12):
+        return True
+    half = _half(v)
+    for e in evidence:
+        tol = max(half, e.half_unit) + 1e-9 * max(1.0, abs(e.value))
+        if abs(abs(v) - abs(e.value)) <= tol:
+            return True
+        if e.kind == "percent" and abs(abs(v) * 100 - abs(e.value)) <= e.half_unit + 1e-9:
+            return True                                # 0.561 for "56.1%"
+    return False
+
+
+def sound_calculations(calcs: list[tuple[Any, str]], evidence_texts: list[str]) -> tuple[list[str], list[str]]:
+    """The results of the calculator calls whose inputs all have a source, and the inputs that have none (as text,
+    in call order). A sound result becomes evidence for the calls after it: a total, then a share of that total."""
+    evidence = [f for t in evidence_texts for f in parse(t, evidence=True)]
+    sound: list[str] = []
+    orphans: list[str] = []
+    for args, result in calcs:
+        missing = [v for v in _numbers(args) if not _sourced(v, evidence)]
+        if missing:
+            orphans += [f"{v:,.10g}" for v in missing]
+            continue
+        sound.append(result)
+        evidence += parse(result, evidence=True)
+    return sound, list(dict.fromkeys(orphans))
+
+
 def classify(answer: str, tool_texts: list[str], user_texts: list[str], memory_texts: list[str]) -> list[Figure]:
-    tools = [f for t in tool_texts for f in parse(t)]
+    tools = [f for t in tool_texts for f in parse(t, evidence=True)]
     users = [f for t in user_texts for f in parse(t)]
     memories = [f for t in memory_texts for f in parse(t)]
     figs = parse(answer)
@@ -184,8 +262,16 @@ def classify(answer: str, tool_texts: list[str], user_texts: list[str], memory_t
     return figs
 
 
-def report(answer: str, tool_texts: list[str], user_texts: list[str], memory_texts: list[str]) -> dict[str, Any]:
-    """What the app stores with an answer: unverified figures, the user's own figures, and every figure's source."""
+def report(answer: str, tool_texts: list[str], user_texts: list[str], memory_texts: list[str], *,
+           calcs: list[tuple[Any, str]] | None = None) -> dict[str, Any]:
+    """What the app stores with an answer: unverified figures, the user's own figures, and every figure's source.
+
+    ``calcs`` are the calculator calls of the conversation as (arguments, result), in order, kept apart from
+    ``tool_texts``: only those whose inputs have a source count as evidence."""
+    orphans: list[str] = []
+    if calcs:
+        sound, orphans = sound_calculations(calcs, [*tool_texts, *user_texts, *memory_texts])
+        tool_texts = [*tool_texts, *sound]
     figs = classify(answer, tool_texts, user_texts, memory_texts)
 
     def uniq(xs: list[str]) -> list[str]:
@@ -195,4 +281,6 @@ def report(answer: str, tool_texts: list[str], user_texts: list[str], memory_tex
         "user_figures": uniq([f.raw for f in figs if f.provenance == "user"]),
         "figure_provenance": [{"figure": f.raw, "kind": f.kind, "source": f.provenance, **({"via": f.via} if f.via else {})}
                               for f in figs][:60],
+        # numbers given to a calculator that were read nowhere; its result is then no evidence for the answer
+        **({"unsourced_inputs": orphans[:20]} if orphans else {}),
     }

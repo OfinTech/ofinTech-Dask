@@ -143,6 +143,8 @@ const d: Record<string, string> = {
   "The model's answer was cut off or empty, so none is shown. The matches below are unaffected; ask again for an answer.": "La respuesta del modelo se cortó o llegó vacía, por eso no se muestra. Los resultados de abajo no se ven afectados; vuelve a preguntar para obtener una respuesta.",
   "This answer is incomplete and must not be relied on.": "Esta respuesta está incompleta y no debe usarse.",
   "From your messages, not checked against the books:": "De tus mensajes, sin cotejar con la contabilidad:",
+  "A calculation in this answer used figures that were read nowhere:": "Un cálculo de esta respuesta usó cifras que no se leyeron en ninguna parte:",
+  ". Its result is not treated as checked.": ". Su resultado no se da por comprobado.",
   "Check now": "Comprobar ahora",
   "Checking the invitation…": "Comprobando la invitación…",
   "Checks": "Comprobaciones",

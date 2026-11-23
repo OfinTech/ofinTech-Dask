@@ -61,6 +61,96 @@ class Statements:
         i = months.index(month) if month in months else len(months) - 1
         return ev.ledger, meta, i
 
+    # -- bank reconciliation ----------------------------------------------------------------------------------------------
+    def bank_reconciliation(self, ws_id: str, workspace: dict[str, Any], statement: str | None = None,
+                            month: str | None = None, account: str | None = None,
+                            columns: dict[str, Any] | None = None) -> dict[str, Any]:
+        """One month of a bank statement dataset against the ledger's bank and cash lines (analysis/reconcile.py).
+        Reads only."""
+        from ..costcentres.service import is_ledger
+        from ..data.store import find_dataset, list_datasets, table_name
+        from .reconcile import MAX_ROWS, detect_columns, reconcile, statement_balances, statement_lines
+
+        if statement:
+            ds = find_dataset(self.engine, ws_id, statement)
+            if is_ledger(ds):
+                raise Invalid(f"“{ds['name']}” is a general ledger, not a bank statement. Name the dataset that holds "
+                              "the bank's statement.", code="not_a_statement")
+            cols = detect_columns(ds["columns"], columns)
+        else:
+            found = []
+            for d in list_datasets(self.engine, ws_id):
+                if is_ledger(d):
+                    continue
+                try:
+                    found.append((d, detect_columns(d["columns"], columns)))
+                except Invalid:
+                    continue
+            if not found:
+                raise Invalid("No dataset in this workspace reads as a bank statement (a date column, and money in "
+                              "and money out or one amount column). Import the bank's statement under Data, then "
+                              "ask again.", code="no_statement")
+            if len(found) > 1:
+                raise Invalid("More than one dataset reads as a bank statement: "
+                              + ", ".join(f"“{d['name']}”" for d, _ in found[:8]) + ". Say which one with statement.",
+                              code="which_statement")
+            ds, cols = found[0]
+        keys = ", ".join(c["key"] for c in ds["columns"])
+        rows = [list(r) for r in self.engine.db.conn.execute(
+            f"SELECT {keys} FROM {table_name(ds['id'])} ORDER BY _row LIMIT ?", (MAX_ROWS,)).fetchall()]
+        lines, unread = statement_lines(rows, cols)
+        if not lines:
+            raise Invalid(f"The statement “{ds['name']}” has no row with a date that can be read.", code="no_statement")
+        covered = sorted({x["date"][:7] for x in lines})
+        m = month or covered[-1]
+        if m not in covered:
+            raise Invalid(f"The statement “{ds['name']}” has no rows in {m}: it covers {covered[0]} to {covered[-1]}.",
+                          code="month_not_covered")
+        led, meta, _ = self._load(ws_id, m)
+        if m not in led.months:
+            raise Invalid(f"The general ledger has no lines in {m}: it covers {led.months[0]} to {led.months[-1]}.",
+                          code="month_not_covered")
+        cash: dict[str, str] = {}
+        for ln in led.lines:
+            if led.role_of(ln) == "cash":
+                cash.setdefault(account_key(ln["account_code"], ln["account"]),
+                                f"{ln['account_code']} {ln['account']}".strip() if ln["account_code"] else ln["account"])
+        if account:
+            want = account.strip().lower()
+            chosen = {k: n for k, n in cash.items() if want == k.split("|")[0].lower() or want in n.lower()}
+            if not chosen:
+                raise Invalid(f"No bank or cash account in the ledger matches “{account}”. The ledger's bank and cash "
+                              "accounts are: " + ", ".join(sorted(cash.values())) + ".", code="no_such_account")
+        else:
+            chosen = cash
+        if not chosen:
+            raise Invalid("The general ledger has no account with the bank and cash role. Finance sets account roles "
+                          "under Financial analysis.", code="no_cash_account")
+        book = []
+        for ln in led.lines:
+            if ln["date"][:7] != m or account_key(ln["account_code"], ln["account"]) not in chosen:
+                continue
+            net = ln["debit"] - ln["credit"]
+            book.append({"date": ln["date"], "entry": ln["entry"], "in": round(max(net, 0.0), 2),
+                         "out": round(max(-net, 0.0), 2),
+                         "text": " · ".join(x for x in (ln.get("description"), ln.get("party")) if x)})
+        i = led.months.index(m)
+        closing = sum(led.balances.get(k, {}).get(m, 0.0) for k in chosen)
+        movement = sum(x["in"] - x["out"] for x in book)
+        opening = (sum(led.balances.get(k, {}).get(led.months[i - 1], 0.0) for k in chosen) if i > 0
+                   else closing - movement)
+        s_open, s_close, s_date = statement_balances(lines, m)
+        in_month = [x for x in lines if x["date"][:7] == m]
+        r = reconcile(in_month, book, statement_opening=s_open, statement_closing=s_close,
+                      book_opening=_r(opening), book_closing=_r(closing))
+        return r | {"month": m, "months": led.months, "as_of": month_end(m).isoformat(), "statement_date": s_date,
+                    "statement": {"id": ds["id"], "name": ds["name"], "rows": len(rows), "unread_rows": unread,
+                                  "truncated": len(rows) >= MAX_ROWS,
+                                  "columns": {k: ds["columns"][v]["name"] for k, v in cols.items()}},
+                    "accounts": sorted(chosen.values()), "other_cash_accounts": sorted(set(cash.values()) - set(chosen.values())),
+                    "currency": workspace.get("base_currency"), "provenance": self.engine.overview._provenance(meta),
+                    "ledger": meta["ledger"]}
+
     # -- statements -------------------------------------------------------------------------------------------------------
     def statements(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, periods: int = 12) -> dict[str, Any]:
         led, meta, i = self._load(ws_id, month)

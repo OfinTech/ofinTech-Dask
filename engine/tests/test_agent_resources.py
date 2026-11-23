@@ -52,12 +52,28 @@ class Resources(unittest.TestCase):
             runs.append(1)
             return ToolOutput("Period changes: 100.00%", [], {"changes": [1.0]})
         self.patch("calc_growth", counting)
-        self.h.llm.script = [[("calc_growth", {"values": [1, 2]})]] * 6 + ["Growth was 100.00%."]
+        self.h.llm.script = [[("calc_growth", {"values": [1, 2]})]] * 4 + ["Growth was 100.00%."]
         d = self.turn("growth")
         results = [m for m in d["messages"] if m["role"] == "tool"]
-        self.assertEqual(len(results), 6)                   # every call still gets a result (the APIs require it)
+        self.assertEqual(len(results), 4)                   # every call still gets a result (the APIs require it)
         self.assertEqual(len(runs), 2)                      # but the tool itself ran twice
         self.assertIn("Same call with the same arguments", results[2]["content"])
+        self.assertEqual(d["run"]["status"], "done")
+
+    def test_after_two_repeats_the_model_is_asked_to_answer_without_tools(self) -> None:
+        # 24 Nov 2026: the same calculation fifteen times, then "Stopped after 16 steps without a final answer"
+        self.h.llm.script = [[("calc_growth", {"values": [1, 2]})]] * 4 + ["Growth was 100.00%."]
+        before = len(self.h.llm.calls)
+        d = self.turn("growth")
+        calls = self.h.llm.calls[before:]
+        self.assertEqual(len(calls), 5)
+        for body in calls[:4]:
+            self.assertIn("tools", body)
+        self.assertNotIn("tools", calls[4], "the fifth call offers no tools")
+        system = " ".join(m["content"] for m in calls[4]["messages"] if m["role"] == "system")
+        self.assertIn("This step has no tools: answer now", system)
+        self.assertNotIn("answer now", " ".join(m["content"] for m in calls[3]["messages"] if m["role"] == "system"))
+        self.assertEqual(d["messages"][-1]["content"], "Growth was 100.00%.")
         self.assertEqual(d["run"]["status"], "done")
 
     def test_a_write_is_never_answered_from_an_earlier_result(self) -> None:

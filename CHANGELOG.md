@@ -5,6 +5,58 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **A bank statement is reconciled in code, not by the model.** Asked to hold a statement against the books, the
+  assistant had only the dataset query to work with. On 23 and 24 Nov 2026 one model took the statement's
+  highest balance for its closing balance, and another ran sixteen queries and stopped without an answer. The
+  new read-only tool `bank_reconciliation` takes a statement dataset and the general ledger's bank account for
+  one month and returns the statement's closing balance (its last row, in row order), the ledger's, the
+  difference, every movement in the ledger and not on the statement, every movement on the statement and not in
+  the ledger, and how much of the difference those explain, with the unexplained remainder. Movements are matched
+  on direction and amount to the cent: on the same date, then within three days, then on the amount alone within
+  the month, and those last are listed for a second look. It finds the statement's columns by the names banks
+  use in English, Arabic, Spanish and French, reads a signed amount column or money in and money out, and says
+  so when the opening balances differ instead of spreading that over the month. It posts nothing, proposes no
+  entry, carries no score and learns nothing from what the accountant then decides. The `bank-reconciliation`
+  skill (now 1.1.0) sends the model to it first.
+- **A what-if on profit applies the direction of each change itself.** Asked what October's net profit becomes
+  once a rent that was never booked is booked and a bill entered twice is removed, one model added both amounts
+  and one subtracted both; the second had just written, in words, which way each one goes. `calc_what_if` takes
+  the profit as it stands and each change with its size and what it is (`cost_added`, `cost_removed`,
+  `income_added`, `income_removed`), applies the signs, and with revenue gives the margin before and after.
+
+### Changed
+
+- **A calculator's result is evidence only when what went into it has a source.** The figure check treated every
+  calculator result as verified, so a model that multiplied a balance by a rate of its own choosing got a
+  checked figure: "Zakat due" on 24 Nov 2026, on a base and a rate nobody had given it. For `calc_arithmetic`
+  and `calc_what_if`, each number passed in must now appear in another tool's result, in the user's messages, in
+  an approved memory or in an earlier sound calculation, or be a plain constant of arithmetic (whole numbers to
+  12, 100, 365 and the like). If one does not, the result is not evidence: a figure in the answer that rests on
+  it is marked "check before relying on", and the numbers that came from nowhere are stored with the answer as
+  `unsourced_inputs` and shown under it. The financial calculators (NPV, loan schedules, depreciation), whose
+  parameters a person chooses, are not held to this.
+- **The same call again and again now ends the turn in an answer.** A repeated read was already served from its
+  earlier result instead of being run again; that bounded the load and not the loop, and a model that asked the
+  calculator for one figure fifteen times ended at the step limit with no answer. After two such repeats the
+  next model call carries no tools and an instruction to answer from the results it has or to say what is
+  missing. A model that still calls a tool it was not offered gets a result that says nothing was run, and a
+  second such step stops the turn with an error that says why ("kept asking for the same result"), after six
+  model calls instead of sixteen.
+- **The rules on tax.** The assistant does not say whether a return or filing is correct, and does not work out
+  the zakat, income tax or other tax due for a period on a base or a rate of its own choosing; it can state what
+  the ledger shows (a tax account's balance, what was paid), and when the user gives both the base and the rate
+  it can do that arithmetic, said to be arithmetic on their figures. This is a rule in the prompt, so it holds
+  as far as the model follows it; the check on calculator inputs above is what holds when it does not.
+
+### Fixed
+
+- **A count in an answer is traced to a bare number in a tool result.** The anomaly report says "4 found"; an
+  answer that listed the four and called them "4 items" was marked "check before relying on: 4 items", because
+  numbers under 100 without a unit were dropped from the evidence as well as from the answer. They are kept in
+  the evidence now, and support counts only: never an amount, a percentage or a ratio.
+
 ## 1.4.0 — 2026-11-23
 
 ### Added

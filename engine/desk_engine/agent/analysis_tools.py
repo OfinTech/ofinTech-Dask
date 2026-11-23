@@ -368,3 +368,103 @@ async def _anomalies(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
             + _provenance_note(r))
     return ToolOutput(head + ("\n" + "\n".join(lines) if lines else " Nothing breaks the pattern of the previous months."),
                       [], r)
+
+
+def _has_ledger_and_data(ctx: ToolContext) -> bool:
+    """A ledger, and at least one dataset that is not a ledger (a statement to hold against it)."""
+    try:
+        from ..costcentres.service import is_ledger
+        from ..data.store import list_datasets
+        sets = list_datasets(ctx.engine, ctx.ws_id)
+        return any(is_ledger(d) for d in sets) and any(not is_ledger(d) for d in sets)
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _move(x: dict[str, Any]) -> str:
+    return f"received {x['in']:,.2f}" if x["in"] else f"paid {x['out']:,.2f}"
+
+
+@registry.tool("bank_reconciliation", "Compares a bank statement (an imported dataset) with the general ledger's bank "
+               "account for one month: the statement's closing balance and the ledger's, the difference, every "
+               "movement that is in the ledger and not on the statement (payments and deposits the bank has not "
+               "seen), every movement on the statement and not in the ledger (charges, interest, receipts not "
+               "recorded), and how much of the difference those items explain. Movements are matched on direction "
+               "and amount to the cent, on the same date, then within a few days, then on the amount alone. Use it "
+               "for every question about a bank statement against the books; report what it lists and do not match "
+               "the lines yourself with query_dataset. It reads only: nothing is posted.",
+               schema({"statement": {"type": "string", "description": "the statement's dataset name or id; may be left "
+                                     "out when the workspace has one bank statement"},
+                       "month": {"type": "string", "description": "YYYY-MM; the statement's last month when left out"},
+                       "account": {"type": "string", "description": "the ledger's bank account, by code or name, when "
+                                   "the ledger has several bank and cash accounts"},
+                       "columns": {"type": "object", "description": "the statement's column names, only when the tool "
+                                   "says it cannot tell them", "properties": {
+                                       k: {"type": "string"} for k in ("date", "money_in", "money_out", "amount",
+                                                                       "balance", "description")}}}),
+               available=_has_ledger_and_data, offload=True)
+async def _bank_reconciliation(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        r = ctx.engine.statements.bank_reconciliation(ctx.ws_id, ctx.workspace, a.get("statement"), a.get("month"),
+                                                      a.get("account"), a.get("columns"))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    cur = r.get("currency") or ""
+
+    def money(v: float | None) -> str:
+        return "not on the statement" if v is None else f"{v:,.2f}"
+    lines = [f"Bank reconciliation for {r['month']}: the statement “{r['statement']['name']}” against the general "
+             f"ledger “{r['ledger']['name']}”, account {', '.join(r['accounts'])}" + (f", in {cur}." if cur else ".")]
+    if r["statement_closing"] is None:
+        lines.append(f"The statement has no balance column, so balances are not compared. Ledger balance at "
+                     f"{r['as_of']}: {r['book_closing']:,.2f}.")
+    else:
+        lines.append(f"Statement closing balance at {r['statement_date']}: {r['statement_closing']:,.2f} (its last "
+                     f"row of the month). Ledger balance at {r['as_of']}: {r['book_closing']:,.2f}. Difference, "
+                     f"statement less ledger: {r['difference']:,.2f}.")
+        gap = r["opening_difference"] or 0.0
+        lines.append(f"Opening balances: statement {money(r['statement_opening'])}, ledger {r['book_opening']:,.2f}"
+                     + (" (they agree)." if abs(gap) < 0.005 else
+                        f" (they differ by {gap:,.2f}: items from before {r['month']} are still open, and are not "
+                        "listed here)."))
+    by = r["matched_by"]
+    lines.append(f"Matched {r['matched']} movements, out of {r['statement_movements']} on the statement and "
+                 f"{r['book_movements']} in the ledger: {by.get('same date', 0)} on the same date, "
+                 f"{by.get('within ' + str(r['window_days']) + ' days', 0)} within {r['window_days']} days, "
+                 f"{by.get('amount only', 0)} on the amount alone.")
+    lines.append(f"In the ledger, not on the statement ({len(r['book_only'])}):"
+                 + ("" if r["book_only"] else " none."))
+    lines += [f"- {x['entry']}, {x['date']}, {_move(x)}" + (f", {x['text']}" if x["text"] else "")
+              for x in r["book_only"][:40]]
+    lines.append(f"On the statement, not in the ledger ({len(r['bank_only'])}):"
+                 + ("" if r["bank_only"] else " none."))
+    lines += [f"- row {x['row']}, {x['date']}, {_move(x)}" + (f", {x['text']}" if x["text"] else "")
+              for x in r["bank_only"][:40]]
+    hidden = max(0, len(r["book_only"]) - 40) + max(0, len(r["bank_only"]) - 40)
+    if hidden:
+        lines.append(f"… {hidden} more unmatched movements are in the table.")
+    if r["amount_only"]:
+        lines.append("Matched on the amount alone, dates apart (worth a look): " + "; ".join(
+            f"{m['book']['entry']} ({m['book']['date']}) with row {m['statement']['row']} ({m['statement']['date']}), "
+            f"{_move(m['statement'])}" for m in r["amount_only"][:10]) + ".")
+    if r["difference"] is not None:
+        lines.append(f"The unmatched items explain {r['explained']:,.2f} of the difference; unexplained: "
+                     f"{r['unexplained']:,.2f}.")
+    if r["other_cash_accounts"]:
+        lines.append("Other bank and cash accounts in the ledger, not included: "
+                     + ", ".join(r["other_cash_accounts"]) + ".")
+    elif len(r["accounts"]) > 1:
+        lines.append("The ledger has several bank and cash accounts and all are included; name one with account to "
+                     "reconcile it alone.")
+    if r["statement"]["unread_rows"]:
+        lines.append(f"{r['statement']['unread_rows']} statement rows had no date that could be read and were left out.")
+    lines.append("Nothing was posted or changed." + _provenance_note(r))
+    cols = [{"key": "where", "label": "Where", "format": "text"}, {"key": "date", "label": "Date", "format": "date"},
+            {"key": "ref", "label": "Entry or row", "format": "text"},
+            {"key": "text", "label": "Description", "format": "text"},
+            {"key": "in", "label": "Received", "format": "money"}, {"key": "out", "label": "Paid", "format": "money"}]
+    rows = ([["Ledger only", x["date"], x["entry"], x["text"], x["in"] or None, x["out"] or None] for x in r["book_only"]]
+            + [["Statement only", x["date"], f"row {x['row']}", x["text"], x["in"] or None, x["out"] or None]
+               for x in r["bank_only"]])
+    return ToolOutput("\n".join(lines), [table_block(cols, rows, "Unmatched movements")] if rows else [], r)
+

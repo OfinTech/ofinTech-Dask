@@ -1,7 +1,7 @@
 ---
 name: bank-reconciliation
 description: 'Reconcile a bank statement to the ledger: match transactions, list unmatched items and explain the difference. Use for bank or card reconciliations.'
-version: 1.0.0
+version: 1.1.0
 tags:
 - reconciliation
 - cash
@@ -14,6 +14,12 @@ tags:
 - Ledger cash-account transactions for the same period (connector sync or an export).
 
 ## Method
+When the statement is a dataset in the workspace and the workspace has a general ledger, call `bank_reconciliation`
+first. It compares the closing and opening balances, does the matching passes below to the cent, and returns the two
+lists of unmatched movements and how much of the difference they explain. Report what it returns; do not match
+the lines yourself. Use the steps below for what it does not do (one-to-many matches, classifying and explaining
+what is left), or when there is no general ledger to hold the statement against.
+
 1. Confirm opening balances agree (statement opening = ledger opening reconciled balance).
 2. Match in passes, strongest first:
    - same amount and same date;

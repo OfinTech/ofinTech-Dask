@@ -213,7 +213,8 @@ class ToolAuthorisation(unittest.TestCase):
         self.assertFalse(is_payment_tool("calc_loan_schedule", "payment column of a loan", acts=False))
 
     def test_13_a_run_cannot_loop_for_ever(self) -> None:
-        h = Harness(script=[[("list_datasets", {})]] * 40)
+        # a different call every step: nothing is repeated, so only the step limit ends it
+        h = Harness(script=[[("calc_growth", {"values": [1, 2 + i]})] for i in range(40)])
         try:
             ws = h.setup_workspace()
             t = h.api("POST", f"/api/w/{ws}/threads", json={})
@@ -222,6 +223,23 @@ class ToolAuthorisation(unittest.TestCase):
             self.assertEqual(data["run"]["status"], "error")
             self.assertIn("16 steps", data["run"]["error"])
             self.assertLessEqual(len(h.llm.calls), 16)
+        finally:
+            h.close()
+
+    def test_13b_the_same_call_over_and_over_ends_sooner(self) -> None:
+        # the same call every step, and a model that goes on calling when it is offered no tools: two runs, two
+        # results repeated from memory, two steps without tools, and the turn is stopped long before the step limit
+        h = Harness(script=[[("list_datasets", {})]] * 40)
+        try:
+            ws = h.setup_workspace()
+            t = h.api("POST", f"/api/w/{ws}/threads", json={})
+            h.api("POST", f"/api/w/{ws}/threads/{t['id']}/messages", json={"text": "loop"})
+            data = h.wait_run(t["id"], timeout=30)
+            self.assertEqual(data["run"]["status"], "error")
+            self.assertIn("same result", data["run"]["error"])
+            self.assertEqual(len(h.llm.calls), 6)
+            self.assertNotIn("tools", h.llm.calls[4])
+            self.assertNotIn("tools", h.llm.calls[5])
         finally:
             h.close()
 

@@ -670,3 +670,81 @@ async def _arithmetic(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         lines.append(f"{step['label']}: {op}({shown_values}) = {shown}")
         rows.append([step["label"], float(q2(result))])
     return ToolOutput("\n".join(lines), [table_block(cols, rows, "Calculation")] if rows else [], rows)
+
+
+# --- what-if on a profit figure -----------------------------------------------------------------
+# On 23 and 24 Nov 2026 two models were asked what October's net profit becomes once a rent that was never booked is
+# booked and a bill entered twice is removed. One added both amounts and one subtracted both; the second had just
+# written, in words, that the rent lowers profit and the duplicate's removal raises it. The direction of a change
+# is a property of what the change is, so the tool takes what each change is and applies the direction itself.
+
+WHAT_IF = {
+    "cost_added": ("a cost that is not in the figure yet (an expense or a bill not booked): lowers profit", -1, 0),
+    "cost_removed": ("a cost that should not be in the figure (a duplicate, an entry to reverse): raises profit", 1, 0),
+    "income_added": ("income that is not in the figure yet (a sale not invoiced): raises profit and revenue", 1, 1),
+    "income_removed": ("income that should not be in the figure (a sale to reverse): lowers profit and revenue", -1, -1),
+}
+
+
+def what_if(profit: Any, changes: list[dict[str, Any]], revenue: Any = None) -> dict[str, Any]:
+    """Profit (and revenue, when given) after the changes; every amount is taken as a positive size."""
+    p0 = d(profit)
+    r0 = None if revenue is None else d(revenue)
+    p1, r1 = p0, r0
+    applied = []
+    for c in changes:
+        kind = c.get("kind")
+        if kind not in WHAT_IF:
+            raise ValueError(f"unknown kind {kind!r}; use one of: " + ", ".join(WHAT_IF))
+        size = abs(d(c["amount"]))
+        _, on_profit, on_revenue = WHAT_IF[kind]
+        p1 += on_profit * size
+        if r1 is not None:
+            r1 += on_revenue * size
+        applied.append({"label": str(c.get("label") or kind), "kind": kind, "amount": size, "effect": on_profit * size})
+    out: dict[str, Any] = {"profit_before": p0, "profit_after": p1, "change": p1 - p0, "applied": applied}
+    if r0 is not None and r1 is not None:
+        out.update(revenue_before=r0, revenue_after=r1,
+                   margin_before=None if r0 == 0 else p0 / r0 * 100, margin_after=None if r1 == 0 else p1 / r1 * 100)
+    return out
+
+
+@registry.tool("calc_what_if", "What a profit figure becomes after changes to it: an expense that was never booked, "
+               "a duplicate bill removed, a sale not yet invoiced. Give the profit as it stands and each change with "
+               "its amount as a positive number and its kind: " + "; ".join(f"{k} = {v[0]}" for k, v in WHAT_IF.items())
+               + ". The tool applies the direction of every change itself. With revenue it also gives the margin "
+               "before and after. Use it, not calc_arithmetic, for every \"what if\" or \"what would profit be\" "
+               "question; the figures are ones from tool results or the user's messages, copied exactly.",
+               schema({"profit_label": {"type": "string", "description": "which profit, e.g. 'Net profit, October 2026'"},
+                       "profit": {**NUM, "description": "the profit as it stands"},
+                       "revenue": {**NUM, "description": "revenue of the same period, for the margin; optional"},
+                       "changes": {"type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "object", "properties": {
+                           "label": {"type": "string", "description": "what the change is, e.g. 'Warehouse rent not booked'"},
+                           "amount": {**NUM, "description": "its size, positive"},
+                           "kind": {"type": "string", "enum": list(WHAT_IF)}},
+                           "required": ["label", "amount", "kind"]}}},
+                      ["profit_label", "profit", "changes"]), pure=True)
+async def _what_if(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        r = what_if(a["profit"], a["changes"], a.get("revenue"))
+    except (ValueError, ArithmeticError, KeyError) as exc:
+        return ToolOutput(f"Not computed ({exc}).")
+    name = str(a.get("profit_label") or "Profit")
+    lines = [f"{name} as it stands: {q2(r['profit_before']):,.2f}"]
+    for c in r["applied"]:
+        lines.append(f"{'+' if c['effect'] >= 0 else '-'} {q2(c['amount']):,.2f}  {c['label']} ({c['kind']}: "
+                     f"{'raises' if c['effect'] >= 0 else 'lowers'} profit)")
+    lines.append(f"{name} after the changes: {q2(r['profit_after']):,.2f} (a change of {q2(r['change']):+,.2f})")
+    cols = [{"key": "label", "label": "Line", "format": "text"}, {"key": "value", "label": "Value", "format": "number"}]
+    rows: list[list[Any]] = [[f"{name}, as it stands", float(q2(r["profit_before"]))]]
+    rows += [[c["label"], float(q2(c["effect"]))] for c in r["applied"]]
+    rows.append([f"{name}, after the changes", float(q2(r["profit_after"]))])
+    if "margin_after" in r:
+        def pct(v: Decimal | None) -> str:
+            return "n/a" if v is None else f"{v.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP):,.1f}%"
+        lines.append(f"Revenue: {q2(r['revenue_before']):,.2f} before, {q2(r['revenue_after']):,.2f} after. "
+                     f"Margin: {pct(r['margin_before'])} before, {pct(r['margin_after'])} after.")
+    data = {k: (float(q2(v)) if isinstance(v, Decimal) else v) for k, v in r.items() if k != "applied"}
+    data["applied"] = [{**c, "amount": float(q2(c["amount"])), "effect": float(q2(c["effect"]))} for c in r["applied"]]
+    return ToolOutput("\n".join(lines), [table_block(cols, rows, "What if")], data)
+
