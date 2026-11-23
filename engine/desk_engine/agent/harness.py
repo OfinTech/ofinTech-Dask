@@ -46,6 +46,15 @@ CHARS_PER_TOKEN = 4             # a deliberately rough estimate; it errs towards
 CHAR_BUCKETS = (5_000, 10_000, 20_000, 40_000, 80_000, 120_000, 160_000, 240_000, 400_000)
 RATIO_BUCKETS = (0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.25)
 REPEAT_LIMIT = 2                # identical read-tool calls served from the run's own earlier result after this many
+# Serving a repeated call from its earlier result bounds the load, not the loop: on 24 Nov 2026 a model asked the
+# calculator for the same figure fifteen times in one turn, was told fifteen times that the result had not changed,
+# and the turn ended at the step limit with no answer. After REPEAT_STOP such calls the next model call carries no
+# tools and the instruction below, so the turn ends in an answer or in a plain statement of what is missing.
+REPEAT_STOP = 2
+ANSWER_NOW = ("\n\nYou have asked for the same result several times in this turn and it does not change. This step "
+              "has no tools: answer now, in the language of the user's latest message, from the results above. If they "
+              "do not answer the question, say exactly what is missing. Do not guess and do not compute anything "
+              "yourself.")
 
 # Model calls that failed for a reason that may pass are tried again, a bounded number of times, and only while
 # nothing of the answer has been shown yet (a partial answer is never replayed). Tools are never retried here.
@@ -75,7 +84,7 @@ def retry_delay(attempt: int, retry_after: float | None) -> float:
 
 # How a run ended; stored in the run's state as ``outcome`` (the status column keeps its existing values)
 OUTCOME_FOR_CODE = {"llm_timeout": "timed_out", "too_many_steps": "failed", "answer_incomplete": "incomplete",
-                    "answer_empty": "failed"}
+                    "answer_empty": "failed", "repeated_calls": "failed"}
 
 
 # --- figure check -----------------------------------------------------------------------------
@@ -412,14 +421,18 @@ class Agent:
         step = int(state.get("step", 0))
         seen: dict[tuple[str, str], int] = {}          # identical read calls in this run segment
         last_output: dict[tuple[str, str], ToolOutput] = {}
-        while step < MAX_STEPS:
+        reused = ignored = 0                           # repeated calls served from an earlier result; calls made
+        while step < MAX_STEPS:                        # in a step that offered no tools
             step += 1
             past = await engine.read(history, engine, thread["id"])
             groups = select_groups(past, tools, has_datasets=bool(datasets), extra=state.get("extra_instructions") or "")
             chosen = choose_tools(tools, groups)
-            specs = [t.spec() for t in chosen]
-            more = available_groups(tools, groups)
+            answer_now = reused >= REPEAT_STOP
+            specs = [] if answer_now else [t.spec() for t in chosen]
+            more = {} if answer_now else available_groups(tools, groups)
             note = ("\n\nMore tool groups can be loaded with more_tools: " + ", ".join(more) + ".") if more else ""
+            if answer_now:
+                note += ANSWER_NOW
             messages = [ChatMessage("system", system), ChatMessage("system", dynamic + note),
                         *([ChatMessage("user", context)] if context else []), *compact(past)]
             msg_id = new_id("m_")
@@ -446,9 +459,16 @@ class Agent:
                 raise AppError(f"The answer {why} before it was finished. It is kept above, marked incomplete; do not "
                                "rely on it. Ask for a shorter answer or split the question.", code="answer_incomplete")
             if not result.tool_calls:
-                from .figures import report
-                payload.update(report(result.text, [m.content for m in past if m.role == "tool"],
-                                      [m.content for m in past if m.role == "user"], [m["content"] for m in memories]))
+                from .figures import is_calculator, report
+                # a calculator's result is evidence only when what went into it has a source: its calls are passed
+                # with their arguments, apart from the other tools' results
+                asked = {c.id: c for m in past if m.role == "assistant" for c in m.tool_calls}
+                calcs = [(asked[m.tool_call_id].arguments, m.content) for m in past
+                         if m.role == "tool" and m.tool_call_id in asked and is_calculator(asked[m.tool_call_id].name)]
+                read = [m.content for m in past if m.role == "tool"
+                        and not (m.tool_call_id in asked and is_calculator(asked[m.tool_call_id].name))]
+                payload.update(report(result.text, read, [m.content for m in past if m.role == "user"],
+                                      [m["content"] for m in memories], calcs=calcs))
                 self._observe_figures(payload)
                 if memories:
                     payload["memories"] = [{"id": m["id"], "content": m["content"], "scope": m["scope"]} for m in memories]
@@ -467,6 +487,25 @@ class Agent:
                 engine.db.execute("UPDATE threads SET updated_at = ? WHERE id = ?", (now(), thread["id"]))
                 return
 
+            if answer_now:
+                # a model that calls a tool it was not offered: every call still gets a result (the model APIs
+                # require one), nothing runs, and a second such step ends the turn rather than spend the rest of
+                # the step limit on it
+                ignored += 1
+                for call in result.tool_calls:
+                    self._tool_message(ctx, call, ToolOutput(
+                        "Not run: this step has no tools. Answer from the results above, or say what is missing."),
+                        "error")
+                engine.metrics.inc("desk_tool_refusals_total", reason="repeated_calls")
+                if ignored >= 2:
+                    raise AppError("The assistant kept asking for the same result instead of answering, so the turn "
+                                   "was stopped. Nothing was stored as an answer; ask again, or ask a narrower "
+                                   "question.", code="repeated_calls")
+                state["step"] = step
+                engine.db.execute("UPDATE agent_runs SET state = ?, usage = ?, updated_at = ? WHERE id = ?",
+                                  (dumps(state), dumps(usage.__dict__), now(), run["id"]))
+                continue
+
             pending: list[dict[str, Any]] = []
             for call in result.tool_calls:
                 tool = tools.get(call.name)
@@ -483,6 +522,7 @@ class Agent:
                             prev.blocks, prev.data), "ok", ms=0.0)
                         engine.metrics.inc("desk_tool_calls_total", status="reused",
                                            tool=tool_label(tool.name, tool.category))
+                        reused += 1
                         continue
                 if tool is None:
                     engine.metrics.inc("desk_tool_refusals_total", reason="unknown_or_not_offered")

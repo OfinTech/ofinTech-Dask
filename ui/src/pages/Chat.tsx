@@ -313,6 +313,7 @@ function MessageView({ m }: { m: Message }): ReactNode {
   if (!m.content) return null;
   const flagged: string[] = m.payload?.unverified_figures || [];
   const fromUser: string[] = m.payload?.user_figures || [];
+  const unsourced: string[] = m.payload?.unsourced_inputs || [];
   return (
     <div className="msg">
       <div className="who">{tr("Assistant")}{m.payload?.model ? `, ${m.payload.model}` : ""}</div>
@@ -325,6 +326,9 @@ function MessageView({ m }: { m: Message }): ReactNode {
       )}
       {flagged.length > 0 && (
         <div className="figcheck">{tr("Check before relying on:")}{" "}{flagged.join(", ")}{tr(". These figures do not appear in any tool result or message in this conversation.")}</div>
+      )}
+      {unsourced.length > 0 && (
+        <div className="figcheck">{tr("A calculation in this answer used figures that were read nowhere:")}{" "}{unsourced.join(", ")}{tr(". Its result is not treated as checked.")}</div>
       )}
       {fromUser.length > 0 && (
         <div className="figcheck">{tr("From your messages, not checked against the books:")}{" "}{fromUser.join(", ")}</div>
