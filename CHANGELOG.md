@@ -5,19 +5,7 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
-### Fixed
-
-- **A correct answer in Arabic is no longer marked "check before relying on".** Arabic joins "and" to the word
-  after it, so an answer writes `و79,605.55`. The figure check refused to start a number after a letter, started
-  three characters later instead, and reported an unknown figure `605.55`: a right answer carried a warning about
-  a number nobody wrote, and a wrong one would have been reported by its tail. A figure may now follow a letter
-  that is not Latin, and never starts after "digit, comma". The Arabic percent sign `٪` is read as a percentage.
-- **The assistant can see a payment that settled no invoice.** The Receivables and Payables pages keep an
-  "unapplied" amount per party (an advance, an overpayment); the `ageing_report` tool left that column out, so
-  asked whether a customer had paid in advance the assistant could only say the data did not show it. The tool
-  now carries the column and names each party and amount, or says there are none.
-
-## 1.4.0 — 2026-11-22
+## 1.4.0 — 2026-11-23
 
 ### Added
 
@@ -89,6 +77,16 @@ migrations are applied automatically on start-up and are never rewritten once re
   tooltip which one that is. Picking a provider keeps the model in use if the provider lists it, takes the only
   model if there is one, and otherwise saves nothing until the model is named. A "not found" answer names the
   model that was asked.
+
+- **A correct answer in Arabic is no longer marked "check before relying on".** Arabic joins "and" to the word
+  after it, so an answer writes `و79,605.55`. The figure check refused to start a number after a letter, started
+  three characters later instead, and reported an unknown figure `605.55`: a right answer carried a warning about
+  a number nobody wrote, and a wrong one would have been reported by its tail. A figure may now follow a letter
+  that is not Latin, and never starts after "digit, comma". The Arabic percent sign `٪` is read as a percentage.
+- **The assistant can see a payment that settled no invoice.** The Receivables and Payables pages keep an
+  "unapplied" amount per party (an advance, an overpayment); the `ageing_report` tool left that column out, so
+  asked whether a customer had paid in advance the assistant could only say the data did not show it. The tool
+  now carries the column and names each party and amount, or says there are none.
 
 ## 1.3.0 — 2026-11-11
 
