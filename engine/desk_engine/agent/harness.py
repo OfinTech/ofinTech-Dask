@@ -463,12 +463,15 @@ class Agent:
                 # a calculator's result is evidence only when what went into it has a source: its calls are passed
                 # with their arguments, apart from the other tools' results
                 asked = {c.id: c for m in past if m.role == "assistant" for c in m.tool_calls}
-                calcs = [(asked[m.tool_call_id].arguments, m.content) for m in past
-                         if m.role == "tool" and m.tool_call_id in asked and is_calculator(asked[m.tool_call_id].name)]
+                calc_at = [i for i, m in enumerate(past)
+                           if m.role == "tool" and m.tool_call_id in asked and is_calculator(asked[m.tool_call_id].name)]
+                calcs = [(asked[past[i].tool_call_id].arguments, past[i].content) for i in calc_at]
+                this_turn = max((i for i, m in enumerate(past) if m.role == "user"), default=-1)
                 read = [m.content for m in past if m.role == "tool"
                         and not (m.tool_call_id in asked and is_calculator(asked[m.tool_call_id].name))]
                 payload.update(report(result.text, read, [m.content for m in past if m.role == "user"],
-                                      [m["content"] for m in memories], calcs=calcs))
+                                      [m["content"] for m in memories], calcs=calcs,
+                                      calcs_since=sum(1 for i in calc_at if i < this_turn)))
                 self._observe_figures(payload)
                 if memories:
                     payload["memories"] = [{"id": m["id"], "content": m["content"], "scope": m["scope"]} for m in memories]

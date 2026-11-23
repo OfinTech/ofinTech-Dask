@@ -26,6 +26,14 @@ migrations are applied automatically on start-up and are never rewritten once re
   the profit as it stands and each change with its size and what it is (`cost_added`, `cost_removed`,
   `income_added`, `income_removed`), applies the signs, and with revenue gives the margin before and after.
 
+- **Asked what it can do, the assistant reads the answer instead of recalling it.** A step of a conversation is
+  sent only the tool groups it needs, so a model asked for its tools listed what it had been shown and filled in
+  the rest: "53" on 24 Nov 2026, with adding a bank transfer, a deposit and a withdrawal among them, in a product
+  that moves no money. `list_capabilities` returns what the registry holds for the workspace and the person
+  asking: how many tools, in which groups, what each does, which run only after a person approves them, and that
+  none pays or transfers. It is sent with every step, and the rules tell the model to answer from it and to name
+  nothing that is not in it. As with every rule, that holds as far as the model follows it.
+
 ### Changed
 
 - **A calculator's result is evidence only when what went into it has a source.** The figure check treated every
@@ -52,6 +60,11 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **Numbers a calculation was given without a source are shown under the answer they belong to, and no other.**
+  The first day the check ran in the Desk (24 Nov 2026), two averages a model had worked out itself and handed to
+  the calculator in its second answer were shown again under the third, fourth, fifth and sixth answers of the
+  conversation, whose own calculations were sound. Every calculation of the conversation is still judged, so an
+  unsound one never becomes evidence later; only those made since the user's latest message are reported.
 - **A count in an answer is traced to a bare number in a tool result.** The anomaly report says "4 found"; an
   answer that listed the four and called them "4 items" was marked "check before relying on: 4 items", because
   numbers under 100 without a unit were dropped from the evidence as well as from the answer. They are kept in
