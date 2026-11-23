@@ -313,6 +313,14 @@ class StoredWithTheAnswer(unittest.TestCase):
         self.assertEqual(payload["unverified_figures"], ["128,000.00"])
         self.assertEqual(payload["unsourced_inputs"], ["0.2"])
         self.assertEqual(payload["user_figures"], ["640,000"])
+        # the next turn of the same conversation, with a sound calculation of its own: the 0.2 of the turn before
+        # is not shown under it again, and its result is still no evidence
+        h.llm.script = [[("calc_arithmetic", {"steps": [{"label": "Half", "operation": "divide", "values": [640000, 2]}]})],
+                        "Half of 640,000 is 320,000.00; the tax figure before was 128,000.00."]
+        h.api("POST", f"/api/w/{ws}/threads/{t}/messages", json={"text": "And half of that profit?"})
+        payload = h.wait_run(t)["messages"][-1]["payload"]
+        self.assertNotIn("unsourced_inputs", payload)
+        self.assertEqual(payload["unverified_figures"], ["128,000.00"])
 
 
 class Rules(unittest.TestCase):

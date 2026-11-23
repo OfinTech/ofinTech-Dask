@@ -212,16 +212,23 @@ def _sourced(v: float, evidence: list[Figure]) -> bool:
     return False
 
 
-def sound_calculations(calcs: list[tuple[Any, str]], evidence_texts: list[str]) -> tuple[list[str], list[str]]:
+def sound_calculations(calcs: list[tuple[Any, str]], evidence_texts: list[str], *,
+                       since: int = 0) -> tuple[list[str], list[str]]:
     """The results of the calculator calls whose inputs all have a source, and the inputs that have none (as text,
-    in call order). A sound result becomes evidence for the calls after it: a total, then a share of that total."""
+    in call order). A sound result becomes evidence for the calls after it: a total, then a share of that total.
+
+    ``since`` is the index of the first call that belongs to the answer being checked. Every call is judged, so
+    that an unsound one from an earlier turn stays out of the evidence, but only the later ones are reported:
+    on 24 Nov 2026 two numbers from the second answer of a conversation were shown under its third, fourth,
+    fifth and sixth, whose own calculations were sound."""
     evidence = [f for t in evidence_texts for f in parse(t, evidence=True)]
     sound: list[str] = []
     orphans: list[str] = []
-    for args, result in calcs:
+    for i, (args, result) in enumerate(calcs):
         missing = [v for v in _numbers(args) if not _sourced(v, evidence)]
         if missing:
-            orphans += [f"{v:,.10g}" for v in missing]
+            if i >= since:
+                orphans += [f"{v:,.10g}" for v in missing]
             continue
         sound.append(result)
         evidence += parse(result, evidence=True)
@@ -263,14 +270,15 @@ def classify(answer: str, tool_texts: list[str], user_texts: list[str], memory_t
 
 
 def report(answer: str, tool_texts: list[str], user_texts: list[str], memory_texts: list[str], *,
-           calcs: list[tuple[Any, str]] | None = None) -> dict[str, Any]:
+           calcs: list[tuple[Any, str]] | None = None, calcs_since: int = 0) -> dict[str, Any]:
     """What the app stores with an answer: unverified figures, the user's own figures, and every figure's source.
 
     ``calcs`` are the calculator calls of the conversation as (arguments, result), in order, kept apart from
-    ``tool_texts``: only those whose inputs have a source count as evidence."""
+    ``tool_texts``: only those whose inputs have a source count as evidence. ``calcs_since`` is how many of them
+    were made before the user's latest message; unsourced inputs are reported for the ones after it."""
     orphans: list[str] = []
     if calcs:
-        sound, orphans = sound_calculations(calcs, [*tool_texts, *user_texts, *memory_texts])
+        sound, orphans = sound_calculations(calcs, [*tool_texts, *user_texts, *memory_texts], since=calcs_since)
         tool_texts = [*tool_texts, *sound]
     figs = classify(answer, tool_texts, user_texts, memory_texts)
 
