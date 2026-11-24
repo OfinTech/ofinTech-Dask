@@ -1881,5 +1881,15 @@ const d: Record<string, string> = {
   "In effect from": "يسري من تاريخ",
   "Earlier calls keep the rate that applied then. Today if left empty.": "تعتمد الاستدعاءات السابقة السعر المحدد في حينها. ويُعتمد تاريخ اليوم إذا تُرك الخيار فارغاً.",
   "(unpriced)": "(غير مسعر)",
+  "The current rate carried forward, not a forecast.": "المعدل الحالي ممتدًا إلى المستقبل، وليس توقعًا.",
+  "Average monthly burn": "متوسط الاستهلاك النقدي الشهري",
+  "Average monthly cash gain": "متوسط الزيادة النقدية الشهرية",
+  "Net cash through trading and investment, averaged over the last {0} months.": "صافي النقد من النشاط التشغيلي والاستثماري، بمتوسط آخر {0} أشهر.",
+  "Months of cash left": "أشهر السيولة المتبقية",
+  "Not burning cash": "لا يوجد استهلاك للنقد",
+  "Cash divided by the average monthly burn.": "السيولة النقدية مقسومة على متوسط الاستهلاك الشهري.",
+  "Cash runs out in": "شهر نفاد السيولة",
+  "The month the balance reaches zero at this rate.": "الشهر الذي يصل فيه الرصيد إلى الصفر بهذا المعدل.",
+  "There is no such month while cash is coming in.": "لا يوجد شهر كهذا ما دام النقد يزيد.",
 };
 export default d;

@@ -21,6 +21,7 @@ from ..errors import Invalid, NotFound
 from .kpis import Evaluator
 from .ledger import Ledger
 from .roles import PL_ROLES, account_key
+from .runway import cash_runway
 from .service import today as service_today
 
 if TYPE_CHECKING:
@@ -175,6 +176,8 @@ class Overview:
                                "customer_concentration", "plan_variance", "revenue_growth", "collection_rate", "opex_ratio")
                      if k in by_id},
             "risks": risks, "insights": insights, "decisions": decisions,
+            # how long the cash lasts at the recent rate, and the month it runs out in (analysis/runway.py)
+            "runway": cash_runway(led, m),
         }
 
     def _health(self, cards: list[dict[str, Any]], headline: dict[str, Any], by_id: dict[str, Any]) -> dict[str, Any]:

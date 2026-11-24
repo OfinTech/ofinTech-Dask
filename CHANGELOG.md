@@ -5,6 +5,21 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Added
+
+- **The month the cash runs out in, on the Overview page and from the assistant.** The scorecard gave months of
+  cash; the question a founder asks is one step further: which month, and what a hire or money raised does to it.
+  Left to a model that is a balance, an average and a division done in its head. `analysis/runway.py` works it out
+  on the two measures the KPI already uses (`cash` and `burn`): cash at the month end, the average burn of the
+  months up to it (three, as the KPI), the months left, and the month during which the balance reaches zero. The
+  Overview page shows the four figures under the key figures, and the assistant's read-only `cash_runway` tool
+  reports the same ones, with the burn of each recent month, for any month and for an average over one to twelve
+  months. Given changes (a monthly cost or income added or removed, or one amount received or paid once) it
+  reports the position as it stands, then with the changes, and how many months sooner or later the cash runs
+  out. A company that is not burning cash gets no month and is told what comes in on average. Both say that
+  this is the current rate carried forward and not a forecast. The page, the tool and KPI 28 give one number: a
+  test holds them together.
+
 ### Fixed
 
 - **A model served behind an OpenAI-compatible address is no longer recorded as using no tokens.** Such a server

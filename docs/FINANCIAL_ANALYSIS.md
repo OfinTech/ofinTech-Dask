@@ -207,6 +207,23 @@ The assistant has three read-only tools:
 
 It cannot change targets, formulas, roles or forecasts.
 
+## How long the cash lasts
+
+KPI 28 gives months of cash. The Overview page and the assistant's `cash_runway` tool take the same two measures
+(`cash` and `burn`) one step further and give the **month the cash runs out in**: cash at the month end, the
+average burn of the months up to it (three, as the KPI; the tool takes one to twelve), the months left, and the
+month during which the balance reaches zero. Capital paid in and loans are financing, so they add to cash and are
+not burn. A company that is not burning cash gets no month, and is told what comes in on average instead.
+
+The tool also answers "what if": a monthly cost or income added or removed (`cost_added`, `cost_removed`,
+`income_added`, `income_removed`), or one amount received or paid once (`cash_in`, `cash_out`). It reports the
+position as it stands first, then the position with the changes, and how many months sooner or later the cash
+runs out.
+
+It is the current rate carried forward, not a forecast: it assumes the months ahead look like the months
+averaged, and says so on the page and in the tool's result. A forecast that a finance lead sets, with its own
+assumptions, is under Forecasting.
+
 ## Limits
 
 - Inventory ratios need inventory in the ledger. A company that expenses its purchases has no DIO.

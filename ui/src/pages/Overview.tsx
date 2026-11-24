@@ -254,6 +254,16 @@ function Executive({ month }: { month: string | null }): ReactNode {
       </a>
     );
   };
+  // How long the cash lasts at the recent rate (engine: analysis/runway.py). The same figures the assistant's
+  // cash_runway tool reports, so the page and an answer cannot disagree.
+  const rw = o.runway;
+  const runwayTile = (label: string, value: string, why: string) => (
+    <a className="exec-tile" href={`#/${withMonth("analysis/kpis/cash_runway", m)}`}>
+      <div className="exec-tile-label">{label} <Prov kind={prov} small /></div>
+      <div className="exec-tile-value num">{value}</div>
+      <div className="exec-tile-why">{why}</div>
+    </a>
+  );
   return (
     <div className="page exec">
       <PageHead title={tr("Overview")} sub={tr("{0}, from the general ledger “{1}”. Select any figure to see what is behind it.", { 0: monthName(m), 1: o.ledger.name })}
@@ -291,6 +301,21 @@ function Executive({ month }: { month: string | null }): ReactNode {
           {tile("cash", "analysis/kpis/days_cash")}
         </div>
       </section>
+
+      {/* how long the cash lasts */}
+      {rw && <section className="section" aria-label={tr("Cash runway")}>
+        <div className="spread"><h2 className="h3">{tr("Cash runway")}</h2>
+          <span className="small muted">{tr("The current rate carried forward, not a forecast.")}</span></div>
+        <div className="exec-tiles">
+          {runwayTile(tr("Cash"), fmtMoney(rw.cash, cur), tr(EXPLAIN.cash))}
+          {runwayTile(rw.burning ? tr("Average monthly burn") : tr("Average monthly cash gain"), fmtMoney(Math.abs(rw.burn), cur),
+            tr("Net cash through trading and investment, averaged over the last {0} months.", { 0: rw.window.length }))}
+          {runwayTile(tr("Months of cash left"), rw.burning ? fmtNumber(rw.months_left, 1) : tr("Not burning cash"),
+            tr("Cash divided by the average monthly burn."))}
+          {runwayTile(tr("Cash runs out in"), rw.burning ? monthName(rw.runs_out) : "—",
+            rw.burning ? tr("The month the balance reaches zero at this rate.") : tr("There is no such month while cash is coming in."))}
+        </div>
+      </section>}
 
       {/* 3. trend, 4. cash */}
       <div className="exec-cols">
