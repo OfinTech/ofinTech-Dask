@@ -1,0 +1,13 @@
+image:
+  repository: ofintech-desk
+  tag: "1.3.0"
+  pullPolicy: IfNotPresent
+
+publicUrl: http://localhost:8700
+allowHttp: true
+
+storage:
+  size: 2Gi
+
+service:
+  port: 8700

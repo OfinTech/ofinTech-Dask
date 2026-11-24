@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      enableServiceLinks: false
+      securityContext:
+        fsGroup: 10001         
+      containers:
+        - name: engine
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8700
+          envFrom:              
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+          env:
+            - name: DESK_MASTER_KEY
+              valueFrom:       
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: master-key
+          startupProbe:         
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          livenessProbe:        
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            failureThreshold: 3
+          readinessProbe:      
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/ofintech-desk
+      volumes:
+        - name: data
+          persistentVolumeClaim:  
+            claimName: {{ .Release.Name }}-data
