@@ -151,6 +151,52 @@ class Statements:
                     "currency": workspace.get("base_currency"), "provenance": self.engine.overview._provenance(meta),
                     "ledger": meta["ledger"]}
 
+    # -- an account's lines, whole entries, and what moved a month's profit (analysis/activity.py) -------------------------
+    def _span(self, led: Ledger, first: str | None, last: str | None) -> tuple[str, str]:
+        """The months asked for, inside what the ledger covers: all of it when neither is given, one month when
+        only one is."""
+        lo, hi = first or last or led.months[0], last or first or led.months[-1]
+        if lo > hi:
+            raise Invalid(f"The period runs backwards: {lo} is after {hi}.", code="bad_period")
+        for m in (lo, hi):
+            if m not in led.months:
+                raise Invalid(f"No ledger data for {m}: the ledger covers {led.months[0]} to {led.months[-1]}.",
+                              code="month_not_covered")
+        return lo, hi
+
+    def _about(self, workspace: dict[str, Any], led: Ledger, meta: dict[str, Any]) -> dict[str, Any]:
+        return {"months": led.months, "currency": workspace.get("base_currency"),
+                "provenance": self.engine.overview._provenance(meta), "ledger": meta["ledger"]}
+
+    def account_activity(self, ws_id: str, workspace: dict[str, Any], account: str, first: str | None = None,
+                         last: str | None = None, party: str | None = None) -> dict[str, Any]:
+        from .activity import account_activity, chart, match_accounts
+
+        led, meta, _ = self._load(ws_id, None)
+        lo, hi = self._span(led, first, last)
+        accounts = chart(led)
+        keys = match_accounts(accounts, account)
+        listed = sorted(accounts.values(), key=lambda a: (a["code"], a["name"]))
+        return self._about(workspace, led, meta) | {
+            "asked": account, "first": lo, "last": hi, "chart": listed if len(keys) != 1 else [],
+            "matches": [accounts[k] for k in keys],
+            "accounts": [account_activity(led, k, lo, hi, party) for k in keys[:4]]}
+
+    def ledger_entries(self, ws_id: str, workspace: dict[str, Any], entry: str | None = None, search: str | None = None,
+                       first: str | None = None, last: str | None = None) -> dict[str, Any]:
+        from .activity import find_entries
+
+        led, meta, _ = self._load(ws_id, None)
+        lo, hi = self._span(led, first, last)
+        return self._about(workspace, led, meta) | find_entries(led, lo, hi, entry, search)
+
+    def profit_drivers(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, against: str = "average",
+                       span: int = 6) -> dict[str, Any]:
+        from .activity import profit_drivers
+
+        led, meta, i = self._load(ws_id, month)
+        return self._about(workspace, led, meta) | profit_drivers(led, led.months[i], against, span)
+
     # -- statements -------------------------------------------------------------------------------------------------------
     def statements(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, periods: int = 12) -> dict[str, Any]:
         led, meta, i = self._load(ws_id, month)

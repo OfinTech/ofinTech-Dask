@@ -7,6 +7,26 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **What moved a month's profit, what was posted on an account and what an entry holds are read from the ledger,
+  not worked out by the model.** On 24 Nov 2026, after the closed questions of the day before had been moved
+  into code, three answers on the same invented company were still only half right. Asked what caused its one
+  loss-making month, each model compared the month with an average it had worked out itself, a different one on
+  each run, and named no account. Asked what zakat had been paid, one said the books held nothing while the
+  entry was there. Asked for a credit note's amount before VAT, one gave the total with the VAT in it. Three
+  read-only tools now return what the ledger holds. `profit_drivers` sets a month's profit and loss against the
+  average of the months before it (six unless asked otherwise), the month before it or the same month a year
+  earlier, line by line and account by account, each with its effect on net profit, says which baseline it used
+  and which months it covers, and lists the months of the last twelve that made a loss; the effects add up to
+  the change in net profit. `account_activity` gives one account between two months: its balance at the start
+  and the end, total debits and credits, every line with the other accounts of its entry, and how much was paid
+  from or received into the bank in the same entry. `ledger_entries` gives whole entries, by number or by words
+  found in an entry's type, descriptions, parties or account names, and reads an invoice, bill or credit note
+  with a sales-tax line as amount before tax, tax and total. An account or an entry written in one language is
+  found when asked for in another (VAT, zakat, credit note, sales returns, rent, loan), the more specific meaning
+  first, and only on whole words. An account that is not there gets the chart of accounts back and no figure;
+  a month the ledger does not cover, or a baseline it does not hold, is refused. The rules send the model to
+  them and tell it to say the books do not show something only after one of them found nothing.
+
 - **A bank statement is reconciled in code, not by the model.** Asked to hold a statement against the books, the
   assistant had only the dataset query to work with. On 23 and 24 Nov 2026 one model took the statement's
   highest balance for its closing balance, and another ran sixteen queries and stopped without an answer. The
@@ -59,6 +79,10 @@ migrations are applied automatically on start-up and are never rewritten once re
   as far as the model follows it; the check on calculator inputs above is what holds when it does not.
 
 ### Fixed
+
+- **An unusual amount is held against the months the ledger has, and says how many.** `ledger_anomalies` wrote
+  "over the previous six months" under every unusual amount, also in a ledger with four or five months before
+  the one asked about, where the average is over those. It now names the number it averaged.
 
 - **Numbers a calculation was given without a source are shown under the answer they belong to, and no other.**
   The first day the check ran in the Desk (24 Nov 2026), two averages a model had worked out itself and handed to
