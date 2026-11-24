@@ -5,6 +5,17 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+### Fixed
+
+- **A model served behind an OpenAI-compatible address is no longer recorded as using no tokens.** Such a server
+  (vLLM, Ollama, LM Studio, any custom endpoint) puts token counts in its stream only when the request asks for
+  them. The engine asked the named cloud providers and did not ask these, because a server that does not know the
+  field may refuse the request; so the model answered and every answer was recorded as zero tokens, on the Usage
+  page and in the run. Every server is now asked, except Mistral's own API, which is left as it was. A server
+  that refuses the field (a 422, or a 400 that names the field or speaks of an unknown one) is tried once more
+  without it and not asked again while the engine runs; any other 400 is a permanent error and is not retried. Answers
+  given before this change keep their zero: the counts were never sent, so they cannot be restored.
+
 ## 1.5.0 — 2026-11-24
 
 ### Added
