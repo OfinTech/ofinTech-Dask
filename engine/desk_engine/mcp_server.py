@@ -1,8 +1,11 @@
 """OfinTech Desk as an MCP server (Streamable HTTP at ``/mcp``).
 
 Other MCP clients (Claude Desktop, IDEs, other agents) can use the workspace's read-only finance
-tools: calculators, datasets, dashboards data and accounting reports. Write tools are never
-exposed here, so nothing outside the app can send messages or change records through this door.
+tools: the statements, ageing, anomalies, what moved a month's profit, an account's lines, whole
+entries and the cash runway as the pages compute them; the KPI scorecard, a KPI's history, the
+forecast and the state of the month-end close; the calculators, datasets, accounting reports and
+documents. Write tools are never exposed here, so nothing outside the app can send messages or
+change records through this door.
 
 Authentication: ``Authorization: Bearer <access key>``; keys are created per workspace member under
 Settings → MCP access and are stored hashed.
@@ -23,9 +26,14 @@ from .security import token_hash
 if TYPE_CHECKING:
     from .app import Engine
 
-EXPOSED_CATEGORIES = {"finance", "data", "accounting", "knowledge"}
-# tools that change workspace state are not offered to outside clients
-NOT_EXPOSED = {"create_dashboard", "sync_accounting"}
+# "analysis" joined on 25 Nov 2026: the KPI scorecard, one KPI's history, the forecast and the state of the close
+# are read-only and were offered to the assistant inside the app while an outside client could read the statements
+# they are built from and not them.
+EXPOSED_CATEGORIES = {"finance", "data", "accounting", "knowledge", "analysis"}
+# Tools that change workspace state are not offered to outside clients, whatever effect they declare.
+# prepare_month_end_close opens a close and writes its proposals: it reads as "read" to the registry because it
+# posts nothing to the books, and it is still not something a key from outside may start.
+NOT_EXPOSED = {"create_dashboard", "sync_accounting", "prepare_month_end_close"}
 
 
 def resolve(engine: Engine, authorization: str) -> ToolContext | None:
@@ -90,7 +98,12 @@ def build_mcp_app(engine: Engine) -> ASGIApp:
                                     is_error=out.text.startswith("Error:"))
 
     server = Server("ofintech-desk", version=VERSION,
-                    instructions="Finance and accounting tools over this OfinTech Desk workspace (read-only).",
+                    instructions="Read-only finance and accounting tools over one OfinTech Desk workspace. Its figures "
+                                 "are computed from the general ledger by the same code as the product's pages: "
+                                 "report them as given and do not recompute them. Start with financial_statements, "
+                                 "financial_kpis or cash_runway; use profit_drivers for why a month moved, "
+                                 "account_activity and ledger_entries for the entries behind a figure. Nothing here "
+                                 "can send, pay, post or change a record.",
                     on_list_tools=list_tools, on_call_tool=call_tool)
     hosts = ["127.0.0.1", "localhost", "127.0.0.1:*", "localhost:*"]
     origins = ["http://127.0.0.1", "http://localhost", "http://127.0.0.1:*", "http://localhost:*"]

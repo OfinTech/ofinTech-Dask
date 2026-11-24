@@ -111,6 +111,42 @@ class MCPServerSide(unittest.TestCase):
         self.h.api("DELETE", f"/api/w/{self.ws}/mcp-keys/{key['id']}", expect=None)
         self.assertEqual(self.rpc(key["key"], "tools/list", {}).status_code, 401)
 
+    def test_a_workspace_with_a_ledger_offers_what_the_pages_compute_and_nothing_that_writes(self) -> None:
+        """What an outside assistant can read is what the pages show: the statements and the tools built on them,
+        the scorecard and the forecast. The list is written out so that a new tool is exposed on purpose."""
+        from .test_cash_runway import BURNING, as_csv
+        up = self.h.api("POST", f"/api/w/{self.ws}/imports", files={"file": ("gl.csv", as_csv(BURNING))})
+        self.h.api("POST", f"/api/w/{self.ws}/imports/{up['upload_id']}/commit",
+                   json={"name": "General ledger", "sheet": None, "header_row": 0})
+        key = self.h.api("POST", f"/api/w/{self.ws}/mcp-keys", json={"name": "Outside assistant"})["key"]
+        self.rpc(key, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {},
+                                     "clientInfo": {"name": "test", "version": "1"}})
+        listed = self.rpc(key, "tools/list", {}, 2).json()["result"]["tools"]
+        names = {t["name"] for t in listed}
+        # bank_reconciliation joins these once a bank statement is imported beside the ledger
+        from_the_ledger = {"financial_statements", "ageing_report", "ledger_anomalies", "profit_drivers",
+                           "account_activity", "ledger_entries", "cash_runway"}
+        scorecard = {"financial_kpis", "kpi_detail", "forecast_report", "month_end_close"}
+        data = {"list_datasets", "describe_dataset", "query_dataset", "search_workspace"}
+        calculators = {n for n in names if n.startswith("calc_")}
+        self.assertEqual(names - calculators, from_the_ledger | scorecard | data)
+        self.assertGreaterEqual(len(calculators), 12)
+        for n in ("prepare_month_end_close", "create_dashboard", "sync_accounting", "message_colleague",
+                  "propose_memory", "edit_file", "create_workbook", "load_skill", "more_tools"):
+            self.assertNotIn(n, names)
+        self.assertTrue(all(t["annotations"]["readOnlyHint"] for t in listed))
+        # the figure an outside assistant gets is the one the page and the product's own assistant give
+        r = self.rpc(key, "tools/call", {"name": "cash_runway", "arguments": {}}, 3).json()["result"]
+        self.assertIn("burn 30,000.00 a month, cash 150,000.00, which lasts 5.0 months and runs out in 2027-03",
+                      r["content"][0]["text"])
+        r = self.rpc(key, "tools/call", {"name": "financial_kpis", "arguments": {}}, 4).json()["result"]
+        self.assertFalse(r.get("isError", r.get("is_error", False)))
+        self.assertIn("Cash runway", r["content"][0]["text"])
+        # a tool that starts something is refused by name, not only left off the list
+        r = self.rpc(key, "tools/call", {"name": "prepare_month_end_close", "arguments": {}}, 5).json()["result"]
+        self.assertTrue(r.get("isError", r.get("is_error", False)))
+        self.assertIn("Unknown tool", r["content"][0]["text"])
+
 
 if __name__ == "__main__":
     unittest.main()

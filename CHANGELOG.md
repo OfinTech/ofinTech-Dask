@@ -7,6 +7,14 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **An outside assistant reads the scorecard, a KPI's history, the forecast and the state of the close over MCP.**
+  The MCP endpoint offered the statement tools and the calculators, and not the KPI scorecard built on them: the
+  tools of the "analysis" group were left out of what a key may read. `financial_kpis`, `kpi_detail`,
+  `forecast_report` and `month_end_close` are read-only and are offered now. `prepare_month_end_close` is not: it
+  opens a close and writes its proposals, and is refused by name. The server's instructions tell a client that
+  the figures are computed by the product's own code and are to be reported as given, and `docs/MCP.md` lists
+  what is exposed (it still named tools from before the statement tools existed). A test holds the exact list.
+
 - **The month the cash runs out in, on the Overview page and from the assistant.** The scorecard gave months of
   cash; the question a founder asks is one step further: which month, and what a hire or money raised does to it.
   Left to a model that is a balance, an average and a division done in its head. `analysis/runway.py` works it out

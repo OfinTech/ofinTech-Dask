@@ -30,6 +30,20 @@ The engine serves MCP (Streamable HTTP, stateless JSON) at `/mcp`:
 - Team Server: `https://<domain>/mcp`
 
 Create a key under **Settings → MCP access**. Keys are stored hashed and the full key is shown once. Send it as
-`Authorization: Bearer odk_…`. The key acts as its member in that workspace and exposes only **read-only** tools:
-the finance calculators, `list_datasets`, `describe_dataset`, `query_dataset`, `accounting_report` and
-`list_invoices`, `search_documents`, `list_documents` and `read_document`. Tools that send, write or run workflows are never exposed. Calls are audited.
+`Authorization: Bearer odk_…`. The key acts as its member in that workspace and exposes only **read-only** tools.
+Calls are audited.
+
+What an outside assistant (Claude, ChatGPT, an IDE, another agent) can read is what the pages show, computed by the
+same code:
+
+| From | Tools |
+|---|---|
+| The general ledger | `financial_statements`, `ageing_report`, `ledger_anomalies`, `profit_drivers`, `account_activity`, `ledger_entries`, `cash_runway`, and `bank_reconciliation` once a bank statement is imported |
+| The scorecard and the plan | `financial_kpis`, `kpi_detail`, `forecast_report`, `month_end_close` (the state of a close, read only) |
+| Data and documents | `list_datasets`, `describe_dataset`, `query_dataset`, `search_workspace`; with a connected accounting system, `accounting_report` and `list_invoices` |
+| Calculators | the `calc_*` tools (NPV, loan schedules, depreciation, ratios, arithmetic, what-if) |
+
+A tool appears only when the workspace has what it reads: no general ledger, no statement tools. Tools that
+send, write, start a close, change a file or run a workflow are never exposed, whatever the key's member may do
+inside the app, and a workspace that keeps its data inside the organization offers none at all. The list above
+is held by a test (`engine/tests/test_mcp.py`), so a new tool is exposed on purpose and not by accident.
