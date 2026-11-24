@@ -14,7 +14,7 @@
 #   OFINTECH_DIR=~/ofintech-desk     where the compose file, the .env and the data volume's name live
 #   OFINTECH_PORT=8700               the port on 127.0.0.1
 #   OFINTECH_IMAGE=ofintech0/ofintech-desk
-#   OFINTECH_TAG=latest              a version is steadier for a customer: OFINTECH_TAG=1.4.0
+#   OFINTECH_TAG=latest              a version is steadier for a customer: OFINTECH_TAG=1.5.0
 #   OFINTECH_WAIT=90                 seconds to wait for it to answer; raise it on a slow or emulated machine
 set -eu
 

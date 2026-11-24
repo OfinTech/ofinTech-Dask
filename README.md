@@ -98,7 +98,7 @@ less install.sh && sh install.sh
 That install is for one person, on one machine: it listens on the loopback address and speaks plain HTTP, so
 nothing on the network can reach it. A server other people sign in to needs a domain and a certificate —
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md). For something you send a customer, pin the version instead of `main`:
-swap `main` in the URL for `v1.4.0`, and the script takes `OFINTECH_TAG=1.4.0`.
+swap `main` in the URL for `v1.5.0`, and the script takes `OFINTECH_TAG=1.5.0`.
 
 ### Try it on books that already exist
 

@@ -5,6 +5,8 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ## Unreleased
 
+## 1.5.0 — 2026-11-24
+
 ### Added
 
 - **What moved a month's profit, what was posted on an account and what an entry holds are read from the ledger,
