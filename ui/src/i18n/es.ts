@@ -1891,5 +1891,13 @@ const d: Record<string, string> = {
   "Cash runs out in": "La caja se agota en",
   "The month the balance reaches zero at this rate.": "El mes en que el saldo llega a cero a este ritmo.",
   "There is no such month while cash is coming in.": "No existe tal mes mientras entra caja.",
+  "Your question": "Su pregunta",
+  "For example: what changed in cash, receivables and payables this week?": "Por ejemplo: ¿qué cambió en caja, cobros y pagos esta semana?",
+  "How often": "Con qué frecuencia",
+  "Every working day": "Cada día laborable",
+  "Every Monday": "Cada lunes",
+  "On the 1st of each month": "El día 1 de cada mes",
+  "At what hour": "A qué hora",
+  "Schedule this question": "Programar esta pregunta",
 };
 export default d;

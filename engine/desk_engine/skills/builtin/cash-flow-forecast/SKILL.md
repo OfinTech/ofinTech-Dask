@@ -1,7 +1,7 @@
 ---
 name: cash-flow-forecast
 description: Build a 13-week direct cash flow forecast from receivables, payables, payroll and recurring items. Use for liquidity planning, runway and covenant headroom.
-version: 1.0.0
+version: 1.1.0
 tags:
 - treasury
 - forecast
@@ -9,7 +9,15 @@ tags:
 
 # 13-week cash flow forecast
 
-## Structure (weekly columns, week 1 starts next Monday)
+## Start from the ledger
+When the workspace has a general ledger, call `weekly_cash_forecast` first, with the terms and the minimum cash
+buffer (`floor`) if the user gave them. It returns the thirteen weeks from open invoices, open bills and standing
+payments, with the entries behind each figure, what it assumed and what it leaves out. Report its figures and its
+limits as given: do not rebuild or re-add them. Its weeks start the day after the month end it reads; say so.
+Everything below is what the user may add on top. Each addition is an assumption, kept apart from the tool's
+figures, listed with its source and added with a calculator tool.
+
+## Structure (weekly columns; without a ledger, week 1 starts next Monday)
 Opening cash → receipts → payments → net flow → closing cash → minimum cash buffer → headroom.
 
 ## Receipts

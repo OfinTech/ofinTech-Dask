@@ -125,3 +125,47 @@ change or approve a forecast.
 - One currency, monthly periods, up to 36 months.
 - Other balance-sheet items (tax payable, accruals, prepayments) and new borrowing are held flat.
 - Purchases are approximated as cost of sales + other operating expenses.
+
+## Thirteen weeks of cash, by the direct method
+
+The forecast above carries a plan forward by month. A lender or a board often asks for something else: cash week
+by week for the next thirteen weeks, from what is actually owed and owing. The assistant's read-only
+`weekly_cash_forecast` tool works that out from the general ledger (`analysis/weekly_cash.py`). It needs no plan
+and no setup, and it does not replace the monthly forecast.
+
+It starts the day after a month end (the latest month unless another is asked for) and gives, for each of
+thirteen weeks, opening cash, receipts, bills, standing payments and closing cash, and the first week the balance
+falls below zero or below a floor you give.
+
+| Line | Where it comes from |
+|---|---|
+| Receipts | Each open customer invoice, in the week it is expected: the invoice date plus the days that customer has taken to pay (its invoices settled in the last twelve months, weighted by amount; at least three of them), or plus the payment terms where there is no such history |
+| Bills | Each open supplier bill, placed the same way from the days this company has taken to pay that supplier |
+| Standing payments | Payments made straight from the bank to the same account in each of the last three months for amounts within 20% of their middle value (rent, payroll, a loan instalment), or every third month three times running (a quarterly tax). Carried forward on the same days at the latest amount |
+
+Settlements are set against the oldest open document first, as the ageing report does, so the open invoices and
+bills add up to the receivables and payables in the ledger. A credit note closes an invoice and is not counted as
+a payment. Money received ahead of an invoice covers that customer's next one.
+
+**What it assumes, and says in every answer**
+
+- The ledger carries no due date, so a customer or supplier without a history is placed by terms: 30 days unless
+  the question gives others (`customer_terms_days`, `supplier_terms_days`).
+- An invoice or bill already past its expected date is put in week 1, and the amount is stated.
+- What falls after week 13 is stated and is in no week.
+
+**What it leaves out, and says in every answer**
+
+- Sales not yet invoiced and bills not yet received. Later weeks therefore understate both sides; for scale the
+  answer gives the monthly average of the last three months for money received from customers, paid to suppliers,
+  other money received and other payments.
+- Payments with no pattern, and payments made every month for amounts too far apart to carry: these are named.
+- A receivable or payable balance with no document behind it (an opening balance): the amount is stated and given
+  no week.
+
+With fewer than three months of ledger the standing payments cannot be found. The answer then gives receipts and
+bills by week and **no weekly balance**, rather than a balance that silently leaves rent and payroll out.
+
+Every figure traces to entries: each placed invoice and bill carries its entry reference, its date, the days used
+and why; each standing payment lists the past entries it was found from and the dates it is carried to. It is
+arithmetic on the ledger, not a statistical model, and it changes nothing.

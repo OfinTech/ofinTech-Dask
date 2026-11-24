@@ -142,7 +142,51 @@ TEMPLATES: list[dict[str, Any]] = [
             ],
         },
     },
+    {
+        # The shortest workflow there is, and the one most people want first: one question, a timetable, the answer
+        # sent to the person who asked. `scheduled_question` below fills it in from a question and a rhythm.
+        "key": "scheduled_question",
+        "name": "A question on a timetable",
+        "description": "Every Monday at 8: the assistant answers one question about the books and sends you the "
+                       "answer in the app, and by e-mail when Gmail is connected. Write your own question and "
+                       "choose how often.",
+        "category": "Reporting",
+        "definition": {
+            "trigger": {"type": "schedule", "cron": "0 8 * * 1"},
+            "steps": [
+                {"id": "ask", "type": "agent", "name": "Ask the question", "prompt":
+                    "As of {{today}}: what changed in cash, receivables and payables over the last week? Give the "
+                    "three largest movements with their amounts, and say where each figure comes from."},
+                {"id": "tell", "type": "notify", "name": "Send the answer", "recipients": "me",
+                 "channels": ["in_app", "email"], "message": "{{steps.ask.output}}"},
+            ],
+        },
+    },
 ]
+
+# How often a scheduled question is asked, as the cron line for it at a given hour. Monday and the 1st are the
+# days a weekly and a monthly question are asked; the person changes the line in the editor for another day.
+RHYTHMS = {"day": "0 {hour} * * *", "weekday": "0 {hour} * * 1-5", "week": "0 {hour} * * 1", "month": "0 {hour} 1 * *"}
+
+
+def scheduled_question(template: dict[str, Any], question: str | None, every: str | None, hour: int | None,
+                       email: bool | None) -> dict[str, Any]:
+    """The scheduled-question template with the person's own question, rhythm and hour in it. What is left out
+    stays as the template has it. The workflow is named after the question, so a list of several reads as what
+    each one asks."""
+    import copy
+
+    t = copy.deepcopy(template)
+    ask, tell = t["definition"]["steps"]
+    text = " ".join((question or "").split())
+    if text:
+        ask["prompt"] = f"As of {{{{today}}}}: {text}"
+        t["name"] = text if len(text) <= 80 else text[:77].rstrip() + "…"
+    if every or hour is not None:
+        t["definition"]["trigger"]["cron"] = RHYTHMS[every or "week"].format(hour=8 if hour is None else hour)
+    if email is not None:
+        tell["channels"] = ["in_app", "email"] if email else ["in_app"]
+    return t
 
 
 def get_template(key: str) -> dict[str, Any] | None:
@@ -160,6 +204,7 @@ LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
         "bank_statement_mail": {"name": "كشوف الحساب البنكية من البريد", "category": "النقد", "description": "عندما يرسل البنك كشف حساب بالبريد: حفظ المرفق في المستندات وتلخيص الرصيد الافتتاحي والختامي والبنود غير المعتادة.", "steps": ["قراءة الكشف", "مشاركة"]},
         "erp_webhook": {"name": "حدث من نظام آخر", "category": "التكاملات", "description": "يرسل نظام آخر (ERP أو مزوّد مدفوعات أو نموذج) حدثاً؛ فيفحصه المساعد ويطلب الموافقة عندما يحتاج الأمر إلى قرار بشري.", "steps": ["فحص الحدث", "هل يحتاج إلى قرار؟", "القرار"]},
         "refresh_file": {"name": "تحديث مصنف كل صباح", "category": "الملفات", "description": "إعادة تشغيل استعلامات مصنف مرتبط بالأدلة كل يوم عمل وإبلاغك عندما يجهز الإصدار الجديد. اختر المصنف قبل التفعيل.", "steps": ["تحديث المصنف", "إبلاغي"]},
+        "scheduled_question": {"name": "سؤال في موعد ثابت", "category": "التقارير", "description": "كل يوم إثنين الساعة 8: يجيب المساعد عن سؤال واحد عن الدفاتر ويرسل لك الجواب داخل التطبيق، وبالبريد الإلكتروني عند ربط Gmail. اكتب سؤالك واختر التكرار.", "steps": ["طرح السؤال", "إرسال الجواب"]},
     },
     "es": {
         "close_overnight": {"name": "Cierre mientras duermes", "category": "Cierre", "description": "A las 2 de la madrugada del día 1 de cada mes: prepara el cierre del mes anterior desde el libro mayor (propone devengos y amortizaciones que faltan, concilia el banco si se añadió el extracto, lista variaciones grandes y clientes sin facturar) y avisa al equipo financiero de que está listo para revisar. No se contabiliza nada en el sistema contable.", "steps": ["Preparar el cierre", "Avisar al equipo financiero"]},
@@ -169,6 +214,7 @@ LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
         "bank_statement_mail": {"name": "Extractos bancarios por correo", "category": "Tesorería", "description": "Cuando el banco envía un extracto por correo: guarda el adjunto en Documentos y resume saldo inicial, saldo final y partidas inusuales.", "steps": ["Leer el extracto", "Compartir"]},
         "erp_webhook": {"name": "Evento de otro sistema", "category": "Integraciones", "description": "Otro sistema (un ERP, una pasarela de pago, un formulario) envía un evento; el asistente lo revisa y pide aprobación cuando hace falta una persona.", "steps": ["Revisar el evento", "¿Requiere decisión?", "Decidir"]},
         "refresh_file": {"name": "Actualizar un libro cada mañana", "category": "Archivos", "description": "Vuelve a ejecutar las consultas de un libro con evidencias cada día laborable y te avisa cuando la nueva versión está lista. Elige el libro antes de activarlo.", "steps": ["Actualizar el libro", "Avisarme"]},
+        "scheduled_question": {"name": "Una pregunta con horario", "category": "Informes", "description": "Cada lunes a las 8: el asistente responde una pregunta sobre los libros y le envía la respuesta en la aplicación, y por correo cuando Gmail está conectado. Escriba su pregunta y elija la frecuencia.", "steps": ["Hacer la pregunta", "Enviar la respuesta"]},
     },
     "fr": {
         "close_overnight": {"name": "La clôture pendant votre sommeil", "category": "Clôture", "description": "À 2 h le 1er de chaque mois : prépare la clôture du mois précédent depuis le grand livre (charges à payer et dotations manquantes proposées, banque rapprochée si un relevé a été ajouté, écarts importants et clients non facturés listés), puis prévient l’équipe finance qu’elle est prête à être revue. Rien n’est comptabilisé dans le logiciel comptable.", "steps": ["Préparer la clôture", "Prévenir l’équipe finance"]},
@@ -178,6 +224,7 @@ LOCALIZED: dict[str, dict[str, dict[str, Any]]] = {
         "bank_statement_mail": {"name": "Relevés bancaires par e-mail", "category": "Trésorerie", "description": "Quand la banque envoie un relevé par e-mail : enregistre la pièce jointe dans les documents et résume solde d’ouverture, solde de clôture et opérations inhabituelles.", "steps": ["Lire le relevé", "Partager"]},
         "erp_webhook": {"name": "Événement d’un autre système", "category": "Intégrations", "description": "Un autre système (ERP, prestataire de paiement, formulaire) envoie un événement ; l’assistant le vérifie et demande une approbation quand une personne doit décider.", "steps": ["Vérifier l’événement", "Décision nécessaire ?", "Décider"]},
         "refresh_file": {"name": "Actualiser un classeur chaque matin", "category": "Fichiers", "description": "Relance chaque jour ouvré les requêtes d’un classeur justifié et vous prévient quand la nouvelle version est prête. Choisissez le classeur avant de l’activer.", "steps": ["Actualiser le classeur", "Me prévenir"]},
+        "scheduled_question": {"name": "Une question à heure fixe", "category": "Rapports", "description": "Chaque lundi à 8 h : l’assistant répond à une question sur les comptes et vous envoie la réponse dans l’application, et par e-mail quand Gmail est connecté. Écrivez votre question et choisissez la fréquence.", "steps": ["Poser la question", "Envoyer la réponse"]},
     },
 }
 

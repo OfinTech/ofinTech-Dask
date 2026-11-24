@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -11,7 +11,7 @@ from ..db import loads
 from ..errors import Invalid, NotFound
 from ..web import Ctx, Router
 from ..workflows.engine import WorkflowDef, upcoming
-from ..workflows.templates import localized
+from ..workflows.templates import localized, scheduled_question
 
 router = Router()
 
@@ -111,6 +111,12 @@ async def templates(ctx: Ctx) -> list[dict[str, Any]]:
 class FromTemplateIn(BaseModel):
     key: str = Field(max_length=60)
     lang: str | None = Field(default=None, max_length=5)
+    # The scheduled-question template only: the person's question, how often and at what hour it is asked, and
+    # whether the answer is also sent by e-mail. Left out, the template is saved as it is written.
+    question: str | None = Field(default=None, max_length=2000)
+    every: Literal["day", "weekday", "week", "month"] | None = None
+    hour: int | None = Field(default=None, ge=0, le=23)
+    email: bool | None = None
 
 
 @router.post("/api/w/{ws}/workflows/from-template", role="editor", body=FromTemplateIn)
@@ -118,6 +124,8 @@ async def from_template(ctx: Ctx) -> dict[str, Any]:
     t = next((x for x in localized(ctx.body.lang or (ctx.user or {}).get("language")) if x["key"] == ctx.body.key), None)
     if t is None:
         raise NotFound("No such template.")
+    if t["key"] == "scheduled_question":
+        t = scheduled_question(t, ctx.body.question, ctx.body.every, ctx.body.hour, ctx.body.email)
     wf = ctx.engine.workflows.save(ctx.workspace, ctx.user_id, t["name"], t["description"],  # type: ignore[arg-type]
                                    WorkflowDef.model_validate(t["definition"]), False)
     ctx.audit("workflow.create", wf["id"], {"template": t["key"]})

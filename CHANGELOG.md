@@ -7,6 +7,39 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Thirteen weeks of cash by the direct method, from the assistant.** The forecast was by month, from a plan.
+  Lenders and boards ask for cash week by week from what is actually owed and owing, and asked of a model that
+  was a table of sums nobody could check. `analysis/weekly_cash.py` works it out from the general ledger and the
+  read-only `weekly_cash_forecast` tool reports it: for each of thirteen weeks from a month end, receipts from
+  open customer invoices (placed by that customer's own payment history where it has three settled invoices in
+  the last year, by terms where it has not), payments of open supplier bills (the same way), standing payments
+  found in the ledger (paid from the bank to the same account in each of the last three months for about the
+  same amount, or every third month three times: rent, payroll, loan instalments, a quarterly tax) carried
+  forward at the latest amount, the balance at the end of each week, and the first week it falls below zero or a
+  floor. Every placed invoice, bill and standing payment names the entries it came from. It says what it
+  assumed (terms of 30 days unless given, because the ledger carries no due date; overdue items in week 1) and
+  what it leaves out (sales not yet invoiced, bills not yet received, payments with no pattern), with the
+  monthly averages of the last three months for scale. With fewer than three months of ledger it gives receipts
+  and bills by week and no balance, rather than one that leaves rent and payroll out. The built-in
+  cash-flow-forecast skill starts from it; it is offered over MCP with the other analysis tools.
+  `docs/FORECASTING.md` has the method.
+- **A question on a timetable.** Workflows could already run the assistant on a schedule and send the result, but
+  it took building one in the editor: a trigger, an assistant step, a notification, and a line of cron. The
+  Workflows page now offers it as a card to fill in: one question about the books, how often (every working
+  day, every Monday, the 1st of each month) and at what hour. It is saved switched off, as every template is, as
+  a two-step workflow named after the question: the assistant answers it as of the day it runs, and the answer
+  is sent to the person who asked, in the app and by e-mail when Gmail is connected. Nothing new runs
+  underneath: it is the workflow engine as it was, so the timetable, the recipients and the steps can be changed
+  in the editor afterwards. `POST /workflows/from-template` takes `question`, `every`, `hour` and `email` for
+  this template and ignores them for the others. In English, Arabic, Spanish and French.
+- **An outside assistant reads the scorecard, a KPI's history, the forecast and the state of the close over MCP.**
+  The MCP endpoint offered the statement tools and the calculators, and not the KPI scorecard built on them: the
+  tools of the "analysis" group were left out of what a key may read. `financial_kpis`, `kpi_detail`,
+  `forecast_report` and `month_end_close` are read-only and are offered now. `prepare_month_end_close` is not: it
+  opens a close and writes its proposals, and is refused by name. The server's instructions tell a client that
+  the figures are computed by the product's own code and are to be reported as given, and `docs/MCP.md` lists
+  what is exposed (it still named tools from before the statement tools existed). A test holds the exact list.
+
 - **The month the cash runs out in, on the Overview page and from the assistant.** The scorecard gave months of
   cash; the question a founder asks is one step further: which month, and what a hire or money raised does to it.
   Left to a model that is a balance, an average and a division done in its head. `analysis/runway.py` works it out

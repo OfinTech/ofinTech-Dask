@@ -35,6 +35,37 @@ export function stepProblem(step: any): string | null {
   return null;
 }
 
+// The scheduled-question template, filled in where it is offered: one question, how often, at what hour. It is
+// saved switched off like every template, so the person sees the timetable before anything is sent.
+function QuestionCard({ t, busy, onCreate }: { t: any; busy: boolean; onCreate: (extra: Record<string, unknown>) => void }): ReactNode {
+  const [question, setQuestion] = useState("");
+  const [every, setEvery] = useState("week");
+  const [hour, setHour] = useState(8);
+  return (
+    <div className="panel panel-pad template-card">
+      <span className="xs muted">{t.category}</span>
+      <h3>{t.name}</h3>
+      <p className="small muted" style={{ margin: "6px 0 12px" }}>{t.description}</p>
+      <Field label={tr("Your question")}>
+        <textarea className="textarea" rows={3} maxLength={2000} value={question} onChange={(e) => setQuestion(e.target.value)}
+          placeholder={tr("For example: what changed in cash, receivables and payables this week?")} />
+      </Field>
+      <div className="row" style={{ margin: "8px 0 12px" }}>
+        <select className="select" aria-label={tr("How often")} value={every} onChange={(e) => setEvery(e.target.value)}>
+          <option value="weekday">{tr("Every working day")}</option>
+          <option value="week">{tr("Every Monday")}</option>
+          <option value="month">{tr("On the 1st of each month")}</option>
+        </select>
+        <select className="select" aria-label={tr("At what hour")} value={hour} onChange={(e) => setHour(Number(e.target.value))}>
+          {[6, 7, 8, 9, 12, 17].map((h) => <option key={h} value={h}>{`${String(h).padStart(2, "0")}:00`}</option>)}
+        </select>
+      </div>
+      <button className="btn small" disabled={busy || !question.trim()}
+        onClick={() => onCreate({ question: question.trim(), every, hour, email: true })}>{tr("Schedule this question")}</button>
+    </div>
+  );
+}
+
 function WorkflowList(): ReactNode {
   const { ws } = useApp();
   const list = useLoad(() => get<any[]>(wsPath(ws, "/workflows")), [ws.id]);
@@ -45,8 +76,8 @@ function WorkflowList(): ReactNode {
     const wf = await run(() => post(wsPath(ws, "/workflows"), { ...t, enabled: false }));
     if (wf) go(`workflows/${(wf as any).id}`);
   }
-  async function fromTemplate(key: string) {
-    const wf = await run(() => post(wsPath(ws, "/workflows/from-template"), { key, lang: lang() }), tr("Saved as a draft"));
+  async function fromTemplate(key: string, extra: Record<string, unknown> = {}) {
+    const wf = await run(() => post(wsPath(ws, "/workflows/from-template"), { key, lang: lang(), ...extra }), tr("Saved as a draft"));
     if (wf) go(`workflows/${(wf as any).id}`);
   }
 
@@ -74,7 +105,8 @@ function WorkflowList(): ReactNode {
           <h2>{tr("Start from a template")}</h2>
           <p className="small muted" style={{ marginTop: -4 }}>{tr("Templates are saved switched off, so you can check the steps first.")}</p>
           <div className="grid3">
-            {(templates.data || []).map((t) => (
+            {(templates.data || []).map((t) => t.key === "scheduled_question"
+              ? <QuestionCard key={t.key} t={t} busy={busy} onCreate={(extra) => fromTemplate(t.key, extra)} /> : (
               <div key={t.key} className="panel panel-pad template-card">
                 <span className="xs muted">{t.category} · {triggerText(t.definition.trigger)}</span>
                 <h3>{t.name}</h3>

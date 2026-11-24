@@ -80,9 +80,24 @@ The Workflows page offers ready-made routines, shown in each person's language a
 | Bank statements from e-mail | an e-mail from the bank with a statement | save and read the statement → share |
 | Event from another system | webhook | check the event → needs a decision? → approval |
 | Refresh a workbook every morning | working days 06:00 | refresh the chosen workbook (two retries) → tell me |
+| A question on a timetable | Mondays 08:00, or the rhythm you choose | the assistant answers your question → the answer is sent to you |
 
 The API: `GET /api/w/{ws}/workflow-templates?lang=ar` and `POST /api/w/{ws}/workflows/from-template`
 (`{"key": "month_end_pack"}`).
+
+### A question on a timetable
+
+The last template is filled in where it is offered: write one question about the books, choose how often it is
+asked (every working day, every Monday, the 1st of each month) and at what hour, and it is saved, switched off,
+as a workflow named after the question. It has two steps: an assistant step that asks the question as of the day
+it runs, and a notification to you with the answer, in the app and by e-mail when Gmail is connected. Open it to
+see the next run times in the workspace's time zone, change the day in the timetable, add recipients or a
+condition, and switch it on. The assistant answers with the same read-only tools and the same access as in a
+conversation, and each run keeps the conversation it produced.
+
+From the API the same four choices go with the key, and each may be left out:
+`{"key": "scheduled_question", "question": "Which five customers owe the most?", "every": "week", "hour": 8, "email": true}`.
+`every` is `day`, `weekday`, `week` or `month`; `hour` is 0 to 23. They are read for this template only.
 
 ## Running
 

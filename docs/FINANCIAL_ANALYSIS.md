@@ -199,11 +199,13 @@ or add a KPI with its own formula, unit and direction. Changes are audited.
 
 ## The assistant
 
-The assistant has three read-only tools:
+The assistant has four read-only tools:
 
 - `financial_kpis`: the scorecard, optionally one group;
 - `kpi_detail`: one KPI, with its history and the accounts behind it;
-- `forecast_report`: see [FORECASTING.md](FORECASTING.md).
+- `forecast_report`: see [FORECASTING.md](FORECASTING.md);
+- `weekly_cash_forecast`: thirteen weeks of cash by the direct method, see
+  [FORECASTING.md](FORECASTING.md#thirteen-weeks-of-cash-by-the-direct-method).
 
 It cannot change targets, formulas, roles or forecasts.
 
