@@ -87,6 +87,15 @@ def incomplete_error(provider: str, malformed: int) -> UpstreamError:
                          code="llm_incomplete")
 
 
+# Servers that answered a request carrying stream_options with a 400 or 422 and then answered the same request
+# without it: they are not asked again while the engine runs, so the refusal costs one request, once.
+_REFUSES_STREAM_OPTIONS: set[str] = set()
+# How such a refusal reads, across the servers seen: the field's own name, or the usual words for a field the
+# server does not know.
+_UNKNOWN_FIELD = ("stream_options", "include_usage", "extra inputs", "extra_forbidden", "unrecognized",
+                  "unknown field", "unknown parameter", "unexpected field", "additional properties")
+
+
 class OpenAICompatible:
     def __init__(self, *, label: str, base_url: str, api_key: str | None, model: str,
                  auth_header: str = "bearer", stream_usage: bool = True, timeout: float = 120.0,
@@ -96,7 +105,9 @@ class OpenAICompatible:
         self.api_key = api_key
         self.model = model
         self.auth_header = auth_header
-        self.stream_usage = stream_usage
+        # Token counts come in the stream only when asked for (stream_options.include_usage); without them every
+        # answer is recorded as zero tokens.
+        self.stream_usage = stream_usage and self.base_url not in _REFUSES_STREAM_OPTIONS
         self.timeout = timeout
         self.transport = transport
         self.extra_headers = extra_headers or {}
@@ -160,12 +171,21 @@ class OpenAICompatible:
             async with self._client() as client:
                 async with client.stream("POST", f"{self.base_url}/chat/completions", headers=self._headers(),
                                          json=body) as resp:
-                    if resp.status_code == 400 and self.stream_usage:
+                    if resp.status_code in (400, 422) and self.stream_usage:
+                        # A server that does not know the field may refuse the request. When the refusal reads
+                        # like that (it names the field, or speaks of an unknown or extra one, or is a 422), the
+                        # request is tried once more without it, and a server that then answers is remembered.
+                        # Any other 400 is a permanent error, and a permanent error is not retried.
                         text = (await resp.aread()).decode(errors="replace")
-                        if "stream_options" in text:
+                        if resp.status_code == 422 or any(w in text.lower() for w in _UNKNOWN_FIELD):
                             self.stream_usage = False
-                            async for ev in self.stream(messages, tools, temperature=temperature, max_tokens=max_tokens):
-                                yield ev
+                            try:
+                                async for ev in self.stream(messages, tools, temperature=temperature, max_tokens=max_tokens):
+                                    yield ev
+                            except Exception:
+                                self.stream_usage = True
+                                raise
+                            _REFUSES_STREAM_OPTIONS.add(self.base_url)
                             return
                         raise upstream_error(self.label, resp.status_code, text)
                     if resp.status_code >= 400:

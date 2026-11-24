@@ -70,7 +70,10 @@ def _build_model(engine: Engine, ws_id: str, provider_id: str, model: str) -> Ch
         api_key=api_key,
         model=model,
         auth_header=kind.auth_header,
-        stream_usage=options.get("stream_usage", kind.kind not in {"ollama", "lmstudio", "openai_compatible", "mistral"}),
+        # Asked of every server but Mistral's own API, which was left as it was (not tried here). Until 24 Nov 2026
+        # a custom endpoint, Ollama and LM Studio were not asked either, so a model served that way (vLLM, for
+        # one) was recorded as using no tokens at all. A server that refuses the field is asked once and no more.
+        stream_usage=options.get("stream_usage", kind.kind != "mistral"),
         transport=transport,
         extra_headers={"X-Title": "OfinTech Desk"} if kind.kind == "openrouter" else None,
     )
