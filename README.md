@@ -21,6 +21,10 @@
   <a href="https://discord.gg/hbzN6udBM">Discord</a>
 </p>
 
+<p align="center">
+  <a href="https://devhunt.org/tool/ofintech-desk" target="_blank" title="OfinTech Desk on DevHunt"><img src="https://devhunt.org/badge/ofintech-desk.svg" alt="OfinTech Desk - Featured on DevHunt" width="220" height="54" /></a>
+</p>
+
 ---
 
 OfinTech Desk reads your ledger, spreadsheets, documents and inbox, does the arithmetic in code, fills in your own
