@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A question on a timetable.** Workflows could already run the assistant on a schedule and send the result, but
+  it took building one in the editor: a trigger, an assistant step, a notification, and a line of cron. The
+  Workflows page now offers it as a card to fill in: one question about the books, how often (every working
+  day, every Monday, the 1st of each month) and at what hour. It is saved switched off, as every template is, as
+  a two-step workflow named after the question: the assistant answers it as of the day it runs, and the answer
+  is sent to the person who asked, in the app and by e-mail when Gmail is connected. Nothing new runs
+  underneath: it is the workflow engine as it was, so the timetable, the recipients and the steps can be changed
+  in the editor afterwards. `POST /workflows/from-template` takes `question`, `every`, `hour` and `email` for
+  this template and ignores them for the others. In English, Arabic, Spanish and French.
 - **An outside assistant reads the scorecard, a KPI's history, the forecast and the state of the close over MCP.**
   The MCP endpoint offered the statement tools and the calculators, and not the KPI scorecard built on them: the
   tools of the "analysis" group were left out of what a key may read. `financial_kpis`, `kpi_detail`,

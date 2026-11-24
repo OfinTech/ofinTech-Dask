@@ -1891,5 +1891,13 @@ const d: Record<string, string> = {
   "Cash runs out in": "La trésorerie s'épuise en",
   "The month the balance reaches zero at this rate.": "Le mois où le solde atteint zéro à ce rythme.",
   "There is no such month while cash is coming in.": "Aucun mois de ce type tant que la trésorerie augmente.",
+  "Your question": "Votre question",
+  "For example: what changed in cash, receivables and payables this week?": "Par exemple : qu’est-ce qui a changé cette semaine dans la trésorerie, les créances et les dettes ?",
+  "How often": "À quelle fréquence",
+  "Every working day": "Chaque jour ouvré",
+  "Every Monday": "Chaque lundi",
+  "On the 1st of each month": "Le 1er de chaque mois",
+  "At what hour": "À quelle heure",
+  "Schedule this question": "Planifier cette question",
 };
 export default d;

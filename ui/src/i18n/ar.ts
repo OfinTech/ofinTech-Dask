@@ -1891,5 +1891,13 @@ const d: Record<string, string> = {
   "Cash runs out in": "شهر نفاد السيولة",
   "The month the balance reaches zero at this rate.": "الشهر الذي يصل فيه الرصيد إلى الصفر بهذا المعدل.",
   "There is no such month while cash is coming in.": "لا يوجد شهر كهذا ما دام النقد يزيد.",
+  "Your question": "سؤالك",
+  "For example: what changed in cash, receivables and payables this week?": "مثال: ماذا تغيّر في النقد والذمم المدينة والدائنة هذا الأسبوع؟",
+  "How often": "كم مرة",
+  "Every working day": "كل يوم عمل",
+  "Every Monday": "كل يوم إثنين",
+  "On the 1st of each month": "في اليوم الأول من كل شهر",
+  "At what hour": "في أي ساعة",
+  "Schedule this question": "جدولة هذا السؤال",
 };
 export default d;
