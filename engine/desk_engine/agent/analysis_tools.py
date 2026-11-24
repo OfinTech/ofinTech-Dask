@@ -742,3 +742,99 @@ async def _cash_runway(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
             {"key": "cash", "label": "Cash at month end", "format": "money"}]
     rows = [[x["month"], x["burn"], x["cash"]] for x in r["by_month"]]
     return ToolOutput("\n".join(out), [table_block(cols, rows, "Burn by month")], r)
+
+
+# --- thirteen weeks of cash, by the direct method ------------------------------------------------------------------
+# Week by week from what is owed, what is owing and what is paid every month (analysis/weekly_cash.py). It is in the
+# "analysis" group: the words forecast, cash flow and liquidity bring it in.
+def _placed_by(part: dict[str, Any], who: str, verb: str, weeks: int) -> str:
+    named = [f"{p['party']} ({p['days']} days over {p['settled_documents']} settled)" for p in part["parties"]
+             if p["basis"] == "history"][:8]
+    out = (f"{part['by_history']} {who} placed by the days they have taken to {verb}"
+           + (": " + "; ".join(named) if named else "") + f". {part['by_terms']} placed by terms of "
+           f"{part['terms_days']} days, an assumption: the ledger carries no due date.")
+    if part["overdue"]:
+        out += f" {part['overdue']:,.2f} is already past that date and is put in week 1."
+    if part["later"]:
+        out += f" {part['later']:,.2f} falls after week {weeks} and is not in the weeks."
+    if part["credit"]:
+        out += f" {part['credit']:,.2f} was settled ahead of any document and is not a forecast either way."
+    return out
+
+
+@registry.tool("weekly_cash_forecast", "Thirteen weeks of cash by the direct method, from a month end: each week's "
+               "receipts from open customer invoices (placed by each customer's own payment history, or by terms "
+               "where there is none), payments of open supplier bills, standing payments found in the ledger (paid "
+               "from the bank every month or every quarter for about the same amount: rent, payroll, loan "
+               "instalments, tax), the balance at the end of each week and the first week it falls below zero or "
+               "below a floor. It states what it assumed and what it leaves out (sales not yet invoiced, bills not "
+               "yet received). Use it for a 13-week or weekly cash forecast, short-term liquidity, or whether "
+               "cash covers the coming weeks: report its figures and its limits as given. For the months ahead "
+               "from a plan use forecast_report; for how long the cash lasts at the current rate use cash_runway.",
+               schema({"month": {"type": "string", "description": "YYYY-MM; the forecast starts the day after this "
+                                                                  "month ends. The latest month when left out"},
+                       "customer_terms_days": {"type": "integer", "minimum": 0, "maximum": 365,
+                                               "description": "days customers are given to pay, used where a "
+                                                              "customer has no payment history; 30 when left out"},
+                       "supplier_terms_days": {"type": "integer", "minimum": 0, "maximum": 365,
+                                               "description": "days suppliers give, used the same way; 30 when left out"},
+                       "floor": {"type": "number", "minimum": 0,
+                                 "description": "the balance cash should not fall below; zero when left out"}}),
+               category="analysis", available=_has_ledger, offload=True)
+async def _weekly_cash_forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    month = _ym(a.get("month"))
+    try:
+        r = ctx.engine.statements.weekly_cash(ctx.ws_id, ctx.workspace, month, a.get("customer_terms_days"),
+                                              a.get("supplier_terms_days"), a.get("floor"))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, month):
+        return ToolOutput(problem, [], {"month": month, "available": False})
+    weeks, st = r["weeks"], r["standing"]
+    out = [f"Cash for the {r['weeks_ahead']} weeks from {weeks[0]['start']} to {weeks[-1]['end']}, by the direct method, "
+           f"in {r.get('currency') or 'the base currency'}, from the general ledger “{r['ledger']['name']}” as it stood "
+           f"at {r['as_of']}. Cash at that date: {r['opening_cash']:,.2f}." + _provenance_note(r)]
+    if r["complete"]:
+        t = r["totals"]
+        out.append(f"Over the {r['weeks_ahead']} weeks: receipts {t['receipts']:,.2f}, less bills {t['bills']:,.2f} and "
+                   f"standing payments {t['standing']:,.2f}, leaves {t['closing']:,.2f} at {weeks[-1]['end']}.")
+        low, b = r["floor"], r["first_week_below"]
+        mark = "zero" if low == 0 else f"the floor of {low:,.2f}"
+        out.append(f"The balance first falls below {mark} in week {b['week']} ({b['start']} to {b['end']}), which ends "
+                   f"at {b['closing']:,.2f}." if b else f"The balance stays at or above {mark} in every week.")
+        out.append("By week (receipts; bills; standing payments; balance at the end): " + " | ".join(
+            f"{w['week']} to {w['end']}: {w['receipts']:,.2f}; {w['bills']:,.2f}; {w['standing']:,.2f}; {w['closing']:,.2f}"
+            for w in weeks))
+    else:
+        out.append("No weekly balance is given: see what could not be worked out. Receipts and bills by week "
+                   "(receipts; bills): " + " | ".join(f"{w['week']} to {w['end']}: {w['receipts']:,.2f}; {w['bills']:,.2f}"
+                                                      for w in weeks))
+    out.append("Receipts are the open customer invoices only: " + _placed_by(r["receipts"], "customer(s)", "pay", r["weeks_ahead"]))
+    out.append("Bills are the open supplier bills only: " + _placed_by(r["bills"], "supplier(s)", "be paid", r["weeks_ahead"]))
+    if st is not None:
+        if st["found"]:
+            out.append("Standing payments carried forward at the latest amount, on the same days: " + "; ".join(
+                f"{x['label']} {x['amount']:,.2f} every {x['every']} (paid "
+                + ", ".join(f"{b['month']} {b['amount']:,.2f}" for b in x["by_month"]) + ")" for x in st["found"][:12]) + ".")
+        else:
+            out.append(f"No standing payment was found: nothing was paid straight from the bank to the same account "
+                       f"in each of {', '.join(st['window'])} for about the same amount, or every third month.")
+        if st["varying"]:
+            out.append("Paid every month but for amounts too far apart to carry forward, so not in the forecast: "
+                       + "; ".join(f"{x['label']} (" + ", ".join(f"{b['amount']:,.2f}" for b in x["by_month"]) + ")"
+                                   for x in st["varying"][:8]) + ".")
+        rc = st["recent"]
+        out.append(f"Not in the forecast: sales not yet invoiced, bills not yet received and payments with no "
+                   f"pattern, so later weeks understate both sides. For scale, the monthly average over "
+                   f"{st['window'][0]} to {st['window'][-1]}: received from customers {rc['customer_receipts']:,.2f}, paid "
+                   f"to suppliers {rc['supplier_payments']:,.2f}, other money received {rc['other_receipts']:,.2f}, "
+                   f"other payments not carried forward {rc['other_payments']:,.2f}.")
+    if r["could_not_work_out"]:
+        out.append("Could not be worked out: " + " ".join(r["could_not_work_out"]))
+    cols = [{"key": "week", "label": "Week", "format": "number"}, {"key": "end", "label": "Week ending", "format": "date"},
+            {"key": "opening", "label": "Opening cash", "format": "money"},
+            {"key": "receipts", "label": "Receipts", "format": "money"}, {"key": "bills", "label": "Bills", "format": "money"},
+            {"key": "standing", "label": "Standing payments", "format": "money"},
+            {"key": "closing", "label": "Closing cash", "format": "money"}]
+    rows = [[w["week"], w["end"], w["opening"], w["receipts"], w["bills"], w["standing"], w["closing"]] for w in weeks]
+    return ToolOutput("\n".join(out), [table_block(cols, rows, "Cash by week")], r)

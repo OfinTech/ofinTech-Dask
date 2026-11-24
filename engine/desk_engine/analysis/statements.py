@@ -197,6 +197,13 @@ class Statements:
         led, meta, i = self._load(ws_id, month)
         return self._about(workspace, led, meta) | cash_runway(led, led.months[i], span, changes)
 
+    def weekly_cash(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, customer_terms: Any = None,
+                    supplier_terms: Any = None, floor: Any = None) -> dict[str, Any]:
+        from .weekly_cash import weekly_cash
+
+        led, meta, i = self._load(ws_id, month)
+        return self._about(workspace, led, meta) | weekly_cash(led, led.months[i], customer_terms, supplier_terms, floor)
+
     def profit_drivers(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, against: str = "average",
                        span: int = 6) -> dict[str, Any]:
         from .activity import profit_drivers

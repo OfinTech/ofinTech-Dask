@@ -7,6 +7,22 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Thirteen weeks of cash by the direct method, from the assistant.** The forecast was by month, from a plan.
+  Lenders and boards ask for cash week by week from what is actually owed and owing, and asked of a model that
+  was a table of sums nobody could check. `analysis/weekly_cash.py` works it out from the general ledger and the
+  read-only `weekly_cash_forecast` tool reports it: for each of thirteen weeks from a month end, receipts from
+  open customer invoices (placed by that customer's own payment history where it has three settled invoices in
+  the last year, by terms where it has not), payments of open supplier bills (the same way), standing payments
+  found in the ledger (paid from the bank to the same account in each of the last three months for about the
+  same amount, or every third month three times: rent, payroll, loan instalments, a quarterly tax) carried
+  forward at the latest amount, the balance at the end of each week, and the first week it falls below zero or a
+  floor. Every placed invoice, bill and standing payment names the entries it came from. It says what it
+  assumed (terms of 30 days unless given, because the ledger carries no due date; overdue items in week 1) and
+  what it leaves out (sales not yet invoiced, bills not yet received, payments with no pattern), with the
+  monthly averages of the last three months for scale. With fewer than three months of ledger it gives receipts
+  and bills by week and no balance, rather than one that leaves rent and payroll out. The built-in
+  cash-flow-forecast skill starts from it; it is offered over MCP with the other analysis tools.
+  `docs/FORECASTING.md` has the method.
 - **A question on a timetable.** Workflows could already run the assistant on a schedule and send the result, but
   it took building one in the editor: a trigger, an assistant step, a notification, and a line of cron. The
   Workflows page now offers it as a card to fill in: one question about the books, how often (every working

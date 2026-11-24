@@ -39,7 +39,7 @@ same code:
 | From | Tools |
 |---|---|
 | The general ledger | `financial_statements`, `ageing_report`, `ledger_anomalies`, `profit_drivers`, `account_activity`, `ledger_entries`, `cash_runway`, and `bank_reconciliation` once a bank statement is imported |
-| The scorecard and the plan | `financial_kpis`, `kpi_detail`, `forecast_report`, `month_end_close` (the state of a close, read only) |
+| The scorecard and the plan | `financial_kpis`, `kpi_detail`, `forecast_report`, `weekly_cash_forecast`, `month_end_close` (the state of a close, read only) |
 | Data and documents | `list_datasets`, `describe_dataset`, `query_dataset`, `search_workspace`; with a connected accounting system, `accounting_report` and `list_invoices` |
 | Calculators | the `calc_*` tools (NPV, loan schedules, depreciation, ratios, arithmetic, what-if) |
 

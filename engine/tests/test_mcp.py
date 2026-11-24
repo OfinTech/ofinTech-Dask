@@ -126,7 +126,7 @@ class MCPServerSide(unittest.TestCase):
         # bank_reconciliation joins these once a bank statement is imported beside the ledger
         from_the_ledger = {"financial_statements", "ageing_report", "ledger_anomalies", "profit_drivers",
                            "account_activity", "ledger_entries", "cash_runway"}
-        scorecard = {"financial_kpis", "kpi_detail", "forecast_report", "month_end_close"}
+        scorecard = {"financial_kpis", "kpi_detail", "forecast_report", "month_end_close", "weekly_cash_forecast"}
         data = {"list_datasets", "describe_dataset", "query_dataset", "search_workspace"}
         calculators = {n for n in names if n.startswith("calc_")}
         self.assertEqual(names - calculators, from_the_ledger | scorecard | data)
