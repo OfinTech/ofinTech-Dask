@@ -353,8 +353,10 @@ async def _anomalies(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
         line = PL_LABELS.get(x["measure"], x["measure"])
         if x["kind"] == "unusual_amount":
             change = "" if x.get("change") is None else f" ({x['change'] * 100:+.0f}%)"
+            # the average is over the six months before it, or over as many as the ledger has
+            span = "six months" if r["history_months"] >= 6 else f"{r['history_months']} months"
             lines.append(f"- Unusual amount, {x['account']} ({line}): {x['value']:,.2f} this month against an average of "
-                         f"{x['average']:,.2f} over the previous six months{change}.")
+                         f"{x['average']:,.2f} over the previous {span}{change}.")
         elif x["kind"] == "missing_posting":
             lines.append(f"- Nothing posted, {x['account']} ({line}): posted every month recently (about "
                          f"{x['average']:,.2f} a month) but nothing this month.")
@@ -468,3 +470,205 @@ async def _bank_reconciliation(ctx: ToolContext, a: dict[str, Any]) -> ToolOutpu
                for x in r["bank_only"]])
     return ToolOutput("\n".join(lines), [table_block(cols, rows, "Unmatched movements")] if rows else [], r)
 
+
+
+# --- the ledger's own lines, read as they are ----------------------------------------------------------------------
+# Three more closed questions (analysis/activity.py): what moved a month's profit and which accounts did it, what
+# was posted on an account, and what an entry holds. Before these, the assistant answered them with query_dataset
+# and its own arithmetic: an average nobody could trace, a payment it could not find, a total given as the amount
+# before tax.
+
+def _ym(v: Any) -> str | None:
+    """A month as the ledger keys it; a full date is read as its month."""
+    text = str(v or "").strip()
+    return (text[:7] if re.fullmatch(r"\d{4}-\d{2}(-\d{2})?", text) else text) or None
+
+
+def _period(first: str, last: str) -> str:
+    return first if first == last else f"{first} to {last}"
+
+
+def _side(v: float | None) -> str:
+    """A balance as a ledger shows it: the amount and the side it sits on."""
+    if v is None:
+        return "—"
+    return "0.00" if abs(v) < 0.005 else f"{abs(v):,.2f} {'debit' if v > 0 else 'credit'}"
+
+
+def _moved(change: float) -> str:
+    return "unchanged" if abs(change) < 0.005 else f"{'higher' if change > 0 else 'lower'} by {abs(change):,.2f}"
+
+
+def _amounts(a: dict[str, float] | None) -> str:
+    return "" if not a else (f" Before tax {a['before_tax']:,.2f}, tax {a['tax']:,.2f}, total {a['total']:,.2f}.")
+
+
+def _legs(rows: list[dict[str, Any]], limit: int) -> str:
+    shown = "; ".join(f"{x['account']} " + (f"debit {x['debit']:,.2f}" if x["debit"] else f"credit {x['credit']:,.2f}")
+                      for x in rows[:limit])
+    return shown + (f"; and {len(rows) - limit} more lines" if len(rows) > limit else "")
+
+
+@registry.tool("profit_drivers", "Why a month's profit is what it is: its profit and loss against a baseline, line by "
+               "line and account by account, each with its effect on net profit, and the months of the last twelve "
+               "that made a loss. The baseline is the average of the months before it (six unless months says "
+               "otherwise), the month before it, or the same month a year earlier, and the result says which. Use it "
+               "whenever the user asks what caused a loss, a drop or a jump in profit, revenue or costs, which "
+               "account is behind it, or what changed against the usual month: report its figures and its baseline "
+               "as given, and do not work out an average of months yourself.",
+               schema({"month": {"type": "string", "description": "YYYY-MM; the latest month when left out"},
+                       "against": {"type": "string", "enum": ["average", "previous_month", "last_year"],
+                                   "description": "average (of the months before it) when left out"},
+                       "months": {"type": "integer", "minimum": 1, "maximum": 12,
+                                  "description": "how many months before it to average; 6 when left out"}}),
+               available=_has_ledger, offload=True)
+async def _profit_drivers(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    month = _ym(a.get("month"))
+    try:
+        r = ctx.engine.statements.profit_drivers(ctx.ws_id, ctx.workspace, month, a.get("against") or "average",
+                                                 int(a.get("months") or 6))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, month):
+        return ToolOutput(problem, [], {"month": month, "available": False})
+    base = r["baseline_months"]
+    versus = {"previous_month": f"the month before it ({base[0]})",
+              "last_year": f"the same month a year earlier ({base[0]})"}.get(
+                  r["against"], f"the month before it ({base[0]})" if len(base) == 1 else
+                  f"the average of the {len(base)} months before it ({base[0]} to {base[-1]})")
+    net = r["net_profit"]
+    out = [f"What moved profit in {r['month']}, against {versus}, in {r.get('currency') or 'the base currency'}, from "
+           f"the general ledger “{r['ledger']['name']}”. Costs are positive amounts." + _provenance_note(r),
+           f"Net profit: {net['value']:,.2f} against {net['baseline']:,.2f}, {_moved(net['change'])}."]
+
+    def row(label: str, x: dict[str, Any]) -> str:
+        return (f"- {label}: {x['value']:,.2f} against {x['baseline']:,.2f} ({_moved(x['change'])}): profit "
+                f"{_moved(x['effect'])}.")
+    moved = sorted((x for x in r["lines"] if x["effect"] is not None and abs(x["effect"]) >= 0.005),
+                   key=lambda x: -abs(x["effect"]))
+    out.append("By line, the largest effect on profit first:" if moved else "No line of the profit and loss moved.")
+    out += [row(PL_LABELS.get(x["measure"], x["measure"]), x) for x in moved]
+    if r["accounts"]:
+        out.append("The accounts behind it, the largest effect first:")
+        out += [row(f"{x['account']} ({PL_LABELS.get(x['measure'], x['measure'])})", x) for x in r["accounts"]]
+        if r["accounts_count"] > len(r["accounts"]):
+            out.append(f"… and {r['accounts_count'] - len(r['accounts'])} accounts that moved less.")
+    losses = "; ".join(f"{x['month']} ({x['net_profit']:,.2f})" for x in r["loss_months"])
+    out.append(f"Months with a loss between {r['year'][0]} and {r['year'][1]}: " + (losses or "none") + ".")
+    cols = [{"key": "what", "label": "Line or account", "format": "text"},
+            {"key": "value", "label": r["month"], "format": "money"},
+            {"key": "baseline", "label": "Baseline", "format": "money"},
+            {"key": "change", "label": "Change", "format": "money"},
+            {"key": "effect", "label": "Effect on profit", "format": "money"}]
+    rows = ([[PL_LABELS.get(x["measure"], x["measure"]), x["value"], x["baseline"], x["change"], x["effect"]]
+             for x in r["lines"]]
+            + [[x["account"], x["value"], x["baseline"], x["change"], x["effect"]] for x in r["accounts"]])
+    return ToolOutput("\n".join(out), [table_block(cols, rows, f"What moved profit in {r['month']}")], r)
+
+
+@registry.tool("account_activity", "What was posted on one account of the general ledger between two months: its "
+               "balance at the start and at the end, total debits and credits, every line with its date, entry number, "
+               "party and description, the other accounts in the same entry, and how much was paid from or received "
+               "into the bank. Name the account by its code or by words from its name, in any language (VAT, zakat, "
+               "loan, rent, sales returns). Use it for what was paid on a tax, a loan or an expense and when, for an "
+               "account's balance and movement, and for the entries behind a figure: report the lines as given, and "
+               "do not rebuild them with query_dataset. Without months it covers the whole ledger.",
+               schema({"account": {"type": "string", "description": "the account's code, or words from its name"},
+                       "from_month": {"type": "string", "description": "YYYY-MM, the first month"},
+                       "to_month": {"type": "string", "description": "YYYY-MM, the last month"},
+                       "party": {"type": "string", "description": "only lines with this customer or supplier"}},
+                      ["account"]),
+               available=_has_ledger, offload=True)
+async def _account_activity(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    from ..analysis.activity import MAX_LINES
+    try:
+        r = ctx.engine.statements.account_activity(ctx.ws_id, ctx.workspace, str(a.get("account") or ""),
+                                                   _ym(a.get("from_month")), _ym(a.get("to_month")), a.get("party"))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    listed = "; ".join(x["label"] for x in r["chart"][:120])
+    if not r["matches"]:
+        return ToolOutput(f"No account in the general ledger “{r['ledger']['name']}” matches “{r['asked']}”. Its "
+                          f"accounts are: {listed}. Ask again with one of these codes or names.", [], r)
+    cur = r.get("currency") or "the base currency"
+    out: list[str] = []
+    if len(r["matches"]) > 1:
+        out.append(f"“{r['asked']}” fits {len(r['matches'])} accounts: " + "; ".join(x["label"] for x in r["matches"])
+                   + (". The first four are shown; name one by its code for the rest." if len(r["matches"]) > 4 else
+                      ". Each is shown below; name one by its code to see it alone."))
+    rows = []
+    for x in r["accounts"]:
+        acct = x["account"]
+        out.append(f"Account {acct['label']} ({acct['class'] or acct['role']}), {_period(x['first'], x['last'])}"
+                   + (f", lines with {x['party']} only" if x["party"] else "") + f", in {cur}, from the general ledger "
+                   f"“{r['ledger']['name']}”." + _provenance_note(r))
+        if x["opening"] is not None:
+            out.append(f"Balance at the start: {_side(x['opening'])}. Debits {x['debit']:,.2f}, credits "
+                       f"{x['credit']:,.2f}. Balance at the end of {x['last']}: {_side(x['closing'])}.")
+        else:
+            out.append(f"Debits {x['debit']:,.2f}, credits {x['credit']:,.2f} in the period (net {_side(x['net'])}).")
+        if x["paid_from_bank"] is not None and x["count"]:
+            out.append(f"Paid from the bank in the same entry: {x['paid_from_bank']:,.2f} of the debits. Received into "
+                       f"the bank in the same entry: {x['received_into_bank']:,.2f} of the credits.")
+        if not x["count"]:
+            out.append("No lines in the period.")
+        elif x["count"] > MAX_LINES:
+            out.append(f"{x['count']} lines, too many to list; by month (ask for one month to see its lines):")
+            out += [f"- {m['month']}: debits {m['debit']:,.2f}, credits {m['credit']:,.2f}"
+                    + (f", balance at the month end {_side(m['closing'])}" if m["closing"] is not None else "")
+                    for m in x["by_month"]]
+        else:
+            out.append(f"Lines ({x['count']}):")
+            for ln in x["lines"]:
+                amount = f"debit {ln['debit']:,.2f}" if ln["debit"] else f"credit {ln['credit']:,.2f}"
+                head = ", ".join(v for v in (ln["date"], ln["entry"], ln["type"], ln["party"]) if v)
+                out.append(f"- {head}: {amount}" + (f", {ln['description']}" if ln["description"] else "")
+                           + (f"; in the same entry: {_legs(ln['with'], 4)}." if ln["with"] else ".")
+                           + _amounts(ln["amounts"]))
+        rows += [[acct["label"], ln["date"], ln["entry"], ln["party"], ln["description"], ln["debit"] or None,
+                  ln["credit"] or None] for ln in x["lines"]]
+    cols = [{"key": "account", "label": "Account", "format": "text"}, {"key": "date", "label": "Date", "format": "date"},
+            {"key": "entry", "label": "Entry", "format": "text"}, {"key": "party", "label": "Party", "format": "text"},
+            {"key": "text", "label": "Description", "format": "text"},
+            {"key": "debit", "label": "Debit", "format": "money"}, {"key": "credit", "label": "Credit", "format": "money"}]
+    return ToolOutput("\n".join(out), [table_block(cols, rows, "Account lines")] if rows else [], r)
+
+
+@registry.tool("ledger_entries", "Whole entries of the general ledger, every line of each: one entry by its number, or "
+               "the entries between two months whose type, descriptions, parties or account names hold the words "
+               "asked for (credit note, a supplier's name, zakat, a bill number), in any language. Where an entry is "
+               "an invoice, a bill or a credit note with a sales-tax line, it also gives the amount before tax, the "
+               "tax and the total. Use it for credit notes and returns, for what an entry is and who it was with, and "
+               "whenever the user asks for an amount before or after VAT: report the lines as given.",
+               schema({"entry": {"type": "string", "description": "an entry number, for example CN-2001"},
+                       "search": {"type": "string", "description": "words to look for, when no entry number is known"},
+                       "from_month": {"type": "string", "description": "YYYY-MM, the first month"},
+                       "to_month": {"type": "string", "description": "YYYY-MM, the last month"}}),
+               available=_has_ledger, offload=True)
+async def _ledger_entries(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    try:
+        r = ctx.engine.statements.ledger_entries(ctx.ws_id, ctx.workspace, a.get("entry"), a.get("search"),
+                                                 _ym(a.get("from_month")), _ym(a.get("to_month")))
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    where = f"the general ledger “{r['ledger']['name']}”"
+    asked = f"entry “{r['entry']}”" if r["entry"] else f"“{r['search']}” between {r['first']} and {r['last']}"
+    if not r["entries"]:
+        return ToolOutput(f"No entry in {where} matches {asked}. Words are looked for in an entry's number, type, "
+                          "descriptions, parties and account names. Entry types in this ledger: "
+                          + (", ".join(r["types"][:30]) or "none recorded") + ".", [], r)
+    out = [f"Entries in {where} matching {asked}: {r['count']}"
+           + (f"; the first {len(r['entries'])} are shown, so narrow the months or the words for the rest."
+              if r["count"] > len(r["entries"]) else ".") + _provenance_note(r)]
+    rows = []
+    for e in r["entries"]:
+        head = ", ".join(v for v in (e["entry"], e["date"], e["type"], e["party"]) if v)
+        out.append(f"- {head}: {_legs(e['lines'], 12)}." + _amounts(e["amounts"]))
+        rows += [[e["entry"], e["date"], e["type"], ln["party"] or e["party"], ln["account"], ln["description"],
+                  ln["debit"] or None, ln["credit"] or None] for ln in e["lines"]]
+    cols = [{"key": "entry", "label": "Entry", "format": "text"}, {"key": "date", "label": "Date", "format": "date"},
+            {"key": "type", "label": "Type", "format": "text"}, {"key": "party", "label": "Party", "format": "text"},
+            {"key": "account", "label": "Account", "format": "text"},
+            {"key": "text", "label": "Description", "format": "text"},
+            {"key": "debit", "label": "Debit", "format": "money"}, {"key": "credit", "label": "Credit", "format": "money"}]
+    return ToolOutput("\n".join(out), [table_block(cols, rows, "Entries")], r)

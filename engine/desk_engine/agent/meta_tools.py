@@ -27,7 +27,7 @@ async def _more(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
 # step was sent, so asked for its tools it lists what it was shown and fills in the rest. On 24 Nov 2026 one
 # answered "53", with a list that included adding a bank transfer, a deposit and a withdrawal: tools that do not
 # exist in a product that moves no money.
-GROUP_NAMES = {"finance": "Finance: calculators, and the ledger's statements, ageing, anomalies and bank reconciliation",
+GROUP_NAMES = {"finance": "Finance: calculators, and the ledger's statements, ageing, anomalies, lines and bank reconciliation",
                "knowledge": "Documents", "memory": "Memory", "skills": "Skills (instructions for a task)",
                "meta": "About the tools themselves", "mcp": "Tools from servers the workspace connected",
                "analysis": "Analysis: KPIs, forecasts and the month-end close", "data": "Data: datasets and dashboards",
