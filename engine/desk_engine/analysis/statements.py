@@ -190,6 +190,13 @@ class Statements:
         lo, hi = self._span(led, first, last)
         return self._about(workspace, led, meta) | find_entries(led, lo, hi, entry, search)
 
+    def cash_runway(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, span: int = 3,
+                    changes: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+        from .runway import cash_runway
+
+        led, meta, i = self._load(ws_id, month)
+        return self._about(workspace, led, meta) | cash_runway(led, led.months[i], span, changes)
+
     def profit_drivers(self, ws_id: str, workspace: dict[str, Any], month: str | None = None, against: str = "average",
                        span: int = 6) -> dict[str, Any]:
         from .activity import profit_drivers

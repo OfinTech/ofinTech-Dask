@@ -672,3 +672,73 @@ async def _ledger_entries(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
             {"key": "text", "label": "Description", "format": "text"},
             {"key": "debit", "label": "Debit", "format": "money"}, {"key": "credit", "label": "Credit", "format": "money"}]
     return ToolOutput("\n".join(out), [table_block(cols, rows, "Entries")], r)
+
+
+# --- how long the cash lasts ----------------------------------------------------------------------------------------
+# The KPI gives months of cash. A founder asks one step further: which month, and what a hire does to it. That is
+# cash, an average and a division, which the model must not do itself (analysis/runway.py does).
+
+_CHANGE_WORDS = {"cost_added": "a cost of {0} a month added", "cost_removed": "a cost of {0} a month removed",
+                 "income_added": "income of {0} a month added", "income_removed": "income of {0} a month removed",
+                 "cash_in": "{0} received once", "cash_out": "{0} paid out once"}
+
+
+def _runway_line(p: dict[str, Any]) -> str:
+    if not p["burning"]:
+        return (f"not burning cash: {abs(p['burn']):,.2f} a month comes in on average, so there is no month in which "
+                f"the cash of {p['cash']:,.2f} runs out at this rate")
+    return (f"burn {p['burn']:,.2f} a month, cash {p['cash']:,.2f}, which lasts {p['months_left']:,.1f} months and runs "
+            f"out in {p['runs_out']}")
+
+
+@registry.tool("cash_runway", "How long the cash lasts: the bank and cash balance at a month end, the average monthly "
+               "burn (net cash out from operating and investing) over the months before it (three unless months "
+               "says otherwise), the months of cash left at that rate, the month the cash runs out in, and the burn "
+               "of each recent month. Give changes to see the same with them applied: a monthly cost or income "
+               "added or removed (a hire, a rent, a contract), or one amount received or paid once (money raised, "
+               "a purchase). Use it for runway, burn rate, when the cash runs out and whether a hire or a cost can "
+               "be afforded: report its figures as given, and say it is the current rate, not a forecast.",
+               schema({"month": {"type": "string", "description": "YYYY-MM; the latest month when left out"},
+                       "months": {"type": "integer", "minimum": 1, "maximum": 12,
+                                  "description": "how many months of burn to average; 3 when left out"},
+                       "changes": {"type": "array", "maxItems": 12, "items": {
+                           "type": "object", "required": ["kind", "amount"], "properties": {
+                               "kind": {"type": "string", "enum": ["cost_added", "cost_removed", "income_added",
+                                                                   "income_removed", "cash_in", "cash_out"],
+                                        "description": "the first four are an amount a month; cash_in and cash_out "
+                                                       "are one amount, once"},
+                               "amount": {"type": "number", "minimum": 0},
+                               "label": {"type": "string", "description": "what it is, in the user's words"}}}}}),
+               available=_has_ledger, offload=True)
+async def _cash_runway(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
+    month = _ym(a.get("month"))
+    try:
+        r = ctx.engine.statements.cash_runway(ctx.ws_id, ctx.workspace, month, int(a.get("months") or 3),
+                                              a.get("changes") or None)
+    except (Invalid, NotFound) as exc:
+        return ToolOutput(exc.message)
+    if problem := _month_problem(r, month):
+        return ToolOutput(problem, [], {"month": month, "available": False})
+    w = r["window"]
+    over = f"the month {w[0]}" if len(w) == 1 else f"the {len(w)} months {w[0]} to {w[-1]}"
+    short = ("" if len(w) >= r["asked_months"] else
+             f" The ledger starts in {r['months'][0]}, so the average is over {len(w)} and not {r['asked_months']}.")
+    out = [f"Cash runway at the end of {r['month']}, in {r.get('currency') or 'the base currency'}, from the general "
+           f"ledger “{r['ledger']['name']}”. Burn is the net cash out from operating and investing, averaged over "
+           f"{over}.{short} This is the current rate carried forward, not a forecast." + _provenance_note(r),
+           "At the current rate: " + _runway_line(r) + ".",
+           "Burn by month (negative is cash coming in): "
+           + "; ".join(f"{x['month']} {x['burn']:,.2f}" for x in r["by_month"]) + "."]
+    s = r["scenario"]
+    if s:
+        said = "; ".join(_CHANGE_WORDS[c["kind"]].format(f"{c['amount']:,.2f}") + (f" ({c['label']})" if c["label"] else "")
+                         for c in s["changes"])
+        out.append(f"With {said}: " + _runway_line(s) + ".")
+        if s["months_change"] is not None:
+            d = s["months_change"]
+            out.append("The cash runs out at the same time." if abs(d) < 0.05 else
+                       f"That is {abs(d):,.1f} months {'later' if d > 0 else 'sooner'}.")
+    cols = [{"key": "month", "label": "Month", "format": "text"}, {"key": "burn", "label": "Burn", "format": "money"},
+            {"key": "cash", "label": "Cash at month end", "format": "money"}]
+    rows = [[x["month"], x["burn"], x["cash"]] for x in r["by_month"]]
+    return ToolOutput("\n".join(out), [table_block(cols, rows, "Burn by month")], r)

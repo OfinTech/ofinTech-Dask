@@ -23,7 +23,10 @@ Rules:
    yourself. For what caused a loss or moved a month's profit, and which account is behind it, use
    profit_drivers and give its baseline as it states it: never average months yourself. For what was posted or
    paid on an account use account_activity, and for a credit note, an entry or an amount before tax use
-   ledger_entries: say the books do not show something only after one of these found nothing.
+   ledger_entries: say the books do not show something only after one of these found nothing. For how long
+   the cash lasts, the burn, the month the cash runs out, or whether a hire or a cost can be afforded, use
+   cash_runway with the change as the user gave it: never divide cash by burn yourself, and say it is the
+   current rate, not a forecast.
    Never do arithmetic yourself: every sum, difference, ratio, percentage or average you state comes
    from calc_arithmetic or another calculator tool, and every figure you give a calculator is one you read in a
    tool result or in the user's messages. For "what would profit be if..." use calc_what_if, which applies the

@@ -1881,5 +1881,15 @@ const d: Record<string, string> = {
   "In effect from": "En vigor desde",
   "Earlier calls keep the rate that applied then. Today if left empty.": "Las llamadas anteriores conservan la tarifa que se aplicaba entonces. Hoy si se deja vacío.",
   "(unpriced)": "(sin tarifa)",
+  "The current rate carried forward, not a forecast.": "El ritmo actual proyectado, no una previsión.",
+  "Average monthly burn": "Consumo mensual medio de caja",
+  "Average monthly cash gain": "Entrada mensual media de caja",
+  "Net cash through trading and investment, averaged over the last {0} months.": "Caja neta de la actividad y la inversión, promediada en los últimos {0} meses.",
+  "Months of cash left": "Meses de caja restantes",
+  "Not burning cash": "No consume caja",
+  "Cash divided by the average monthly burn.": "La caja dividida entre el consumo mensual medio.",
+  "Cash runs out in": "La caja se agota en",
+  "The month the balance reaches zero at this rate.": "El mes en que el saldo llega a cero a este ritmo.",
+  "There is no such month while cash is coming in.": "No existe tal mes mientras entra caja.",
 };
 export default d;
