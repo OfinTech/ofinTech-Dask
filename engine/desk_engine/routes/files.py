@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ValidationError
 from starlette.responses import Response
 
 from ..errors import Invalid
+from ..files.folders import STORED
 from ..files.spec import FileSpec
 from ..web import Ctx, Router
 
@@ -21,7 +22,48 @@ def _version(ctx: Ctx) -> int | None:
 
 @router.get("/api/w/{ws}/files", role="viewer")
 async def list_files(ctx: Ctx) -> list[dict[str, Any]]:
-    return ctx.engine.files.list(ctx.ws_id)
+    """Every file, or with ``?folder=`` the files of one folder (``root`` for the top level)."""
+    return ctx.engine.files.list(ctx.ws_id, ctx.request.query_params.get("folder", "all"))
+
+
+# -- folders. Declared before the routes that take a file id, so that "folders" is never read as one. -----------------
+class FolderIn(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    parent_id: str | None = Field(default=None, max_length=64)
+
+
+class FolderChange(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    parent_id: str | None = Field(default=None, max_length=64)
+    move: bool = False          # true when parent_id is meant, since the top level is null
+
+
+class MoveIn(BaseModel):
+    folder_id: str | None = Field(default=None, max_length=64)
+
+
+@router.get("/api/w/{ws}/files/folders", role="viewer")
+async def list_folders(ctx: Ctx) -> list[dict[str, Any]]:
+    return ctx.engine.files.folders.list(ctx.ws_id)
+
+
+@router.post("/api/w/{ws}/files/folders", role="editor", body=FolderIn)
+async def create_folder(ctx: Ctx) -> dict[str, Any]:
+    return ctx.engine.files.folders.create(ctx.ws_id, ctx.user_id, ctx.body.name, ctx.body.parent_id)  # type: ignore[arg-type]
+
+
+@router.patch("/api/w/{ws}/files/folders/{folder}", role="editor", body=FolderChange)
+async def change_folder(ctx: Ctx) -> dict[str, Any]:
+    """Rename a folder, move it, or both."""
+    return ctx.engine.files.folders.update(ctx.ws_id, ctx.user_id, ctx.request.path_params["folder"],  # type: ignore[arg-type]
+                                           name=ctx.body.name, parent_id=ctx.body.parent_id, move=ctx.body.move)
+
+
+@router.delete("/api/w/{ws}/files/folders/{folder}", role="editor")
+async def delete_folder(ctx: Ctx) -> dict[str, Any]:
+    """Remove a folder. What is in it moves to the folder above; a folder that is not empty needs ``?confirm=1``."""
+    return ctx.engine.files.folders.delete(ctx.ws_id, ctx.user_id, ctx.request.path_params["folder"],  # type: ignore[arg-type]
+                                           confirmed=ctx.request.query_params.get("confirm") in ("1", "true", "yes"))
 
 
 @router.post("/api/w/{ws}/files", role="editor")
@@ -39,16 +81,26 @@ async def create_file(ctx: Ctx) -> dict[str, Any]:
 
 @router.post("/api/w/{ws}/files/upload", role="editor")
 async def upload_file(ctx: Ctx) -> dict[str, Any]:
-    """Keep your own .xlsx or .docx (a template, last month's pack) so the assistant can fill or update it."""
+    """Add a file, into a folder (form field ``folder``) or at the top level. An .xlsx or .docx (a template, last
+    month's pack) becomes one the assistant can fill or update; any other document is kept as it arrived."""
     if int(ctx.request.headers.get("content-length") or 0) > 26 * 1024 * 1024:
-        raise Invalid("Files up to 25 MB can be edited.")
-    async with ctx.request.form(max_files=1, max_fields=2) as form:
+        raise Invalid("Files up to 25 MB can be added.", code="file_too_large")
+    async with ctx.request.form(max_files=1, max_fields=3) as form:
         f = form.get("file")
         if f is None or isinstance(f, str):
-            raise Invalid("Choose an Excel or Word file.")
+            raise Invalid("Choose a file.")
+        folder = form.get("folder")
         data = await f.read()
         name = f.filename or "file"
-    return await ctx.engine.files.import_upload(ctx.workspace, ctx.user_id, name, data)  # type: ignore[arg-type]
+    return await ctx.engine.files.add(ctx.workspace, ctx.user_id, name, data,  # type: ignore[arg-type]
+                                      folder_id=folder if isinstance(folder, str) else None)
+
+
+@router.post("/api/w/{ws}/files/{fid}/move", role="editor", body=MoveIn)
+async def move_file(ctx: Ctx) -> dict[str, Any]:
+    """Put a file in a folder, or at the top level with ``folder_id`` null."""
+    return ctx.engine.files.folders.move_file(ctx.ws_id, ctx.user_id, ctx.request.path_params["fid"],  # type: ignore[arg-type]
+                                              ctx.body.folder_id)
 
 
 class EditIn(BaseModel):
@@ -87,12 +139,15 @@ async def cell(ctx: Ctx) -> dict[str, Any]:
 @router.get("/api/w/{ws}/files/{fid}/download", role="viewer")
 async def download(ctx: Ctx) -> Response:
     fmt = ctx.request.query_params.get("format", "xlsx")
-    if fmt not in {"xlsx", "docx"}:
-        raise Invalid("format must be xlsx or docx")
+    if fmt not in STORED:           # xlsx and docx are in it; the service says when this file has no such version
+        raise Invalid("That is not a format a file is kept in.")
     data, name, mime = await ctx.engine.files.download(ctx.ws_id, ctx.request.path_params["fid"], fmt, _version(ctx))
     safe = "".join(ch if ch.isalnum() or ch in " -_.()&" else "_" for ch in name)
     ctx.audit("file.download", ctx.request.path_params["fid"], {"format": fmt})
-    return Response(data, media_type=mime, headers={"content-disposition": f'attachment; filename="{safe}"'})
+    # Always a download, and never a type the browser may guess its way into showing: a stored document is
+    # whatever its owner uploaded.
+    return Response(data, media_type=mime, headers={"content-disposition": f'attachment; filename="{safe}"',
+                                                    "x-content-type-options": "nosniff"})
 
 
 @router.post("/api/w/{ws}/files/{fid}/refresh", role="editor")

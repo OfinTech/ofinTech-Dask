@@ -11,6 +11,7 @@ from urllib.parse import quote
 from ..db import dumps, loads, new_id, now
 from ..errors import AppError, Conflict, Invalid, NotFound
 from .evidence import Evidence
+from .folders import STORED, Folders, stored_format
 from .resolve import fmt_value, resolve
 from .review import llm_review, run_checks
 from .spec import FileSpec
@@ -22,6 +23,7 @@ log = logging.getLogger("desk.files")
 
 MIME = {"xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+STORED_KIND = "stored"     # a document kept as it arrived: opened by downloading it, never edited or re-rendered
 
 
 def _safe_name(title: str) -> str:
@@ -33,6 +35,7 @@ class Files:
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
         self.tasks: set[asyncio.Task[None]] = set()
+        self.folders = Folders(engine)
 
     # -- links back into the app ------------------------------------------------------------------------------
     def app_url(self, ws_id: str) -> Any:
@@ -58,6 +61,9 @@ class Files:
             existing = self.engine.db.one("SELECT * FROM files WHERE id = ? AND workspace_id = ?", (file_id, ws_id))
             if existing is None:
                 raise NotFound("File not found.")
+            if existing["kind"] == STORED_KIND:
+                raise Invalid("That file is a document kept as it was uploaded; it cannot be saved over. Create a "
+                              "new file instead.", code="not_editable")
             thread_id = thread_id or existing["thread_id"]
         evidence = Evidence.for_thread(self.engine, thread_id)
         model = resolve(self.engine, workspace, spec, evidence)
@@ -91,6 +97,8 @@ class Files:
 
     async def refresh(self, workspace: dict[str, Any], user_id: str, file_id: str) -> dict[str, Any]:
         v = self._version(workspace["id"], file_id, None)
+        if v["file"]["kind"] == STORED_KIND:
+            raise Invalid("This document is kept as it was uploaded; there is nothing to refresh.")
         if str(v["file"]["kind"]).startswith("user_"):
             raise Invalid("Uploaded files have no data to refresh; ask the assistant to update the figures.")
         spec = FileSpec.model_validate_json(v["spec"])
@@ -98,8 +106,44 @@ class Files:
                                  note="Refreshed with the latest data")
 
     # -- the user's own Excel and Word files --------------------------------------------------------------------------
+    async def add(self, workspace: dict[str, Any], user_id: str, name: str, data: bytes, *,
+                  folder_id: Any = None) -> dict[str, Any]:
+        """A file added on the Files page, into a folder or at the top level. An Excel or Word file becomes one the
+        assistant can fill in, as before; any other document is kept as it arrived."""
+        from .folders import extension
+
+        folder = self.folders.require(workspace["id"], folder_id)
+        if extension(name) in ("xlsx", "docx"):
+            out = await self.import_upload(workspace, user_id, name, data, folder_id=folder)
+        else:
+            out = await self.store_document(workspace, user_id, name, data, folder_id=folder)
+        return out
+
+    async def store_document(self, workspace: dict[str, Any], user_id: str, name: str, data: bytes, *,
+                             folder_id: str | None = None) -> dict[str, Any]:
+        """Keep a document exactly as it was uploaded. It has one version and is never edited here."""
+        fmt = stored_format(name, data)
+        ws_id, ts, fid = workspace["id"], now(), new_id("f_")
+        shown = " ".join(name.split())[:200] or f"document.{fmt}"
+        title = shown.rsplit(".", 1)[0][:120] or "Document"
+        model = {"kind": STORED_KIND, "format": fmt, "original_name": shown, "size": len(data), "mime": STORED[fmt],
+                 "summary": {}}
+        spec = {"stored": True, "format": fmt, "name": shown}
+        with self.engine.db.tx() as c:
+            c.execute("INSERT INTO files (id, workspace_id, thread_id, name, kind, current_version, created_by, "
+                      "created_at, updated_at, folder_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                      (fid, ws_id, None, title, STORED_KIND, 1, user_id, ts, ts, folder_id))
+            c.execute("INSERT INTO file_versions (id, file_id, workspace_id, version, spec, model, note, created_by, "
+                      "created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                      (new_id("fv_"), fid, ws_id, 1, dumps(spec), dumps(model), "As uploaded", user_id, ts))
+        await self._store(ws_id, fid, 1, fmt, data, mime=STORED[fmt])
+        self.engine.audit(ws_id, user_id, "file.upload", fid, {"format": fmt, "size": len(data), "stored": True,
+                                                               "folder": folder_id})
+        return self.get(ws_id, fid)
+
     async def import_upload(self, workspace: dict[str, Any], user_id: str, name: str, data: bytes, *,
-                            thread_id: str | None = None, document_id: str | None = None) -> dict[str, Any]:
+                            thread_id: str | None = None, document_id: str | None = None,
+                            folder_id: str | None = None) -> dict[str, Any]:
         """Keep an uploaded .xlsx/.docx as version 1 of an editable file (the original, untouched)."""
         from .editable import at_risk, detect_format, outline_docx, outline_xlsx
 
@@ -112,8 +156,8 @@ class Files:
         spec = {"upload": True, "format": fmt, "name": name[:200], "document_id": document_id}
         with self.engine.db.tx() as c:
             c.execute("INSERT INTO files (id, workspace_id, thread_id, name, kind, current_version, created_by, "
-                      "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-                      (fid, ws_id, thread_id, title, f"user_{fmt}", 1, user_id, ts, ts))
+                      "created_at, updated_at, folder_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                      (fid, ws_id, thread_id, title, f"user_{fmt}", 1, user_id, ts, ts, folder_id))
             c.execute("INSERT INTO file_versions (id, file_id, workspace_id, version, spec, model, note, created_by, "
                       "created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                       (new_id("fv_"), fid, ws_id, 1, dumps(spec), dumps(model), "Original, as uploaded", user_id, ts))
@@ -121,15 +165,19 @@ class Files:
         self.engine.audit(ws_id, user_id, "file.upload", fid, {"format": fmt, "size": len(data)})
         return self.get(ws_id, fid)
 
-    async def _store(self, ws_id: str, file_id: str, version: int, fmt: str, data: bytes) -> None:
+    async def _store(self, ws_id: str, file_id: str, version: int, fmt: str, data: bytes, *,
+                     mime: str | None = None) -> None:
         key = f"files/{ws_id}/{file_id}/v{version}.{fmt}"
-        await self.engine.storage.put(key, data, MIME[fmt])
+        await self.engine.storage.put(key, data, mime or MIME[fmt])
         outputs = {fmt: {"key": key, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}}
         self.engine.db.execute("UPDATE file_versions SET outputs = ? WHERE file_id = ? AND version = ?",
                                (dumps(outputs), file_id, version))
 
     def _upload(self, ws_id: str, file_id: str, version: int | None = None) -> dict[str, Any]:
         v = self._version(ws_id, file_id, version)
+        if v["file"]["kind"] == STORED_KIND:
+            raise Invalid("This document is kept as it was uploaded and is not edited here. Only Excel (.xlsx) and "
+                          "Word (.docx) files can be read cell by cell or edited.", code="not_editable")
         if not str(v["file"]["kind"]).startswith("user_"):
             raise Invalid("This file was created by the assistant; revise it with create_workbook or create_report "
                           "and its file_id.", code="not_an_upload")
@@ -208,7 +256,7 @@ class Files:
 
         v = self._version(ws_id, file_id, version)
         model = loads(v["model"], {})
-        if model.get("kind") == "upload":  # the user's own file is stored as edited, never re-rendered
+        if model.get("kind") in ("upload", STORED_KIND):  # the user's own file is stored as it is, never re-rendered
             return loads(v["outputs"], {})
         findings = self.findings(ws_id, file_id, version)
         author = self.engine.db.scalar("SELECT name FROM users WHERE id = ?", (v["created_by"],))
@@ -233,25 +281,43 @@ class Files:
         if fmt not in outputs:
             raise NotFound(f"This file has no {fmt} version.")
         data = await self.engine.storage.get(outputs[fmt]["key"])
+        if v["file"]["kind"] == STORED_KIND:      # one version, handed back under the name it came with
+            return data, f"{_safe_name(v['file']['name'])}.{fmt}", STORED[fmt]
         name = f"{_safe_name(v['file']['name'])} v{v['version']}.{fmt}"
         return data, name, MIME[fmt]
 
     # -- reading -------------------------------------------------------------------------------------------------------
-    def list(self, ws_id: str) -> list[dict[str, Any]]:
+    def list(self, ws_id: str, folder: Any = "all") -> list[dict[str, Any]]:
+        """Every file of the workspace, newest first; or, with ``folder``, the files of one folder (``None`` or
+        "root" for the top level). Each row says which folder it is in and that folder's path."""
+        where, params = "f.workspace_id = ?", [ws_id]
+        if folder != "all":
+            target = self.folders.require(ws_id, folder)
+            where += " AND f.folder_id IS ?"
+            params.append(target)
         rows = self.engine.db.all(
             "SELECT f.id, f.name, f.kind, f.current_version, f.review_status, f.thread_id, f.created_at, f.updated_at, "
-            "u.name AS created_by_name, (SELECT COUNT(*) FROM file_findings x WHERE x.file_id = f.id AND x.version = "
-            "f.current_version AND x.status = 'open') AS open_findings FROM files f LEFT JOIN users u ON "
-            "u.id = f.created_by WHERE f.workspace_id = ? ORDER BY f.updated_at DESC LIMIT 500", (ws_id,))
+            "f.folder_id, u.name AS created_by_name, (SELECT COUNT(*) FROM file_findings x WHERE x.file_id = f.id AND "
+            "x.version = f.current_version AND x.status = 'open') AS open_findings FROM files f LEFT JOIN users u ON "
+            f"u.id = f.created_by WHERE {where} ORDER BY f.updated_at DESC LIMIT 500", params)
+        folders = self.folders._rows(ws_id)
         for r in rows:
             m = self.engine.db.one("SELECT model FROM file_versions WHERE file_id = ? AND version = ?",
                                    (r["id"], r["current_version"]))
-            r["summary"] = loads(m["model"], {}).get("summary", {}) if m else {}
+            model = loads(m["model"], {}) if m else {}
+            r["summary"] = model.get("summary", {})
+            if r["folder_id"] not in folders:      # a folder that is gone leaves its files at the top level
+                r["folder_id"] = None
+            r["folder_path"] = self.folders.path(ws_id, r["folder_id"], folders)
+            if r["kind"] == STORED_KIND:
+                r["format"], r["size"] = model.get("format"), model.get("size")
         return rows
 
     def get(self, ws_id: str, file_id: str, version: int | None = None) -> dict[str, Any]:
         v = self._version(ws_id, file_id, version)
         f = v.pop("file")
+        f["folder_id"] = f.get("folder_id") if f.get("folder_id") in self.folders._rows(ws_id) else None
+        f["folder_path"] = self.folders.path(ws_id, f["folder_id"])
         versions = self.engine.db.all(
             "SELECT v.version, v.note, v.created_at, v.outputs, u.name AS created_by_name FROM file_versions v LEFT JOIN "
             "users u ON u.id = v.created_by WHERE v.file_id = ? ORDER BY v.version DESC", (file_id,))
@@ -310,6 +376,9 @@ class Files:
         f = self.engine.db.one("SELECT * FROM files WHERE id = ? AND workspace_id = ?", (file_id, workspace["id"]))
         if f is None:
             raise NotFound("File not found.")
+        if f["kind"] == STORED_KIND:
+            raise Invalid("The independent review covers files the assistant builds; this document is kept as it "
+                          "was uploaded.")
         if str(f["kind"]).startswith("user_"):
             raise Invalid("The independent review covers files the assistant builds; edits to your own files are "
                           "checked against sources as they are made.")

@@ -854,6 +854,25 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX ix_model_prices ON model_prices(workspace_id, model, effective_from DESC);
     """,
+    # 24 — folders for Files. A folder belongs to a workspace and may sit inside another; a file sits in one folder
+    #      or at the top level (folder_id NULL), which is where every file that existed before this stays.
+    #      Neither parent_id nor files.folder_id is a foreign key on purpose: deleting a folder must never delete
+    #      what is in it. The service moves the contents to the parent and then removes the one row; a cascade
+    #      here would turn a mistake in that code into lost files.
+    """
+    CREATE TABLE file_folders (
+        id TEXT PRIMARY KEY,
+        workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+        parent_id TEXT,
+        name TEXT NOT NULL,
+        created_by TEXT,
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+    );
+    CREATE INDEX ix_file_folders_ws ON file_folders(workspace_id, parent_id);
+    ALTER TABLE files ADD COLUMN folder_id TEXT;
+    CREATE INDEX ix_files_folder ON files(workspace_id, folder_id);
+    """,
 ]
 
 

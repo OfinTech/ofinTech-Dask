@@ -124,6 +124,26 @@ Limits: `.xlsx` and `.docx` up to 25 MB. Macro-enabled (`.xlsm`), old (`.xls`, `
 are refused; save a copy as `.xlsx`/`.docx` first. Charts, images and pivot tables in an existing workbook are not
 kept by the Excel library used here; the app warns before the first edit of such a file, and version 1 keeps them.
 
+## 5. Folders, and documents kept as they are
+
+Files has folders. A folder can sit inside another, eight deep at most, and a file sits in one folder or at the
+top level. Files that existed before folders are at the top level, where they were.
+
+A folder takes any document, up to 25 MB each:
+
+| What you add | What happens to it |
+|---|---|
+| Excel `.xlsx`, Word `.docx` | As in section 4: the assistant can read it and fill it in, and every edit is a new version |
+| PDF, PowerPoint, CSV and other text, the older Office formats (`.xls`, `.doc`, `.ppt`), OpenDocument, pictures of documents, e-mail files | Kept exactly as it arrived, with one version. It opens by downloading it. The assistant does not read it; to have a PDF searched and quoted, add it under Documents as well |
+| A program, a script, a web page, an archive, a file with macros | Refused |
+
+A file is refused by its name, and by its first bytes when the name lies: a program renamed `invoice.pdf` does
+not get in. A download is always sent as an attachment and never shown in the page.
+
+**Tidying never destroys.** Deleting a folder moves what is in it, files and folders, to the folder above, and
+removes the one folder. A folder that is not empty is not deleted until you confirm that. Moving, renaming and
+deleting are on the audit log. A viewer reads; an editor changes.
+
 ## In the app
 
 The **Files** page lists every file with its verification count, for example *46 traced · 30 formulas · 2 without
@@ -148,6 +168,14 @@ figures against, so prefer query tables there. The other endpoints:
 - `GET …/download?format=xlsx|docx&version=n` downloads a file.
 - `POST …/refresh` and `POST …/review` refresh the data and start a review.
 - `PATCH …/findings/{id}` resolves, dismisses or reopens a finding.
-- `POST /api/w/{ws}/files/upload` (multipart `file`) keeps your own `.xlsx`/`.docx`; `GET …/inspect?sheet=&range=`
+- `GET /api/w/{ws}/files` lists every file with its `folder_id` and `folder_path`; `?folder=<id>` gives one folder
+  and `?folder=root` the top level.
+- `GET /api/w/{ws}/files/folders` lists the folders with their paths and what each holds; `POST` creates one
+  (`{"name": "Bank", "parent_id": null}`); `PATCH …/folders/{id}` renames (`name`) or moves
+  (`{"parent_id": …, "move": true}`; the top level is `null`); `DELETE …/folders/{id}` removes an empty folder,
+  and with `?confirm=1` one that is not, moving its contents up.
+- `POST /api/w/{ws}/files/{id}/move` (`{"folder_id": …}`) puts a file in a folder.
+- `POST /api/w/{ws}/files/upload` (multipart `file`, and `folder` for a folder's id) keeps your own `.xlsx`/`.docx`,
+  or stores any other document as it is; `GET …/inspect?sheet=&range=`
   lists its contents; `POST …/edit` with `{"edits": [...], "note": "…"}` applies the same edits as the assistant (used
   by workflow file steps).

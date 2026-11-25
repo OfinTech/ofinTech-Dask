@@ -7,6 +7,16 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **Files has folders, and a folder takes any document.** Files was one flat list of what the assistant built and
+  the Excel and Word files it fills in. People keep more than that beside their books: the signed PDF, the
+  bank's CSV, the scan of a contract. Folders can be created, renamed, moved and nested (eight deep), and a file
+  is added into one or moved between them. Excel and Word files stay editable by the assistant as before; any
+  other document (PDF, PowerPoint, CSV and text, the older Office formats, OpenDocument, pictures, e-mail files,
+  up to 25 MB) is kept exactly as it arrived and opens by downloading it. Programs, scripts, web pages, archives
+  and files with macros are refused, by name and by their first bytes when the name lies; a download is always
+  an attachment. Deleting a folder never deletes what is in it: the contents move to the folder above, and a
+  folder that is not empty waits for a confirmation. Files from before are at the top level. Migration 24
+  (`file_folders`, `files.folder_id`), appended. In English, Arabic, Spanish and French. `docs/FILES.md` §5.
 - **A Helm chart for the Team Server** (`deploy/helm/ofintech-desk`, contributed by cybe44oot in #44): one pod
   as uid 10001 with every capability dropped and a read-only root, one volume, a Service, an optional Ingress,
   a master key generated once or brought in an existing Secret (which GitOps tools need), and a `publicUrl` that

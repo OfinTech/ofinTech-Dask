@@ -5,6 +5,7 @@ import { LANGUAGES, N, lang, setLang, tr, type Lang } from "../lib/i18n";
 // ---- icons (1.6px strokes, 24px grid) ------------------------------------------------------------
 const paths: Record<string, string> = {
   chat: "M4 5h16v11H8l-4 4z",
+  folder: "M3 6h6l2 2h10v11H3z",
   dash: "M4 20V10M10 20V4M16 20v-7M22 20H2",
   data: "M4 6c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zm0 0v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
   flow: "M6 3v6m0 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 6h6a6 6 0 0 1 6 6v6M18 15l-3 3m3-3 3 3",

@@ -51,6 +51,7 @@ RESOURCE_TABLES: dict[tuple[str, str], tuple[str, str]] = {
     ("embedded", "iid"): ("embedded_integrations", "id"),
     ("embedded", "sid"): ("embedded_sessions", "id"),
     ("files", "fid"): ("files", "id"),
+    ("files", "folder"): ("file_folders", "id"),
     ("files", "finding"): ("file_findings", "id"),
     ("forecasts", "fid"): ("forecasts", "id"),
     ("imports", "upload_id"): ("datasets", "id"),

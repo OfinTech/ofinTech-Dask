@@ -4,7 +4,7 @@ import { can, useApp, wsPath } from "../lib/app";
 import { fmtDateTime, fmtNumber, fmtPercent, fmtRelative } from "../lib/format";
 import { DataTable } from "../components/charts";
 import { Comments } from "../components/comments";
-import { Confirm, Empty, ErrorBox, Icon, Loading, PageHead, StatusTag, go, query, useAction, useLoad } from "../components/ui";
+import { Confirm, Empty, ErrorBox, Icon, Loading, Modal, PageHead, StatusTag, go, query, useAction, useLoad } from "../components/ui";
 import { N, tr } from "../lib/i18n";
 
 type Cell = { v?: any; f?: string; st?: string; x?: string; e?: string; s?: string; n?: string; d?: any; a?: string };
@@ -47,16 +47,87 @@ function Verification({ s }: { s: any }): ReactNode {
 }
 
 const KIND_LABEL: Record<string, string> = { report: N("Report: Word and Excel"), workbook: N("Workbook: Excel"),
-  user_xlsx: N("Your Excel file"), user_docx: N("Your Word file") };
+  user_xlsx: N("Your Excel file"), user_docx: N("Your Word file"), stored: N("Document, kept as uploaded") };
+
+// What a folder takes. The server decides; this only narrows the file chooser to the same list.
+const ACCEPT = ".pdf,.xlsx,.docx,.pptx,.csv,.tsv,.txt,.md,.json,.xml,.rtf,.xls,.doc,.ppt,.ods,.odt,.odp,.png,.jpg,.jpeg,.tif,.tiff,.gif,.webp,.bmp,.heic,.eml,.msg";
+
+type Folder = { id: string; parent_id: string | null; name: string; path: string; depth: number; files: number; folders: number;
+  updated_at: number };
+
+function fmtSize(n: unknown): string {
+  if (typeof n !== "number") return "";
+  if (n < 1024) return `${n} B`;
+  return n < 1024 * 1024 ? `${fmtNumber(n / 1024, 0)} KB` : `${fmtNumber(n / (1024 * 1024), 1)} MB`;
+}
+
+/** Where a file or a folder can be moved to: the top level and every folder, by its path. */
+function MoveTo({ folders, value, exclude, onPick }: { folders: Folder[]; value: string | null; exclude?: Folder;
+  onPick: (id: string | null) => void }): ReactNode {
+  const allowed = folders.filter((f) => !exclude || (f.id !== exclude.id && !f.path.startsWith(exclude.path + " / ")));
+  return (
+    <select className="select" style={{ width: 170 }} aria-label={tr("Move to")} value={value || ""}
+      onChange={(e) => { if ((e.target.value || null) !== (value || null)) onPick(e.target.value || null); }}>
+      <option value="">{tr("Top level")}</option>
+      {allowed.map((f) => <option key={f.id} value={f.id}>{f.path}</option>)}
+    </select>
+  );
+}
+
+function FolderName({ title, initial, yes, onSave, onClose }: { title: string; initial: string; yes: string;
+  onSave: (name: string) => void; onClose: () => void }): ReactNode {
+  const [name, setName] = useState(initial);
+  const ok = name.trim().length > 0;
+  return (
+    <Modal title={title} onClose={onClose} footer={<>
+      <button className="btn" onClick={onClose}>{tr("Cancel")}</button>
+      <button className="btn primary" disabled={!ok} onClick={() => { onSave(name.trim()); onClose(); }}>{yes}</button></>}>
+      <input className="input" autoFocus maxLength={120} aria-label={tr("Folder name")} placeholder={tr("Folder name")} value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && ok) { onSave(name.trim()); onClose(); } }} />
+    </Modal>
+  );
+}
 
 function FileList(): ReactNode {
   const { ws } = useApp();
   const files = useLoad(() => get<any[]>(wsPath(ws, "/files")), [ws.id]);
+  const folders = useLoad(() => get<Folder[]>(wsPath(ws, "/files/folders")), [ws.id]);
   const { busy, run } = useAction();
+  const [naming, setNaming] = useState<{ folder?: Folder } | null>(null);
+  const [removing, setRemoving] = useState<Folder | null>(null);
+  const editor = can(ws, "editor");
+  const all = folders.data || [];
+  const current = all.find((f) => f.id === query().get("folder")) || null;
+  const here = current ? current.id : null;
+  const inside = all.filter((f) => (f.parent_id || null) === here);
+  const mine = (files.data || []).filter((f) => (f.folder_id || null) === here);
+  const trail: Folder[] = [];
+  for (let f: Folder | null = current; f; f = all.find((x) => x.id === f!.parent_id) || null) trail.unshift(f);
+  const open = (id: string | null) => go(id ? `files?folder=${id}` : "files");
+  const reload = () => { files.reload(); folders.reload(); };
+
   async function add(file: File | undefined) {
     if (!file) return;
-    const r: any = await run(() => upload(wsPath(ws, "/files/upload"), file), tr("File added"));
-    if (r?.file) go(`files/${r.file.id}`);
+    const r: any = await run(() => upload(wsPath(ws, "/files/upload"), file, here ? { folder: here } : {}), tr("File added"));
+    if (r?.file && r.model?.kind === "upload") go(`files/${r.file.id}`);
+    else reload();
+  }
+  async function saveFolder(name: string) {
+    const target = naming?.folder;
+    const done = target ? await run(() => patch(wsPath(ws, `/files/folders/${target.id}`), { name }), tr("Folder renamed"))
+      : await run(() => post(wsPath(ws, "/files/folders"), { name, parent_id: here }), tr("Folder created"));
+    if (done) folders.reload();
+  }
+  async function moveFolder(f: Folder, to: string | null) {
+    if (await run(() => patch(wsPath(ws, `/files/folders/${f.id}`), { parent_id: to, move: true }), tr("Folder moved"))) reload();
+  }
+  async function moveFile(id: string, to: string | null) {
+    if (await run(() => post(wsPath(ws, `/files/${id}/move`), { folder_id: to }), tr("File moved"))) reload();
+  }
+  async function removeFolder(f: Folder) {
+    const done = await run(() => del<any>(wsPath(ws, `/files/folders/${f.id}?confirm=1`)), tr("Folder deleted"));
+    if (done) { if (current && current.id === f.id) open(f.parent_id); reload(); }
   }
   useEffect(() => {
     if ((files.data || []).some((f) => f.review_status === "running")) {
@@ -65,35 +136,100 @@ function FileList(): ReactNode {
     }
     return undefined;
   }, [files.data]);
+  const loading = (files.loading && !files.data) || (folders.loading && !folders.data);
+  const nothing = inside.length === 0 && mine.length === 0;
   return (
     <div className="page" style={{ maxWidth: 1200 }}>
-      <PageHead title={tr("Files")} sub={tr("Workbooks and reports the assistant prepared, and your own Excel and Word files it fills in. Every figure is traced to its source or is a live formula, and every change is kept as a version.")}
-        actions={can(ws, "editor") && <label className={`btn primary ${busy ? "disabled" : ""}`}>
-          <Icon name="upload" />{tr("Add your Excel or Word file")}
-          <input type="file" hidden accept=".xlsx,.docx" disabled={busy} onChange={(e) => { void add(e.target.files?.[0]); e.target.value = ""; }} />
-        </label>} />
-      <ErrorBox error={files.error} />
-      {files.loading && !files.data ? <Loading /> : (files.data || []).length === 0 ? (
-        <div className="panel"><Empty title={tr("No files yet")}>{tr("Ask the assistant for a workbook or a report, for example “Build a Q1 actual vs budget workbook from the P&L” or “Write the month-end commentary for March”.")}</Empty></div>
+      <PageHead title={tr("Files")} sub={tr("Workbooks and reports the assistant prepared, your own Excel and Word files it fills in, and any other document you keep beside the books, in folders. Every figure the assistant writes is traced to its source or is a live formula, and every change is kept as a version.")}
+        actions={editor && <>
+          <button className="btn" disabled={busy} onClick={() => setNaming({})}><Icon name="folder" />{tr("New folder")}</button>
+          <label className={`btn primary ${busy ? "disabled" : ""}`}>
+            <Icon name="upload" />{tr("Add a file")}
+            <input type="file" hidden accept={ACCEPT} disabled={busy} onChange={(e) => { void add(e.target.files?.[0]); e.target.value = ""; }} />
+          </label></>} />
+      <ErrorBox error={files.error || folders.error} />
+      {current && <p className="small" aria-label={tr("Folder")}>
+        <button className="linklike" onClick={() => open(null)}>{tr("Files")}</button>
+        {trail.map((f) => <span key={f.id}>{" / "}{f.id === current.id ? <strong>{f.name}</strong>
+          : <button className="linklike" onClick={() => open(f.id)}>{f.name}</button>}</span>)}
+      </p>}
+      {loading ? <Loading /> : nothing ? (
+        <div className="panel">{current
+          ? <Empty title={tr("This folder is empty")}>{tr("Add a file here, or move one in from another folder. Folders take PDF, Word, Excel, PowerPoint, CSV, text, pictures of documents and e-mail files, up to 25 MB each.")}</Empty>
+          : <Empty title={tr("No files yet")}>{tr("Ask the assistant for a workbook or a report, for example “Build a Q1 actual vs budget workbook from the P&L” or “Write the month-end commentary for March”.")}</Empty>}</div>
       ) : (
         <div className="table-wrap" style={{ maxHeight: "none" }}>
           <table className="ledger">
-            <thead><tr><th>{tr("Name")}</th><th>{tr("Figures")}</th><th>{tr("Review")}</th><th className="num">{tr("Version")}</th><th>{tr("Updated")}</th></tr></thead>
-            <tbody>{(files.data || []).map((f) => (
-              <tr key={f.id}>
-                <td><a href={`#/files/${f.id}`}>{f.name}</a>
-                  <div className="xs muted">{tr(KIND_LABEL[f.kind] || f.kind)}</div></td>
-                <td><Verification s={f.summary} /></td>
-                <td>{String(f.kind).startsWith("user_") ? <span className="xs muted">{tr("checked as edited")}</span> : f.review_status === "running" ? <StatusTag status="running" /> : f.open_findings > 0
-                  ? <span className="tag amber">{f.open_findings}{" "}{tr("open")}</span>
-                  : f.review_status === "done" ? <span className="tag green">{tr("clear")}</span>
-                    : f.review_status === "error" ? <StatusTag status="error" /> : <span className="tag">{tr("not reviewed")}</span>}</td>
-                <td className="num">{f.current_version}</td>
-                <td className="small">{fmtRelative(f.updated_at)}{f.created_by_name ? `, ${f.created_by_name}` : ""}</td>
-              </tr>))}</tbody>
+            <thead><tr><th>{tr("Name")}</th><th>{tr("Figures")}</th><th>{tr("Review")}</th><th className="num">{tr("Version")}</th><th>{tr("Updated")}</th>
+              {editor && <th>{tr("Move to")}</th>}{editor && <th aria-label={tr("Actions")} />}</tr></thead>
+            <tbody>
+              {inside.map((f) => (
+                <tr key={f.id}>
+                  <td><button className="linklike" onClick={() => open(f.id)}><Icon name="folder" size={16} />{" "}{f.name}</button>
+                    <div className="xs muted">{tr("Folder")}{" · "}{f.files}{" "}{tr("files")}{f.folders > 0 ? <>{" · "}{f.folders}{" "}{tr("folders")}</> : null}</div></td>
+                  <td /><td /><td /><td className="small">{fmtRelative(f.updated_at)}</td>
+                  {editor && <td><MoveTo folders={all} value={f.parent_id} exclude={f} onPick={(to) => void moveFolder(f, to)} /></td>}
+                  {editor && <td style={{ whiteSpace: "nowrap" }}>
+                    <button className="btn ghost" aria-label={tr("Rename folder")} title={tr("Rename folder")} onClick={() => setNaming({ folder: f })}><Icon name="edit" /></button>
+                    <button className="btn ghost" aria-label={tr("Delete folder")} title={tr("Delete folder")} onClick={() => setRemoving(f)}><Icon name="trash" /></button></td>}
+                </tr>))}
+              {mine.map((f) => (
+                <tr key={f.id}>
+                  <td><a href={`#/files/${f.id}`}>{f.name}</a>
+                    <div className="xs muted">{tr(KIND_LABEL[f.kind] || f.kind)}{f.kind === "stored" && f.format ? ` · ${String(f.format).toUpperCase()}` : ""}</div></td>
+                  <td>{f.kind === "stored" ? <span className="xs muted">{fmtSize(f.size)}</span> : <Verification s={f.summary} />}</td>
+                  <td>{f.kind === "stored" ? <span className="xs muted">{tr("not read by the assistant")}</span> : String(f.kind).startsWith("user_") ? <span className="xs muted">{tr("checked as edited")}</span> : f.review_status === "running" ? <StatusTag status="running" /> : f.open_findings > 0
+                    ? <span className="tag amber">{f.open_findings}{" "}{tr("open")}</span>
+                    : f.review_status === "done" ? <span className="tag green">{tr("clear")}</span>
+                      : f.review_status === "error" ? <StatusTag status="error" /> : <span className="tag">{tr("not reviewed")}</span>}</td>
+                  <td className="num">{f.kind === "stored" ? "" : f.current_version}</td>
+                  <td className="small">{fmtRelative(f.updated_at)}{f.created_by_name ? `, ${f.created_by_name}` : ""}</td>
+                  {editor && <td><MoveTo folders={all} value={f.folder_id || null} onPick={(to) => void moveFile(f.id, to)} /></td>}
+                  {editor && <td />}
+                </tr>))}
+            </tbody>
           </table>
         </div>
       )}
+      {naming && <FolderName title={naming.folder ? tr("Rename folder") : tr("New folder")} initial={naming.folder?.name || ""}
+        yes={naming.folder ? tr("Rename") : tr("Create folder")} onSave={(name) => void saveFolder(name)} onClose={() => setNaming(null)} />}
+      {removing && <Confirm yes="Delete folder" onClose={() => setRemoving(null)} onYes={() => void removeFolder(removing)}
+        text={removing.files + removing.folders > 0
+          ? tr("Delete the folder {0}? The {1} file(s) and {2} folder(s) in it are moved to the folder above. Nothing in it is deleted.", { 0: removing.name, 1: removing.files, 2: removing.folders })
+          : tr("Delete the folder {0}? It is empty.", { 0: removing.name })} />}
+    </div>
+  );
+}
+
+/** A document kept as it was uploaded: what it is, where it is, and a download. */
+function StoredView({ id, data }: { id: string; data: any }): ReactNode {
+  const { ws } = useApp();
+  const { run } = useAction();
+  const [confirm, setConfirm] = useState(false);
+  const model = data.model, file = data.file, first = data.versions[data.versions.length - 1] || {};
+  const back = () => go(file.folder_id ? `files?folder=${file.folder_id}` : "files");
+  return (
+    <div className="page" style={{ maxWidth: 900 }}>
+      <PageHead title={file.name}
+        sub={<><button className="linklike" onClick={() => go("files")}>{tr("Files")}</button>
+          {file.folder_path ? <>{" / "}<button className="linklike" onClick={back}>{file.folder_path}</button></> : null}{" / "}{tr("Document, kept as uploaded")}</>}
+        actions={<>
+          <button className="btn primary" onClick={() => run(() => download(wsPath(ws, `/files/${id}/download?format=${model.format}`), model.original_name || `${file.name}.${model.format}`))}>
+            <Icon name="docs" />{tr("Download")}</button>
+          {can(ws, "editor") && <button className="btn ghost" aria-label={tr("Delete file")} onClick={() => setConfirm(true)}><Icon name="trash" /></button>}
+        </>} />
+      <div className="panel">
+        <table className="ledger"><tbody>
+          <tr><th>{tr("File name")}</th><td>{model.original_name}</td></tr>
+          <tr><th>{tr("Type")}</th><td>{String(model.format || "").toUpperCase()}</td></tr>
+          <tr><th>{tr("Size")}</th><td>{fmtSize(model.size)}</td></tr>
+          <tr><th>{tr("Folder")}</th><td>{file.folder_path || tr("Top level")}</td></tr>
+          <tr><th>{tr("Added")}</th><td>{fmtDateTime(first.created_at)}{first.created_by_name ? `, ${first.created_by_name}` : ""}</td></tr>
+        </tbody></table>
+      </div>
+      <p className="small muted">{tr("This document is kept exactly as it was uploaded and opens by downloading it. The assistant reads and edits Excel (.xlsx) and Word (.docx) files; to have it search a PDF, add the PDF under Documents as well.")}</p>
+      {confirm && <Confirm text={tr("Delete {0}? It cannot be brought back.", { 0: file.name })} onClose={() => setConfirm(false)}
+        onYes={async () => { await run(() => del(wsPath(ws, `/files/${id}`))); back(); }} />}
     </div>
   );
 }
@@ -122,7 +258,7 @@ function FileView({ id }: { id: string }): ReactNode {
     return undefined;
   }, [data]);
   useEffect(() => {
-    if (model && !tab && model.kind !== "upload") setTab(model.kind === "report" ? "__report" : model.sheets[0]?.name);
+    if (model && !tab && model.kind !== "upload" && model.kind !== "stored") setTab(model.kind === "report" ? "__report" : model.sheets[0]?.name);
   }, [model]);
 
   const findings: Finding[] = data?.findings || [];
@@ -144,6 +280,7 @@ function FileView({ id }: { id: string }): ReactNode {
   }
 
   const file = data.file;
+  if (model.kind === "stored") return <StoredView id={id} data={data} />;
   if (model.kind === "upload") return <UploadView id={id} data={data} onVersion={(v) => setVersion(v)} reload={f.reload} />;
   return (
     <div className="page file-page">
