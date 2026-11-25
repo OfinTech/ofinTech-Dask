@@ -1,13 +1,46 @@
 image:
-  repository: ofintech-desk
-  tag: "1.3.0"
+  repository: ofintech0/ofintech-desk
+  tag: ""
   pullPolicy: IfNotPresent
 
-publicUrl: http://localhost:8700
-allowHttp: true
 
-storage:
-  size: 2Gi
+publicUrl: ""
+allowHttp: false
+
+masterKey:
+  existingSecret: ""
+  existingSecretKey: master-key
+
+# extra env vars like : DESK_SMTP_HOST / DESK_SMTP_PASSWORD ..etc
+extraEnv: []
+
+# Load every key of a Secret or ConfigMap as environment variables.
+extraEnvFrom: []
+
+persistence:
+  size: 10Gi
+  storageClassName: ""
+  existingClaim: ""
 
 service:
   port: 8700
+
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  tlsSecretName: ""
+  annotations: {}
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+tmpSizeLimit: 1Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

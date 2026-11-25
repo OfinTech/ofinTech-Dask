@@ -4,5 +4,7 @@ metadata:
   name: {{ .Release.Name }}-config
 data:
   DESK_MODE: server
-  DESK_PUBLIC_URL: {{ .Values.publicUrl | quote }}
-  DESK_ALLOW_HTTP: {{ .Values.allowHttp | quote }}
+  DESK_PUBLIC_URL: {{ include "ofintech-desk.publicUrl" . | quote }}
+  {{- if .Values.allowHttp }}
+  DESK_ALLOW_HTTP: "true"
+  {{- end }}

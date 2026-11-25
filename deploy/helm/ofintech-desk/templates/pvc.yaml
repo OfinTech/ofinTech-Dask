@@ -1,12 +1,19 @@
+{{- /* Don't create a disk if the user brings their own (existingClaim). */}}
+
+{{- if not .Values.persistence.existingClaim }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ .Release.Name }}-data
   annotations:
-    helm.sh/resource-policy: keep   
+    helm.sh/resource-policy: keep
 spec:
   accessModes:
-    - ReadWriteOnce               
+    - ReadWriteOnce
+  {{- with .Values.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
   resources:
     requests:
-      storage: {{ .Values.storage.size }}
+      storage: {{ .Values.persistence.size }}
+{{- end }}
