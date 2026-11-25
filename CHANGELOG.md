@@ -7,6 +7,13 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **A Helm chart for the Team Server** (`deploy/helm/ofintech-desk`, contributed by cybe44oot in #44): one pod
+  as uid 10001 with every capability dropped and a read-only root, one volume, a Service, an optional Ingress,
+  a master key generated once or brought in an existing Secret (which GitOps tools need), and a `publicUrl` that
+  must be https. CI lints it, renders it and checks that a missing or plain-http address is refused. Its README
+  says what it has not had yet, a run on a real cluster by the maintainers, and what the proxy in front must
+  allow: request bodies up to 260 MB and replies passed on as they arrive. The Ingress example for that is
+  rendered in CI.
 - **Thirteen weeks of cash by the direct method, from the assistant.** The forecast was by month, from a plan.
   Lenders and boards ask for cash week by week from what is actually owed and owing, and asked of a model that
   was a table of sums nobody could check. `analysis/weekly_cash.py` works it out from the general ledger and the

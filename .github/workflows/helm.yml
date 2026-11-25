@@ -28,6 +28,12 @@ jobs:
           helm template desk "$CHART" --set publicUrl=https://desk.example.com \
             --set masterKey.existingSecret=desk-key --set persistence.existingClaim=desk-data \
             --set ingress.enabled=true --set ingress.className=nginx --set ingress.tlsSecretName=desk-tls > /dev/null
+      - name: The Ingress example in the README renders with what the proxy must allow
+        run: |
+          helm template desk "$CHART" -f "$CHART/ci/ingress-values.yaml" > /tmp/ingress.yaml
+          grep -q 'nginx.ingress.kubernetes.io/proxy-body-size: 260m' /tmp/ingress.yaml
+          grep -Eq "nginx.ingress.kubernetes.io/proxy-buffering: [\"']?off[\"']?$" /tmp/ingress.yaml
+          grep -q 'secretName: desk-tls' /tmp/ingress.yaml
       - name: Refuse a missing or plain-http publicUrl
         run: |
           if helm template desk "$CHART" > /dev/null 2>&1; then echo "rendered without publicUrl"; exit 1; fi
