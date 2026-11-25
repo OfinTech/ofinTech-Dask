@@ -11,6 +11,7 @@ from urllib.parse import quote
 from ..db import dumps, loads, new_id, now
 from ..errors import AppError, Conflict, Invalid, NotFound
 from .evidence import Evidence
+from ..storage import GENERATED, UPLOAD
 from .folders import STORED, Folders, stored_format
 from .resolve import fmt_value, resolve
 from .review import llm_review, run_checks
@@ -65,6 +66,9 @@ class Files:
                 raise Invalid("That file is a document kept as it was uploaded; it cannot be saved over. Create a "
                               "new file instead.", code="not_editable")
             thread_id = thread_id or existing["thread_id"]
+        # What is built is not sized until it is rendered, so this asks about nothing yet: a gate that will take no
+        # more for this workspace says so here, before a version exists. ``keep`` asks again with the real size.
+        self.engine.admit(ws_id, 0, GENERATED)
         evidence = Evidence.for_thread(self.engine, thread_id)
         model = resolve(self.engine, workspace, spec, evidence)
         checks = run_checks(model)
@@ -123,6 +127,7 @@ class Files:
                              folder_id: str | None = None) -> dict[str, Any]:
         """Keep a document exactly as it was uploaded. It has one version and is never edited here."""
         fmt = stored_format(name, data)
+        self.engine.admit(workspace["id"], len(data))
         ws_id, ts, fid = workspace["id"], now(), new_id("f_")
         shown = " ".join(name.split())[:200] or f"document.{fmt}"
         title = shown.rsplit(".", 1)[0][:120] or "Document"
@@ -148,6 +153,7 @@ class Files:
         from .editable import at_risk, detect_format, outline_docx, outline_xlsx
 
         fmt = detect_format(name, data)
+        self.engine.admit(workspace["id"], len(data))
         outline = await asyncio.to_thread(outline_xlsx if fmt == "xlsx" else outline_docx, data)
         ws_id, ts, fid = workspace["id"], now(), new_id("f_")
         title = name.rsplit(".", 1)[0][:120] or "Uploaded file"
@@ -166,9 +172,9 @@ class Files:
         return self.get(ws_id, fid)
 
     async def _store(self, ws_id: str, file_id: str, version: int, fmt: str, data: bytes, *,
-                     mime: str | None = None) -> None:
+                     mime: str | None = None, kind: str = UPLOAD) -> None:
         key = f"files/{ws_id}/{file_id}/v{version}.{fmt}"
-        await self.engine.storage.put(key, data, mime or MIME[fmt])
+        await self.engine.keep(ws_id, key, data, mime or MIME[fmt], kind=kind)
         outputs = {fmt: {"key": key, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}}
         self.engine.db.execute("UPDATE file_versions SET outputs = ? WHERE file_id = ? AND version = ?",
                                (dumps(outputs), file_id, version))
@@ -212,6 +218,7 @@ class Files:
         fn = apply_xlsx if fmt == "xlsx" else apply_docx
         new, log = await asyncio.to_thread(fn, data, ops, evidence)
         outline = await asyncio.to_thread(outline_xlsx if fmt == "xlsx" else outline_docx, new)
+        self.engine.admit(ws_id, len(new), GENERATED)      # before the version exists, so a refusal leaves none
         version, ts = v["version"] + 1, now()
         new_model = model | {"outline": outline, "edits": log, "summary": summarize(log), "at_risk": []}
         with self.engine.db.tx() as c:
@@ -229,7 +236,7 @@ class Files:
                               (new_id("ff_"), file_id, ws_id, version, "check", e["target"], "medium",
                                "Figure without a source", f"{figs} was not found in the conversation's data or "
                                "documents. Check it before sharing.", ts))
-        await self._store(ws_id, file_id, version, fmt, new)
+        await self._store(ws_id, file_id, version, fmt, new, kind=GENERATED)
         self.engine.audit(ws_id, user_id, "file.edit", file_id, {"version": version, "edits": len(log)})
         return self.get(ws_id, file_id)
 
@@ -269,7 +276,7 @@ class Files:
             blobs["docx"] = await asyncio.to_thread(render_docx, model, findings=findings, meta=meta, app_url=url)
         for fmt, data in blobs.items():
             key = f"files/{ws_id}/{file_id}/v{version}.{fmt}"
-            await self.engine.storage.put(key, data, MIME[fmt])
+            await self.engine.keep(ws_id, key, data, MIME[fmt], kind=GENERATED)
             outputs[fmt] = {"key": key, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}
         self.engine.db.execute("UPDATE file_versions SET outputs = ? WHERE file_id = ? AND version = ?",
                                (dumps(outputs), file_id, version))

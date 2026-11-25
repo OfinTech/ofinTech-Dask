@@ -218,6 +218,7 @@ class Knowledge:
             raise Invalid(f"Documents up to {MAX_FILE_MB} MB can be added.", code="document_too_large")
         if not data:
             raise Invalid("The file is empty.")
+        self.engine.admit(ws_id, len(data))
         self.collection(ws_id, collection_id)
         digest = hashlib.sha256(data).hexdigest()
         dup = self.engine.db.one("SELECT id, name FROM documents WHERE workspace_id = ? AND sha256 = ?", (ws_id, digest))
@@ -225,7 +226,7 @@ class Knowledge:
             raise Conflict(f"This file is already in the knowledge base as “{dup['name']}”.", code="duplicate_document",
                            details={"document_id": dup["id"]})
         doc_id = new_id("doc_")
-        await self.engine.storage.put(self.storage_key(ws_id, doc_id), data, mime)
+        await self.engine.keep(ws_id, self.storage_key(ws_id, doc_id), data, mime)
         ts = now()
         self.engine.db.insert("documents", {
             "id": doc_id, "workspace_id": ws_id, "collection_id": collection_id, "name": filename[:200], "mime": mime,

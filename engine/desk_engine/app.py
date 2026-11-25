@@ -44,7 +44,7 @@ from .mail import Mailer
 from .mcp_client import MCPManager
 from .memory import Memory
 from .security import SecretBox, SecretStore
-from .storage import build_storage
+from .storage import UPLOAD, StorageGate, build_storage
 from .web import ROLES
 from .webhooks import Webhooks
 from .workflows.engine import Workflows
@@ -61,6 +61,7 @@ async def _mcp_tools(ctx: ToolContext) -> list[Any]:
 
 
 registry.provider(_mcp_tools)
+
 
 
 class Engine:
@@ -101,6 +102,9 @@ class Engine:
         self.mcp = MCPManager(self)
         self.knowledge = Knowledge(self)
         self.storage = build_storage(settings, transport=http_transport)
+        # Asked before a workspace's bytes are kept (see ``admit`` and ``keep``). Empty here: an installation that
+        # runs the Desk itself has no limit of ours. An edition with plans registers its storage allowance.
+        self.storage_gates: list[StorageGate] = []
         self.files = Files(self)
         self.mailer = Mailer.from_env()
         if settings.sealed and self.mailer.host:
@@ -239,6 +243,29 @@ class Engine:
                 except Exception:  # pragma: no cover
                     log.exception("scheduled sync failed for %s", conn["id"])
                     self.background_failed("accounting_sync")
+
+    # -- the one way a workspace's bytes reach file storage --------------------------------------
+    def admit(self, workspace_id: str, size: int, kind: str = UPLOAD) -> None:
+        """Ask every gate whether this workspace may keep ``size`` more bytes. A gate that refuses raises, and its
+        error is what the person sees.
+
+        Every path that takes a file from a person calls this first, before it parses anything or writes a row, so
+        that a refusal leaves nothing behind. ``keep`` asks again as the bytes are written. A gate is therefore a
+        question, not a reservation: it may be asked twice about the same bytes and must not count them twice."""
+        for gate in self.storage_gates:
+            gate(workspace_id, size, kind)
+
+    async def keep(self, workspace_id: str, key: str, data: bytes, content_type: str = "application/octet-stream",
+                   *, kind: str = UPLOAD) -> None:
+        """Keep bytes for a workspace. Nothing else in the engine writes to file storage: a new place that stores
+        a customer's file goes through here, and so through the gates, or ``tests/test_storage_one_way_in.py``
+        fails. ``kind`` is ``UPLOAD`` for what a person or a connected system brought in and ``GENERATED`` for what
+        the product built from data that was already here."""
+        parts = key.split("/")
+        if len(parts) < 3 or parts[1] != workspace_id:
+            raise ValueError(f"storage key {key!r} is not under workspace {workspace_id!r}")
+        self.admit(workspace_id, len(data), kind)
+        await self.storage.put(key, data, content_type)
 
     # -- shared services -----------------------------------------------------------------------
     def audit(self, workspace_id: str | None, user_id: str | None, action: str, target: str | None = None,

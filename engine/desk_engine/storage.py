@@ -19,6 +19,7 @@ import os
 import re
 import time
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,15 @@ def check_key(key: str) -> str:
     if not KEY_RE.match(key) or ".." in key or len(key) > 512:
         raise Invalid("Bad storage key.")
     return key
+
+
+# What is being kept, for the gates an edition may register on the engine (``Engine.storage_gates``): a file a
+# person or a connected system brought in, or one the product built from data that was already in the workspace
+# (a rendered workbook, a report, an edited copy).
+UPLOAD = "upload"
+GENERATED = "generated"
+# workspace id, bytes about to be kept, kind. Returns nothing; raises an AppError to refuse.
+StorageGate = Callable[[str, int, str], None]
 
 
 @dataclass

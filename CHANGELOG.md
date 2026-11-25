@@ -7,6 +7,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Added
 
+- **One way into file storage, with a gate in front of it.** The engine kept customers' files from five places,
+  each writing to storage itself. Anything that had to be checked before a file is kept (a storage allowance, in
+  an edition with plans) had to be remembered in each of them, and a new one could appear beside the ones
+  checked: the documents kept in folders did exactly that. Now `Engine.keep` is the only thing that writes, it
+  asks the functions in `Engine.storage_gates` first (workspace, bytes, and whether it is an upload or something
+  the product built), and a test fails if anything else in the engine writes to storage. Every path that takes
+  a file asks early as well, so a refusal leaves no row and no object behind. The list of gates is empty in this
+  repository: nothing changes for an installation you run yourself. `docs/ARCHITECTURE.md`, "One way into file
+  storage".
 - **Files has folders, and a folder takes any document.** Files was one flat list of what the assistant built and
   the Excel and Word files it fills in. People keep more than that beside their books: the signed PDF, the
   bank's CSV, the scan of a contract. Folders can be created, renamed, moved and nested (eight deep), and a file
