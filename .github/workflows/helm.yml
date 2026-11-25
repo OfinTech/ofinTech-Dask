@@ -1,0 +1,37 @@
+name: helm
+
+on:
+  push:
+    branches: [main]
+    paths: ["deploy/helm/**", ".github/workflows/helm.yml"]
+  pull_request:
+    paths: ["deploy/helm/**", ".github/workflows/helm.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    env:
+      CHART: deploy/helm/ofintech-desk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+        with: { version: v3.19.0 }
+      - name: helm lint
+        run: helm lint --strict "$CHART" --set publicUrl=https://desk.example.com
+      - name: Render
+        run: |
+          helm template desk "$CHART" --set publicUrl=https://desk.example.com > /dev/null
+          helm template desk "$CHART" --set publicUrl=https://desk.example.com \
+            --set masterKey.existingSecret=desk-key --set persistence.existingClaim=desk-data \
+            --set ingress.enabled=true --set ingress.className=nginx --set ingress.tlsSecretName=desk-tls > /dev/null
+      - name: Refuse a missing or plain-http publicUrl
+        run: |
+          if helm template desk "$CHART" > /dev/null 2>&1; then echo "rendered without publicUrl"; exit 1; fi
+          if helm template desk "$CHART" --set publicUrl=http://desk.example.com > /dev/null 2>&1; then
+            echo "rendered a plain-http publicUrl without allowHttp"; exit 1
+          fi
+          helm template desk "$CHART" --set publicUrl=http://localhost:8700 --set allowHttp=true > /dev/null

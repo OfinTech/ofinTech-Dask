@@ -1,0 +1,34 @@
+{{- if .Values.ingress.enabled }}
+{{- /* Default: the host in publicUrl, without the scheme and the port. */}}
+{{- $fromUrl := regexReplaceAll ":[0-9]+$" (regexReplaceAll "^https?://" (include "ofintech-desk.publicUrl" .) "") "" }}
+{{- $host := .Values.ingress.host | default $fromUrl }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- with .Values.ingress.tlsSecretName }}
+  tls:
+    - hosts:
+        - {{ $host | quote }}
+      secretName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ $host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}
+                port:
+                  name: http
+{{- end }}

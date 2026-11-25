@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  DESK_MODE: server
+  DESK_PUBLIC_URL: {{ include "ofintech-desk.publicUrl" . | quote }}
+  {{- if .Values.allowHttp }}
+  DESK_ALLOW_HTTP: "true"
+  {{- end }}
