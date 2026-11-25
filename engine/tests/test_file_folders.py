@@ -340,22 +340,26 @@ class AnotherWorkspace(Base):
 
 class Migration(unittest.TestCase):
     def test_a_database_from_before_folders_gains_them_and_its_files_are_at_the_top_level(self) -> None:
+        # The folders migration is found by what it does, not by its number: an edition that adds migrations of its
+        # own places this one after them (migrations are applied by position, and a position never changes once a
+        # database has run it), so a number written here would be true in one edition only.
+        at = [i for i, script in enumerate(MIGRATIONS) if "CREATE TABLE file_folders" in script]
+        self.assertEqual(len(at), 1, "exactly one migration creates the folders table")
         with tempfile.TemporaryDirectory() as tmp:
             db = sqlite3.connect(Path(tmp) / "desk.db")
-            for script in MIGRATIONS[:23]:
+            for script in MIGRATIONS[:at[0]]:
                 db.executescript(script)
             self.assertNotIn("folder_id", [c[1] for c in db.execute("PRAGMA table_info(files)")])
             db.execute("PRAGMA foreign_keys=OFF")
             db.execute("INSERT INTO files (id, workspace_id, name, kind, created_at, updated_at) VALUES "
                        "('f_old', 'ws_old', 'Before folders', 'workbook', 1, 1)")
             db.commit()
-            db.executescript(MIGRATIONS[23])
+            db.executescript(MIGRATIONS[at[0]])
             self.assertEqual(db.execute("SELECT name, folder_id FROM files").fetchall(), [("Before folders", None)])
             self.assertEqual(db.execute("SELECT COUNT(*) FROM file_folders").fetchone()[0], 0)
             db.close()
-        self.assertEqual(len(MIGRATIONS), 24)
-        self.assertIn("CREATE TABLE file_folders", MIGRATIONS[23])
-
+        # nothing after it depends on the place it has here: it only adds a table, a column and two indexes
+        self.assertNotIn("DROP", MIGRATIONS[at[0]].upper())
 
 if __name__ == "__main__":
     unittest.main()
