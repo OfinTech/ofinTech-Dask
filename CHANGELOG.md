@@ -55,6 +55,15 @@ migrations are applied automatically on start-up and are never rewritten once re
 
 ### Fixed
 
+- **The 13-week forecast's closing balance is no longer quoted without what it leaves out.** Asked for the
+  forecast on a trial company, a model gave the balance at the end of week 13 and the list of what is not in it,
+  and dropped the monthly averages the tool gives for scale, which stood in a paragraph of their own further
+  down. Without them the balance reads as what the bank will hold, when it counts only what is already invoiced,
+  already billed or paid every month. `weekly_cash_forecast` now says that, and the averages, in the same
+  paragraph as the closing balance; its description and the assistant's rule say the balance is never given
+  without them. When no balance is given (fewer than three months of ledger) it still says what the weekly
+  receipts and bills leave out, which it did not.
+
 - **A model served behind an OpenAI-compatible address is no longer recorded as using no tokens.** Such a server
   (vLLM, Ollama, LM Studio, any custom endpoint) puts token counts in its stream only when the request asks for
   them. The engine asked the named cloud providers and did not ask these, because a server that does not know the
