@@ -27,6 +27,14 @@ figure carries a marker:
 Literal numbers in the text are traced the same way as typed inputs, and highlighted with a Word comment when they
 have no source.
 
+**Figures read outside a conversation.** Code that builds a file from figures it read itself (a scheduled job, an
+edition's own workflow) passes those results to `Files.create(..., evidence=Evidence.from_results(results))`.
+Each result is the tool's name, its arguments, what it returned and when it was read; a typed figure found in them
+is traced and named exactly as a conversation's tool result would be. Without evidence and without a conversation,
+every typed figure is *without source*. A refresh traces against the file's conversation, or against fresh results
+given to `Files.refresh(..., evidence=...)`; a file that had only supplied results is built again rather than
+refreshed without them.
+
 ## 2. Live formulas, not pasted values
 
 The assistant never writes Excel formulas itself. It writes short expressions over column names:
@@ -143,6 +151,10 @@ not get in. A download is always sent as an attachment and never shown in the pa
 **Tidying never destroys.** Deleting a folder moves what is in it, files and folders, to the folder above, and
 removes the one folder. A folder that is not empty is not deleted until you confirm that. Moving, renaming and
 deleting are on the audit log. A viewer reads; an editor changes.
+
+**A file the assistant builds can go into a folder.** `create_workbook` and `create_report` take a `folder_id`, and
+so does `Files.create`; without one the file is at the top level. A folder of another workspace is refused. A new
+version stays in the folder its file is in now, so revising a file never moves one a person has moved.
 
 ## In the app
 

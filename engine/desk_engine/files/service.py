@@ -55,9 +55,16 @@ class Files:
 
     # -- create / revise ------------------------------------------------------------------------------------------
     async def create(self, workspace: dict[str, Any], user_id: str, spec: FileSpec, *, thread_id: str | None,
-                     file_id: str | None = None, note: str | None = None, review: bool | None = None) -> dict[str, Any]:
+                     file_id: str | None = None, note: str | None = None, review: bool | None = None,
+                     folder_id: str | None = None, evidence: Evidence | None = None) -> dict[str, Any]:
+        """Build a file from ``spec``, or a new version of ``file_id``.
+
+        ``folder_id`` puts a new file in that folder of the workspace (``None`` is the top level). A new version
+        stays where its file is, so a revision never moves a file someone has moved; the argument is then ignored.
+        ``evidence`` is where typed figures are traced; without it, the conversation of ``thread_id``."""
         ws_id = workspace["id"]
         existing = None
+        folder = None
         if file_id:
             existing = self.engine.db.one("SELECT * FROM files WHERE id = ? AND workspace_id = ?", (file_id, ws_id))
             if existing is None:
@@ -66,10 +73,13 @@ class Files:
                 raise Invalid("That file is a document kept as it was uploaded; it cannot be saved over. Create a "
                               "new file instead.", code="not_editable")
             thread_id = thread_id or existing["thread_id"]
+        else:
+            folder = self.folders.require(ws_id, folder_id)
         # What is built is not sized until it is rendered, so this asks about nothing yet: a gate that will take no
         # more for this workspace says so here, before a version exists. ``keep`` asks again with the real size.
         self.engine.admit(ws_id, 0, GENERATED)
-        evidence = Evidence.for_thread(self.engine, thread_id)
+        if evidence is None:
+            evidence = Evidence.for_thread(self.engine, thread_id)
         model = resolve(self.engine, workspace, spec, evidence)
         checks = run_checks(model)
         ts = now()
@@ -81,8 +91,8 @@ class Files:
                           "review_error = NULL, updated_at = ? WHERE id = ?", (spec.title, spec.kind, version, ts, fid))
             else:
                 c.execute("INSERT INTO files (id, workspace_id, thread_id, name, kind, current_version, created_by, "
-                          "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-                          (fid, ws_id, thread_id, spec.title, spec.kind, version, user_id, ts, ts))
+                          "created_at, updated_at, folder_id) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                          (fid, ws_id, thread_id, spec.title, spec.kind, version, user_id, ts, ts, folder))
             c.execute("INSERT INTO file_versions (id, file_id, workspace_id, version, spec, model, note, created_by, "
                       "created_at) VALUES (?,?,?,?,?,?,?,?,?)",
                       (new_id("fv_"), fid, ws_id, version, spec.model_dump_json(), dumps(model),
@@ -93,13 +103,20 @@ class Files:
                           (new_id("ff_"), fid, ws_id, version, "check", f["target"], f["severity"], f["title"],
                            f.get("body") or "", ts))
         await self.render(ws_id, fid, version)
-        self.engine.audit(ws_id, user_id, "file.create" if version == 1 else "file.revise", fid,
-                          {"version": version, "kind": spec.kind})
+        detail: dict[str, Any] = {"version": version, "kind": spec.kind}
+        if not existing:
+            detail["folder"] = folder
+        self.engine.audit(ws_id, user_id, "file.create" if version == 1 else "file.revise", fid, detail)
         if (review if review is not None else bool(workspace.get("auto_review", 1))):
             self.start_review(workspace, fid, user_id)
         return self.get(ws_id, fid)
 
-    async def refresh(self, workspace: dict[str, Any], user_id: str, file_id: str) -> dict[str, Any]:
+    async def refresh(self, workspace: dict[str, Any], user_id: str, file_id: str, *,
+                      evidence: Evidence | None = None) -> dict[str, Any]:
+        """The same file read again. Query tables read their datasets afresh; typed figures are traced against
+        ``evidence`` when given, otherwise against the file's conversation. A file built with evidence its caller
+        supplied and no conversation has nothing to trace them against here: refreshed without new evidence, those
+        figures come back without a source, so such a caller refreshes by building again with fresh results."""
         v = self._version(workspace["id"], file_id, None)
         if v["file"]["kind"] == STORED_KIND:
             raise Invalid("This document is kept as it was uploaded; there is nothing to refresh.")
@@ -107,7 +124,7 @@ class Files:
             raise Invalid("Uploaded files have no data to refresh; ask the assistant to update the figures.")
         spec = FileSpec.model_validate_json(v["spec"])
         return await self.create(workspace, user_id, spec, thread_id=None, file_id=file_id,
-                                 note="Refreshed with the latest data")
+                                 note="Refreshed with the latest data", evidence=evidence)
 
     # -- the user's own Excel and Word files --------------------------------------------------------------------------
     async def add(self, workspace: dict[str, Any], user_id: str, name: str, data: bytes, *,

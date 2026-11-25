@@ -36,6 +36,8 @@ BLOCK = {"type": "object", "properties": {
         "label": {"type": "string"}, "value": {"type": "string", "description": "e.g. [pl:total:amount]"},
         "format": FORMAT}, "required": ["label", "value"]}, "description": "kpis blocks"},
 }, "required": ["type"]}
+FOLDER = {"type": "string", "description": "a new file goes into this folder of Files; leave it out for the top "
+                                         "level. A new version stays in its file's folder."}
 SHEETS = {"type": "array", "items": {"type": "object", "properties": {
     "name": {"type": "string", "description": "sheet name, at most 31 characters"},
     "blocks": {"type": "array", "items": BLOCK}}, "required": ["name", "blocks"]}}
@@ -78,7 +80,7 @@ async def _create(ctx: ToolContext, a: dict[str, Any], kind: str) -> ToolOutput:
     except ValidationError as exc:
         return ToolOutput(_errors(exc))
     out = await ctx.engine.files.create(ctx.workspace, ctx.user_id, spec, thread_id=ctx.thread_id,
-                                        file_id=a.get("file_id"), note=a.get("note"))
+                                        file_id=a.get("file_id"), note=a.get("note"), folder_id=a.get("folder_id"))
     f, model = out["file"], out["model"]
     s = model["summary"]
     unverified = [c["a"] for sh in model["sheets"] for b in sh["blocks"] if b["type"] == "table"
@@ -103,7 +105,8 @@ async def _create(ctx: ToolContext, a: dict[str, Any], kind: str) -> ToolOutput:
 @registry.tool("create_workbook", "Create an Excel workbook of tables, KPIs and notes. " + COMMON,
                schema({"title": {"type": "string"}, "sheets": SHEETS,
                        "file_id": {"type": "string", "description": "save as a new version of this file"},
-                       "note": {"type": "string", "description": "what changed in this version"}},
+                       "note": {"type": "string", "description": "what changed in this version"},
+                       "folder_id": FOLDER},
                       ["title", "sheets"]), category="files",
                summarize=lambda a: f"Create workbook '{a.get('title')}'", min_role="editor")
 async def _workbook(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
@@ -116,7 +119,8 @@ async def _workbook(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
                "money, number, integer, percent). Each figure gets an [S]/[C] marker that links to the list of sources "
                "and calculations. " + COMMON,
                schema({"title": {"type": "string"}, "subtitle": {"type": "string"}, "sheets": SHEETS,
-                       "sections": SECTIONS, "file_id": {"type": "string"}, "note": {"type": "string"}},
+                       "sections": SECTIONS, "file_id": {"type": "string"}, "note": {"type": "string"},
+                       "folder_id": FOLDER},
                       ["title", "sheets", "sections"]), category="files",
                summarize=lambda a: f"Create report '{a.get('title')}'", min_role="editor")
 async def _report(ctx: ToolContext, a: dict[str, Any]) -> ToolOutput:
