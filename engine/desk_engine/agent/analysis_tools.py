@@ -769,8 +769,10 @@ def _placed_by(part: dict[str, Any], who: str, verb: str, weeks: int) -> str:
                "instalments, tax), the balance at the end of each week and the first week it falls below zero or "
                "below a floor. It states what it assumed and what it leaves out (sales not yet invoiced, bills not "
                "yet received). Use it for a 13-week or weekly cash forecast, short-term liquidity, or whether "
-               "cash covers the coming weeks: report its figures and its limits as given. For the months ahead "
-               "from a plan use forecast_report; for how long the cash lasts at the current rate use cash_runway.",
+               "cash covers the coming weeks: report its figures and its limits as given, and never give its closing "
+               "balance without the sentence that follows it on what is left out and the monthly averages. For the "
+               "months ahead from a plan use forecast_report; for how long the cash lasts at the current rate use "
+               "cash_runway.",
                schema({"month": {"type": "string", "description": "YYYY-MM; the forecast starts the day after this "
                                                                   "month ends. The latest month when left out"},
                        "customer_terms_days": {"type": "integer", "minimum": 0, "maximum": 365,
@@ -795,9 +797,17 @@ async def _weekly_cash_forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutp
            f"in {r.get('currency') or 'the base currency'}, from the general ledger “{r['ledger']['name']}” as it stood "
            f"at {r['as_of']}. Cash at that date: {r['opening_cash']:,.2f}." + _provenance_note(r)]
     if r["complete"]:
-        t = r["totals"]
+        t, rc = r["totals"], st["recent"]
+        # The closing balance and what it leaves out are one paragraph, so the balance is not quoted without them:
+        # asked for this forecast, a model gave the balance and dropped a "for scale" line that stood further down.
         out.append(f"Over the {r['weeks_ahead']} weeks: receipts {t['receipts']:,.2f}, less bills {t['bills']:,.2f} and "
-                   f"standing payments {t['standing']:,.2f}, leaves {t['closing']:,.2f} at {weeks[-1]['end']}.")
+                   f"standing payments {t['standing']:,.2f}, leaves {t['closing']:,.2f} at {weeks[-1]['end']}. That "
+                   f"balance counts only what is already invoiced, already billed or paid every month: it is not what "
+                   f"the bank will hold. Sales not yet invoiced, bills not yet received and payments with no pattern "
+                   f"are not in it. For scale, a month of {st['window'][0]} to {st['window'][-1]} on average: "
+                   f"{rc['supplier_payments']:,.2f} paid to suppliers and {rc['other_payments']:,.2f} in other payments "
+                   f"that are not carried forward, against {rc['customer_receipts']:,.2f} received from customers and "
+                   f"{rc['other_receipts']:,.2f} of other money received.")
         low, b = r["floor"], r["first_week_below"]
         mark = "zero" if low == 0 else f"the floor of {low:,.2f}"
         out.append(f"The balance first falls below {mark} in week {b['week']} ({b['start']} to {b['end']}), which ends "
@@ -809,6 +819,8 @@ async def _weekly_cash_forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutp
         out.append("No weekly balance is given: see what could not be worked out. Receipts and bills by week "
                    "(receipts; bills): " + " | ".join(f"{w['week']} to {w['end']}: {w['receipts']:,.2f}; {w['bills']:,.2f}"
                                                       for w in weeks))
+        out.append("These are the open invoices and bills only: sales not yet invoiced, bills not yet received and "
+                   "payments made straight from the bank are not in them.")
     out.append("Receipts are the open customer invoices only: " + _placed_by(r["receipts"], "customer(s)", "pay", r["weeks_ahead"]))
     out.append("Bills are the open supplier bills only: " + _placed_by(r["bills"], "supplier(s)", "be paid", r["weeks_ahead"]))
     if st is not None:
@@ -823,12 +835,6 @@ async def _weekly_cash_forecast(ctx: ToolContext, a: dict[str, Any]) -> ToolOutp
             out.append("Paid every month but for amounts too far apart to carry forward, so not in the forecast: "
                        + "; ".join(f"{x['label']} (" + ", ".join(f"{b['amount']:,.2f}" for b in x["by_month"]) + ")"
                                    for x in st["varying"][:8]) + ".")
-        rc = st["recent"]
-        out.append(f"Not in the forecast: sales not yet invoiced, bills not yet received and payments with no "
-                   f"pattern, so later weeks understate both sides. For scale, the monthly average over "
-                   f"{st['window'][0]} to {st['window'][-1]}: received from customers {rc['customer_receipts']:,.2f}, paid "
-                   f"to suppliers {rc['supplier_payments']:,.2f}, other money received {rc['other_receipts']:,.2f}, "
-                   f"other payments not carried forward {rc['other_payments']:,.2f}.")
     if r["could_not_work_out"]:
         out.append("Could not be worked out: " + " ".join(r["could_not_work_out"]))
     cols = [{"key": "week", "label": "Week", "format": "number"}, {"key": "end", "label": "Week ending", "format": "date"},

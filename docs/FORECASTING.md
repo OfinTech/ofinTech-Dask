@@ -158,7 +158,8 @@ a payment. Money received ahead of an invoice covers that customer's next one.
 
 - Sales not yet invoiced and bills not yet received. Later weeks therefore understate both sides; for scale the
   answer gives the monthly average of the last three months for money received from customers, paid to suppliers,
-  other money received and other payments.
+  other money received and other payments. This stands in the same paragraph as the closing balance, so that the
+  balance is not read as what the bank will hold.
 - Payments with no pattern, and payments made every month for amounts too far apart to carry: these are named.
 - A receivable or payable balance with no document behind it (an opening balance): the amount is stated and given
   no week.

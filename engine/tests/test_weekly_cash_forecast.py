@@ -333,11 +333,42 @@ class Tool(unittest.TestCase):
                       "6,000.00)", text)
         self.assertIn("too far apart to carry forward, so not in the forecast: 6300 Marketing (1,000.00, 5,000.00, "
                       "2,000.00).", text)
-        self.assertIn("Not in the forecast: sales not yet invoiced, bills not yet received and payments with no pattern, "
-                      "so later weeks understate both sides.", text)
-        self.assertIn("received from customers 12,333.33, paid to suppliers 1,333.33, other money received 500.00, other "
-                      "payments not carried forward 6,666.67.", text)
         self.assertNotIn("Could not be worked out", text)
+
+    def test_the_closing_balance_is_never_a_paragraph_without_what_it_leaves_out(self) -> None:
+        # Asked for this forecast on 25 Nov 2026, a model gave the closing balance and dropped the monthly averages,
+        # which stood in a paragraph of their own further down. They are one paragraph now.
+        said = [line for line in self.call({}).for_model().split("\n") if "leaves 33,000.00 at 2027-01-30" in line]
+        self.assertEqual(len(said), 1)
+        self.assertEqual(said[0], (
+            "Over the 13 weeks: receipts 42,000.00, less bills 9,500.00 and standing payments 81,000.00, leaves 33,000.00 "
+            "at 2027-01-30. That balance counts only what is already invoiced, already billed or paid every month: it is "
+            "not what the bank will hold. Sales not yet invoiced, bills not yet received and payments with no pattern are "
+            "not in it. For scale, a month of 2026-08 to 2026-10 on average: 1,333.33 paid to suppliers and 6,666.67 in "
+            "other payments that are not carried forward, against 12,333.33 received from customers and 500.00 of other "
+            "money received."))
+        tool = asyncio.run(registry.for_context(self.ctx))["weekly_cash_forecast"]
+        self.assertIn("never give its closing balance without the sentence that follows it", " ".join(tool.description.split()))
+
+    def test_without_a_balance_it_still_says_what_the_weeks_leave_out(self) -> None:
+        h = Harness()
+        self.addCleanup(h.close)
+        ws = h.setup_workspace(with_model=False)
+        rows = [r for r in company() if r[0] == "Date" or r[0] >= "2026-09-01"]
+        up = h.api("POST", f"/api/w/{ws}/imports", files={"file": ("gl.csv", as_csv(rows))})
+        h.api("POST", f"/api/w/{ws}/imports/{up['upload_id']}/commit", json={"name": "General ledger", "sheet": None, "header_row": 0})
+        workspace = dict(h.engine.db.one("SELECT * FROM workspaces WHERE id = ?", (ws,)))
+        user = h.engine.db.one("SELECT user_id FROM members WHERE workspace_id = ?", (ws,))["user_id"]
+        ctx = ToolContext(h.engine, workspace, user)
+
+        async def go() -> Any:
+            return await (await registry.for_context(ctx))["weekly_cash_forecast"].handler(ctx, {})
+        text = asyncio.run(go()).for_model()
+        self.assertIn("No weekly balance is given: see what could not be worked out.", text)
+        self.assertIn("These are the open invoices and bills only: sales not yet invoiced, bills not yet received and "
+                      "payments made straight from the bank are not in them.", text)
+        self.assertNotIn("leaves", text)
+        self.assertIn("Could not be worked out: Standing payments", text)
 
     def test_a_floor_terms_and_a_month_the_ledger_does_not_cover(self) -> None:
         self.assertIn("The balance first falls below the floor of 60,000.00 in week 8 (2026-12-20 to 2026-12-26), which "
@@ -364,7 +395,8 @@ class Tool(unittest.TestCase):
             groups = select_groups([ChatMessage("user", asked)], tools, has_datasets=True)
             self.assertIn("weekly_cash_forecast", {t.name for t in choose_tools(tools, groups)}, asked)
         self.assertIn("For cash week by week over the coming weeks use weekly_cash_forecast, and say what it leaves out "
-                      "as it says it.", " ".join(RULES.split()))
+                      "as it says it: its closing balance is never given without that and the monthly averages beside it.",
+                      " ".join(RULES.split()))
         before = self.h.engine.db.one("SELECT COUNT(*) AS n FROM audit_log")["n"]
         self.call({})
         self.assertEqual(self.h.engine.db.one("SELECT COUNT(*) AS n FROM audit_log")["n"], before)
