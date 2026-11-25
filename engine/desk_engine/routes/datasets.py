@@ -100,11 +100,12 @@ async def upload(ctx: Ctx) -> dict[str, Any]:
         filename = f.filename or "upload.xlsx"
     if len(data) > limit:
         raise Invalid(f"Files up to {ctx.engine.settings.max_upload_mb} MB can be imported.")
+    ctx.engine.admit(ctx.ws_id, len(data))
     tables = importer.read_workbook(data, filename)
     upload_id = new_id("up_")
     await _expire_uploads(ctx)
-    await ctx.engine.storage.put(f"uploads/{ctx.ws_id}/{upload_id}", data)
-    await ctx.engine.storage.put(f"uploads/{ctx.ws_id}/{upload_id}.json", json.dumps({"filename": filename}).encode())
+    await ctx.engine.keep(ctx.ws_id, f"uploads/{ctx.ws_id}/{upload_id}", data)
+    await ctx.engine.keep(ctx.ws_id, f"uploads/{ctx.ws_id}/{upload_id}.json", json.dumps({"filename": filename}).encode())
     previews = []
     for t in tables[:20]:
         try:

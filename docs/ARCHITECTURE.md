@@ -66,6 +66,16 @@
 - **Workflows are data.** Definitions are validated by pydantic (discriminated unions). Templating is
   `{{path.lookup}}` only, with no expressions. Runs persist step index, context and log, so they resume after
   approvals and restarts.
+- **One way into file storage.** Everything that keeps a workspace's bytes (an uploaded file, a document, an
+  import, a workbook the assistant built) goes through `Engine.keep(workspace_id, key, data, …, kind=…)`, and
+  nothing else in the engine writes to storage; `tests/test_storage_one_way_in.py` fails if something does.
+  `keep` first asks the gates in `Engine.storage_gates`, each a function of the workspace, the number of bytes
+  and the kind (`upload` for what a person or a connected system brought in, `generated` for what the product
+  built from data already there). A gate refuses by raising, and its message is what the person sees. Every
+  path that takes a file also asks early with `Engine.admit(…)`, before it writes a row, so a refusal leaves
+  nothing behind. The list is empty here: an installation you run yourself has no limit of ours. It is the place
+  for an edition's storage allowance, or for your own rule. A gate is a question, not a reservation: it is asked
+  twice about the same bytes and must not count them twice.
 - **Dependencies.** All dependencies are permissive and few: Starlette, uvicorn, pydantic, httpx2, mcp, openpyxl,
   cryptography, PyYAML, python-multipart; React and Electron. Charts, the Markdown renderer and the workflow editor
   are written in the project, so there is no runtime CDN or font download.
