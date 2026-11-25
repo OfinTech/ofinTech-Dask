@@ -1,0 +1,13 @@
+# An Ingress in front of the Desk, with what the proxy has to allow (see the chart's README). CI renders this file.
+# The two annotation names below are ingress-nginx's; another controller has its own names for the same two things.
+publicUrl: https://desk.example.com
+
+ingress:
+  enabled: true
+  className: nginx
+  tlsSecretName: desk-tls
+  annotations:
+    # Uploads: the Desk accepts up to 260 MB in one request; nginx stops a request body at 1 MB unless told.
+    nginx.ingress.kubernetes.io/proxy-body-size: 260m
+    # Answers are streamed: the proxy must pass each piece on as it arrives, not collect the whole reply.
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"

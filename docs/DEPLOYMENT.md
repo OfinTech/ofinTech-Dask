@@ -89,6 +89,13 @@ two above with the version you want and delete the `build:` line. Everything els
 the certificate, the backups, the checklist — is unchanged. An upgrade is then a new tag and
 `docker compose pull && docker compose up -d`, with no build on the server.
 
+### Kubernetes
+
+A Helm chart is in [`deploy/helm/ofintech-desk`](../deploy/helm/ofintech-desk/README.md), contributed by the
+community: one pod, one volume, an optional Ingress. It is linted and rendered in CI and has not yet been run on
+a cluster by the maintainers; its README says what the proxy in front has to allow for uploads and streamed
+answers. The Docker Compose install below is the one that is run every day.
+
 ## Install
 
 ```bash
