@@ -76,6 +76,11 @@
   nothing behind. The list is empty here: an installation you run yourself has no limit of ours. It is the place
   for an edition's storage allowance, or for your own rule. A gate is a question, not a reservation: it is asked
   twice about the same bytes and must not count them twice.
+- **Where an edition changes the interface.** `ui/src/lib/edition.ts` holds the hooks an edition registers once at
+  start with `extendEdition`: the name of a rail entry in a given workspace (`navLabel`; the Files page and its
+  breadcrumbs use the same name) and a component drawn on the Files list above the folders (`filesTop`). Nothing
+  is registered here, so every page is the core's. A field an edition adds to a workspace in the session is
+  declared in the edition's own module, since `Workspace` in `ui/src/lib/app.tsx` is an interface.
 - **Dependencies.** All dependencies are permissive and few: Starlette, uvicorn, pydantic, httpx2, mcp, openpyxl,
   cryptography, PyYAML, python-multipart; React and Electron. Charts, the Markdown renderer and the workflow editor
   are written in the project, so there is no runtime CDN or font download.

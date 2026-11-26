@@ -1,9 +1,11 @@
 import { createContext, useContext } from "react";
 
-export type Workspace = {
+/** A workspace as the session lists it. An interface, so an edition that adds fields to the session's row declares
+ *  them in its own module (`declare module "<path>/lib/app" { interface Workspace { … } }`) without changing this. */
+export interface Workspace {
   id: string; name: string; role: "viewer" | "editor" | "admin" | "owner"; base_currency: string; country: string;
   fiscal_year_start_month: number; accounting_framework: string; timezone: string; egress_policy?: "open" | "sealed";
-};
+}
 
 export type Session = {
   version: string; mode: "desktop" | "server"; signup_open: boolean; needs_first_user: boolean; public_url: string;
