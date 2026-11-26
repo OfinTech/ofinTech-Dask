@@ -4,7 +4,7 @@
 import { useState, type ReactNode } from "react";
 import { get, post } from "../lib/api";
 import { useApp, wsPath } from "../lib/app";
-import { fmtDate, fmtDateTime, fmtFixed, fmtMoney, fmtNumber, fmtPercent } from "../lib/format";
+import { fmtDate, fmtDateTime, fmtFixed, fmtMoney, fmtNumber, fmtPercent, formatLocale } from "../lib/format";
 import { Chart } from "../components/charts";
 import { Empty, ErrorBox, Icon, Loading, PageHead, go, query, useAction, useLoad } from "../components/ui";
 import { N, lang, tr } from "../lib/i18n";
@@ -95,11 +95,11 @@ const PROV_WHY: Record<string, string> = {
 // ---- helpers ------------------------------------------------------------------------------------------------------
 function monthName(m: string): string {
   const d = new Date(`${m}-01T00:00:00`);
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "long", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat(formatLocale(), { month: "long", year: "numeric" }).format(d);
 }
 function monthShort(m: string): string {
   const d = new Date(`${m}-01T00:00:00`);
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "short", year: "2-digit" }).format(d);
+  return new Intl.DateTimeFormat(formatLocale(), { month: "short", year: "2-digit" }).format(d);
 }
 function upDown(change: number | null | undefined): string {
   if (change === null || change === undefined) return "";

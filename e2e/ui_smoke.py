@@ -68,7 +68,9 @@ def main() -> int:
         sample_workbook(xlsx)
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            pg = browser.new_page(viewport={"width": 1360, "height": 860})
+            # a browser set to Arabic: the app is English until a person chooses (the owner, 26 Nov 2026), so every
+            # English selector below is also the proof that the browser's language did not choose for them
+            pg = browser.new_page(viewport={"width": 1360, "height": 860}, locale="ar-SA")
             pg.on("pageerror", lambda e: errors.append(str(e)))
             try:
                 run_steps(pg, base, out, xlsx)
@@ -101,6 +103,8 @@ def hide_toasts(pg, hide: bool = True) -> None:
 
 def run_steps(pg, base, out, xlsx):
     pg.goto(f"{base}/#token={TOKEN}")
+    shown = pg.evaluate("document.documentElement.lang + '/' + document.documentElement.dir")
+    assert shown == "en/ltr", f"a browser set to Arabic was given {shown}, not English"
     pg.locator("label:has(> span:text-is('Company or workspace name')) input").fill("E2E Ltd")
     pg.get_by_role("button", name="Create workspace").click()
     pg.wait_for_selector("text=No general ledger yet")   # the overview is the landing page; it asks for a ledger first

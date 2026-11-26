@@ -2,7 +2,8 @@
 
 The interface is available in **English, Arabic, Spanish and French**. Each person picks a language under
 **Settings → Account → Language** (or on the sign-in page); signed-in people keep the choice on their account, so it
-follows them to every device. Before sign-in the browser's language is used when it is one of these.
+follows them to every device. **English is the default**: until a person chooses, the interface and the website
+are in English, whatever language their browser or computer is set to.
 
 - **Arabic** switches the whole layout to right to left. Figures, codes, formulas and file contents keep their own
   direction, and every paragraph takes the direction of its first letter, so mixed Arabic and English text reads
@@ -12,6 +13,8 @@ follows them to every device. Before sign-in the browser's language is used when
   download. Figures inside Arabic text keep Inter's tabular digits.
 - **Numbers and dates** follow the language's conventions, always with Western digits (as most finance teams'
   reports use): `1,234.56` in English, `1.234,56` in Spanish, `1 234,56` in French.
+  In English, a browser set to an English variant (US, UK, …) decides only the order of day and month; a browser set
+  to another language never turns an English interface's months or digits into that language.
 - **The assistant** answers in the language of your latest message, and uses your interface language when that is
   unclear. Account names, document titles and quoted text stay as they are.
 - **Workflow templates** are shown in your language. Messages from the server (errors) are in English.

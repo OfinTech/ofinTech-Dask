@@ -2,8 +2,16 @@
 
 import { locale as uiLocale } from "./i18n";
 
-// formatting follows the interface language (Western digits everywhere); English uses the browser's own locale
-const locales = (): string => (uiLocale().startsWith("en") && typeof navigator !== "undefined" ? navigator.language || "en-US" : uiLocale());
+/** The locale numbers and dates are written in: the interface language's, with Western digits in every language.
+ *  In English the browser's own English (en-US, en-GB, …) sets the order of day and month; a browser set to another
+ *  language does not turn an English interface's dates and digits into that language. */
+export function formatLocale(): string {
+  const ui = uiLocale();
+  if (!ui.startsWith("en") || typeof navigator === "undefined") return ui;
+  const nav = navigator.language || "";
+  return /^en(-|$)/i.test(nav) ? nav : ui;
+}
+const locales = formatLocale;
 
 export function fmtNumber(v: unknown, digits = 2): string {
   if (v === null || v === undefined || v === "") return "—";

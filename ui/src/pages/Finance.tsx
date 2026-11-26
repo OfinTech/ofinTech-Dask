@@ -4,9 +4,9 @@
 import { type ReactNode } from "react";
 import { get } from "../lib/api";
 import { useApp, wsPath } from "../lib/app";
-import { fmtDate, fmtMoney, fmtNumber, fmtPercent } from "../lib/format";
+import { fmtDate, fmtMoney, fmtNumber, fmtPercent, formatLocale } from "../lib/format";
 import { Empty, ErrorBox, Loading, PageHead, go, query, useLoad } from "../components/ui";
-import { N, lang, tr } from "../lib/i18n";
+import { N, tr } from "../lib/i18n";
 import { Prov } from "./Overview";
 
 const TABS: [string, string][] = [["statements", N("Statements")], ["budget", N("Budget vs actual")], ["receivables", N("Receivables")],
@@ -33,10 +33,10 @@ const PROV_WHY: Record<string, string> = {
 };
 
 function monthName(m: string): string {
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
+  return new Intl.DateTimeFormat(formatLocale(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
 }
 function monthShort(m: string): string {
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "short", year: "2-digit" }).format(new Date(`${m}-01T00:00:00`));
+  return new Intl.DateTimeFormat(formatLocale(), { month: "short", year: "2-digit" }).format(new Date(`${m}-01T00:00:00`));
 }
 function withMonth(path: string, month: string | null, extra?: Record<string, string>): string {
   const q = new URLSearchParams(extra);

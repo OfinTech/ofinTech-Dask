@@ -4,9 +4,9 @@
 import { type ReactNode } from "react";
 import { get } from "../lib/api";
 import { useApp, wsPath } from "../lib/app";
-import { fmtDate, fmtDateTime, fmtMoney, fmtNumber, fmtPercent, fmtRelative } from "../lib/format";
+import { fmtDate, fmtDateTime, fmtMoney, fmtNumber, fmtPercent, fmtRelative, formatLocale } from "../lib/format";
 import { ErrorBox, Loading, PageHead, useLoad } from "../components/ui";
-import { N, lang, tr } from "../lib/i18n";
+import { N, tr } from "../lib/i18n";
 
 const CLOSE_STATUS: Record<string, string> = { none: N("Not started"), open: N("In progress"), closed: N("Closed") };
 const ITEM_KIND: Record<string, string> = {
@@ -34,7 +34,7 @@ const ACTION: Record<string, string> = {
 };
 
 function monthName(m: string): string {
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
+  return new Intl.DateTimeFormat(formatLocale(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
 }
 
 export function OversightPage(): ReactNode {

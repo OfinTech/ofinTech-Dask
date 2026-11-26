@@ -24,8 +24,10 @@ function initial(): Lang {
     const saved = localStorage.getItem(KEY);
     if (saved && saved in DICTS) return saved as Lang;
   } catch { /* storage unavailable */ }
-  const nav = (navigator.language || "en").slice(0, 2).toLowerCase();
-  return (nav in DICTS ? nav : "en") as Lang;
+  // English is the product's language until a person chooses another (the owner, 26 Nov 2026): in the language
+  // menu, which this browser remembers, or on the account, which follows them to every device (main.tsx). The
+  // browser's own language is not read: a browser set to Arabic is not a person asking for an Arabic interface.
+  return "en";
 }
 
 let current: Lang = initial();
