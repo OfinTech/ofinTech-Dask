@@ -31,6 +31,7 @@ import { FinancePage } from "./pages/Finance";
 import { LedgerPage } from "./pages/Ledger";
 import { OversightPage } from "./pages/Oversight";
 import { N, lang, onLang, setLang, tr, type Lang } from "./lib/i18n";
+import { editionName } from "./lib/edition";
 import { ACTIVITY_EVENTS, FUTURE_TOLERANCE_MS, fromServer, idleState, isUserActivity, mergeActivity, secondsLeft, tickMs, type IdleState } from "./lib/idle";
 
 const NAV: [string, string, string][] = [
@@ -433,7 +434,7 @@ function App(): ReactNode {
           <nav className="nav">
             {NAV.filter(([key]) => navKeys.has(key)).map(([key, label, icon]) => (
               <a key={key} href={`#/${key}`} aria-current={section === key ? "page" : undefined}>
-                <Icon name={icon} />{tr(label)}
+                <Icon name={icon} />{editionName(key, ws) || tr(label)}
                 {key === "inbox" && counts.pending_approvals + counts.unread > 0 && (
                   <span className="count" aria-label={`${counts.pending_approvals} approvals, ${counts.unread} unread`}>
                     {counts.pending_approvals + counts.unread}</span>)}

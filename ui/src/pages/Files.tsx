@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { del, download, get, patch, post, upload } from "../lib/api";
-import { can, useApp, wsPath } from "../lib/app";
+import { can, useApp, wsPath, type Workspace } from "../lib/app";
+import { editionName, filesTop } from "../lib/edition";
 import { fmtDateTime, fmtNumber, fmtPercent, fmtRelative } from "../lib/format";
 import { DataTable } from "../components/charts";
 import { Comments } from "../components/comments";
@@ -52,6 +53,11 @@ const KIND_LABEL: Record<string, string> = { report: N("Report: Word and Excel")
 // What a folder takes. The server decides; this only narrows the file chooser to the same list.
 const ACCEPT = ".pdf,.xlsx,.docx,.pptx,.csv,.tsv,.txt,.md,.json,.xml,.rtf,.xls,.doc,.ppt,.ods,.odt,.odp,.png,.jpg,.jpeg,.tif,.tiff,.gif,.webp,.bmp,.heic,.eml,.msg";
 
+/** What this page is called in the workspace: "Files", unless an edition names it otherwise there. */
+function filesName(ws: Workspace): string {
+  return editionName("files", ws) || tr("Files");
+}
+
 type Folder = { id: string; parent_id: string | null; name: string; path: string; depth: number; files: number; folders: number;
   updated_at: number };
 
@@ -97,6 +103,7 @@ function FileList(): ReactNode {
   const [naming, setNaming] = useState<{ folder?: Folder } | null>(null);
   const [removing, setRemoving] = useState<Folder | null>(null);
   const editor = can(ws, "editor");
+  const Top = filesTop();                     // what an edition draws above the folders; nothing in the core
   const all = folders.data || [];
   const current = all.find((f) => f.id === query().get("folder")) || null;
   const here = current ? current.id : null;
@@ -140,7 +147,7 @@ function FileList(): ReactNode {
   const nothing = inside.length === 0 && mine.length === 0;
   return (
     <div className="page" style={{ maxWidth: 1200 }}>
-      <PageHead title={tr("Files")} sub={tr("Workbooks and reports the assistant prepared, your own Excel and Word files it fills in, and any other document you keep beside the books, in folders. Every figure the assistant writes is traced to its source or is a live formula, and every change is kept as a version.")}
+      <PageHead title={filesName(ws)} sub={tr("Workbooks and reports the assistant prepared, your own Excel and Word files it fills in, and any other document you keep beside the books, in folders. Every figure the assistant writes is traced to its source or is a live formula, and every change is kept as a version.")}
         actions={editor && <>
           <button className="btn" disabled={busy} onClick={() => setNaming({})}><Icon name="folder" />{tr("New folder")}</button>
           <label className={`btn primary ${busy ? "disabled" : ""}`}>
@@ -148,8 +155,9 @@ function FileList(): ReactNode {
             <input type="file" hidden accept={ACCEPT} disabled={busy} onChange={(e) => { void add(e.target.files?.[0]); e.target.value = ""; }} />
           </label></>} />
       <ErrorBox error={files.error || folders.error} />
+      {Top && <Top ws={ws} folder={here} folders={all} editor={editor} />}
       {current && <p className="small" aria-label={tr("Folder")}>
-        <button className="linklike" onClick={() => open(null)}>{tr("Files")}</button>
+        <button className="linklike" onClick={() => open(null)}>{filesName(ws)}</button>
         {trail.map((f) => <span key={f.id}>{" / "}{f.id === current.id ? <strong>{f.name}</strong>
           : <button className="linklike" onClick={() => open(f.id)}>{f.name}</button>}</span>)}
       </p>}
@@ -211,7 +219,7 @@ function StoredView({ id, data }: { id: string; data: any }): ReactNode {
   return (
     <div className="page" style={{ maxWidth: 900 }}>
       <PageHead title={file.name}
-        sub={<><button className="linklike" onClick={() => go("files")}>{tr("Files")}</button>
+        sub={<><button className="linklike" onClick={() => go("files")}>{filesName(ws)}</button>
           {file.folder_path ? <>{" / "}<button className="linklike" onClick={back}>{file.folder_path}</button></> : null}{" / "}{tr("Document, kept as uploaded")}</>}
         actions={<>
           <button className="btn primary" onClick={() => run(() => download(wsPath(ws, `/files/${id}/download?format=${model.format}`), model.original_name || `${file.name}.${model.format}`))}>
@@ -286,7 +294,7 @@ function FileView({ id }: { id: string }): ReactNode {
     <div className="page file-page">
       <PageHead title={file.name}
         sub={<>
-          <button className="linklike" onClick={() => go("files")}>{tr("Files")}</button>{" / "}
+          <button className="linklike" onClick={() => go("files")}>{filesName(ws)}</button>{" / "}
           {model.kind === "report" ? tr("Report") : tr("Workbook")}{tr(", version")}{" "}{data.version}{data.note ? ` — ${data.note}` : ""}
         </>}
         actions={<>
@@ -617,7 +625,7 @@ function UploadView({ id, data, onVersion, reload }: { id: string; data: any; on
   return (
     <div className="page" style={{ maxWidth: 1100 }}>
       <PageHead title={file.name}
-        sub={<><button className="linklike" onClick={() => go("files")}>{tr("Files")}</button>{" / "}
+        sub={<><button className="linklike" onClick={() => go("files")}>{filesName(ws)}</button>{" / "}
           {fmt === "xlsx" ? tr("Your Excel file") : tr("Your Word file")}{tr(", version")}{" "}{data.version}{data.note ? ` — ${data.note}` : ""}</>}
         actions={<>
           {data.versions.length > 1 && <select className="select" style={{ width: 150 }} aria-label={tr("Version")} value={data.version}
