@@ -130,6 +130,42 @@ def main() -> int:
                     problems.append(f"{path} [{locale}]: console {real[:2]}")
                 context.close()
 
+            # English until the visitor chooses Arabic (the owner, 26 Nov 2026): a browser set to Arabic, or the
+            # value the old script wrote on every load from the browser's language, is not a choice
+            def lang_of(page: object) -> str:
+                return page.evaluate("document.documentElement.lang + '/' + document.documentElement.dir")
+
+            context = browser.new_context(locale="ar-SA")
+            context.add_init_script("try { if (!sessionStorage.getItem('seeded')) { localStorage.setItem("
+                                    "'ofintech-lang', 'ar'); sessionStorage.setItem('seeded', '1'); } } catch (e) {}")
+            page = context.new_page()
+            page.goto(BASE + "/", wait_until="networkidle")
+            seen = {"first visit, Arabic browser": lang_of(page)}
+            carried = page.evaluate("[...document.querySelectorAll('a[href]')].map(a => a.getAttribute('href'))"
+                                    ".filter(h => h.includes('lang='))")
+            if carried:
+                problems.append(f"English links carry a language: {carried[:3]}")
+            page.click("[data-lang-toggle]")
+            seen["after choosing Arabic"] = lang_of(page)
+            page.goto(BASE + "/sign-in.html", wait_until="networkidle")
+            seen["next page, no link parameter"] = lang_of(page)
+            page.click("[data-lang-toggle]")
+            page.goto(BASE + "/docs.html", wait_until="networkidle")
+            seen["after choosing English again"] = lang_of(page)
+            context.close()
+            context = browser.new_context(locale="en-US")
+            page = context.new_page()
+            page.goto(BASE + "/?lang=ar", wait_until="networkidle")
+            seen["a link that asks for Arabic"] = lang_of(page)
+            context.close()
+            want = {"first visit, Arabic browser": "en/ltr", "after choosing Arabic": "ar/rtl",
+                    "next page, no link parameter": "ar/rtl", "after choosing English again": "en/ltr",
+                    "a link that asks for Arabic": "ar/rtl"}
+            for k, v in seen.items():
+                print(f"  language: {k:30} {v}")
+                if v != want[k]:
+                    problems.append(f"language, {k}: {v}, expected {want[k]}")
+
             # the one-page site's sections are in people's bookmarks; a fragment never reaches the server
             for fragment, expected in (("#signin", "/sign-in.html"), ("#signup", "/sign-up.html")):
                 context = browser.new_context(locale="ar-SA")

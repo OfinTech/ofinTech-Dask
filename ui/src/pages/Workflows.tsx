@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { del, get, post, put } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
-import { fmtDateTime, fmtRelative } from "../lib/format";
+import { fmtDateTime, fmtRelative, formatLocale } from "../lib/format";
 import { Comments } from "../components/comments";
 import { Confirm, Empty, ErrorBox, Field, Icon, Loading, PageHead, StatusTag, go, query, useAction, useLoad } from "../components/ui";
 import { N, lang, tr } from "../lib/i18n";
@@ -290,7 +290,7 @@ function SchedulePreview({ cron, timezone }: { cron: string; timezone?: string }
   if (!out.next) return null;
   return (
     <div className="xs muted">{tr("Next runs (")}{out.timezone}):{" "}
-      {out.next.map((x) => new Date(x).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: out.timezone })).join("; ")}</div>
+      {out.next.map((x) => new Date(x).toLocaleString(formatLocale(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: out.timezone })).join("; ")}</div>
   );
 }
 

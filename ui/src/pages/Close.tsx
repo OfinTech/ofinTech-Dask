@@ -3,9 +3,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { del, download, get, post, put, upload, patch } from "../lib/api";
 import { can, useApp, wsPath } from "../lib/app";
-import { fmtDate, fmtMoney, fmtNumber, fmtRelative } from "../lib/format";
+import { fmtDate, fmtMoney, fmtNumber, fmtRelative, formatLocale } from "../lib/format";
 import { Confirm, Empty, ErrorBox, Field, Icon, Loading, PageHead, go, useAction, useLoad, useToast } from "../components/ui";
-import { N, lang, locale, tr } from "../lib/i18n";
+import { N, lang, tr } from "../lib/i18n";
 
 const ENTRY_KINDS = ["accrual", "depreciation", "bank_fee", "bank_interest"];
 /** Status words shown on items (listed so they are translated). */
@@ -15,7 +15,7 @@ export const CLOSE_WORDS = [N("proposed"), N("approved"), N("rejected"), N("reso
 export function fmtMonth(m?: string | null): string {
   if (!m) return "—";
   try {
-    return new Date(`${m}-15T00:00:00`).toLocaleDateString(locale().startsWith("en") ? undefined : locale(), { month: "long", year: "numeric" });
+    return new Date(`${m}-15T00:00:00`).toLocaleDateString(formatLocale(), { month: "long", year: "numeric" });
   } catch { return m; }
 }
 

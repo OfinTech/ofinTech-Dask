@@ -2,7 +2,8 @@
    the engine's address for the sign-in and sign-up forms, and the error codes the engine sends back.
 
    Every translatable node carries data-en. Placeholders use data-en-placeholder, values data-en-value,
-   titles data-en-title. Switching language swaps text, html[lang] and html[dir]; ?lang=en makes it shareable. */
+   titles data-en-title. Switching language swaps text, html[lang] and html[dir]; ?lang=ar makes it shareable.
+   English is what a visitor sees until they choose Arabic: the browser's language is not read. */
 (function () {
   "use strict";
 
@@ -38,20 +39,26 @@
       el.textContent = en ? "العربية" : "English";
       el.setAttribute("aria-label", en ? "التبديل إلى العربية" : "Switch to English");
     });
-    try { localStorage.setItem("ofintech-lang", lang); } catch (e) { /* private window */ }
-    // keep ?lang= on internal links so the choice survives navigation
+    // keep ?lang=ar on internal links so the choice survives navigation; English needs nothing
     document.querySelectorAll('a[href]').forEach(function (a) {
       var href = a.getAttribute("href");
       if (!href || /^(https?:|mailto:|tel:|#)/.test(href)) return;
-      a.setAttribute("href", href.split("?")[0].split("#")[0] + (en ? "?lang=en" : "") + (href.indexOf("#") > -1 ? "#" + href.split("#")[1] : ""));
+      a.setAttribute("href", href.split("?")[0].split("#")[0] + (en ? "" : "?lang=ar") + (href.indexOf("#") > -1 ? "#" + href.split("#")[1] : ""));
     });
   }
 
+  // A language is a choice: the switch (remembered in this browser) or a link that names one. The old key was
+  // written on every page load from the browser's language, so it never recorded a choice; it is dropped.
+  var CHOSEN = "ofintech-lang-chosen";
   function initialLang() {
     var p = new URLSearchParams(location.search).get("lang");
     if (p === "en" || p === "ar") return p;
-    try { var s = localStorage.getItem("ofintech-lang"); if (s) return s; } catch (e) { /* ignore */ }
-    return (navigator.language || "ar").slice(0, 2) === "ar" ? "ar" : "en";
+    try {
+      localStorage.removeItem("ofintech-lang");
+      var s = localStorage.getItem(CHOSEN);
+      if (s === "en" || s === "ar") return s;
+    } catch (e) { /* private window */ }
+    return "en";
   }
 
   /* ---- what the engine sends back ------------------------------------------------------------------- */
@@ -122,7 +129,9 @@
     document.querySelectorAll("[data-lang-toggle]").forEach(function (el) {
       el.addEventListener("click", function (e) {
         e.preventDefault();
-        setLang(document.documentElement.lang === "en" ? "ar" : "en");
+        var chosen = document.documentElement.lang === "en" ? "ar" : "en";
+        try { localStorage.setItem(CHOSEN, chosen); } catch (err) { /* private window */ }
+        setLang(chosen);
       });
     });
 

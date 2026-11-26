@@ -3,9 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { get } from "../lib/api";
 import { useApp, wsPath } from "../lib/app";
-import { fmtDate, fmtMoney, fmtNumber } from "../lib/format";
+import { fmtDate, fmtMoney, fmtNumber, formatLocale } from "../lib/format";
 import { Empty, ErrorBox, Loading, PageHead, go, query, useLoad } from "../components/ui";
-import { N, lang, tr } from "../lib/i18n";
+import { N, tr } from "../lib/i18n";
 import { Prov } from "./Overview";
 
 const TABS: [string, string][] = [["entries", N("Journal entries")], ["accounts", N("Accounts")], ["validation", N("Validation")]];
@@ -37,7 +37,7 @@ const PROV_WHY: Record<string, string> = {
 };
 
 function monthName(m: string): string {
-  return new Intl.DateTimeFormat(lang() === "en" ? navigator.language || "en" : lang(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
+  return new Intl.DateTimeFormat(formatLocale(), { month: "long", year: "numeric" }).format(new Date(`${m}-01T00:00:00`));
 }
 function withQ(path: string, params: Record<string, string | null | undefined>): string {
   const q = new URLSearchParams();
