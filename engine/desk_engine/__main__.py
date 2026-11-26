@@ -14,6 +14,7 @@ import os
 import secrets
 import socket
 import sys
+from typing import Any
 
 
 def _free_port(host: str, preferred: int) -> int:
@@ -26,6 +27,16 @@ def _free_port(host: str, preferred: int) -> int:
             except OSError:
                 continue
     raise SystemExit("no free port")
+
+
+def proxy_options(settings: Any) -> dict[str, Any]:
+    """Whom the server believes about the client's address. On a server, X-Forwarded-For is read only when the
+    connection comes from a proxy in DESK_TRUSTED_PROXIES (by default loopback and private networks, where Caddy,
+    nginx or an ingress sits), and then the client is the last address in it that is not such a proxy: the one the
+    proxy itself added. What a client writes in the header is never taken as its address."""
+    if settings.is_desktop:
+        return {"proxy_headers": False}
+    return {"proxy_headers": True, "forwarded_allow_ips": settings.trusted_proxies}
 
 
 def serve() -> None:
@@ -44,8 +55,7 @@ def serve() -> None:
             object.__setattr__(settings, "public_url", f"http://localhost:{port}")
     app = create_app(settings)
     config = uvicorn.Config(app, host=settings.host, port=port, log_level=settings.log_level, access_log=False,
-                            proxy_headers=not settings.is_desktop, forwarded_allow_ips="*" if not settings.is_desktop else None,
-                            server_header=False)
+                            server_header=False, **proxy_options(settings))
     server = uvicorn.Server(config)
 
     async def run() -> None:
