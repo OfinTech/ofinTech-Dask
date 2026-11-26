@@ -20,12 +20,24 @@ from ..web import SESSION_COOKIE, Ctx, Email, Router, optional_user, public_user
 router = Router()
 
 
+# Sign-in attempts. One account from one address may try a few times; one account from every address together
+# may try more. The second limit stops a guesser who spreads over many addresses; keeping the first per address
+# means that somebody who only knows a person's e-mail cannot lock that person out from their own address.
+LOGIN_PER_ACCOUNT_AND_ADDRESS = 8
+LOGIN_PER_ACCOUNT = 40
+LOGIN_PER_ADDRESS = 30
+MAX_TRACKED_KEYS = 50_000      # above this, keys with nothing left in their window are dropped
+
+
 def _rate_limit(ctx: Any, key: str, limit: int = 8, window: float = 300) -> None:
     """``ctx`` is a request context or the engine itself (for the form endpoints)."""
     engine = ctx if hasattr(ctx, "db") else ctx.engine
     attempts: dict[str, deque[float]] = engine.__dict__.setdefault("_auth_attempts", defaultdict(deque))
-    q = attempts[key]
     t = time.monotonic()
+    if len(attempts) > MAX_TRACKED_KEYS:      # every new address or e-mail adds a key; old ones must not pile up
+        for k in [k for k, q in attempts.items() if not q or t - q[-1] > window]:
+            del attempts[k]
+    q = attempts[key]
     while q and t - q[0] > window:
         q.popleft()
     if len(q) >= limit:
@@ -152,8 +164,9 @@ def login_user(engine: Any, *, email: str, password: str, client_host: str) -> s
     """Checks the password (the JSON API and the website's form share this) and returns the user's id."""
     if engine.settings.is_desktop:
         raise Forbidden("The desktop app signs you in automatically.")
-    _rate_limit(engine, f"login:{email.lower()}")
-    _rate_limit(engine, f"login-ip:{client_host}", limit=30)
+    _rate_limit(engine, f"login:{email.lower()}:{client_host}", limit=LOGIN_PER_ACCOUNT_AND_ADDRESS)
+    _rate_limit(engine, f"login:{email.lower()}", limit=LOGIN_PER_ACCOUNT)
+    _rate_limit(engine, f"login-ip:{client_host}", limit=LOGIN_PER_ADDRESS)
     user = engine.db.one("SELECT * FROM users WHERE email = ? AND is_local = 0", (email.lower(),))
     if not verify_password(password, user["password_hash"] if user else None) or user is None:
         engine.audit(None, user["id"] if user else None, "user.login.failed", None, {"reason": "bad_credentials"},
@@ -236,7 +249,7 @@ async def reauth(ctx: Ctx) -> dict[str, Any]:
     assert ctx.user is not None
     if ctx.user["is_local"]:
         return {"ok": True, "fresh_until": None}
-    _rate_limit(ctx.engine, f"login:{ctx.user['email'].lower()}")
+    _rate_limit(ctx.engine, f"reauth:{ctx.user['id']}")   # only a signed-in person reaches it
     if not ctx.user["password_hash"]:
         raise Forbidden("This account signs in with Google. Sign in again to confirm.", code="reauth_google")
     if not verify_password(ctx.body.password, ctx.user["password_hash"]):

@@ -111,6 +111,9 @@ class Settings:
     storage: dict[str, Any] = field(default_factory=lambda: {"kind": "local", "encrypt": True})
     sealed: bool = False                     # DESK_SEALED: no connection outside the private network (egress.py)
     egress_allow: tuple[str, ...] = ()       # DESK_EGRESS_ALLOW: hosts a sealed server may still reach
+    # DESK_TRUSTED_PROXIES: the proxies whose X-Forwarded-For names the client. Never "anyone": a header a client
+    # writes itself would then decide the address every per-address limit counts and the audit log records.
+    trusted_proxies: str = "127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10,fc00::/7"
 
     @property
     def is_desktop(self) -> bool:
@@ -252,4 +255,5 @@ def load_settings(env_overrides: dict[str, str] | None = None) -> Settings:
         storage=storage_settings(),
         sealed=_bool("DESK_SEALED", False),
         egress_allow=tuple(h.strip().lower() for h in _env("DESK_EGRESS_ALLOW", "").split(",") if h.strip()),
+        trusted_proxies=_env("DESK_TRUSTED_PROXIES", "") or Settings.trusted_proxies,
     )

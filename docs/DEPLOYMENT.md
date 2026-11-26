@@ -268,6 +268,7 @@ its own absence, so an outside monitor against `/health` — and a certificate-e
 | `DESK_MASTER_KEY` | required | 32 bytes, base64; encrypts stored credentials |
 | `DESK_OPEN_SIGNUP` | `false` | Allow sign-up without an invitation |
 | `DESK_ALLOW_PRIVATE_URLS` | `false` | Allow model or MCP endpoints on private networks (for example a self-hosted vLLM in the same VPC) |
+| `DESK_TRUSTED_PROXIES` | loopback and private networks | The proxies whose `X-Forwarded-For` names the client, as addresses or ranges separated by commas. The client is the last address in the header that is not one of them, so what a client writes there itself is never taken as its address. Caddy, nginx or an ingress on the same machine or private network needs nothing here. A proxy at a public address in front (a CDN such as Cloudflare) must be listed, or every sign-in through it is counted as coming from the proxy |
 | `DESK_ALLOW_STDIO_MCP` | `false` | Allow local-command MCP servers on the server (not recommended) |
 | `DESK_MAX_UPLOAD_MB` | `25` | Import size limit |
 | `DESK_KNOWLEDGE_CACHE_MB` | `512` | Memory for cached embedding matrices, across all workspaces. Least recently used are dropped first; `0` removes the limit |
