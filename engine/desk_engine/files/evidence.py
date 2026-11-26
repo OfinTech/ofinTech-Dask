@@ -4,11 +4,16 @@
 * ``Evidence`` is everything the conversation saw: tool results (accounting reports, dataset queries, calculator
   results, e-mails, document passages) and the user's own messages. A figure typed into a table or a report is
   traced to the evidence line that contains it, preferring lines that also mention the row's label.
+* ``Evidence.from_results`` is the same kind of evidence from results a caller read itself, outside a conversation:
+  each one a tool's name, its arguments, what it returned and when. A file built with it names its sources the way
+  a file built in a conversation does.
 """
 
 from __future__ import annotations
 
+import json
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -121,22 +126,31 @@ class Evidence:
                     items.append(Item(f"doc:{it.get('document_id') or it.get('link')}:{it.get('page')}", "passage", title,
                                       "Documents", r["created_at"], link, _lines(body), 2))
                 continue
-            fmt = {k: (v if not isinstance(v, (dict, list)) else "…") for k, v in args.items()}
-            fmt.setdefault("report", "Report")
-            fmt.setdefault("kind", "Invoices")
-            fmt.setdefault("dataset", "dataset")
-            title = TOOL_TITLES.get(name, name.replace("_", " ").capitalize()).format_map(_Safe(fmt))
-            title = title.replace("profit_and_loss", "Profit and loss").replace("balance_sheet", "Balance sheet")
-            system = conns.get(str(args.get("connection_id") or ""), "")
-            if name in {"accounting_report", "list_invoices"} and not system and conns:
-                system = next(iter(conns.values()))
-            if not system:
-                system = "Dataset" if "dataset" in name else "Gmail" if name.startswith("gmail") else "OfinTech Desk"
-            period = " · ".join(str(args[k]) for k in ("start_date", "end_date", "as_of") if args.get(k))
-            if period:
-                title += f" ({period})"
+            title, system = _tool_title(name, args, conns)
             items.append(Item(f"tool:{r['id']}", "tool", title, system, r["created_at"],
                               f"chat/{thread_id}?message={r['id']}", _lines(r["content"] or ""), 2))
+        return cls(items)
+
+    @classmethod
+    def from_results(cls, results: Iterable[Mapping[str, Any]]) -> Evidence:
+        """Evidence from tool results the caller read itself. Each result holds ``name`` (the tool), ``result``
+        (what it returned: text as it is, or data, which is written one record to a line so a figure stays beside
+        its label) and ``at`` (when it was read, seconds since the epoch). Optional: ``arguments`` (they name the
+        report and the period, as in a conversation), ``system`` (where the figures came from; by default as in a
+        conversation), ``link`` (a place in the app to open) and ``key`` (two results with the same key are one
+        source). A result the caller marks with ``status`` other than "ok" is left out, as a failed call is."""
+        items: list[Item] = []
+        for n, r in enumerate(results, 1):
+            if r.get("status") not in (None, "ok"):
+                continue
+            if r.get("at") is None:
+                raise ValueError("Each result needs `at`: when it was read, so the file can say how fresh it is.")
+            name = str(r.get("name") or "tool")
+            args = r.get("arguments") or {}
+            title, system = _tool_title(name, args, {})
+            body = r.get("result")
+            items.append(Item(str(r.get("key") or f"result:{n}:{name}"), "tool", title, str(r.get("system") or system),
+                              float(r["at"]), r.get("link"), _lines(body if isinstance(body, str) else _text(body)), 2))
         return cls(items)
 
     def match(self, value: float, labels: list[str]) -> tuple[Item, str] | None:
@@ -155,6 +169,36 @@ class Evidence:
                 if best is None or score > best[0]:
                     best = (score, item, line)
         return (best[1], best[2]) if best else None
+
+
+def _tool_title(name: str, args: Mapping[str, Any], conns: Mapping[str, str]) -> tuple[str, str]:
+    """How a tool result is named in a file's list of sources, and the system it came from."""
+    fmt = {k: (v if not isinstance(v, (dict, list)) else "…") for k, v in args.items()}
+    fmt.setdefault("report", "Report")
+    fmt.setdefault("kind", "Invoices")
+    fmt.setdefault("dataset", "dataset")
+    title = TOOL_TITLES.get(name, name.replace("_", " ").capitalize()).format_map(_Safe(fmt))
+    title = title.replace("profit_and_loss", "Profit and loss").replace("balance_sheet", "Balance sheet")
+    system = conns.get(str(args.get("connection_id") or ""), "")
+    if name in {"accounting_report", "list_invoices"} and not system and conns:
+        system = next(iter(conns.values()))
+    if not system:
+        system = "Dataset" if "dataset" in name else "Gmail" if name.startswith("gmail") else "OfinTech Desk"
+    period = " · ".join(str(args[k]) for k in ("start_date", "end_date", "as_of") if args.get(k))
+    if period:
+        title += f" ({period})"
+    return title, system
+
+
+def _text(value: Any, label: str = "") -> str:
+    """Data as lines: a record to a line, its fields side by side, so a figure is on the line that names it."""
+    if isinstance(value, Mapping):
+        if all(not isinstance(v, (Mapping, list, tuple)) for v in value.values()):
+            return (f"{label}: " if label else "") + json.dumps(value, ensure_ascii=False, default=str)
+        return "\n".join(_text(v, f"{label}.{k}" if label else str(k)) for k, v in value.items())
+    if isinstance(value, (list, tuple)):
+        return "\n".join(_text(v, label) for v in value)
+    return (f"{label}: " if label else "") + str(value)
 
 
 class _Safe(dict):  # type: ignore[type-arg]
