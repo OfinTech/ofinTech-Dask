@@ -231,7 +231,7 @@ i18n:check`; browser: `python e2e/ui_smoke.py`. What was run for this release is
 ## Helping
 
 [ROADMAP.md](ROADMAP.md) says where the work is and what is deliberately not planned. [docs/WANTED.md](docs/WANTED.md)
-is the list of named gaps — a bank statement shape or a chart of accounts from your country needs no code and no
+is the list of named gaps a bank statement shape or a chart of accounts from your country needs no code and no
 real data, and is the most useful thing this project can receive. [CONTRIBUTING.md](CONTRIBUTING.md) says how to run
 it and what a pull request is checked against; an issue or a pull request written in Arabic is as welcome as one in
 English.
