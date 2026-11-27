@@ -11,4 +11,8 @@ python-multipart==0.0.34
 PyYAML==6.0.3
 pypdf==7.1.1
 python-docx==1.2.0
+# python-docx's XML library, pinned here because python-docx accepts any version: on 27 Nov 2026 lxml 6.2.0
+# came out before its arm64 wheel, so the image tried to compile it and failed. A new version arrives through
+# Dependabot, with CI to show it builds.
+lxml==6.2.0
 numpy==2.5.3
