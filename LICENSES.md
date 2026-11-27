@@ -29,6 +29,7 @@ optionally, on the desktop); its language data files are Apache-2.0 as well.
 | PyYAML | 6.0.3 | MIT | Skill front matter |
 | pypdf | 6.21.2 | BSD-3-Clause | PDF text extraction |
 | python-docx | 1.2.0 | MIT | Word extraction and Word reports |
+| lxml | 6.2.0 | BSD-3-Clause | XML for Word files (used by python-docx) |
 | NumPy | 2.5.3 | BSD-3-Clause (and bundled permissive licences) | Semantic search |
 | React, React DOM | 19.2.8 | MIT | UI |
 | Inter 4.1 (variable; © 2016 The Inter Project Authors, github.com/rsms/inter) | SIL Open Font License 1.1, Reserved Font Name "Inter" | English and other Latin-script interface text, and figures. Bundled unchanged as `InterVariable.woff2` in the UI and on the website; the licence travels with it in `ui/src/fonts/OFL-Inter.txt`, the built `assets/OFL-Inter.txt` and `site/assets/fonts/OFL-Inter.txt` |

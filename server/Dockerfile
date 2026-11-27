@@ -40,7 +40,9 @@ RUN useradd --system --uid 10001 --home /var/lib/ofintech-desk desk && mkdir -p 
     && chown desk /var/lib/ofintech-desk
 WORKDIR /app
 COPY engine/requirements.txt ./
-RUN pip install -r requirements.txt
+# Wheels only: a package whose wheel for this platform is missing stops the build here, by name, instead of
+# being compiled with build tools the image does not have.
+RUN pip install --only-binary=:all: -r requirements.txt
 COPY engine/desk_engine ./desk_engine
 # The three invented files "Try it with a demo company" loads (desk_engine/demo.py): about 100 KB, written by
 # examples/demo-company/generate.py, naming no real company or person. Leave the line out and the button is not offered.
