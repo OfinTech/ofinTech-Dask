@@ -111,6 +111,17 @@ async def complete_callback(engine: Engine, params: dict[str, str]) -> dict[str,
                                label=f"Xero: {orgs[0].get('tenantName')}", config=config, tokens=tokens,
                                connection_id=reconnect_id)
 
+    elif provider == "daftra":
+        from .daftra import site_of, token_url
+
+        site = site_of(state["extra"].get("site"))
+        tokens = await exchange_code(engine, provider, code, state["code_verifier"], token_url=token_url(site))
+        config = {"site": site, "token_url": token_url(site)}
+        cid = store_connection(engine, workspace_id=ws_id, user_id=user_id, provider=provider,
+                               label=f"Daftra: {site.split('.')[0]}", config=config, tokens=tokens,
+                               connection_id=reconnect_id)
+        await _label_from_company(engine, ws_id, cid, "Daftra")
+
     elif provider == "google":
         tokens = await exchange_code(engine, provider, code, state["code_verifier"])
         info = await _get_json(engine, "https://openidconnect.googleapis.com/v1/userinfo", tokens["access_token"])
@@ -122,7 +133,7 @@ async def complete_callback(engine: Engine, params: dict[str, str]) -> dict[str,
         raise Invalid("Unknown connector.")
 
     engine.audit(ws_id, user_id, "connection.connected", cid, {"provider": provider})
-    if provider in {"quickbooks", "zoho_books", "xero"}:
+    if provider in {"quickbooks", "zoho_books", "xero", "daftra"}:
         asyncio.get_running_loop().create_task(_first_sync(engine, ws_id, cid, user_id))
     return {"workspace_id": ws_id, "connection_id": cid, "provider": provider}
 

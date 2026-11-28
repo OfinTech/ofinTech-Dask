@@ -64,6 +64,14 @@ PROVIDERS: dict[str, OAuthProvider] = {
          "accounting.reports.balancesheet.read", "accounting.reports.aged.read", "accounting.invoices.read",
          "accounting.contacts.read", "accounting.settings.read", "accounting.journals.read"],
         basic_auth=True, developer_portal="https://developer.xero.com/app/manage"),
+    # Daftra: every customer account has its own address, so both URLs name it ({site}, checked by daftra.site_of).
+    # The sign-in path can be set with DESK_DAFTRA_AUTHORIZE_URL (it must keep {site}); the app's permissions are
+    # chosen in Daftra's developer portal, so no scope is sent unless the OAuth app's options name some.
+    "daftra": OAuthProvider(
+        "daftra", "Daftra",
+        "https://{site}/v2/oauth/authorize",
+        "https://{site}/api2/v2/oauth/token",
+        [], pkce=False, developer_portal="https://apps.daftra.com"),
     "google": OAuthProvider(
         "google", "Google (Gmail, Drive, Sheets)",
         "https://accounts.google.com/o/oauth2/v2/auth",
@@ -162,9 +170,26 @@ def authorization_url(engine: Engine, provider: str, workspace_id: str, user_id:
                                       "extra": dumps(extra or {}), "created_at": now()})
     params = {"client_id": client_id, "response_type": "code", "redirect_uri": engine.settings.oauth_redirect_uri,
               "scope": p.scope_separator.join(scopes_for(engine, provider)), "state": state, **p.extra_params}
+    if not params["scope"]:
+        del params["scope"]
     if p.pkce:
         params |= {"code_challenge": challenge, "code_challenge_method": "S256"}
-    return f"{p.authorize_url}?{urlencode(params)}"
+    return f"{authorize_base(provider, (extra or {}).get('site'))}?{urlencode(params)}"
+
+
+def authorize_base(provider: str, site: str | None) -> str:
+    """Where a person signs in. A provider whose accounts each have their own address names it as {site}; the site
+    is checked before it is put in, and an address set in the environment must keep the {site} in it."""
+    p = get_provider(provider)
+    url = os.environ.get(f"DESK_{provider.upper()}_AUTHORIZE_URL", "").strip() or p.authorize_url
+    if "{site}" not in p.authorize_url:
+        return p.authorize_url
+    if "{site}" not in url or not url.startswith("https://{site}/"):
+        raise NotConfigured(f"DESK_{provider.upper()}_AUTHORIZE_URL must start with https://{{site}}/.",
+                            code="oauth_app_missing")
+    from .daftra import site_of
+
+    return url.replace("{site}", site_of(site), 1)
 
 
 def consume_state(engine: Engine, state: str) -> dict[str, Any]:
