@@ -41,7 +41,7 @@ TRIGGERS: dict[str, list[str]] = {
              "données", "graphique", "tableau de bord", "mois", "trimestre", "année", "budget", "recette", "dépense",
              "ventes", "écart"],
     "accounting": ["invoice", "bill", "ledger", "p&l", "profit", "loss", "balance sheet", "receivable", "payable",
-                   "quickbooks", "xero", "zoho", "odoo", "sync", "overdue", "aging", "customer", "supplier", "vendor",
+                   "quickbooks", "xero", "zoho", "odoo", "daftra", "sync", "overdue", "aging", "customer", "supplier", "vendor",
                    "فاتورة", "فواتير", "دفتر", "ربح", "خسارة", "ميزانية", "مدين", "دائن", "متأخر", "عميل", "مورد", "قائمة الدخل",
                    "factura", "beneficio", "pérdida", "balance", "cobro", "pago", "vencid", "cliente", "proveedor",
                    "facture", "bénéfice", "perte", "bilan", "créance", "dette", "échu", "fournisseur"],

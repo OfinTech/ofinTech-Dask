@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from ..app import Engine
 
 log = logging.getLogger(__name__)
-ACCOUNTING_PROVIDERS = {"quickbooks", "zoho_books", "xero", "odoo", "custom"}
+ACCOUNTING_PROVIDERS = {"quickbooks", "zoho_books", "xero", "odoo", "daftra", "custom"}
 SECTIONS = ["Income", "Cost of sales", "Expenses", "Other income", "Other expenses", "Net profit"]
 
 
@@ -103,6 +103,9 @@ def client_for(engine: Engine, connection: dict[str, Any]) -> AccountingClient:
     if provider == "odoo":
         from .odoo import OdooClient
         return OdooClient(engine, connection)
+    if provider == "daftra":
+        from .daftra import DaftraClient
+        return DaftraClient(engine, connection)
     if provider == "custom":
         from .open_api import PullClient, PushedClient
         if loads(connection["config"], {}).get("mode") == "pull":
