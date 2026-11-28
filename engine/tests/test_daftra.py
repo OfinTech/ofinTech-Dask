@@ -7,6 +7,8 @@ What this guards.
 - **The reports read as Daftra shows them.** Profit and loss by month with expenses as positive amounts, cost of
   sales apart; the balance sheet by section, with credit groups turned the right way.
 - **Journal lines carry their accounts and classes,** across pages, and drafts are not read as posted.
+- **Connecting asks for the account's address,** signs in there, and keeps the address for every later call and
+  token refresh. The client ID and secret come from the environment, as for the other OAuth connections.
 - **Nothing is invented.** A document whose amounts Daftra does not send has an empty balance and status
   "unknown", and is not counted as open.
 
@@ -17,9 +19,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import unittest
 from datetime import date
 from typing import Any
+from unittest import mock
 from urllib.parse import parse_qs, urlparse
 
 import httpx2 as httpx
@@ -213,6 +217,83 @@ class Connection(unittest.TestCase):
         with self.assertRaises(UpstreamError):
             asyncio.run(client_for(self.h.engine, self.conn()).company())
         self.assertNotIn("dt-access", json.dumps([str(x.url) for x in self.h.router.requests]))
+
+
+class SignIn(unittest.TestCase):
+    ENV = {"DESK_DAFTRA_CLIENT_ID": "daftra-test-client", "DESK_DAFTRA_CLIENT_SECRET": "daftra-test-secret"}
+
+    def setUp(self) -> None:
+        patcher = mock.patch.dict(os.environ, self.ENV)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.h = Harness()
+        self.addCleanup(self.h.close)
+        self.ws = self.h.setup_workspace(with_model=False)
+        r = self.h.router
+        self.token_calls: list[dict[str, list[str]]] = []
+
+        def token(req: httpx.Request) -> httpx.Response:
+            self.token_calls.append(parse_qs(req.content.decode()))
+            return httpx.Response(200, json={"token_type": "Bearer", "expires_in": 94608000,
+                                             "access_token": "dt-a1", "refresh_token": "dt-r1"})
+        r.add("POST", f"{API}/v2/oauth/token", token)
+        r.add("GET", f"{API}/site_info.json", ok({"Site": {"business_name": "Harbor Trading (test)",
+                                                            "currency_code": "SAR", "country_code": "SA"}}))
+        for path in ("/reports/accounts_profit_accrual", "/reports/balance_sheet"):
+            r.add("GET", f"{API}{path}", ok({}))
+        for path in ("/invoices.json", "/purchase_invoices.json", "/journal_accounts.json", "/journals.json"):
+            r.add("GET", f"{API}{path}", page([], 1, 1))
+
+    def authorize(self, expect: int = 200, **body: Any) -> Any:
+        return self.h.api("POST", f"/api/w/{self.ws}/connections/daftra/authorize", json=body, expect=expect)
+
+    def test_the_sign_in_goes_to_the_account_and_asks_for_no_scope(self) -> None:
+        url = self.authorize(site="https://Harbor-Test.daftra.com/")["url"]
+        self.assertTrue(url.startswith(f"https://{SITE}/v2/oauth/authorize?"), url)
+        q = {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
+        self.assertEqual(q["client_id"], "daftra-test-client")
+        self.assertEqual(q["redirect_uri"], self.h.engine.settings.oauth_redirect_uri)
+        self.assertEqual(q["response_type"], "code")
+        self.assertNotIn("scope", q)
+        self.assertNotIn("daftra-test-secret", url)
+
+    def test_an_address_that_is_not_daftra_is_refused(self) -> None:
+        for bad in ("evil.example", "harbor.daftra.com.evil.example", ""):
+            r = self.authorize(expect=None, site=bad)
+            self.assertNotIn("url", r)
+        self.assertNotIn("url", self.authorize(expect=None))
+
+    def test_the_sign_in_address_can_be_set_but_must_stay_on_the_account(self) -> None:
+        with mock.patch.dict(os.environ, {"DESK_DAFTRA_AUTHORIZE_URL": "https://{site}/oauth2/authorize"}):
+            self.assertTrue(self.authorize(site=SITE)["url"].startswith(f"https://{SITE}/oauth2/authorize?"))
+        for bad in ("https://evil.example/{site}/authorize", "https://evil.example/authorize"):
+            with mock.patch.dict(os.environ, {"DESK_DAFTRA_AUTHORIZE_URL": bad}):
+                self.assertNotIn("url", self.authorize(expect=None, site=SITE))
+
+    def test_the_callback_stores_the_account_and_refreshes_there(self) -> None:
+        q = {k: v[0] for k, v in parse_qs(urlparse(self.authorize(site=SITE)["url"]).query).items()}
+        done = self.h.client.get("/oauth/callback", params={"code": "c0de", "state": q["state"]})
+        self.assertEqual(done.status_code, 200, done.text)
+        self.assertEqual(self.token_calls[0]["grant_type"], ["authorization_code"])
+        self.assertEqual(self.token_calls[0]["code"], ["c0de"])
+        self.assertEqual(self.token_calls[0]["client_secret"], ["daftra-test-secret"])
+        self.assertEqual(self.token_calls[0]["redirect_uri"], [self.h.engine.settings.oauth_redirect_uri])
+        conn = dict(self.h.engine.db.one("SELECT * FROM connections WHERE provider = 'daftra'"))
+        cfg = json.loads(conn["config"])
+        self.assertEqual((cfg["site"], cfg["token_url"]), (SITE, f"{API}/v2/oauth/token"))
+        self.assertEqual(conn["label"], "Daftra: Harbor Trading (test)")
+        self.assertNotIn("dt-a1", conn["config"])
+        # a reconnect needs no address: the stored one is used
+        again = self.authorize(connection_id=conn["id"])["url"]
+        self.assertTrue(again.startswith(f"https://{SITE}/v2/oauth/authorize?"))
+        # an expired token is refreshed at the same account
+        from desk_engine.connectors.oauth import TokenManager
+        self.h.engine.secrets.put("connection", {"tokens": {"access_token": "old", "refresh_token": "dt-r1",
+                                                            "expires_in": 1, "obtained_at": 0}},
+                                  workspace_id=self.ws, secret_id=conn["secret_id"])
+        self.assertEqual(asyncio.run(TokenManager(self.h.engine, conn).access_token()), "dt-a1")
+        self.assertEqual(self.token_calls[-1]["grant_type"], ["refresh_token"])
+        self.assertEqual({str(x.url).split("/")[2] for x in self.h.router.requests}, {SITE})
 
 
 if __name__ == "__main__":

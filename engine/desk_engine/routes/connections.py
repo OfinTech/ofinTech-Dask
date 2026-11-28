@@ -93,6 +93,8 @@ async def set_oauth_app(ctx: Ctx) -> dict[str, Any]:
 
 class AuthorizeIn(BaseModel):
     connection_id: str | None = None
+    # for a provider whose accounts each have their own address (Daftra): yourcompany.daftra.com
+    site: str | None = Field(default=None, max_length=120)
     # the app page to come back to after the provider's sign-in, e.g. "/connections" (an app route, never a URL)
     return_to: str | None = Field(default=None, max_length=120, pattern=r"^/[A-Za-z0-9_\-/]*$")
 
@@ -110,6 +112,15 @@ async def authorize(ctx: Ctx) -> dict[str, Any]:
             raise NotFound("Connection not found.")
         extra["connection_id"] = ctx.body.connection_id
     extra["return_to"] = ctx.body.return_to or "/connections"
+    if provider == "daftra":
+        from ..connectors.daftra import site_of
+
+        site = ctx.body.site
+        if not site and ctx.body.connection_id:
+            row = ctx.engine.db.one("SELECT config FROM connections WHERE id = ? AND workspace_id = ?",
+                                    (ctx.body.connection_id, ctx.ws_id))
+            site = loads(row["config"], {}).get("site") if row else None
+        extra["site"] = site_of(site)
     url = authorization_url(ctx.engine, provider, ctx.ws_id, ctx.user_id, extra)
     return {"url": url}
 

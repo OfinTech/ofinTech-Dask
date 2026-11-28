@@ -18,6 +18,7 @@ const ACCOUNTING = [
   ["quickbooks", "QuickBooks Online", "Profit and loss by month, balance sheet, invoices and bills (read-only)."],
   ["zoho_books", "Zoho Books", "All Zoho data centres. Profit and loss, balance sheet, invoices and bills (read-only)."],
   ["xero", "Xero", "Profit and loss, balance sheet, invoices and bills (read-only, granular scopes)."],
+  ["daftra", "Daftra", "Profit and loss, balance sheet, invoices, bills and journal lines (read-only)."],
 ] as const;
 
 /** Back from a provider's sign-in: the server added ?connected=<id> or ?connect_error=<message> to the page address.
@@ -40,9 +41,9 @@ export function useConnectResult(onConnected?: () => void): string | null {
 /** Start a provider's sign-in. In the browser the same tab goes to the provider and comes back to this page; in the
  * desktop app the system browser opens it and the page refreshes until the connection appears. */
 export async function startAuthorize(run: any, ws: any, provider: string, connectionId: string | undefined,
-  toast: (t: string) => void, onChange: () => void): Promise<void> {
+  toast: (t: string) => void, onChange: () => void, extra: Record<string, string> = {}): Promise<void> {
   const back = "/" + (location.hash.replace(/^#\/?/, "").split("?")[0] || "connections");
-  const r = await run(() => post<{ url: string }>(wsPath(ws, `/connections/${provider}/authorize`), { connection_id: connectionId, return_to: back }));
+  const r = await run(() => post<{ url: string }>(wsPath(ws, `/connections/${provider}/authorize`), { connection_id: connectionId, return_to: back, ...extra }));
   if (!r) return;
   if (!window.desk) { window.location.assign(r.url); return; }
   openExternal(r.url);
@@ -309,8 +310,12 @@ function ProviderCard({ provider, label, desc, conns, configured, admin, onChang
   const toast = useToast();
   const { busy, run } = useAction();
   const [confirm, setConfirm] = useState<any>(null);
+  // Daftra: each customer account has its own address, asked for before the sign-in (a reconnect reuses the stored one)
+  const asksSite = provider === "daftra";
+  const [site, setSite] = useState("");
 
-  const connect = (connectionId?: string) => startAuthorize(run, ws, provider, connectionId, toast, onChange);
+  const connect = (connectionId?: string) => startAuthorize(run, ws, provider, connectionId, toast, onChange,
+    asksSite && !connectionId ? { site: site.trim() } : {});
 
   return (
     <div className="panel panel-pad stack">
@@ -339,8 +344,11 @@ function ProviderCard({ provider, label, desc, conns, configured, admin, onChang
           </div>
         </div>
       ))}
-      {admin && (configured ? <div><button className="btn primary small" disabled={busy} onClick={() => connect()}>
-        <Icon name="link" />{conns.length ? tr("Connect another") : tr("Connect")}</button></div>
+      {admin && (configured ? <div className="stack">
+        {asksSite && <Field label={tr("Daftra address")} hint={tr("e.g. yourcompany.daftra.com")}>
+          <input className="input" value={site} dir="ltr" onChange={(e) => setSite(e.target.value)} /></Field>}
+        <div><button className="btn primary small" disabled={busy || (asksSite && !site.trim())} onClick={() => connect()}>
+        <Icon name="link" />{conns.length ? tr("Connect another") : tr("Connect")}</button></div></div>
         : <p className="small">{tr("Not set up on this installation yet.")}{" "}
           {session.user?.instance_admin ? <button className="btn small" onClick={onSetup}>{tr("Add OAuth app")}</button>
             : tr("Ask the installation administrator to add the OAuth app.")}</p>)}

@@ -5,7 +5,7 @@ or the administrator of a Team Server. Each customer then connects their own com
 IDs and secrets can be:
 
 - set as environment variables (`DESK_<PROVIDER>_CLIENT_ID`, `DESK_<PROVIDER>_CLIENT_SECRET`, where PROVIDER is
-  `QUICKBOOKS`, `ZOHO_BOOKS`, `XERO` or `GOOGLE`); or
+  `QUICKBOOKS`, `ZOHO_BOOKS`, `XERO`, `DAFTRA` or `GOOGLE`); or
 - entered by the installation administrator under **Connections → OAuth apps**. Secrets are encrypted at rest.
 
 **Redirect URI** to register with every provider:
@@ -75,6 +75,27 @@ totals). Compare the first synced month with the same report in Zoho Books.
 
 If a user authorises several organisations, choose one on the connection card. P&L is requested in 12-month chunks
 (`periods`/`timeframe=MONTH`).
+
+## Daftra
+
+1. Create an app in Daftra's developer portal (<https://apps.daftra.com>) and give it the redirect URI above. Choose
+   the permissions there (View is enough: the connector only reads). Daftra reviews an app before it is listed.
+2. Set `DESK_DAFTRA_CLIENT_ID` and `DESK_DAFTRA_CLIENT_SECRET` (or enter them under **Connections → OAuth apps**).
+3. A customer connects from **Connections → Accounting → Daftra** with their account's address
+   (`yourcompany.daftra.com`, or `.daftara.com`). Only an address of that form is accepted, and every call and every
+   token refresh goes to it.
+
+The sign-in page is `https://<account>/v2/oauth/authorize` and the token endpoint
+`https://<account>/api2/v2/oauth/token`. Daftra's public reference documents the token endpoint but not the
+sign-in page; if Daftra uses another path, set `DESK_DAFTRA_AUTHORIZE_URL` to it, keeping `{site}` where the
+account's address goes (`https://{site}/...`). No scope is sent: the app's permissions are the ones chosen in the
+portal.
+
+What is read: the company (`site_info`), the accrual profit and loss by month, the balance sheet, sales and purchase
+invoices, journal accounts and posted journals (drafts are skipped). Expenses are written as positive amounts and a
+top-level category named as cost of sales is kept apart. Each journal account's class comes from where it sits in
+the balance sheet or the profit and loss, and its name for Bank, Receivable and Payable. Daftra's reference gives no
+totals for a purchase invoice; when they are not sent, the bill's balance is empty and it is not counted as open.
 
 ## Odoo
 
